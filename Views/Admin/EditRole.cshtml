@@ -1,0 +1,67 @@
+﻿@using AtharERP_System.Models.Entities
+@model ApplicationRole
+@{
+    ViewData["Title"] = "تعديل الدور";
+    var allPermissions = ViewBag.AllPermissions as List<Permission> ?? new List<Permission>();
+    var selectedIds = ViewBag.SelectedPermissionIds as List<int> ?? new List<int>();
+}
+
+<h1 class="athar-page-title">تعديل الدور</h1>
+
+<div class="athar-card mt-3">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="EditRole" asp-route-id="@Model.Id">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم الدور</label>
+                <input type="text" name="Name" class="form-control" value="@Model.Name" required @(Model.IsTemplate ? "readonly" : "") />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الوصف</label>
+                <input type="text" name="Description" class="form-control" value="@Model.Description" />
+            </div>
+        </div>
+
+        <div class="mb-3 form-check form-switch">
+            <input type="checkbox" name="IsActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
+            <input type="hidden" name="IsActive" value="false" />
+            <label class="form-check-label" for="isActive">نشط</label>
+        </div>
+
+        <h5 class="mt-4">الصلاحيات</h5>
+        <div class="row">
+            @foreach (var moduleGroup in allPermissions.GroupBy(p => p.Module))
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="athar-permission-group">
+                        <h6>@moduleGroup.Key</h6>
+                        @foreach (var perm in moduleGroup)
+                        {
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="selectedPermissions" value="@perm.Id"
+                                       id="perm_@perm.Id" checked="@selectedIds.Contains(perm.Id)" />
+                                <label class="form-check-label" for="perm_@perm.Id">@(perm.Description ?? perm.Name)</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <button type="submit" class="btn athar-btn mt-3">حفظ التعديلات</button>
+        <a asp-action="Roles" class="btn athar-btn-outline mt-3">إلغاء</a>
+    </form>
+</div>

@@ -75,45 +75,6 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // دالة 2: Login (POST) — معالجة بيانات الدخول
-        // ============================================
-        // [HttpPost] = تستجيب لإرسال النموذج (Form submit)
-        // [ValidateAntiForgeryToken] = يتحقق أن الطلب جاء من موقعك (يمنع هجوم CSRF)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string password, bool rememberMe, string? returnUrl = null)
-        {
-            // 1. البحث عن المستخدم بالبريد الإلكتروني
-            var user = await _userManager.FindByEmailAsync(email);
-
-            // 2. التحقق من وجود المستخدم ونشاطه
-            if (user == null || !user.IsActive)
-            {
-                ModelState.AddModelError(string.Empty, "بيانات الدخول غير صحيحة أو الحساب معطل");
-                return View(); // يُعيد الصفحة مع رسالة خطأ
-            }
-
-            // 3. التحقق من كلمة المرور وتسجيل الدخول
-            var result = await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: false);
-
-            if (result.Succeeded)
-            {
-                // 4. تحديث آخر دخول
-                user.LastLogin = DateTime.UtcNow;
-                await _userManager.UpdateAsync(user);
-
-                // 5. إعادة التوجيه للصفحة المطلوبة أو الرئيسية
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    return Redirect(returnUrl);
-                return RedirectToAction("Index", "Home");
-            }
-
-            // 6. إذا فشلت كلمة المرور
-            ModelState.AddModelError(string.Empty, "بيانات الدخول غير صحيحة");
-            return View();
-        }
-
-        // ============================================
         // دالة 3: Register (GET) — صفحة إضافة مستخدم
         // ============================================
         // [Authorize(Roles = "مدير النظام")] = فقط المدير يمكنه الوصول
