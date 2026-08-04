@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AtharERP_System")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6fe6c30f24b1e261ec57f83175d31e1909d40e95")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+befffde108c6680640ef1cbdb34e329c9ad7c464")]
 [assembly: System.Reflection.AssemblyProductAttribute("AtharERP_System")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AtharERP_System")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

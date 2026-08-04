@@ -26,6 +26,14 @@
 	<ItemGroup>
 	  <Folder Include="Data\Migrations\" />
 	  <Folder Include="Migrations\" />
+	  <Folder Include="wwwroot\fonts\tajawal\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\..\Downloads\Tajawal-Black.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Black.woff2" />
+	  <None Include="..\..\..\Downloads\Tajawal-Bold.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Bold.woff2" />
+	  <None Include="..\..\..\Downloads\Tajawal-Medium.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Medium.woff2" />
+	  <None Include="..\..\..\Downloads\Tajawal-Regular.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Regular.woff2" />
 	</ItemGroup>
 
 </Project>

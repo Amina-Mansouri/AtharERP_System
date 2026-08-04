@@ -1,31 +1,313 @@
-html {
-  font-size: 14px;
+@font-face {
+    font-family: 'Tajawal';
+    src: url('/fonts/tajawal/Tajawal-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+@font-face {
+    font-family: 'Tajawal';
+    src: url('/fonts/tajawal/Tajawal-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+@font-face {
+    font-family: 'Tajawal';
+    src: url('/fonts/tajawal/Tajawal-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+@font-face {
+    font-family: 'Tajawal';
+    src: url('/fonts/tajawal/Tajawal-Black.woff2') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --athar-primary: #6B4226;
+    --athar-primary-dark: #3D2412;
+    --athar-primary-light: #8B5A2B;
+    --athar-accent: #D9A441;
+    --athar-bg: #FAF6F0;
+    --athar-text: #2B1D12;
+    --athar-border: #E6D9C6;
+    --athar-danger: #B3372C;
+    --athar-success: #5C7A3A;
+}
+
+html, body {
+    height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+    background-color: var(--athar-bg);
+    color: var(--athar-text);
+    margin: 0;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* ===== Navbar ===== */
+.athar-navbar {
+    background: linear-gradient(90deg, var(--athar-primary-dark), var(--athar-primary));
+    padding: 0.75rem 0;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.athar-brand {
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: #fff !important;
+}
+
+    .athar-brand span {
+        color: var(--athar-accent);
+        font-size: 0.9rem;
+        margin-right: 0.4rem;
+    }
+
+.athar-navbar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+}
+
+    .athar-navbar .nav-link:hover {
+        color: var(--athar-accent) !important;
+    }
+
+.athar-navbar .dropdown-menu {
+    background-color: var(--athar-primary-dark);
+    border: none;
+}
+
+.athar-navbar .dropdown-item {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+    .athar-navbar .dropdown-item:hover {
+        background-color: var(--athar-primary-light);
+        color: #fff;
+    }
+
+.athar-user-greeting {
+    color: #fff !important;
+}
+
+/* ===== Buttons ===== */
+.athar-btn {
+    background-color: var(--athar-primary);
+    color: #fff;
+    border: 1px solid var(--athar-primary);
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 0.5rem 1.25rem;
+}
+
+    .athar-btn:hover {
+        background-color: var(--athar-primary-dark);
+        color: #fff;
+    }
+
+.athar-btn-outline {
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    padding: 0.4rem 1rem;
+}
+
+    .athar-btn-outline:hover {
+        background-color: rgba(255, 255, 255, 0.12);
+        color: #fff;
+    }
+
+/* outline buttons used outside dark backgrounds (cards) need dark text */
+.athar-card .athar-btn-outline,
+.athar-auth-card .athar-btn-outline {
+    color: var(--athar-primary);
+    border-color: var(--athar-primary);
+}
+
+    .athar-card .athar-btn-outline:hover,
+    .athar-auth-card .athar-btn-outline:hover {
+        background-color: var(--athar-primary);
+        color: #fff;
+    }
+
+.athar-btn-accent {
+    background-color: var(--athar-accent);
+    color: var(--athar-primary-dark);
+    border: 1px solid var(--athar-accent);
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 0.6rem 1.5rem;
+}
+
+    .athar-btn-accent:hover {
+        background-color: #c4922f;
+        color: var(--athar-primary-dark);
+    }
+
+/* ===== Content / Cards ===== */
+.athar-content {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+    min-height: calc(100vh - 140px);
+}
+
+.athar-page-title {
+    color: var(--athar-primary-dark);
+    font-weight: 900;
+}
+
+.athar-card {
+    background: #fff;
+    border: 1px solid var(--athar-border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(107, 66, 38, 0.08);
+}
+
+.athar-permission-group {
+    background: var(--athar-bg);
+    border: 1px solid var(--athar-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    height: 100%;
+}
+
+    .athar-permission-group h6 {
+        color: var(--athar-primary);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+/* ===== Table ===== */
+.athar-table thead {
+    background-color: var(--athar-primary);
+    color: #fff;
+}
+
+    .athar-table thead th {
+        border: none;
+        font-weight: 500;
+    }
+
+.athar-table tbody tr:hover {
+    background-color: rgba(107, 66, 38, 0.06);
+}
+
+/* ===== Badges ===== */
+.athar-badge-active {
+    background-color: var(--athar-success);
+    color: #fff;
+}
+
+.athar-badge-inactive {
+    background-color: var(--athar-danger);
+    color: #fff;
+}
+
+/* ===== Stat cards (Dashboard) ===== */
+.athar-stat-card {
+    background: #fff;
+    border: 1px solid var(--athar-border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(107, 66, 38, 0.08);
+}
+
+.athar-stat-value {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: var(--athar-primary);
+}
+
+.athar-stat-label {
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* ===== Hero (Home landing page) ===== */
+.athar-hero {
+    background: linear-gradient(135deg, var(--athar-primary-dark), var(--athar-primary));
+    border-radius: 14px;
+    padding: 4rem 1.5rem;
+    margin-top: 1rem;
+    color: #fff;
+}
+
+.athar-hero-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--athar-accent);
+    margin-bottom: 0;
+}
+
+.athar-hero-subtitle {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+.athar-hero-text {
+    max-width: 640px;
+    margin: 1rem auto 0;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.athar-hero-welcome {
+    font-size: 1.1rem;
+    color: var(--athar-accent);
+    font-weight: 700;
+}
+
+/* ===== Auth pages (Login / Register / AccessDenied) ===== */
+.athar-auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--athar-primary-dark), var(--athar-primary));
+    padding: 2rem 1rem;
+}
+
+.athar-auth-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 10px 40px rgba(61, 36, 18, 0.3);
+}
+
+.athar-auth-card-wide {
+    max-width: 760px;
+}
+
+.athar-auth-title {
+    color: var(--athar-primary);
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.athar-auth-subtitle {
+    text-align: center;
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+
+/* ===== Footer ===== */
+.athar-footer {
+    background-color: var(--athar-primary-dark);
+    color: rgba(255, 255, 255, 0.75);
+    padding: 1rem 0;
+    font-size: 0.9rem;
 }

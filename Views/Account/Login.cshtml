@@ -1,0 +1,44 @@
+﻿@{
+    ViewData["Title"] = "تسجيل الدخول";
+    ViewData["HideNav"] = true;
+}
+
+<div class="athar-auth-card">
+    <h1 class="athar-auth-title">أثر</h1>
+    <p class="athar-auth-subtitle">تسجيل الدخول إلى النظام</p>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-controller="Account" asp-action="Login">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+        <div class="mb-3">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input type="email" name="email" class="form-control" required autofocus />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">كلمة المرور</label>
+            <input type="password" name="password" class="form-control" required />
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="rememberMe" value="true" class="form-check-input" id="rememberMe" />
+            <input type="hidden" name="rememberMe" value="false" />
+            <label class="form-check-label" for="rememberMe">تذكرني</label>
+        </div>
+
+        <button type="submit" class="btn athar-btn w-100">دخول</button>
+    </form>
+</div>

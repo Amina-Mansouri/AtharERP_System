@@ -1,0 +1,45 @@
+﻿## .NET build results
+bin/
+obj/
+out/
+
+## User-specific / IDE files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+.nuget/
+
+## Test results
+TestResults/
+[Cc]overage/
+*.trx
+
+## Local secrets / machine-specific config
+appsettings.Development.json
+appsettings.*.local.json
+*.env
+Properties/serviceDependencies.local.json
+Properties/serviceDependencies.local.json.user
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Logs
+*.log
+logs/
+
+## Local SQLite (if ever used for testing)
+*.db
+*.db-shm
+*.db-wal

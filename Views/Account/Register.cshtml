@@ -1,0 +1,113 @@
+﻿@using AtharERP_System.Models.Entities
+@{
+    ViewData["Title"] = "إضافة مستخدم جديد";
+    ViewData["HideNav"] = true;
+    var roles = ViewBag.Roles as List<string> ?? new List<string>();
+}
+
+<div class="athar-auth-card athar-auth-card-wide">
+    <h1 class="athar-auth-title">أثر</h1>
+    <p class="athar-auth-subtitle">إضافة مستخدم جديد</p>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-controller="Account" asp-action="Register">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الاسم الكامل</label>
+                <input type="text" name="fullName" class="form-control" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">البريد الإلكتروني</label>
+                <input type="email" name="email" class="form-control" required />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">كلمة المرور</label>
+                <input type="password" name="password" class="form-control" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">تأكيد كلمة المرور</label>
+                <input type="password" name="confirmPassword" class="form-control" required />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المسمى الوظيفي</label>
+                <input type="text" name="jobTitle" class="form-control" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">القسم</label>
+                <input type="text" name="department" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">درجة المهندس</label>
+                <select name="engineerRank" class="form-select">
+                    <option value="None">غير محدد</option>
+                    <option value="Junior">مبتدئ</option>
+                    <option value="MidLevel">متوسط</option>
+                    <option value="Senior">خبير</option>
+                    <option value="Lead">رئيسي</option>
+                    <option value="Principal">استشاري</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">رقم الهاتف</label>
+                <input type="tel" name="phoneNumber" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الدور</label>
+                <select name="role" class="form-select" required>
+                    <option value="">-- اختر الدور --</option>
+                    @foreach (var r in roles)
+                    {
+                        <option value="@r">@r</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم الموقع المتوقع للحضور</label>
+                <input type="text" name="expectedLocationName" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">خط العرض</label>
+                <input type="number" step="any" name="expectedLatitude" class="form-control" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">خط الطول</label>
+                <input type="number" step="any" name="expectedLongitude" class="form-control" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">نصف القطر المسموح (متر)</label>
+                <input type="number" step="any" name="allowedRadiusMeters" class="form-control" value="100" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn athar-btn w-100">إنشاء المستخدم</button>
+        <a asp-controller="Admin" asp-action="Users" class="btn athar-btn-outline w-100 mt-2">إلغاء</a>
+    </form>
+</div>

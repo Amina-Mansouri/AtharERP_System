@@ -1,0 +1,41 @@
+﻿@{
+    ViewData["Title"] = "لوحة التحكم";
+}
+
+<h1 class="athar-page-title">لوحة التحكم</h1>
+<p class="text-muted">مرحباً بك في نظام أثر لإدارة المشاريع الهندسية</p>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-3 col-sm-6">
+        <div class="athar-stat-card">
+            <div class="athar-stat-value">@ViewBag.TotalUsers</div>
+            <div class="athar-stat-label">إجمالي المستخدمين</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="athar-stat-card">
+            <div class="athar-stat-value">@ViewBag.ActiveUsers</div>
+            <div class="athar-stat-label">المستخدمون النشطون</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="athar-stat-card">
+            <div class="athar-stat-value">@ViewBag.TotalRoles</div>
+            <div class="athar-stat-label">عدد الأدوار</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="athar-stat-card">
+            <div class="athar-stat-value">@ViewBag.TotalPermissions</div>
+            <div class="athar-stat-label">عدد الصلاحيات</div>
+        </div>
+    </div>
+</div>
+
+@if (User.IsInRole("مدير النظام"))
+{
+    <div class="mt-4">
+        <a asp-controller="Admin" asp-action="Users" class="btn athar-btn me-2">إدارة المستخدمين</a>
+        <a asp-controller="Admin" asp-action="Roles" class="btn athar-btn-outline">إدارة الأدوار</a>
+    </div>
+}

@@ -37,7 +37,41 @@ namespace AtharERP_System.Controllers
         public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            return View(); // يعرض Views/Account/Login.cshtml
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe, string? returnUrl = null)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null || !user.IsActive)
+            {
+                ModelState.AddModelError(string.Empty, "بيانات الدخول غير صحيحة أو الحساب معطل");
+                return View();
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: true);
+
+            if (result.Succeeded)
+            {
+                user.LastLogin = DateTime.UtcNow;
+                await _userManager.UpdateAsync(user);
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError(string.Empty, "تم قفل الحساب مؤقتاً بسبب تكرار محاولات الدخول الفاشلة. حاول مرة أخرى بعد 15 دقيقة");
+                return View();
+            }
+
+            ModelState.AddModelError(string.Empty, "بيانات الدخول غير صحيحة");
+            return View();
         }
 
         // ============================================

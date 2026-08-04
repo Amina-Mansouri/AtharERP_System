@@ -1,5 +1,7 @@
 using AtharERP_System.Data;
+using AtharERP_System.Identity;
 using AtharERP_System.Models.Entities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +14,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Identity مع الكيانات المخصصة + الأدوار
+// Identity مع الكيانات المخصصة + الأدوار + رسائل الأخطاء بالعربية
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -26,7 +28,37 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
 })
 .AddEntityFrameworkStores<AppDbContext>()
+.AddErrorDescriber<AtharIdentityErrorDescriber>()
 .AddDefaultTokenProviders();
+
+// تقليل الفاصل الزمني للتحقق من صلاحية الجلسة حتى يتم إبطالها بسرعة عند تعطيل المستخدم
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
+    options.ValidationInterval = TimeSpan.FromMinutes(1);
+});
+
+// التحقق الإضافي من حالة تفعيل الحساب عند كل تحقق من الجلسة
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Events.OnValidatePrincipal = async context =>
+    {
+        // التحقق القياسي من Security Stamp (يكتشف تغيير كلمة المرور مثلاً)
+        await SecurityStampValidator.ValidatePrincipalAsync(context);
+
+        if (context.Principal?.Identity?.IsAuthenticated != true)
+            return;
+
+        // التحقق من أن الحساب لا يزال مفعّلاً
+        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.GetUserAsync(context.Principal);
+
+        if (user == null || !user.IsActive)
+        {
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        }
+    };
+});
 
 builder.Services.AddControllersWithViews();
 
