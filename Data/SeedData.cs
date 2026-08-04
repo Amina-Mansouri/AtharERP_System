@@ -123,13 +123,22 @@ namespace AtharERP_System.Data
             var role = await roleManager.FindByNameAsync(roleName);
             if (role == null) return;
 
+            // ✅ تأكد من أن القائمة ليست null ولا تحتوي على null
+            if (permNames == null || permNames.Length == 0) return;
+
+            var safePermNames = permNames
+                .Where(n => !string.IsNullOrEmpty(n))
+                .ToList();
+
+            if (!safePermNames.Any()) return;
+
             var existing = await context.RolePermissions
                 .Where(rp => rp.RoleId == role.Id)
                 .Select(rp => rp.PermissionId)
                 .ToListAsync();
 
             var perms = await context.Permissions
-                .Where(p => permNames.Contains(p.Name))
+                .Where(p => safePermNames.Contains(p.Name))
                 .ToListAsync();
 
             foreach (var p in perms)
