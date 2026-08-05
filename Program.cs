@@ -1,6 +1,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Identity;
 using AtharERP_System.Models.Entities;
+using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,9 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddErrorDescriber<AtharIdentityErrorDescriber>()
 .AddDefaultTokenProviders();
 
+// خدمة التحقق من الصلاحيات (تُستخدم في كل الوحدات من Module 2 فصاعداً)
+builder.Services.AddScoped<PermissionService>();
+
 // تقليل الفاصل الزمني للتحقق من صلاحية الجلسة حتى يتم إبطالها بسرعة عند تعطيل المستخدم
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 {
@@ -42,13 +46,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Events.OnValidatePrincipal = async context =>
     {
-        // التحقق القياسي من Security Stamp (يكتشف تغيير كلمة المرور مثلاً)
         await SecurityStampValidator.ValidatePrincipalAsync(context);
 
         if (context.Principal?.Identity?.IsAuthenticated != true)
             return;
 
-        // التحقق من أن الحساب لا يزال مفعّلاً
         var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
         var user = await userManager.GetUserAsync(context.Principal);
 

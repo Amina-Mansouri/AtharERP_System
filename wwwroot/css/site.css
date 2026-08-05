@@ -341,3 +341,26 @@ body {
     color: var(--athar-primary);
     font-weight: 500;
 }
+
+/* ===== Project status badges (Module 2) ===== */
+.athar-status-badge {
+    color: #fff;
+    font-weight: 500;
+}
+
+.athar-status-New {
+    background-color: #6c757d;
+}
+
+.athar-status-InProgress {
+    background-color: var(--athar-accent);
+    color: var(--athar-primary-dark);
+}
+
+.athar-status-ClientReview {
+    background-color: #3D6B8B;
+}
+
+.athar-status-Completed {
+    background-color: var(--athar-success);
+}

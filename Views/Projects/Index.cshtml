@@ -1,0 +1,109 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<Project>
+@inject PermissionService PermissionService
+@{
+    ViewData["Title"] = "المشاريع";
+    var search = ViewBag.Search as string;
+    var status = ViewBag.Status as ProjectStatus?;
+    var canCreate = await PermissionService.HasPermissionAsync(User, "Projects.Create");
+    var canEdit = await PermissionService.HasPermissionAsync(User, "Projects.Edit");
+    var canDelete = await PermissionService.HasPermissionAsync(User, "Projects.Delete");
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">المشاريع</h1>
+    @if (canCreate)
+    {
+        <a asp-action="Create" class="btn athar-btn">+ مشروع جديد</a>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    <form method="get" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-6">
+            <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث بالاسم أو الرمز أو الموقع..." />
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">-- كل الحالات --</option>
+                <option value="New" selected="@(status == ProjectStatus.New)">جديد</option>
+                <option value="InProgress" selected="@(status == ProjectStatus.InProgress)">قيد التنفيذ</option>
+                <option value="ClientReview" selected="@(status == ProjectStatus.ClientReview)">مراجعة العميل</option>
+                <option value="Completed" selected="@(status == ProjectStatus.Completed)">مكتمل</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn athar-btn w-100">بحث</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table athar-table align-middle">
+            <thead>
+                <tr>
+                    <th>الرمز</th>
+                    <th>اسم المشروع</th>
+                    <th>الموقع</th>
+                    <th>مدير المشروع</th>
+                    <th>تاريخ البدء</th>
+                    <th>الحالة</th>
+                    <th>الميزانية</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">لا توجد مشاريع مطابقة</td>
+                    </tr>
+                }
+                @foreach (var project in Model)
+                {
+                    <tr>
+                        <td>@project.Code</td>
+                        <td>
+                            @project.Name
+                            @if (project.ParentProject != null)
+                            {
+                                <br /><small class="text-muted">فرعي من: @project.ParentProject.Name</small>
+                            }
+                        </td>
+                        <td>@(project.Location ?? "-")</td>
+                        <td>@(project.ProjectManager?.FullName ?? "-")</td>
+                        <td>@project.StartDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <span class="badge athar-status-badge athar-status-@project.Status">
+                                @(project.Status switch
+                                {
+                                    ProjectStatus.New => "جديد",
+                                    ProjectStatus.InProgress => "قيد التنفيذ",
+                                    ProjectStatus.ClientReview => "مراجعة العميل",
+                                    ProjectStatus.Completed => "مكتمل",
+                                    _ => project.Status.ToString()
+                                })
+                            </span>
+                        </td>
+                        <td>@project.Budget.ToString("N2")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm athar-btn-outline">عرض</a>
+                            @if (canEdit)
+                            {
+                                <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
+                            }
+                            @if (canDelete)
+                            {
+                                <form method="post" asp-action="Delete" asp-route-id="@project.Id" class="d-inline"
+                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا المشروع؟');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

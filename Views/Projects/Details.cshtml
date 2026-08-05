@@ -1,0 +1,88 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model Project
+@inject PermissionService PermissionService
+@{
+    ViewData["Title"] = $"تفاصيل المشروع - {Model.Name}";
+    var canEdit = await PermissionService.HasPermissionAsync(User, "Projects.Edit");
+    string StatusLabel(ProjectStatus s) => s switch
+    {
+        ProjectStatus.New => "جديد",
+        ProjectStatus.InProgress => "قيد التنفيذ",
+        ProjectStatus.ClientReview => "مراجعة العميل",
+        ProjectStatus.Completed => "مكتمل",
+        _ => s.ToString()
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">@Model.Name <small class="text-muted">(@Model.Code)</small></h1>
+    @if (canEdit)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn athar-btn">تعديل المشروع</a>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <strong>الحالة:</strong>
+            <span class="badge athar-status-badge athar-status-@Model.Status">@StatusLabel(Model.Status)</span>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>نشط:</strong> @(Model.IsActive ? "نعم" : "لا")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>الموقع:</strong> @(Model.Location ?? "-")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>مدير المشروع:</strong> @(Model.ProjectManager?.FullName ?? "-")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>تاريخ البدء:</strong> @Model.StartDate.ToString("yyyy-MM-dd")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>تاريخ الانتهاء المتوقع:</strong> @(Model.EndDate?.ToString("yyyy-MM-dd") ?? "-")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>الميزانية:</strong> @Model.Budget.ToString("N2")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>المشروع الرئيسي:</strong> @(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-")
+        </div>
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="col-12 mb-3">
+                <strong>الوصف:</strong>
+                <p class="mb-0">@Model.Description</p>
+            </div>
+        }
+    </div>
+
+    @if (Model.ChildProjects.Any())
+    {
+        <hr />
+        <h5>المشاريع الفرعية</h5>
+        <ul>
+            @foreach (var child in Model.ChildProjects)
+            {
+                <li><a asp-action="Details" asp-route-id="@child.Id">@child.Code - @child.Name</a></li>
+            }
+        </ul>
+    }
+
+    @if (Model.ProjectEngineers.Any())
+    {
+        <hr />
+        <h5>المهندسون المكلفون</h5>
+        <ul>
+            @foreach (var pe in Model.ProjectEngineers)
+            {
+                <li>@pe.User.FullName</li>
+            }
+        </ul>
+    }
+
+    <hr />
+    <a asp-action="Index" class="btn athar-btn-outline">العودة إلى القائمة</a>
+</div>

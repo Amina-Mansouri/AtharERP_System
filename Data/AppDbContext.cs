@@ -13,6 +13,10 @@ namespace AtharERP_System.Data
         public DbSet<Permission> Permissions { get; set; } = null!;
         public DbSet<RolePermission> RolePermissions { get; set; } = null!;
 
+        // Module 2: إدارة المشاريع
+        public DbSet<Project> Projects { get; set; } = null!;
+        public DbSet<ProjectEngineer> ProjectEngineers { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -46,6 +50,42 @@ namespace AtharERP_System.Data
 
             builder.Entity<RolePermission>()
                 .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+                .IsUnique();
+
+            // ========== علاقات المشاريع (Module 2) ==========
+            builder.Entity<Project>()
+                .HasIndex(p => p.Code)
+                .IsUnique();
+
+            // مشروع رئيسي / فرعي (علاقة ذاتية) - Restrict لتفادي تعارض مسارات الحذف على نفس الجدول
+            builder.Entity<Project>()
+                .HasOne(p => p.ParentProject)
+                .WithMany(p => p.ChildProjects)
+                .HasForeignKey(p => p.ParentProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // مدير المشروع - Restrict لمنع حذف مستخدم مرتبط بمشروع
+            builder.Entity<Project>()
+                .HasOne(p => p.ProjectManager)
+                .WithMany()
+                .HasForeignKey(p => p.ProjectManagerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // المهندسون المكلفون بالمشروع
+            builder.Entity<ProjectEngineer>()
+                .HasOne(pe => pe.Project)
+                .WithMany(p => p.ProjectEngineers)
+                .HasForeignKey(pe => pe.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectEngineer>()
+                .HasOne(pe => pe.User)
+                .WithMany()
+                .HasForeignKey(pe => pe.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProjectEngineer>()
+                .HasIndex(pe => new { pe.ProjectId, pe.UserId })
                 .IsUnique();
         }
     }
