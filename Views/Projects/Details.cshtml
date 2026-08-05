@@ -30,7 +30,23 @@
             <span class="badge athar-status-badge athar-status-@Model.Status">@StatusLabel(Model.Status)</span>
         </div>
         <div class="col-md-6 mb-3">
-            <strong>نشط:</strong> @(Model.IsActive ? "نعم" : "لا")
+            <strong>نسبة الإنجاز الكلية:</strong>
+            <div class="progress mt-1" style="height: 10px; max-width: 300px;">
+                <div class="progress-bar athar-progress-bar" style="width: @Model.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+            </div>
+            <small>@Model.CompletionPercentage.ToString("N1")%</small>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>العميل:</strong>
+            @if (Model.Client != null)
+            {
+                @(Model.Client.Name)
+                @(string.IsNullOrEmpty(Model.Client.CompanyName) ? "" : $" - {Model.Client.CompanyName}")
+            }
+            else
+            {
+                @:-
+            }
         </div>
         <div class="col-md-6 mb-3">
             <strong>الموقع:</strong> @(Model.Location ?? "-")
@@ -82,7 +98,43 @@
             }
         </ul>
     }
+</div>
 
-    <hr />
+@if (canEdit)
+{
+    <partial name="_StagesPartial" model="Model" />
+
+    @foreach (var stage in Model.Stages)
+    {
+        <partial name="_TasksPartial" model="stage" />
+    }
+}
+else
+{
+    <div class="athar-card mt-3">
+        <h5>مراحل المشروع</h5>
+        @if (!Model.Stages.Any())
+        {
+            <p class="text-muted">لا توجد مراحل مضافة بعد</p>
+        }
+        else
+        {
+            @foreach (var stage in Model.Stages)
+            {
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>@stage.Order. @stage.Name (@stage.Weight.ToString("N0")%)</span>
+                        <span>@stage.CompletionPercentage.ToString("N1")%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar athar-progress-bar" style="width: @stage.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}
+
+<div class="mt-3">
     <a asp-action="Index" class="btn athar-btn-outline">العودة إلى القائمة</a>
 </div>

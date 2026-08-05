@@ -57,6 +57,11 @@ namespace AtharERP_System.Data
                 new Permission { Name = "Projects.Edit", Description = "تعديل مشروع", Module = "المشاريع", Action = "Edit" },
                 new Permission { Name = "Projects.Delete", Description = "حذف مشروع", Module = "المشاريع", Action = "Delete" },
 
+                new Permission { Name = "Clients.View", Description = "عرض العملاء", Module = "العملاء", Action = "View" },
+                new Permission { Name = "Clients.Create", Description = "إنشاء عميل", Module = "العملاء", Action = "Create" },
+                new Permission { Name = "Clients.Edit", Description = "تعديل عميل", Module = "العملاء", Action = "Edit" },
+                new Permission { Name = "Clients.Delete", Description = "حذف عميل", Module = "العملاء", Action = "Delete" },
+
                 new Permission { Name = "Sites.View", Description = "عرض المواقع", Module = "المواقع", Action = "View" },
                 new Permission { Name = "Sites.Manage", Description = "إدارة المواقع", Module = "المواقع", Action = "Manage" },
 
@@ -88,11 +93,12 @@ namespace AtharERP_System.Data
             await LinkPermissionsToRole(context, roleManager, "مدير النظام", permissions.Select(p => p.Name).ToArray());
             await LinkPermissionsToRole(context, roleManager, "مهندس تصميم", new[] {
                 "Projects.View", "Projects.Create", "Projects.Edit",
+                "Clients.View", "Clients.Create", "Clients.Edit",
                 "Sites.View", "Sites.Manage", "Supplies.View", "Supplies.Create",
                 "CRM.View", "CRM.Approvals", "Reports.View"
             });
             await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[] {
-                "Projects.View", "Projects.Edit", "Sites.View",
+                "Projects.View", "Projects.Edit", "Clients.View", "Sites.View",
                 "Supplies.View", "Supplies.Approve", "Finance.View",
                 "Reports.View", "Reports.Export", "CRM.View", "CRM.Approvals"
             });
@@ -116,6 +122,69 @@ namespace AtharERP_System.Data
                 await userManager.CreateAsync(admin, "Athar@Admin2026");
                 await userManager.AddToRoleAsync(admin, "مدير النظام");
             }
+
+            // ========== عملاء تجريبيون ==========
+            if (!await context.Clients.AnyAsync())
+            {
+                var sampleClients = new[]
+                {
+                    new Client
+                    {
+                        Name = "أحمد الككلي",
+                        CompanyName = "مجموعة الككلي للاستثمار",
+                        Phone = "0912345678",
+                        Email = "info@kikli-group.ly",
+                        Address = "طرابلس - شارع الجمهورية",
+                        TaxNumber = "TX-10023",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    },
+                    new Client
+                    {
+                        Name = "سالم المبروك",
+                        CompanyName = "شركة المبروك للمقاولات",
+                        Phone = "0913456789",
+                        Email = "contact@mabrouk-const.ly",
+                        Address = "بنغازي - شارع جمال عبدالناصر",
+                        TaxNumber = "TX-10045",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    },
+                    new Client
+                    {
+                        Name = "هدى العريبي",
+                        CompanyName = null,
+                        Phone = "0914567890",
+                        Email = "houda.araibi@example.com",
+                        Address = "مصراتة - المنطقة الصناعية",
+                        TaxNumber = null,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    }
+                };
+
+                context.Clients.AddRange(sampleClients);
+                await context.SaveChangesAsync();
+
+                // مشروع تجريبي مرتبط بأول عميل (فقط إذا لم توجد أي مشاريع بعد)
+                if (!await context.Projects.AnyAsync())
+                {
+                    context.Projects.Add(new Project
+                    {
+                        Code = $"PRJ-{DateTime.UtcNow.Year}-001",
+                        Name = "مشروع تجريبي - مجمع سكني",
+                        Description = "مشروع تجريبي لتهيئة النظام",
+                        Location = "طرابلس",
+                        StartDate = DateTime.UtcNow,
+                        Status = ProjectStatus.New,
+                        Budget = 500000,
+                        ClientId = sampleClients[0].Id,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await context.SaveChangesAsync();
+                }
+            }
         }
 
         private static async Task LinkPermissionsToRole(AppDbContext context, RoleManager<ApplicationRole> roleManager, string roleName, string[] permNames)
@@ -123,14 +192,7 @@ namespace AtharERP_System.Data
             var role = await roleManager.FindByNameAsync(roleName);
             if (role == null) return;
 
-            // ✅ تأكد من أن القائمة ليست null ولا تحتوي على null
-            if (permNames == null || permNames.Length == 0) return;
-
-            var safePermNames = permNames
-                .Where(n => !string.IsNullOrEmpty(n))
-                .ToList();
-
-            if (!safePermNames.Any()) return;
+            var permNamesList = permNames.ToList();
 
             var existing = await context.RolePermissions
                 .Where(rp => rp.RoleId == role.Id)
@@ -138,7 +200,7 @@ namespace AtharERP_System.Data
                 .ToListAsync();
 
             var perms = await context.Permissions
-                .Where(p => safePermNames.Contains(p.Name))
+                .Where(p => permNamesList.Contains(p.Name))
                 .ToListAsync();
 
             foreach (var p in perms)

@@ -1,0 +1,88 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<Client>
+@inject PermissionService PermissionService
+@{
+    ViewData["Title"] = "العملاء";
+    var search = ViewBag.Search as string;
+    var canCreate = await PermissionService.HasPermissionAsync(User, "Clients.Create");
+    var canEdit = await PermissionService.HasPermissionAsync(User, "Clients.Edit");
+    var canDelete = await PermissionService.HasPermissionAsync(User, "Clients.Delete");
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">العملاء</h1>
+    @if (canCreate)
+    {
+        <a asp-action="Create" class="btn athar-btn">+ عميل جديد</a>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    <form method="get" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-8">
+            <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث بالاسم أو الشركة أو الهاتف..." />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn athar-btn w-100">بحث</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table athar-table align-middle">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>اسم الشركة</th>
+                    <th>الهاتف</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>عدد المشاريع</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">لا يوجد عملاء</td>
+                    </tr>
+                }
+                @foreach (var client in Model)
+                {
+                    <tr>
+                        <td>@client.Name</td>
+                        <td>@(client.CompanyName ?? "-")</td>
+                        <td>@(client.Phone ?? "-")</td>
+                        <td>@(client.Email ?? "-")</td>
+                        <td>@client.Projects.Count</td>
+                        <td>
+                            @if (client.IsActive)
+                            {
+                                <span class="badge athar-badge-active">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="badge athar-badge-inactive">معطل</span>
+                            }
+                        </td>
+                        <td>
+                            @if (canEdit)
+                            {
+                                <a asp-action="Edit" asp-route-id="@client.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
+                            }
+                            @if (canDelete)
+                            {
+                                <form method="post" asp-action="Delete" asp-route-id="@client.Id" class="d-inline"
+                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا العميل؟');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

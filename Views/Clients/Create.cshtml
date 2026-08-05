@@ -1,0 +1,68 @@
+﻿@using AtharERP_System.Models.Entities
+@model Client
+@{
+    ViewData["Title"] = "عميل جديد";
+}
+
+<h1 class="athar-page-title">إضافة عميل جديد</h1>
+
+<div class="athar-card mt-3">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="Create">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم العميل</label>
+                <input type="text" name="Name" class="form-control" value="@Model?.Name" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم الشركة</label>
+                <input type="text" name="CompanyName" class="form-control" value="@Model?.CompanyName" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الهاتف</label>
+                <input type="tel" name="Phone" class="form-control" value="@Model?.Phone" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">البريد الإلكتروني</label>
+                <input type="email" name="Email" class="form-control" value="@Model?.Email" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">العنوان</label>
+                <input type="text" name="Address" class="form-control" value="@Model?.Address" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الرقم الضريبي</label>
+                <input type="text" name="TaxNumber" class="form-control" value="@Model?.TaxNumber" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">ملاحظات</label>
+                <textarea name="Notes" class="form-control" rows="3">@Model?.Notes</textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn athar-btn">حفظ</button>
+        <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>

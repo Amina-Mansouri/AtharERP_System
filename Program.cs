@@ -32,8 +32,11 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddErrorDescriber<AtharIdentityErrorDescriber>()
 .AddDefaultTokenProviders();
 
-// خدمة التحقق من الصلاحيات (تُستخدم في كل الوحدات من Module 2 فصاعداً)
+// خدمة التحقق من الصلاحيات
 builder.Services.AddScoped<PermissionService>();
+
+// خدمة حساب نسب الإنجاز للمراحل والمشاريع (Module 2)
+builder.Services.AddScoped<ProjectCalculationService>();
 
 // تقليل الفاصل الزمني للتحقق من صلاحية الجلسة حتى يتم إبطالها بسرعة عند تعطيل المستخدم
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>

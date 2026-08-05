@@ -364,3 +364,53 @@ body {
 .athar-status-Completed {
     background-color: var(--athar-success);
 }
+
+/* ===== Project completion progress bar (Module 2) ===== */
+.athar-progress-bar {
+    background-color: var(--athar-accent);
+}
+
+/* ===== Kanban board (Module 2 - Tasks) ===== */
+.athar-kanban-column {
+    background: var(--athar-bg);
+    border: 1px solid var(--athar-border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    min-height: 150px;
+}
+
+.athar-kanban-header {
+    font-weight: 700;
+    color: var(--athar-primary);
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--athar-border);
+    padding-bottom: 0.4rem;
+}
+
+.athar-kanban-card {
+    background: #fff;
+    border: 1px solid var(--athar-border);
+    border-radius: 6px;
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+}
+
+.athar-priority-Low {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.athar-priority-Medium {
+    background-color: var(--athar-accent);
+    color: var(--athar-primary-dark);
+}
+
+.athar-priority-High {
+    background-color: #B3372C;
+    color: #fff;
+}
+
+.athar-priority-Critical {
+    background-color: #7A1A1A;
+    color: #fff;
+}

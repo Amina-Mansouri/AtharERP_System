@@ -27,6 +27,7 @@ namespace AtharERP_System.Controllers
             var query = _context.Projects
                 .Include(p => p.ProjectManager)
                 .Include(p => p.ParentProject)
+                .Include(p => p.Client)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -50,7 +51,7 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // تفاصيل مشروع
+        // تفاصيل مشروع (يشمل العميل، المراحل، الخطوات، المهام والتبعيات)
         // ============================================
         [RequirePermission("Projects.View")]
         public async Task<IActionResult> Details(int id)
@@ -59,11 +60,24 @@ namespace AtharERP_System.Controllers
                 .Include(p => p.ProjectManager)
                 .Include(p => p.ParentProject)
                 .Include(p => p.ChildProjects)
+                .Include(p => p.Client)
                 .Include(p => p.ProjectEngineers).ThenInclude(pe => pe.User)
+                .Include(p => p.Stages).ThenInclude(s => s.AssignedEngineer)
+                .Include(p => p.Stages).ThenInclude(s => s.Steps)
+                .Include(p => p.Stages).ThenInclude(s => s.Tasks).ThenInclude(t => t.AssignedTo)
+                .Include(p => p.Stages).ThenInclude(s => s.Tasks).ThenInclude(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
                 return NotFound();
+
+            project.Stages = project.Stages.OrderBy(s => s.Order).ToList();
+
+            // بيانات مساعدة لنماذج إضافة المراحل/المهام المضمّنة في الصفحة
+            ViewBag.Engineers = await _userManager.Users
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
 
             return View(project);
         }
@@ -83,7 +97,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,Description,Location,Latitude,Longitude,StartDate,EndDate,Status,Budget,ParentProjectId,ProjectManagerId")] Project model,
+            [Bind("Name,Description,Location,Latitude,Longitude,StartDate,EndDate,Status,Budget,ParentProjectId,ProjectManagerId,ClientId")] Project model,
             string[] assignedEngineerIds)
         {
             if (!ModelState.IsValid)
@@ -142,7 +156,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,Description,Location,Latitude,Longitude,StartDate,EndDate,Status,Budget,ParentProjectId,ProjectManagerId,IsActive")] Project model,
+            [Bind("Name,Description,Location,Latitude,Longitude,StartDate,EndDate,Status,Budget,ParentProjectId,ProjectManagerId,ClientId,IsActive")] Project model,
             string[] assignedEngineerIds)
         {
             var project = await _context.Projects.FindAsync(id);
@@ -172,11 +186,11 @@ namespace AtharERP_System.Controllers
             project.Budget = model.Budget;
             project.ParentProjectId = model.ParentProjectId;
             project.ProjectManagerId = model.ProjectManagerId;
+            project.ClientId = model.ClientId;
             project.IsActive = model.IsActive;
 
             await _context.SaveChangesAsync();
 
-            // إعادة ضبط المهندسين المكلفين (حذف ثم إضافة على دفعتين لتفادي تعارض الفهرس الفريد)
             var existingLinks = await _context.ProjectEngineers.Where(pe => pe.ProjectId == id).ToListAsync();
             _context.ProjectEngineers.RemoveRange(existingLinks);
             await _context.SaveChangesAsync();
@@ -236,6 +250,11 @@ namespace AtharERP_System.Controllers
             ViewBag.Engineers = await _userManager.Users
                 .Where(u => u.IsActive)
                 .OrderBy(u => u.FullName)
+                .ToListAsync();
+
+            ViewBag.Clients = await _context.Clients
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
                 .ToListAsync();
         }
 

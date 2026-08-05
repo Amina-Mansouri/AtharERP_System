@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using AtharERP_System.Services
+@inject PermissionService PermissionService
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
@@ -22,6 +24,18 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Home" asp-action="Dashboard">لوحة التحكم</a>
                             </li>
+                            @if (await PermissionService.HasPermissionAsync(User, "Projects.View"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Projects" asp-action="Index">المشاريع</a>
+                                </li>
+                            }
+                            @if (await PermissionService.HasPermissionAsync(User, "Clients.View"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Clients" asp-action="Index">العملاء</a>
+                                </li>
+                            }
                             @if (User.IsInRole("مدير النظام"))
                             {
                                 <li class="nav-item dropdown">

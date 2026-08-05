@@ -47,11 +47,22 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الميزانية")]
         public decimal Budget { get; set; }
 
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "نسبة الإنجاز")]
+        public decimal CompletionPercentage { get; set; }
+
         [Display(Name = "نشط")]
         public bool IsActive { get; set; } = true;
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // ========== العميل ==========
+        [Display(Name = "العميل")]
+        public int? ClientId { get; set; }
+
+        [ForeignKey("ClientId")]
+        public virtual Client? Client { get; set; }
 
         // ========== التسلسل الهرمي: مشروع رئيسي / فرعي ==========
         [Display(Name = "المشروع الرئيسي")]
@@ -71,5 +82,8 @@ namespace AtharERP_System.Models.Entities
 
         // ========== المهندسون المكلفون ==========
         public virtual ICollection<ProjectEngineer> ProjectEngineers { get; set; } = new List<ProjectEngineer>();
+
+        // ========== مراحل المشروع ==========
+        public virtual ICollection<ProjectStage> Stages { get; set; } = new List<ProjectStage>();
     }
 }
