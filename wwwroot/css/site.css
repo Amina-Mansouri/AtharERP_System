@@ -311,3 +311,33 @@ body {
     padding: 1rem 0;
     font-size: 0.9rem;
 }
+
+/* ===== Location picker (map) ===== */
+.athar-map-section {
+    background: var(--athar-bg);
+    border: 1px solid var(--athar-border);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.athar-map-hint {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+}
+
+.athar-map {
+    /* عزل اتجاه الخريطة عن باقي الصفحة، فـ Leaflet غير مصمم لسياق RTL */
+    direction: ltr;
+    height: 350px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--athar-border);
+    z-index: 0;
+}
+
+.athar-coords-display {
+    font-size: 0.9rem;
+    color: var(--athar-primary);
+    font-weight: 500;
+}

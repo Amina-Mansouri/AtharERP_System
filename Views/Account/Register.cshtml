@@ -87,27 +87,51 @@
                 </select>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">اسم الموقع المتوقع للحضور</label>
-                <input type="text" name="expectedLocationName" class="form-control" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">خط العرض</label>
-                <input type="number" step="any" name="expectedLatitude" class="form-control" />
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">خط الطول</label>
-                <input type="number" step="any" name="expectedLongitude" class="form-control" />
-            </div>
-            <div class="col-md-4 mb-3">
                 <label class="form-label">نصف القطر المسموح (متر)</label>
                 <input type="number" step="any" name="allowedRadiusMeters" class="form-control" value="100" />
             </div>
+        </div>
+
+        <div class="athar-map-section mb-3">
+            <label class="form-label d-block">تحديد موقع الحضور المتوقع (اختياري)</label>
+            <p class="athar-map-hint">انقر على الخريطة لتحديد الموقع، أو اسحب العلامة بعد وضعها لتعديل الموقع</p>
+
+            <div class="mb-2">
+                <label class="form-label">اسم الموقع</label>
+                <input type="text" id="expectedLocationName" name="expectedLocationName" class="form-control"
+                       placeholder="يُعبَّأ تلقائياً بعد اختيار نقطة على الخريطة، ويمكنك تعديله يدوياً" />
+            </div>
+
+            <div id="register-map" class="athar-map"></div>
+
+            <div class="athar-coords-display mt-2" id="register-coords-display">لم يتم تحديد موقع بعد</div>
+
+            <input type="hidden" id="expectedLatitude" name="expectedLatitude" />
+            <input type="hidden" id="expectedLongitude" name="expectedLongitude" />
         </div>
 
         <button type="submit" class="btn athar-btn w-100">إنشاء المستخدم</button>
         <a asp-controller="Admin" asp-action="Users" class="btn athar-btn-outline w-100 mt-2">إلغاء</a>
     </form>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="~/js/location-picker.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initAtharLocationPicker({
+                mapId: 'register-map',
+                latInputId: 'expectedLatitude',
+                lngInputId: 'expectedLongitude',
+                nameInputId: 'expectedLocationName',
+                coordsDisplayId: 'register-coords-display'
+            });
+        });
+    </script>
+}

@@ -4,6 +4,8 @@
     ViewData["Title"] = "تعديل المستخدم";
     var roles = ViewBag.Roles as List<string> ?? new List<string>();
     var currentRole = ViewBag.CurrentRole as string;
+    var initialLat = Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
+    var initialLng = Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
 }
 
 <h1 class="athar-page-title">تعديل بيانات المستخدم</h1>
@@ -75,27 +77,63 @@
                 </select>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">اسم الموقع المتوقع للحضور</label>
-                <input type="text" name="ExpectedLocationName" class="form-control" value="@Model.ExpectedLocationName" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">خط العرض</label>
-                <input type="number" step="any" name="ExpectedLatitude" class="form-control" value="@Model.ExpectedLatitude" />
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">خط الطول</label>
-                <input type="number" step="any" name="ExpectedLongitude" class="form-control" value="@Model.ExpectedLongitude" />
-            </div>
-            <div class="col-md-4 mb-3">
                 <label class="form-label">نصف القطر المسموح (متر)</label>
                 <input type="number" step="any" name="AllowedRadiusMeters" class="form-control" value="@Model.AllowedRadiusMeters" />
             </div>
+        </div>
+
+        <div class="athar-map-section mb-3">
+            <label class="form-label d-block">تحديد موقع الحضور المتوقع (اختياري)</label>
+            <p class="athar-map-hint">انقر على الخريطة لتحديد الموقع، أو اسحب العلامة بعد وضعها لتعديل الموقع</p>
+
+            <div class="mb-2">
+                <label class="form-label">اسم الموقع</label>
+                <input type="text" id="ExpectedLocationName" name="ExpectedLocationName" class="form-control"
+                       value="@Model.ExpectedLocationName"
+                       placeholder="يُعبَّأ تلقائياً بعد اختيار نقطة على الخريطة، ويمكنك تعديله يدوياً" />
+            </div>
+
+            <div id="edituser-map" class="athar-map"></div>
+
+            <div class="athar-coords-display mt-2" id="edituser-coords-display">
+                @if (Model.ExpectedLatitude.HasValue && Model.ExpectedLongitude.HasValue)
+                {
+                    @:الإحداثيات المختارة: @Model.ExpectedLatitude.Value.ToString("F6"), @Model.ExpectedLongitude.Value.ToString("F6")
+                }
+                else
+                {
+                    @:لم يتم تحديد موقع بعد
+                }
+            </div>
+
+            <input type="hidden" id="ExpectedLatitude" name="ExpectedLatitude" value="@(Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+            <input type="hidden" id="ExpectedLongitude" name="ExpectedLongitude" value="@(Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
         </div>
 
         <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
         <a asp-action="Users" class="btn athar-btn-outline">إلغاء</a>
     </form>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="~/js/location-picker.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initAtharLocationPicker({
+                mapId: 'edituser-map',
+                latInputId: 'ExpectedLatitude',
+                lngInputId: 'ExpectedLongitude',
+                nameInputId: 'ExpectedLocationName',
+                coordsDisplayId: 'edituser-coords-display',
+                initialLat: @initialLat,
+                initialLng: @initialLng
+            });
+        });
+    </script>
+}
