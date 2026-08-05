@@ -17,27 +17,43 @@ namespace AtharERP_System.Services
             _userManager = userManager;
         }
 
-        // يتحقق ما إذا كان المستخدم الحالي يملك صلاحية معينة عبر أدواره
         public async Task<bool> HasPermissionAsync(ClaimsPrincipal principal, string permissionName)
         {
+            // 1. التحقق من تسجيل الدخول
             if (principal.Identity == null || !principal.Identity.IsAuthenticated)
                 return false;
 
+            // 2. جلب المستخدم والتحقق من نشاطه
             var user = await _userManager.GetUserAsync(principal);
             if (user == null || !user.IsActive)
                 return false;
 
-            var roleNames = await _userManager.GetRolesAsync(user);
+            // 3. جلب أسماء الأدوار
+            var roleNames = (await _userManager.GetRolesAsync(user)).ToList();
             if (roleNames.Count == 0)
                 return false;
 
+            // 4. جلب معرفات الأدوار النشطة
+            var roleIds = await _context.Roles
+                .Where(r => roleNames.Contains(r.Name) && r.IsActive)
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            if (roleIds.Count == 0)
+                return false;
+
+            // 5. جلب معرف الصلاحية المطلوبة
+            var permissionId = await _context.Permissions
+                .Where(p => p.Name == permissionName && p.IsActive)
+                .Select(p => (int?)p.Id)
+                .FirstOrDefaultAsync();
+
+            if (permissionId == null)
+                return false;
+
+            // 6. التحقق من وجود الربط
             return await _context.RolePermissions
-                .Include(rp => rp.Role)
-                .Include(rp => rp.Permission)
-                .AnyAsync(rp => roleNames.Contains(rp.Role.Name!)
-                             && rp.Role.IsActive
-                             && rp.Permission.Name == permissionName
-                             && rp.Permission.IsActive);
+                .AnyAsync(rp => roleIds.Contains(rp.RoleId) && rp.PermissionId == permissionId.Value);
         }
     }
 }
