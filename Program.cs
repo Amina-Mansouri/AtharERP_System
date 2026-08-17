@@ -35,8 +35,11 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 // خدمة التحقق من الصلاحيات
 builder.Services.AddScoped<PermissionService>();
 
-// خدمة حساب نسب الإنجاز للمراحل والمشاريع (Module 2)
+// خدمة حساب نسب الإنجاز للمراحل والمشاريع
 builder.Services.AddScoped<ProjectCalculationService>();
+
+// خدمة إرسال البريد الإلكتروني (تفعيل حساب منسي / إعادة تعيين كلمة المرور)
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 // تقليل الفاصل الزمني للتحقق من صلاحية الجلسة حتى يتم إبطالها بسرعة عند تعطيل المستخدم
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>

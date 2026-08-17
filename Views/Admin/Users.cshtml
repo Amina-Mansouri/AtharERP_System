@@ -30,7 +30,7 @@
                     <tr>
                         <td>@user.FullName</td>
                         <td>@user.Email</td>
-                        <td>@(user.Department ?? "-")</td>
+                        <td>@(user.Department?.Name ?? "-")</td>
                         <td>@string.Join("، ", userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : new List<string>())</td>
                         <td>
                             @if (user.IsActive)
@@ -52,6 +52,17 @@
                                     @(user.IsActive ? "تعطيل" : "تفعيل")
                                 </button>
                             </form>
+                            <button type="button" class="btn btn-sm athar-btn-outline" data-bs-toggle="collapse" data-bs-target="#resetPw_@user.Id">
+                                إعادة تعيين كلمة المرور
+                            </button>
+                            <div class="collapse mt-2" id="resetPw_@user.Id">
+                                <form method="post" asp-action="ResetUserPassword" asp-route-id="@user.Id" class="d-flex gap-1"
+                                      onsubmit="return confirm('هل أنت متأكد من تغيير كلمة مرور هذا المستخدم؟');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="password" name="newPassword" class="form-control form-control-sm" placeholder="كلمة مرور جديدة" required minlength="8" />
+                                    <button type="submit" class="btn btn-sm athar-btn">تحديث</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 }

@@ -14,6 +14,9 @@ namespace AtharERP_System.Models.Entities
         [Required]
         public int PermissionId { get; set; }
 
+        [Display(Name = "ممنوحة")]
+        public bool IsGranted { get; set; } = true;
+
         // خصائص التنقل
         [ForeignKey("RoleId")]
         public virtual ApplicationRole Role { get; set; } = null!;

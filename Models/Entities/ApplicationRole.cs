@@ -18,6 +18,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "قالب جاهز")]
         public bool IsTemplate { get; set; } = false;
 
+        [Display(Name = "قابل للحذف")]
+        public bool CanDelete { get; set; } = true;
+
         // العلاقة: الدور يملك صلاحيات متعددة
         public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }

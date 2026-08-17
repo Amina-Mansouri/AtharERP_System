@@ -1,5 +1,6 @@
 ﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
+using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AtharERP_System.Controllers
 {
-    // فقط مدير النظام يمكنه الوصول لأي إجراء داخل هذا المتحكم
     [Authorize(Roles = "مدير النظام")]
     public class AdminController : Controller
     {
@@ -32,7 +32,10 @@ namespace AtharERP_System.Controllers
         [HttpGet]
         public async Task<IActionResult> Users()
         {
-            var users = await _userManager.Users.OrderBy(u => u.FullName).ToListAsync();
+            var users = await _userManager.Users
+                .Include(u => u.Department)
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
 
             var userRoles = new Dictionary<string, IList<string>>();
             foreach (var user in users)
@@ -53,9 +56,8 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             var currentRoles = await _userManager.GetRolesAsync(user);
-
-            ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
             ViewBag.CurrentRole = currentRoles.FirstOrDefault();
+            await ReloadEditUserViewBagsAsync(id, ViewBag.CurrentRole);
 
             return View(user);
         }
@@ -64,24 +66,41 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
             string id,
-            [Bind("FullName,JobTitle,Department,EngineerRank,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+            [Bind("FullName,JobNumber,PersonalId,Responsibilities,ProfilePhotoPath,DocumentsPath,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
             string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound();
 
+            // قاعدة العمل 3: كل موظف يجب أن يكون مرتبطاً بقسم
+            if (model.DepartmentId == null)
+            {
+                ModelState.AddModelError(string.Empty, "القسم مطلوب");
+            }
+
             if (!ModelState.IsValid)
             {
-                ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
-                ViewBag.CurrentRole = role;
+                await ReloadEditUserViewBagsAsync(id, role);
                 return View(user);
             }
 
             user.FullName = model.FullName;
-            user.JobTitle = model.JobTitle;
-            user.Department = model.Department;
-            user.EngineerRank = model.EngineerRank;
+            user.JobNumber = model.JobNumber;
+            user.PersonalId = model.PersonalId;
+            user.Responsibilities = model.Responsibilities;
+            user.ProfilePhotoPath = model.ProfilePhotoPath;
+            user.DocumentsPath = model.DocumentsPath;
+            user.DepartmentId = model.DepartmentId;
+            user.Rank = model.Rank;
+            user.CareerTrack = model.CareerTrack;
+            user.ContractSalary = model.ContractSalary;
+            user.ContractStartDate = model.ContractStartDate;
+            user.ContractEndDate = model.ContractEndDate;
+            user.MonthlyEvaluationDate = model.MonthlyEvaluationDate;
+            user.YearlyEvaluationDate = model.YearlyEvaluationDate;
+            user.ContractTerminationDate = model.ContractTerminationDate;
+            user.Pledge = model.Pledge;
             user.PhoneNumber = model.PhoneNumber;
             user.ExpectedLocationName = model.ExpectedLocationName;
             user.ExpectedLatitude = model.ExpectedLatitude;
@@ -95,12 +114,10 @@ namespace AtharERP_System.Controllers
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
-                ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
-                ViewBag.CurrentRole = role;
+                await ReloadEditUserViewBagsAsync(id, role);
                 return View(user);
             }
 
-            // تحديث الدور (دور واحد لكل مستخدم، بنفس منطق التسجيل في AccountController)
             if (!string.IsNullOrEmpty(role))
             {
                 var currentRoles = await _userManager.GetRolesAsync(user);
@@ -127,17 +144,142 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Users");
             }
 
+            // قاعدة العمل 2: لا يمكن تعطيل آخر مدير نظام نشط في النظام
+            if (user.IsActive && await _userManager.IsInRoleAsync(user, "مدير النظام"))
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("مدير النظام");
+                var otherActiveAdmins = admins.Count(u => u.Id != user.Id && u.IsActive);
+                if (otherActiveAdmins == 0)
+                {
+                    TempData["Error"] = "لا يمكن تعطيل آخر مدير نظام نشط في النظام";
+                    return RedirectToAction("Users");
+                }
+            }
+
             user.IsActive = !user.IsActive;
             await _userManager.UpdateAsync(user);
 
             if (!user.IsActive)
             {
-                // إبطال أي جلسة عمل حالية للمستخدم فور تعطيله
                 await _userManager.UpdateSecurityStampAsync(user);
             }
 
             TempData["Success"] = user.IsActive ? $"تم تفعيل {user.FullName}" : $"تم تعطيل {user.FullName}";
             return RedirectToAction("Users");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetUserPassword(string id, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+            TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded
+                ? $"تم تحديث كلمة مرور {user.FullName} بنجاح"
+                : string.Join("، ", result.Errors.Select(e => e.Description));
+
+            return RedirectToAction("EditUser", new { id });
+        }
+
+        // ============================================
+        // المناصب المتعددة (EmployeePosition)
+        // ============================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPosition(
+            string userId,
+            [Bind("DepartmentId,Rank,Track,StartDate,IsPrimary")] EmployeePosition model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "بيانات المنصب غير صحيحة";
+                return RedirectToAction("EditUser", new { id = userId });
+            }
+
+            model.UserId = userId;
+
+            if (model.IsPrimary)
+            {
+                var existingPrimary = await _context.EmployeePositions
+                    .Where(ep => ep.UserId == userId && ep.IsPrimary && ep.EndDate == null)
+                    .ToListAsync();
+                foreach (var p in existingPrimary)
+                    p.IsPrimary = false;
+
+                user.DepartmentId = model.DepartmentId;
+                user.Rank = model.Rank;
+                user.CareerTrack = model.Track;
+                await _userManager.UpdateAsync(user);
+            }
+
+            _context.EmployeePositions.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تمت إضافة المنصب بنجاح";
+            return RedirectToAction("EditUser", new { id = userId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EndPosition(int id, string userId)
+        {
+            var position = await _context.EmployeePositions.FindAsync(id);
+            if (position != null)
+            {
+                position.EndDate = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = "تم إنهاء المنصب بنجاح";
+            return RedirectToAction("EditUser", new { id = userId });
+        }
+
+        // ============================================
+        // الصلاحيات الإضافية الممنوحة يدوياً (UserPermission)
+        // ============================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddUserPermission(string userId, int permissionId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound();
+
+            var exists = await _context.UserPermissions.AnyAsync(up => up.UserId == userId && up.PermissionId == permissionId);
+            if (!exists)
+            {
+                _context.UserPermissions.Add(new UserPermission { UserId = userId, PermissionId = permissionId, GrantedAt = DateTime.UtcNow });
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم منح الصلاحية الإضافية بنجاح";
+            }
+
+            return RedirectToAction("EditUser", new { id = userId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveUserPermission(int id, string userId)
+        {
+            var link = await _context.UserPermissions.FindAsync(id);
+            if (link != null)
+            {
+                _context.UserPermissions.Remove(link);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = "تمت إزالة الصلاحية الإضافية";
+            return RedirectToAction("EditUser", new { id = userId });
         }
 
         // ============================================
@@ -169,7 +311,7 @@ namespace AtharERP_System.Controllers
         {
             ViewBag.AllPermissions = await _context.Permissions
                 .Where(p => p.IsActive)
-                .OrderBy(p => p.Module).ThenBy(p => p.Action)
+                .OrderBy(p => p.Module).ThenBy(p => p.Code)
                 .ToListAsync();
             ViewBag.SelectedPermissionIds = new List<int>();
 
@@ -189,13 +331,14 @@ namespace AtharERP_System.Controllers
             {
                 ViewBag.AllPermissions = await _context.Permissions
                     .Where(p => p.IsActive)
-                    .OrderBy(p => p.Module).ThenBy(p => p.Action)
+                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
                     .ToListAsync();
                 ViewBag.SelectedPermissionIds = selectedPermissions?.ToList() ?? new List<int>();
                 return View(model);
             }
 
             model.CreatedAt = DateTime.UtcNow;
+            model.CanDelete = true;
             var result = await _roleManager.CreateAsync(model);
 
             if (!result.Succeeded)
@@ -205,7 +348,7 @@ namespace AtharERP_System.Controllers
 
                 ViewBag.AllPermissions = await _context.Permissions
                     .Where(p => p.IsActive)
-                    .OrderBy(p => p.Module).ThenBy(p => p.Action)
+                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
                     .ToListAsync();
                 ViewBag.SelectedPermissionIds = selectedPermissions?.ToList() ?? new List<int>();
                 return View(model);
@@ -218,7 +361,8 @@ namespace AtharERP_System.Controllers
                     _context.RolePermissions.Add(new RolePermission
                     {
                         RoleId = model.Id,
-                        PermissionId = permId
+                        PermissionId = permId,
+                        IsGranted = true
                     });
                 }
                 await _context.SaveChangesAsync();
@@ -240,11 +384,11 @@ namespace AtharERP_System.Controllers
 
             ViewBag.AllPermissions = await _context.Permissions
                 .Where(p => p.IsActive)
-                .OrderBy(p => p.Module).ThenBy(p => p.Action)
+                .OrderBy(p => p.Module).ThenBy(p => p.Code)
                 .ToListAsync();
 
             ViewBag.SelectedPermissionIds = await _context.RolePermissions
-                .Where(rp => rp.RoleId == id)
+                .Where(rp => rp.RoleId == id && rp.IsGranted)
                 .Select(rp => rp.PermissionId)
                 .ToListAsync();
 
@@ -269,7 +413,7 @@ namespace AtharERP_System.Controllers
             {
                 ViewBag.AllPermissions = await _context.Permissions
                     .Where(p => p.IsActive)
-                    .OrderBy(p => p.Module).ThenBy(p => p.Action)
+                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
                     .ToListAsync();
                 ViewBag.SelectedPermissionIds = selectedPermissions?.ToList() ?? new List<int>();
                 return View(role);
@@ -288,13 +432,12 @@ namespace AtharERP_System.Controllers
 
                 ViewBag.AllPermissions = await _context.Permissions
                     .Where(p => p.IsActive)
-                    .OrderBy(p => p.Module).ThenBy(p => p.Action)
+                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
                     .ToListAsync();
                 ViewBag.SelectedPermissionIds = selectedPermissions?.ToList() ?? new List<int>();
                 return View(role);
             }
 
-            // إعادة ضبط الصلاحيات: حذف الحالية ثم إضافة المختارة (على دفعتين لتفادي تعارض الفهرس الفريد)
             var existingLinks = await _context.RolePermissions.Where(rp => rp.RoleId == id).ToListAsync();
             _context.RolePermissions.RemoveRange(existingLinks);
             await _context.SaveChangesAsync();
@@ -306,7 +449,8 @@ namespace AtharERP_System.Controllers
                     _context.RolePermissions.Add(new RolePermission
                     {
                         RoleId = id,
-                        PermissionId = permId
+                        PermissionId = permId,
+                        IsGranted = true
                     });
                 }
                 await _context.SaveChangesAsync();
@@ -324,7 +468,8 @@ namespace AtharERP_System.Controllers
             if (role == null)
                 return NotFound();
 
-            if (role.IsTemplate)
+            // قاعدة العمل 1: الأدوار القوالب محمية من الحذف (CanDelete = false)
+            if (!role.CanDelete)
             {
                 TempData["Error"] = "لا يمكن حذف دور قالب جاهز";
                 return RedirectToAction("Roles");
@@ -341,6 +486,157 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = $"تم حذف الدور {role.Name} بنجاح";
             return RedirectToAction("Roles");
+        }
+
+        // ============================================
+        // إدارة الأقسام (Department)
+        // ============================================
+
+        [HttpGet]
+        public async Task<IActionResult> Departments()
+        {
+            var departments = await _context.Departments
+                .Include(d => d.ParentDepartment)
+                .Include(d => d.Users)
+                .OrderBy(d => d.ParentDepartmentId == null ? 0 : 1)
+                .ThenBy(d => d.Name)
+                .ToListAsync();
+
+            return View(departments);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateDepartment()
+        {
+            ViewBag.ParentDepartments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description")] Department model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.ParentDepartments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+                return View(model);
+            }
+
+            model.IsActive = true;
+            model.CreatedAt = DateTime.UtcNow;
+
+            _context.Departments.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"تم إنشاء القسم {model.Name} بنجاح";
+            return RedirectToAction("Departments");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditDepartment(int id)
+        {
+            var department = await _context.Departments.FindAsync(id);
+            if (department == null)
+                return NotFound();
+
+            ViewBag.ParentDepartments = await _context.Departments
+                .Where(d => d.IsActive && d.Id != id)
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+
+            return View(department);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive")] Department model)
+        {
+            var department = await _context.Departments.FindAsync(id);
+            if (department == null)
+                return NotFound();
+
+            if (model.ParentDepartmentId == id)
+            {
+                ModelState.AddModelError(string.Empty, "لا يمكن أن يكون القسم أباً لنفسه");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.ParentDepartments = await _context.Departments
+                    .Where(d => d.IsActive && d.Id != id)
+                    .OrderBy(d => d.Name)
+                    .ToListAsync();
+                return View(model);
+            }
+
+            department.Name = model.Name;
+            department.ParentDepartmentId = model.ParentDepartmentId;
+            department.Description = model.Description;
+            department.IsActive = model.IsActive;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"تم تحديث القسم {department.Name} بنجاح";
+            return RedirectToAction("Departments");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteDepartment(int id)
+        {
+            var department = await _context.Departments
+                .Include(d => d.ChildDepartments)
+                .Include(d => d.Users)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (department == null)
+                return NotFound();
+
+            if (department.ChildDepartments.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف القسم لوجود أقسام فرعية مرتبطة به";
+                return RedirectToAction("Departments");
+            }
+
+            if (department.Users.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف القسم لوجود موظفين مرتبطين به";
+                return RedirectToAction("Departments");
+            }
+
+            _context.Departments.Remove(department);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم حذف القسم بنجاح";
+            return RedirectToAction("Departments");
+        }
+
+        // ============================================
+        // دالة مساعدة
+        // ============================================
+        private async Task ReloadEditUserViewBagsAsync(string userId, string? selectedRole)
+        {
+            ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
+            ViewBag.CurrentRole = selectedRole;
+            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.JobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();
+            ViewBag.CareerTracks = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+
+            ViewBag.Positions = await _context.EmployeePositions
+                .Include(ep => ep.Department)
+                .Where(ep => ep.UserId == userId)
+                .OrderByDescending(ep => ep.StartDate)
+                .ToListAsync();
+
+            ViewBag.AllPermissions = await _context.Permissions
+                .Where(p => p.IsActive)
+                .OrderBy(p => p.Module).ThenBy(p => p.Code)
+                .ToListAsync();
+
+            ViewBag.UserOverridePermissions = await _context.UserPermissions
+                .Include(up => up.Permission)
+                .Where(up => up.UserId == userId)
+                .ToListAsync();
         }
     }
 }

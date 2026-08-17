@@ -13,7 +13,12 @@ namespace AtharERP_System.Data
         public DbSet<Permission> Permissions { get; set; } = null!;
         public DbSet<RolePermission> RolePermissions { get; set; } = null!;
 
-        // Module 2: إدارة المشاريع
+        // Module 01: الهيكل التنظيمي والصلاحيات الموسّعة
+        public DbSet<Department> Departments { get; set; } = null!;
+        public DbSet<EmployeePosition> EmployeePositions { get; set; } = null!;
+        public DbSet<UserPermission> UserPermissions { get; set; } = null!;
+
+        // Module 2 (سابق - لم يُمس): إدارة المشاريع
         public DbSet<Client> Clients { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<ProjectEngineer> ProjectEngineers { get; set; } = null!;
@@ -50,39 +55,80 @@ namespace AtharERP_System.Data
 
             // ========== الفهارس الفريدة ==========
             builder.Entity<Permission>()
-                .HasIndex(p => new { p.Module, p.Action })
+                .HasIndex(p => p.Code)
                 .IsUnique();
-            builder.Entity<RolePermission>()
-    .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
-    .IsUnique();
 
-            // ========== علاقات المشاريع (Module 2) ==========
+            builder.Entity<RolePermission>()
+                .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+                .IsUnique();
+
+            // ========== القسم (Department) - علاقة ذاتية ==========
+            builder.Entity<Department>()
+                .HasOne(d => d.ParentDepartment)
+                .WithMany(d => d.ChildDepartments)
+                .HasForeignKey(d => d.ParentDepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== قسم المستخدم الأساسي ==========
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.Department)
+                .WithMany(d => d.Users)
+                .HasForeignKey(u => u.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== المناصب المتعددة (EmployeePosition) ==========
+            builder.Entity<EmployeePosition>()
+                .HasOne(ep => ep.User)
+                .WithMany(u => u.EmployeePositions)
+                .HasForeignKey(ep => ep.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<EmployeePosition>()
+                .HasOne(ep => ep.Department)
+                .WithMany(d => d.EmployeePositions)
+                .HasForeignKey(ep => ep.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== الصلاحيات الإضافية الممنوحة يدوياً (UserPermission) ==========
+            builder.Entity<UserPermission>()
+                .HasOne(up => up.User)
+                .WithMany(u => u.UserPermissions)
+                .HasForeignKey(up => up.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserPermission>()
+                .HasOne(up => up.Permission)
+                .WithMany()
+                .HasForeignKey(up => up.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserPermission>()
+                .HasIndex(up => new { up.UserId, up.PermissionId })
+                .IsUnique();
+
+            // ========== علاقات المشاريع (Module 2 - سابق، بدون تغيير) ==========
             builder.Entity<Project>()
                 .HasIndex(p => p.Code)
                 .IsUnique();
 
-            // مشروع رئيسي / فرعي (علاقة ذاتية) - Restrict لتفادي تعارض مسارات الحذف على نفس الجدول
             builder.Entity<Project>()
                 .HasOne(p => p.ParentProject)
                 .WithMany(p => p.ChildProjects)
                 .HasForeignKey(p => p.ParentProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // مدير المشروع - Restrict لمنع حذف مستخدم مرتبط بمشروع
             builder.Entity<Project>()
                 .HasOne(p => p.ProjectManager)
                 .WithMany()
                 .HasForeignKey(p => p.ProjectManagerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // العميل المرتبط بالمشروع - Restrict لمنع حذف عميل لديه مشاريع
             builder.Entity<Project>()
                 .HasOne(p => p.Client)
                 .WithMany(c => c.Projects)
                 .HasForeignKey(p => p.ClientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // المهندسون المكلفون بالمشروع
             builder.Entity<ProjectEngineer>()
                 .HasOne(pe => pe.Project)
                 .WithMany(p => p.ProjectEngineers)
@@ -99,7 +145,6 @@ namespace AtharERP_System.Data
                 .HasIndex(pe => new { pe.ProjectId, pe.UserId })
                 .IsUnique();
 
-            // ========== مراحل المشروع (ProjectStage) ==========
             builder.Entity<ProjectStage>()
                 .HasOne(s => s.Project)
                 .WithMany(p => p.Stages)
@@ -116,14 +161,12 @@ namespace AtharERP_System.Data
                 .HasIndex(s => new { s.ProjectId, s.Order })
                 .IsUnique();
 
-            // ========== خطوات المرحلة (ProjectStep) ==========
             builder.Entity<ProjectStep>()
                 .HasOne(st => st.ProjectStage)
                 .WithMany(s => s.Steps)
                 .HasForeignKey(st => st.ProjectStageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ========== مهام المرحلة (ProjectTask) ==========
             builder.Entity<ProjectTask>()
                 .HasOne(t => t.ProjectStage)
                 .WithMany(s => s.Tasks)
@@ -136,7 +179,6 @@ namespace AtharERP_System.Data
                 .HasForeignKey(t => t.AssignedToId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== تبعيات المهام (TaskDependency) ==========
             builder.Entity<TaskDependency>()
                 .HasOne(td => td.Task)
                 .WithMany(t => t.Dependencies)

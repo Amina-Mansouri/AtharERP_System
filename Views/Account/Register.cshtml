@@ -3,6 +3,9 @@
     ViewData["Title"] = "إضافة مستخدم جديد";
     ViewData["HideNav"] = true;
     var roles = ViewBag.Roles as List<string> ?? new List<string>();
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var jobRanks = ViewBag.JobRanks as List<(string Value, string Label)> ?? new List<(string Value, string Label)>();
+    var careerTracks = ViewBag.CareerTracks as List<(string Value, string Label)> ?? new List<(string Value, string Label)>();
 }
 
 <div class="athar-auth-card athar-auth-card-wide">
@@ -47,36 +50,61 @@
         </div>
 
         <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">المسمى الوظيفي</label>
-                <input type="text" name="jobTitle" class="form-control" />
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الرقم الوظيفي</label>
+                <input type="text" name="jobNumber" class="form-control" />
             </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">القسم</label>
-                <input type="text" name="department" class="form-control" />
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الرقم الشخصي</label>
+                <input type="text" name="personalId" class="form-control" />
             </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">درجة المهندس</label>
-                <select name="engineerRank" class="form-select">
-                    <option value="None">غير محدد</option>
-                    <option value="Junior">مبتدئ</option>
-                    <option value="MidLevel">متوسط</option>
-                    <option value="Senior">خبير</option>
-                    <option value="Lead">رئيسي</option>
-                    <option value="Principal">استشاري</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">رقم الهاتف</label>
                 <input type="tel" name="phoneNumber" class="form-control" />
             </div>
         </div>
 
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">القسم</label>
+                <select name="departmentId" class="form-select" required>
+                    <option value="">-- اختر القسم --</option>
+                    @foreach (var d in departments)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الرتبة الوظيفية</label>
+                <select name="rank" class="form-select">
+                    @foreach (var jr in jobRanks)
+                    {
+                        <option value="@jr.Value">@jr.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">المسار الوظيفي</label>
+                <select name="careerTrack" class="form-select">
+                    @foreach (var ct in careerTracks)
+                    {
+                        <option value="@ct.Value">@ct.Label</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الراتب التعاقدي</label>
+                <input type="number" step="0.01" min="0" name="contractSalary" class="form-control" value="0" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ بداية العقد</label>
+                <input type="date" name="contractStartDate" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4 mb-3">
                 <label class="form-label">الدور</label>
                 <select name="role" class="form-select" required>
                     <option value="">-- اختر الدور --</option>
@@ -85,10 +113,6 @@
                         <option value="@r">@r</option>
                     }
                 </select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">نصف القطر المسموح (متر)</label>
-                <input type="number" step="any" name="allowedRadiusMeters" class="form-control" value="100" />
             </div>
         </div>
 
@@ -105,6 +129,13 @@
             <div id="register-map" class="athar-map"></div>
 
             <div class="athar-coords-display mt-2" id="register-coords-display">لم يتم تحديد موقع بعد</div>
+
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">نصف القطر المسموح (متر)</label>
+                    <input type="number" min="1" name="allowedRadiusMeters" class="form-control" value="100" />
+                </div>
+            </div>
 
             <input type="hidden" id="expectedLatitude" name="expectedLatitude" />
             <input type="hidden" id="expectedLongitude" name="expectedLongitude" />

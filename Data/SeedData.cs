@@ -17,12 +17,53 @@ namespace AtharERP_System.Data
             // ينشئ الجداول إذا لم تكن موجودة
             await context.Database.MigrateAsync();
 
-            // ========== الأدوار القوالب الجاهزة ==========
+            // ========== الأقسام الافتراضية (Section 10.3) ==========
+            Department? topManagement = null;
+            if (!await context.Departments.AnyAsync())
+            {
+                topManagement = new Department { Name = "الإدارة العليا", IsActive = true, CreatedAt = DateTime.UtcNow };
+                context.Departments.Add(topManagement);
+                await context.SaveChangesAsync();
+
+                var childDepartmentNames = new[]
+                {
+                    "قسم التصميم المعماري والداخلي",
+                    "قسم التصميم الإنشائي",
+                    "قسم التصميم الميكانيكي",
+                    "قسم التصميم الكهربائي",
+                    "قسم التصميم الجرافيكي",
+                    "قسم إدارة المشاريع",
+                    "قسم إدارة العمليات الميدانية",
+                    "قسم إدارة التوريدات",
+                    "قسم شؤون الإدارة والموارد البشرية",
+                    "قسم المالية",
+                    "قسم الجودة والتدقيق",
+                    "قسم Document Control"
+                };
+
+                foreach (var name in childDepartmentNames)
+                {
+                    context.Departments.Add(new Department
+                    {
+                        Name = name,
+                        ParentDepartmentId = topManagement.Id,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                topManagement = await context.Departments.FirstOrDefaultAsync(d => d.ParentDepartmentId == null);
+            }
+
+            // ========== الأدوار القوالب الجاهزة (محمية من الحذف) ==========
             var templateRoles = new[]
             {
-                new { Name = "مدير النظام", Desc = "صلاحيات كاملة", IsTemplate = true },
-                new { Name = "مهندس تصميم", Desc = "المشاريع والتصاميم", IsTemplate = true },
-                new { Name = "مهندس جودة", Desc = "الجودة والتقارير", IsTemplate = true }
+                new { Name = "مدير النظام", Desc = "صلاحيات كاملة" },
+                new { Name = "مهندس تصميم", Desc = "المشاريع والتصاميم" },
+                new { Name = "مهندس جودة", Desc = "الجودة والتقارير" }
             };
 
             foreach (var r in templateRoles)
@@ -33,97 +74,146 @@ namespace AtharERP_System.Data
                     {
                         Name = r.Name,
                         Description = r.Desc,
-                        IsTemplate = r.IsTemplate,
+                        IsTemplate = true,
+                        CanDelete = false,
                         CreatedAt = DateTime.UtcNow
                     });
                 }
             }
 
-            // ========== صلاحيات النظام ==========
+            // ========== كتالوج الصلاحيات (47 صلاحية - القسم 6) ==========
             var permissions = new[]
             {
-                new Permission { Name = "Users.View", Description = "عرض المستخدمين", Module = "المستخدمون", Action = "View" },
-                new Permission { Name = "Users.Create", Description = "إنشاء مستخدم", Module = "المستخدمون", Action = "Create" },
-                new Permission { Name = "Users.Edit", Description = "تعديل مستخدم", Module = "المستخدمون", Action = "Edit" },
-                new Permission { Name = "Users.Delete", Description = "حذف مستخدم", Module = "المستخدمون", Action = "Delete" },
+                // 6.1 عام / المستخدمون
+                new Permission { Code = "Users.View", Name = "المستخدمين.عرض", Module = "Users" },
+                new Permission { Code = "Users.Create", Name = "المستخدمين.إضافة", Module = "Users" },
+                new Permission { Code = "Users.Edit", Name = "المستخدمين.تعديل", Module = "Users" },
+                new Permission { Code = "Users.Delete", Name = "المستخدمين.حذف", Module = "Users" },
+                new Permission { Code = "Users.ToggleActive", Name = "المستخدمين.تفعيل", Module = "Users" },
 
-                new Permission { Name = "Roles.View", Description = "عرض الأدوار", Module = "الأدوار", Action = "View" },
-                new Permission { Name = "Roles.Create", Description = "إنشاء دور", Module = "الأدوار", Action = "Create" },
-                new Permission { Name = "Roles.Edit", Description = "تعديل دور", Module = "الأدوار", Action = "Edit" },
-                new Permission { Name = "Roles.Delete", Description = "حذف دور", Module = "الأدوار", Action = "Delete" },
+                // 6.2 الأدوار
+                new Permission { Code = "Roles.View", Name = "الأدوار.عرض", Module = "Roles" },
+                new Permission { Code = "Roles.Create", Name = "الأدوار.إضافة", Module = "Roles" },
+                new Permission { Code = "Roles.Edit", Name = "الأدوار.تعديل", Module = "Roles" },
+                new Permission { Code = "Roles.Delete", Name = "الأدوار.حذف", Module = "Roles" },
+                new Permission { Code = "Roles.ManagePermissions", Name = "الأدوار.تخصيص_صلاحيات", Module = "Roles" },
 
-                new Permission { Name = "Projects.View", Description = "عرض المشاريع", Module = "المشاريع", Action = "View" },
-                new Permission { Name = "Projects.Create", Description = "إنشاء مشروع", Module = "المشاريع", Action = "Create" },
-                new Permission { Name = "Projects.Edit", Description = "تعديل مشروع", Module = "المشاريع", Action = "Edit" },
-                new Permission { Name = "Projects.Delete", Description = "حذف مشروع", Module = "المشاريع", Action = "Delete" },
+                // 6.3 المشاريع
+                new Permission { Code = "Projects.ViewAll", Name = "المشاريع.عرض_الكل", Module = "Projects" },
+                new Permission { Code = "Projects.ViewOwn", Name = "المشاريع.عرض_الخاصة", Module = "Projects" },
+                new Permission { Code = "Projects.Create", Name = "المشاريع.إضافة", Module = "Projects" },
+                new Permission { Code = "Projects.Edit", Name = "المشاريع.تعديل", Module = "Projects" },
+                new Permission { Code = "Projects.Delete", Name = "المشاريع.حذف", Module = "Projects" },
+                new Permission { Code = "Projects.Stages.Manage", Name = "المشاريع.مراحل.إدارة", Module = "Projects" },
+                new Permission { Code = "Projects.Tasks.Manage", Name = "المشاريع.مهام.إدارة", Module = "Projects" },
+                new Permission { Code = "Projects.Costs.View", Name = "المشاريع.تكاليف.عرض", Module = "Projects" },
+                new Permission { Code = "Projects.Costs.Edit", Name = "المشاريع.تكاليف.تعديل", Module = "Projects" },
 
-                new Permission { Name = "Clients.View", Description = "عرض العملاء", Module = "العملاء", Action = "View" },
-                new Permission { Name = "Clients.Create", Description = "إنشاء عميل", Module = "العملاء", Action = "Create" },
-                new Permission { Name = "Clients.Edit", Description = "تعديل عميل", Module = "العملاء", Action = "Edit" },
-                new Permission { Name = "Clients.Delete", Description = "حذف عميل", Module = "العملاء", Action = "Delete" },
+                // 6.4 المالية
+                new Permission { Code = "Finance.View", Name = "المالية.عرض", Module = "Finance" },
+                new Permission { Code = "Finance.Costs.View", Name = "المالية.تكاليف.عرض", Module = "Finance" },
+                new Permission { Code = "Finance.Costs.Edit", Name = "المالية.تكاليف.تعديل", Module = "Finance" },
+                new Permission { Code = "Finance.Sales.View", Name = "المالية.مبيعات.عرض", Module = "Finance" },
+                new Permission { Code = "Finance.Sales.Edit", Name = "المالية.مبيعات.تعديل", Module = "Finance" },
+                new Permission { Code = "Finance.Reports", Name = "المالية.تقارير", Module = "Finance" },
+                new Permission { Code = "Finance.Print", Name = "المالية.طباعة", Module = "Finance" },
 
-                new Permission { Name = "Sites.View", Description = "عرض المواقع", Module = "المواقع", Action = "View" },
-                new Permission { Name = "Sites.Manage", Description = "إدارة المواقع", Module = "المواقع", Action = "Manage" },
+                // 6.5 الموارد البشرية
+                new Permission { Code = "HR.View", Name = "الموارد_البشرية.عرض", Module = "HR" },
+                new Permission { Code = "HR.Attendance.View", Name = "الموارد_البشرية.حضور.عرض", Module = "HR" },
+                new Permission { Code = "HR.Attendance.Edit", Name = "الموارد_البشرية.حضور.تعديل", Module = "HR" },
+                new Permission { Code = "HR.Salaries.View", Name = "الموارد_البشرية.رواتب.عرض", Module = "HR" },
+                new Permission { Code = "HR.Salaries.Edit", Name = "الموارد_البشرية.رواتب.تعديل", Module = "HR" },
+                new Permission { Code = "HR.Leaves.Manage", Name = "الموارد_البشرية.إجازات.إدارة", Module = "HR" },
+                new Permission { Code = "HR.Evaluation", Name = "الموارد_البشرية.تقييم", Module = "HR" },
 
-                new Permission { Name = "Supplies.View", Description = "عرض التوريدات", Module = "التوريدات", Action = "View" },
-                new Permission { Name = "Supplies.Create", Description = "إنشاء طلب توريد", Module = "التوريدات", Action = "Create" },
-                new Permission { Name = "Supplies.Approve", Description = "اعتماد توريد", Module = "التوريدات", Action = "Approve" },
+                // 6.6 التوريدات
+                new Permission { Code = "Supply.View", Name = "التوريدات.عرض", Module = "Supply" },
+                new Permission { Code = "Supply.Create", Name = "التوريدات.إضافة", Module = "Supply" },
+                new Permission { Code = "Supply.Approve", Name = "التوريدات.موافقة", Module = "Supply" },
 
-                new Permission { Name = "Finance.View", Description = "عرض المالية", Module = "المالية", Action = "View" },
-                new Permission { Name = "Finance.Create", Description = "تسجيل مالية", Module = "المالية", Action = "Create" },
+                // 6.7 المواقع
+                new Permission { Code = "Sites.View", Name = "المواقع.عرض", Module = "Site" },
+                new Permission { Code = "Sites.Reports", Name = "المواقع.تقارير", Module = "Site" },
 
-                new Permission { Name = "HR.View", Description = "عرض الموارد البشرية", Module = "الموارد البشرية", Action = "View" },
-                new Permission { Name = "HR.Attendance", Description = "إدارة الحضور", Module = "الموارد البشرية", Action = "Attendance" },
+                // 6.8 العلاقات العامة / CRM
+                new Permission { Code = "PR.View", Name = "العلاقات_العامة.عرض", Module = "CRM" },
+                new Permission { Code = "PR.Contracts", Name = "العلاقات_العامة.عقود", Module = "CRM" },
+                new Permission { Code = "PR.Clients", Name = "العلاقات_العامة.عملاء", Module = "CRM" },
 
-                new Permission { Name = "CRM.View", Description = "عرض العملاء", Module = "العلاقات العامة", Action = "View" },
-                new Permission { Name = "CRM.Approvals", Description = "موافقات العملاء", Module = "العلاقات العامة", Action = "Approvals" },
+                // 6.9 الجودة
+                new Permission { Code = "Quality.View", Name = "الجودة.عرض", Module = "Quality" },
+                new Permission { Code = "Quality.Reports", Name = "الجودة.تقارير", Module = "Quality" },
+                new Permission { Code = "Quality.Approve", Name = "الجودة.اعتماد", Module = "Quality" },
 
-                new Permission { Name = "Reports.View", Description = "عرض التقارير", Module = "التقارير", Action = "View" },
-                new Permission { Name = "Reports.Export", Description = "تصدير التقارير", Module = "التقارير", Action = "Export" },
+                // 6.10 التقارير والإشعارات
+                new Permission { Code = "Reports.View", Name = "التقارير.عرض", Module = "Reports" },
+                new Permission { Code = "Reports.Export", Name = "التقارير.تصدير", Module = "Reports" },
+                new Permission { Code = "Notifications.Manage", Name = "الإشعارات.إدارة", Module = "Notifications" },
             };
 
             foreach (var p in permissions)
             {
-                if (!await context.Permissions.AnyAsync(x => x.Name == p.Name))
+                if (!await context.Permissions.AnyAsync(x => x.Code == p.Code))
                     context.Permissions.Add(p);
             }
             await context.SaveChangesAsync();
 
-            // ربط الصلاحيات بالأدوار
-            await LinkPermissionsToRole(context, roleManager, "مدير النظام", permissions.Select(p => p.Name).ToArray());
-            await LinkPermissionsToRole(context, roleManager, "مهندس تصميم", new[] {
-                "Projects.View", "Projects.Create", "Projects.Edit",
-                "Clients.View", "Clients.Create", "Clients.Edit",
-                "Sites.View", "Sites.Manage", "Supplies.View", "Supplies.Create",
-                "CRM.View", "CRM.Approvals", "Reports.View"
+            // ========== ربط الصلاحيات بالأدوار ==========
+            await LinkPermissionsToRole(context, roleManager, "مدير النظام", permissions.Select(p => p.Code).ToArray());
+
+            await LinkPermissionsToRole(context, roleManager, "مهندس تصميم", new[]
+            {
+                "Projects.ViewOwn",
+                "Supply.View", "Supply.Create"
             });
-            await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[] {
-                "Projects.View", "Projects.Edit", "Clients.View", "Sites.View",
-                "Supplies.View", "Supplies.Approve", "Finance.View",
-                "Reports.View", "Reports.Export", "CRM.View", "CRM.Approvals"
+
+            await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[]
+            {
+                "Projects.ViewAll", "Projects.Create", "Projects.Tasks.Manage",
+                "Quality.View", "Quality.Approve", "Quality.Reports",
+                "Reports.View"
             });
 
             // ========== المستخدم الافتراضي ==========
             var adminEmail = "admin@athar.ly";
-            if (await userManager.FindByEmailAsync(adminEmail) == null)
+            var admin = await userManager.FindByEmailAsync(adminEmail);
+            if (admin == null)
             {
-                var admin = new ApplicationUser
+                admin = new ApplicationUser
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
                     FullName = "مدير النظام",
-                    JobTitle = "مدير تنفيذي",
-                    Department = "الإدارة العليا",
-                    EngineerRank = EngineerRank.None,
+                    JobNumber = "EMP-0001",
+                    DepartmentId = topManagement?.Id,
+                    Responsibilities = "الإدارة الكاملة للنظام",
+                    Rank = JobRank.M5_CEO,
+                    CareerTrack = CareerTrack.Administrative,
+                    ContractSalary = 0,
                     EmailConfirmed = true,
                     IsActive = true,
-                    JoinDate = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow
                 };
                 await userManager.CreateAsync(admin, "Athar@Admin2026");
                 await userManager.AddToRoleAsync(admin, "مدير النظام");
+
+                if (topManagement != null)
+                {
+                    context.EmployeePositions.Add(new EmployeePosition
+                    {
+                        UserId = admin.Id,
+                        DepartmentId = topManagement.Id,
+                        Rank = JobRank.M5_CEO,
+                        Track = CareerTrack.Administrative,
+                        StartDate = DateTime.UtcNow,
+                        IsPrimary = true
+                    });
+                    await context.SaveChangesAsync();
+                }
             }
 
-            // ========== عملاء تجريبيون ==========
+            // ========== عملاء ومشروع تجريبي (Module 2 سابق - بدون تغيير) ==========
             if (!await context.Clients.AnyAsync())
             {
                 var sampleClients = new[]
@@ -166,7 +256,6 @@ namespace AtharERP_System.Data
                 context.Clients.AddRange(sampleClients);
                 await context.SaveChangesAsync();
 
-                // مشروع تجريبي مرتبط بأول عميل (فقط إذا لم توجد أي مشاريع بعد)
                 if (!await context.Projects.AnyAsync())
                 {
                     context.Projects.Add(new Project
@@ -187,12 +276,12 @@ namespace AtharERP_System.Data
             }
         }
 
-        private static async Task LinkPermissionsToRole(AppDbContext context, RoleManager<ApplicationRole> roleManager, string roleName, string[] permNames)
+        private static async Task LinkPermissionsToRole(AppDbContext context, RoleManager<ApplicationRole> roleManager, string roleName, string[] permCodes)
         {
             var role = await roleManager.FindByNameAsync(roleName);
             if (role == null) return;
 
-            var permNamesList = permNames.ToList();
+            var permCodesList = permCodes.ToList();
 
             var existing = await context.RolePermissions
                 .Where(rp => rp.RoleId == role.Id)
@@ -200,13 +289,13 @@ namespace AtharERP_System.Data
                 .ToListAsync();
 
             var perms = await context.Permissions
-                .Where(p => permNamesList.Contains(p.Name))
+                .Where(p => permCodesList.Contains(p.Code))
                 .ToListAsync();
 
             foreach (var p in perms)
             {
                 if (!existing.Contains(p.Id))
-                    context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = p.Id });
+                    context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = p.Id, IsGranted = true });
             }
             await context.SaveChangesAsync();
         }

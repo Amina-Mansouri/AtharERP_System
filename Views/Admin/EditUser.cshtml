@@ -4,11 +4,18 @@
     ViewData["Title"] = "تعديل المستخدم";
     var roles = ViewBag.Roles as List<string> ?? new List<string>();
     var currentRole = ViewBag.CurrentRole as string;
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var jobRanks = ViewBag.JobRanks as List<(string Value, string Label)> ?? new List<(string Value, string Label)>();
+    var careerTracks = ViewBag.CareerTracks as List<(string Value, string Label)> ?? new List<(string Value, string Label)>();
+    var positions = ViewBag.Positions as List<EmployeePosition> ?? new List<EmployeePosition>();
+    var allPermissions = ViewBag.AllPermissions as List<Permission> ?? new List<Permission>();
+    var overridePermissions = ViewBag.UserOverridePermissions as List<UserPermission> ?? new List<UserPermission>();
+    var overridePermissionIds = overridePermissions.Select(up => up.PermissionId).ToHashSet();
     var initialLat = Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
     var initialLng = Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
 }
 
-<h1 class="athar-page-title">تعديل بيانات المستخدم</h1>
+<h1 class="athar-page-title">تعديل بيانات المستخدم: @Model.FullName</h1>
 
 <div class="athar-card mt-3">
     @if (!ViewData.ModelState.IsValid)
@@ -26,48 +33,80 @@
     <form method="post" asp-action="EditUser" asp-route-id="@Model.Id">
         @Html.AntiForgeryToken()
 
+        <h5>البيانات الأساسية</h5>
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">الاسم الكامل</label>
                 <input type="text" name="FullName" class="form-control" value="@Model.FullName" required />
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">البريد الإلكتروني</label>
                 <input type="email" class="form-control" value="@Model.Email" disabled />
             </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">المسمى الوظيفي</label>
-                <input type="text" name="JobTitle" class="form-control" value="@Model.JobTitle" />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">القسم</label>
-                <input type="text" name="Department" class="form-control" value="@Model.Department" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">درجة المهندس</label>
-                <select name="EngineerRank" class="form-select">
-                    <option value="None" selected="@(Model.EngineerRank == EngineerRank.None)">غير محدد</option>
-                    <option value="Junior" selected="@(Model.EngineerRank == EngineerRank.Junior)">مبتدئ</option>
-                    <option value="MidLevel" selected="@(Model.EngineerRank == EngineerRank.MidLevel)">متوسط</option>
-                    <option value="Senior" selected="@(Model.EngineerRank == EngineerRank.Senior)">خبير</option>
-                    <option value="Lead" selected="@(Model.EngineerRank == EngineerRank.Lead)">رئيسي</option>
-                    <option value="Principal" selected="@(Model.EngineerRank == EngineerRank.Principal)">استشاري</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">رقم الهاتف</label>
                 <input type="tel" name="PhoneNumber" class="form-control" value="@Model.PhoneNumber" />
             </div>
         </div>
 
         <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الرقم الوظيفي</label>
+                <input type="text" name="JobNumber" class="form-control" value="@Model.JobNumber" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الرقم الشخصي</label>
+                <input type="text" name="PersonalId" class="form-control" value="@Model.PersonalId" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الصورة الشخصية (مسار/رابط)</label>
+                <input type="text" name="ProfilePhotoPath" class="form-control" value="@Model.ProfilePhotoPath" />
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-md-6 mb-3">
+                <label class="form-label">مسار المستندات</label>
+                <input type="text" name="DocumentsPath" class="form-control" value="@Model.DocumentsPath" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المسؤوليات</label>
+                <input type="text" name="Responsibilities" class="form-control" value="@Model.Responsibilities" />
+            </div>
+        </div>
+
+        <hr />
+        <h5>الوظيفة</h5>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">القسم</label>
+                <select name="DepartmentId" class="form-select" required>
+                    <option value="">-- اختر القسم --</option>
+                    @foreach (var d in departments)
+                    {
+                        <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">الرتبة الوظيفية</label>
+                <select name="Rank" class="form-select">
+                    @foreach (var jr in jobRanks)
+                    {
+                        <option value="@jr.Value" selected="@(Model.Rank.ToString() == jr.Value)">@jr.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">المسار الوظيفي</label>
+                <select name="CareerTrack" class="form-select">
+                    @foreach (var ct in careerTracks)
+                    {
+                        <option value="@ct.Value" selected="@(Model.CareerTrack.ToString() == ct.Value)">@ct.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
                 <label class="form-label">الدور</label>
                 <select name="role" class="form-select" required>
                     @foreach (var r in roles)
@@ -76,21 +115,55 @@
                     }
                 </select>
             </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">نصف القطر المسموح (متر)</label>
-                <input type="number" step="any" name="AllowedRadiusMeters" class="form-control" value="@Model.AllowedRadiusMeters" />
+        </div>
+
+        <hr />
+        <h5>العقد والتقييم</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الراتب التعاقدي</label>
+                <input type="number" step="0.01" min="0" name="ContractSalary" class="form-control" value="@Model.ContractSalary" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ بداية العقد</label>
+                <input type="date" name="ContractStartDate" class="form-control" value="@(Model.ContractStartDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ نهاية العقد</label>
+                <input type="date" name="ContractEndDate" class="form-control" value="@(Model.ContractEndDate?.ToString("yyyy-MM-dd"))" />
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ التقييم الشهري</label>
+                <input type="date" name="MonthlyEvaluationDate" class="form-control" value="@(Model.MonthlyEvaluationDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ التقييم السنوي</label>
+                <input type="date" name="YearlyEvaluationDate" class="form-control" value="@(Model.YearlyEvaluationDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ إنهاء العقد</label>
+                <input type="date" name="ContractTerminationDate" class="form-control" value="@(Model.ContractTerminationDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">التعهد</label>
+                <textarea name="Pledge" class="form-control" rows="2">@Model.Pledge</textarea>
+            </div>
+        </div>
+
+        <hr />
+        <h5>موقع الحضور المتوقع</h5>
         <div class="athar-map-section mb-3">
-            <label class="form-label d-block">تحديد موقع الحضور المتوقع (اختياري)</label>
             <p class="athar-map-hint">انقر على الخريطة لتحديد الموقع، أو اسحب العلامة بعد وضعها لتعديل الموقع</p>
 
             <div class="mb-2">
                 <label class="form-label">اسم الموقع</label>
-                <input type="text" id="ExpectedLocationName" name="ExpectedLocationName" class="form-control"
-                       value="@Model.ExpectedLocationName"
-                       placeholder="يُعبَّأ تلقائياً بعد اختيار نقطة على الخريطة، ويمكنك تعديله يدوياً" />
+                <input type="text" id="ExpectedLocationName" name="ExpectedLocationName" class="form-control" value="@Model.ExpectedLocationName" />
             </div>
 
             <div id="edituser-map" class="athar-map"></div>
@@ -106,12 +179,159 @@
                 }
             </div>
 
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">نصف القطر المسموح (متر)</label>
+                    <input type="number" min="1" name="AllowedRadiusMeters" class="form-control" value="@Model.AllowedRadiusMeters" />
+                </div>
+            </div>
+
             <input type="hidden" id="ExpectedLatitude" name="ExpectedLatitude" value="@(Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
             <input type="hidden" id="ExpectedLongitude" name="ExpectedLongitude" value="@(Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
         </div>
 
         <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
         <a asp-action="Users" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>
+
+<div class="athar-card mt-3">
+    <h5>المناصب الوظيفية</h5>
+
+    @if (positions.Any())
+    {
+        <table class="table table-sm mt-2">
+            <thead>
+                <tr>
+                    <th>القسم</th>
+                    <th>الرتبة</th>
+                    <th>المسار</th>
+                    <th>تاريخ البداية</th>
+                    <th>تاريخ النهاية</th>
+                    <th>أساسي</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var pos in positions)
+                {
+                    <tr>
+                        <td>@pos.Department?.Name</td>
+                        <td>@pos.Rank</td>
+                        <td>@pos.Track</td>
+                        <td>@pos.StartDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(pos.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td>@(pos.IsPrimary ? "نعم" : "لا")</td>
+                        <td>
+                            @if (pos.EndDate == null)
+                            {
+                                <form method="post" asp-action="EndPosition" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@pos.Id" />
+                                    <input type="hidden" name="userId" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">إنهاء</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="text-muted">لا توجد مناصب مسجلة بعد</p>
+    }
+
+    <hr />
+    <h6>إضافة منصب جديد</h6>
+    <form method="post" asp-action="AddPosition" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userId" value="@Model.Id" />
+        <div class="col-md-3">
+            <label class="form-label">القسم</label>
+            <select name="DepartmentId" class="form-select form-select-sm" required>
+                @foreach (var d in departments)
+                {
+                    <option value="@d.Id">@d.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">الرتبة</label>
+            <select name="Rank" class="form-select form-select-sm">
+                @foreach (var jr in jobRanks)
+                {
+                    <option value="@jr.Value">@jr.Label</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">المسار</label>
+            <select name="Track" class="form-select form-select-sm">
+                @foreach (var ct in careerTracks)
+                {
+                    <option value="@ct.Value">@ct.Label</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">تاريخ البداية</label>
+            <input type="date" name="StartDate" class="form-control form-control-sm" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div class="col-md-1">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="IsPrimary" value="true" id="isPrimaryPos" checked />
+                <label class="form-check-label" for="isPrimaryPos">أساسي</label>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة</button>
+        </div>
+    </form>
+</div>
+
+<div class="athar-card mt-3">
+    <h5>صلاحيات إضافية ممنوحة يدوياً</h5>
+    <p class="text-muted small">تُضاف فوق صلاحيات دور المستخدم (اتحاد Union) ولا تُلغي أي صلاحية من الدور.</p>
+
+    @if (overridePermissions.Any())
+    {
+        <ul class="list-group mb-3">
+            @foreach (var up in overridePermissions)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @up.Permission.Name <small class="text-muted">(@up.Permission.Code)</small>
+                    <form method="post" asp-action="RemoveUserPermission" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@up.Id" />
+                        <input type="hidden" name="userId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">إزالة</button>
+                    </form>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="text-muted">لا توجد صلاحيات إضافية ممنوحة حالياً</p>
+    }
+
+    <form method="post" asp-action="AddUserPermission" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userId" value="@Model.Id" />
+        <div class="col-md-8">
+            <label class="form-label">منح صلاحية إضافية</label>
+            <select name="permissionId" class="form-select">
+                @foreach (var perm in allPermissions.Where(p => !overridePermissionIds.Contains(p.Id)))
+                {
+                    <option value="@perm.Id">@perm.Name (@perm.Code)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn athar-btn w-100">+ منح الصلاحية</button>
+        </div>
     </form>
 </div>
 

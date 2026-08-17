@@ -38,10 +38,29 @@ namespace AtharERP_System.Controllers
             ViewBag.TotalRoles = await _roleManager.Roles.CountAsync();
             ViewBag.TotalPermissions = await _context.Permissions.CountAsync();
 
+            ViewBag.LatestUsers = await _userManager.Users
+                .Include(u => u.Department)
+                .OrderByDescending(u => u.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
+            var deptCounts = await _context.Departments
+                .Where(d => d.IsActive)
+                .Select(d => new { d.Name, Count = d.Users.Count(u => u.IsActive) })
+                .OrderByDescending(d => d.Count)
+                .ToListAsync();
+
+            ViewBag.DepartmentDistribution = deptCounts
+                .Select(d => new KeyValuePair<string, int>(d.Name, d.Count))
+                .ToList();
+
             return View();
         }
 
-    
+        public IActionResult Privacy()
+        {
+            return View();
+        }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

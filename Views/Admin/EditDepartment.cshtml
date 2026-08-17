@@ -1,0 +1,59 @@
+﻿@using AtharERP_System.Models.Entities
+@model Department
+@{
+    ViewData["Title"] = "تعديل القسم";
+    var parentDepartments = ViewBag.ParentDepartments as List<Department> ?? new List<Department>();
+}
+
+<h1 class="athar-page-title">تعديل القسم</h1>
+
+<div class="athar-card mt-3">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="EditDepartment" asp-route-id="@Model.Id">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم القسم</label>
+                <input type="text" name="Name" class="form-control" value="@Model.Name" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">القسم الرئيسي (اختياري)</label>
+                <select name="ParentDepartmentId" class="form-select">
+                    <option value="">-- لا يوجد (قسم رئيسي) --</option>
+                    @foreach (var d in parentDepartments)
+                    {
+                        <option value="@d.Id" selected="@(Model.ParentDepartmentId == d.Id)">@d.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">الوصف</label>
+                <textarea name="Description" class="form-control" rows="3">@Model.Description</textarea>
+            </div>
+        </div>
+
+        <div class="mb-3 form-check form-switch">
+            <input type="checkbox" name="IsActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
+            <input type="hidden" name="IsActive" value="false" />
+            <label class="form-check-label" for="isActive">نشط</label>
+        </div>
+
+        <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
+        <a asp-action="Departments" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>

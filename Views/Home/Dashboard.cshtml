@@ -1,5 +1,8 @@
-﻿@{
+﻿@using AtharERP_System.Models.Entities
+@{
     ViewData["Title"] = "لوحة التحكم";
+    var latestUsers = ViewBag.LatestUsers as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var deptDistribution = ViewBag.DepartmentDistribution as List<KeyValuePair<string, int>> ?? new List<KeyValuePair<string, int>>();
 }
 
 <h1 class="athar-page-title">لوحة التحكم</h1>
@@ -32,10 +35,74 @@
     </div>
 </div>
 
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <div class="athar-card">
+            <h5>أحدث المستخدمين المسجلين</h5>
+            @if (!latestUsers.Any())
+            {
+                <p class="text-muted">لا يوجد مستخدمون بعد</p>
+            }
+            else
+            {
+                <table class="table table-sm mt-2">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>القسم</th>
+                            <th>تاريخ التسجيل</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in latestUsers)
+                        {
+                            <tr>
+                                <td>@u.FullName</td>
+                                <td>@(u.Department?.Name ?? "-")</td>
+                                <td>@u.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="athar-card">
+            <h5>توزيع المستخدمين حسب القسم</h5>
+            @if (!deptDistribution.Any())
+            {
+                <p class="text-muted">لا توجد بيانات بعد</p>
+            }
+            else
+            {
+                <table class="table table-sm mt-2">
+                    <thead>
+                        <tr>
+                            <th>القسم</th>
+                            <th>عدد الموظفين النشطين</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in deptDistribution)
+                        {
+                            <tr>
+                                <td>@d.Key</td>
+                                <td>@d.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
 @if (User.IsInRole("مدير النظام"))
 {
-    <div class="mt-4">
+    <div class="mt-3">
         <a asp-controller="Admin" asp-action="Users" class="btn athar-btn me-2">إدارة المستخدمين</a>
-        <a asp-controller="Admin" asp-action="Roles" class="btn athar-btn-outline">إدارة الأدوار</a>
+        <a asp-controller="Admin" asp-action="Roles" class="btn athar-btn-outline me-2">إدارة الأدوار</a>
+        <a asp-controller="Admin" asp-action="Departments" class="btn athar-btn-outline">إدارة الأقسام</a>
     </div>
 }
