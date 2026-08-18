@@ -414,3 +414,62 @@ body {
     background-color: #7A1A1A;
     color: #fff;
 }
+/* ===== شعار أثر (حماية حقوق النشر) ===== */
+.athar-navbar-logo {
+    height: 42px;
+    width: auto;
+}
+
+.athar-auth-logo {
+    max-width: 260px;
+    width: 100%;
+    height: auto;
+}
+
+.athar-footer-logo {
+    height: 20px;
+    width: auto;
+    opacity: 0.85;
+}
+
+/* ===== ترويسة وعلامة مائية للتقارير المطبوعة (جاهزة لكل الوحدات القادمة) ===== */
+.athar-report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--athar-primary);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+    .athar-report-header img {
+        height: 60px;
+        width: auto;
+    }
+
+.athar-report-watermark {
+    position: relative;
+}
+
+    .athar-report-watermark::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url('/images/logo-outline.png');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 55%;
+        opacity: 0.06;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+@media print {
+    .athar-navbar, .athar-footer {
+        display: none !important;
+    }
+
+    .athar-report-watermark::before {
+        opacity: 0.08;
+    }
+}

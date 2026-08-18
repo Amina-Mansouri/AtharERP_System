@@ -1,0 +1,11 @@
+﻿@{
+    var reportTitle = ViewData["ReportTitle"] as string ?? "تقرير";
+}
+
+<div class="athar-report-header">
+    <img src="~/images/logo-full.png" alt="أثر للتصاميم والاستشارات الهندسية" />
+    <div class="text-end">
+        <h4 class="mb-0">@reportTitle</h4>
+        <small class="text-muted">@DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small>
+    </div>
+</div>
