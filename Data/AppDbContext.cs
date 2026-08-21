@@ -18,14 +18,23 @@ namespace AtharERP_System.Data
         public DbSet<EmployeePosition> EmployeePositions { get; set; } = null!;
         public DbSet<UserPermission> UserPermissions { get; set; } = null!;
 
-        // Module 2 (سابق - لم يُمس): إدارة المشاريع
+        // Module 02: إدارة المشاريع
         public DbSet<Client> Clients { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
-        public DbSet<ProjectEngineer> ProjectEngineers { get; set; } = null!;
         public DbSet<ProjectStage> ProjectStages { get; set; } = null!;
         public DbSet<ProjectStep> ProjectSteps { get; set; } = null!;
         public DbSet<ProjectTask> ProjectTasks { get; set; } = null!;
+        public DbSet<TaskAssignee> TaskAssignees { get; set; } = null!;
+        public DbSet<TaskTodo> TaskTodos { get; set; } = null!;
         public DbSet<TaskDependency> TaskDependencies { get; set; } = null!;
+        public DbSet<ProjectCost> ProjectCosts { get; set; } = null!;
+        public DbSet<ProjectCostSubtask> ProjectCostSubtasks { get; set; } = null!;
+        public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; } = null!;
+        public DbSet<ProjectDocument> ProjectDocuments { get; set; } = null!;
+        public DbSet<ProjectTimeline> ProjectTimelines { get; set; } = null!;
+        public DbSet<FinancialRecord> FinancialRecords { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -53,7 +62,6 @@ namespace AtharERP_System.Data
                 .HasForeignKey(rp => rp.PermissionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ========== الفهارس الفريدة ==========
             builder.Entity<Permission>()
                 .HasIndex(p => p.Code)
                 .IsUnique();
@@ -69,14 +77,12 @@ namespace AtharERP_System.Data
                 .HasForeignKey(d => d.ParentDepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== قسم المستخدم الأساسي ==========
             builder.Entity<ApplicationUser>()
                 .HasOne(u => u.Department)
                 .WithMany(d => d.Users)
                 .HasForeignKey(u => u.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== المناصب المتعددة (EmployeePosition) ==========
             builder.Entity<EmployeePosition>()
                 .HasOne(ep => ep.User)
                 .WithMany(u => u.EmployeePositions)
@@ -89,7 +95,6 @@ namespace AtharERP_System.Data
                 .HasForeignKey(ep => ep.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== الصلاحيات الإضافية الممنوحة يدوياً (UserPermission) ==========
             builder.Entity<UserPermission>()
                 .HasOne(up => up.User)
                 .WithMany(u => u.UserPermissions)
@@ -106,10 +111,16 @@ namespace AtharERP_System.Data
                 .HasIndex(up => new { up.UserId, up.PermissionId })
                 .IsUnique();
 
-            // ========== علاقات المشاريع (Module 2 - سابق، بدون تغيير) ==========
+            // ========== المشروع (Project) ==========
             builder.Entity<Project>()
                 .HasIndex(p => p.Code)
                 .IsUnique();
+
+            builder.Entity<Project>()
+                .HasOne(p => p.Client)
+                .WithMany(c => c.Projects)
+                .HasForeignKey(p => p.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Project>()
                 .HasOne(p => p.ParentProject)
@@ -118,33 +129,12 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Project>()
-                .HasOne(p => p.ProjectManager)
+                .HasOne(p => p.CreatedBy)
                 .WithMany()
-                .HasForeignKey(p => p.ProjectManagerId)
+                .HasForeignKey(p => p.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Project>()
-                .HasOne(p => p.Client)
-                .WithMany(c => c.Projects)
-                .HasForeignKey(p => p.ClientId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<ProjectEngineer>()
-                .HasOne(pe => pe.Project)
-                .WithMany(p => p.ProjectEngineers)
-                .HasForeignKey(pe => pe.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ProjectEngineer>()
-                .HasOne(pe => pe.User)
-                .WithMany()
-                .HasForeignKey(pe => pe.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<ProjectEngineer>()
-                .HasIndex(pe => new { pe.ProjectId, pe.UserId })
-                .IsUnique();
-
+            // ========== مراحل المشروع (ProjectStage) ==========
             builder.Entity<ProjectStage>()
                 .HasOne(s => s.Project)
                 .WithMany(p => p.Stages)
@@ -158,27 +148,74 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ProjectStage>()
-                .HasIndex(s => new { s.ProjectId, s.Order })
-                .IsUnique();
-
-            builder.Entity<ProjectStep>()
-                .HasOne(st => st.ProjectStage)
-                .WithMany(s => s.Steps)
-                .HasForeignKey(st => st.ProjectStageId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ProjectTask>()
-                .HasOne(t => t.ProjectStage)
-                .WithMany(s => s.Tasks)
-                .HasForeignKey(t => t.ProjectStageId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ProjectTask>()
-                .HasOne(t => t.AssignedTo)
+                .HasOne(s => s.Department)
                 .WithMany()
-                .HasForeignKey(t => t.AssignedToId)
+                .HasForeignKey(s => s.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<ProjectStage>()
+                .HasIndex(s => new { s.ProjectId, s.Sequence })
+                .IsUnique();
+
+            // ========== خطوات المرحلة (ProjectStep) ==========
+            builder.Entity<ProjectStep>()
+                .HasOne(st => st.Stage)
+                .WithMany(s => s.Steps)
+                .HasForeignKey(st => st.StageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectStep>()
+                .HasOne(st => st.CompletedBy)
+                .WithMany()
+                .HasForeignKey(st => st.CompletedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== مهام المشروع (ProjectTask) ==========
+            // المسار الأساسي للحذف عبر Project مباشرة (ProjectId إلزامي)
+            builder.Entity<ProjectTask>()
+                .HasOne(t => t.Project)
+                .WithMany(p => p.Tasks)
+                .HasForeignKey(t => t.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict لتفادي تعارض مسارات الحذف المتعددة مع المسار أعلاه (StageId اختياري أصلاً)
+            builder.Entity<ProjectTask>()
+                .HasOne(t => t.Stage)
+                .WithMany(s => s.Tasks)
+                .HasForeignKey(t => t.StageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProjectTask>()
+                .HasOne(t => t.CreatedBy)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== المكلَّفون بالمهمة (TaskAssignee) ==========
+            builder.Entity<TaskAssignee>()
+                .HasOne(ta => ta.Task)
+                .WithMany(t => t.Assignees)
+                .HasForeignKey(ta => ta.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<TaskAssignee>()
+                .HasOne(ta => ta.User)
+                .WithMany()
+                .HasForeignKey(ta => ta.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TaskAssignee>()
+                .HasIndex(ta => new { ta.TaskId, ta.UserId })
+                .IsUnique();
+
+            // ========== قائمة مهام To-Do (TaskTodo) ==========
+            builder.Entity<TaskTodo>()
+                .HasOne(tt => tt.Task)
+                .WithMany(t => t.Todos)
+                .HasForeignKey(tt => tt.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== تبعيات المهام (TaskDependency) ==========
             builder.Entity<TaskDependency>()
                 .HasOne(td => td.Task)
                 .WithMany(t => t.Dependencies)
@@ -194,6 +231,86 @@ namespace AtharERP_System.Data
             builder.Entity<TaskDependency>()
                 .HasIndex(td => new { td.TaskId, td.DependsOnTaskId })
                 .IsUnique();
+
+            // ========== تكاليف المشروع (ProjectCost) ==========
+            builder.Entity<ProjectCost>()
+                .HasOne(c => c.Project)
+                .WithMany(p => p.Costs)
+                .HasForeignKey(c => c.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectCostSubtask>()
+                .HasOne(cs => cs.ProjectCost)
+                .WithMany(c => c.Subtasks)
+                .HasForeignKey(cs => cs.ProjectCostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== فريق المشروع (ProjectTeamMember) ==========
+            builder.Entity<ProjectTeamMember>()
+                .HasOne(tm => tm.Project)
+                .WithMany(p => p.TeamMembers)
+                .HasForeignKey(tm => tm.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectTeamMember>()
+                .HasOne(tm => tm.User)
+                .WithMany()
+                .HasForeignKey(tm => tm.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProjectTeamMember>()
+                .HasIndex(tm => new { tm.ProjectId, tm.UserId })
+                .IsUnique();
+
+            // ========== مستندات المشروع (ProjectDocument) ==========
+            builder.Entity<ProjectDocument>()
+                .HasOne(d => d.Project)
+                .WithMany(p => p.Documents)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectDocument>()
+                .HasOne(d => d.UploadedBy)
+                .WithMany()
+                .HasForeignKey(d => d.UploadedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== الجدول الزمني (ProjectTimeline) ==========
+            builder.Entity<ProjectTimeline>()
+                .HasOne(tl => tl.Project)
+                .WithMany(p => p.Timelines)
+                .HasForeignKey(tl => tl.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== السجلات المالية (FinancialRecord) ==========
+            // Restrict: البيانات المالية لا تُحذف تلقائياً عند حذف المشروع (سجل تدقيق)
+            builder.Entity<FinancialRecord>()
+                .HasOne(f => f.Project)
+                .WithMany()
+                .HasForeignKey(f => f.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // SetNull: يمكن أن يبقى السجل المالي حتى لو حُذفت التكلفة المصدر (ProjectCostId اختياري)
+            builder.Entity<FinancialRecord>()
+                .HasOne(f => f.ProjectCost)
+                .WithMany()
+                .HasForeignKey(f => f.ProjectCostId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ========== الإشعارات (Notification) ==========
+            builder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== سجل التدقيق (AuditLog) ==========
+            // Restrict: سجل التدقيق لا يُحذف أبداً تلقائياً
+            builder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
