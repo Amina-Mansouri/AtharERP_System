@@ -1,0 +1,45 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<Notification>
+@{
+    ViewData["Title"] = "الإشعارات";
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">الإشعارات</h1>
+    @if (Model.Any(n => !n.IsRead))
+    {
+        <form method="post" asp-action="MarkAllAsRead">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn athar-btn-outline">تحديد الكل كمقروء</button>
+        </form>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    @if (!Model.Any())
+    {
+        <p class="text-muted text-center mb-0">لا توجد إشعارات</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var n in Model)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center @(n.IsRead ? "" : "fw-bold")">
+                    <form method="post" asp-action="MarkAsRead" asp-route-id="@n.Id" class="d-flex justify-content-between align-items-center w-100">
+                        @Html.AntiForgeryToken()
+                        <span>
+                            @if (!n.IsRead)
+                            {
+                                <span class="badge bg-primary">جديد</span>
+                            }
+                            @n.Message
+                        </span>
+                        <span class="text-muted small">@n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        <button type="submit" class="btn btn-sm athar-btn-outline">فتح</button>
+                    </form>
+                </li>
+            }
+        </ul>
+    }
+</div>

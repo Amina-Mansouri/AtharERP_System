@@ -1,11 +1,26 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @using AtharERP_System.Models.Entities
+@using AtharERP_System.Data
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject AppDbContext DbContext
 
 <ul class="navbar-nav ms-auto align-items-lg-center">
     @if (SignInManager.IsSignedIn(User))
     {
+        var currentUserId = UserManager.GetUserId(User);
+        var unreadCount = currentUserId == null ? 0 : await DbContext.Notifications.CountAsync(n => n.UserId == currentUserId && !n.IsRead);
+
+        <li class="nav-item me-lg-2">
+            <a class="nav-link position-relative" asp-controller="Notifications" asp-action="Index" title="الإشعارات">
+                🔔
+                @if (unreadCount > 0)
+                {
+                    <span class="badge rounded-pill bg-danger">@(unreadCount > 99 ? "99+" : unreadCount.ToString())</span>
+                }
+            </a>
+        </li>
         <li class="nav-item me-lg-3">
             <span class="nav-link athar-user-greeting">مرحباً، @User.Identity?.Name</span>
         </li>
