@@ -1,21 +1,27 @@
 ﻿using AtharERP_System.Authorization;
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
+using AtharERP_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AtharERP_System.Controllers
 {
     public class ClientsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly AuditService _audit;
 
-        public ClientsController(AppDbContext context)
+        public ClientsController(AppDbContext context, AuditService audit)
         {
             _context = context;
+            _audit = audit;
         }
 
-        [RequirePermission("Clients.View")]
+        private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        [RequirePermission("PR.Clients")]
         public async Task<IActionResult> Index(string? search)
         {
             var query = _context.Clients
@@ -36,14 +42,14 @@ namespace AtharERP_System.Controllers
             return View(clients);
         }
 
-        [RequirePermission("Clients.Create")]
+        [RequirePermission("PR.Clients")]
         [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
-        [RequirePermission("Clients.Create")]
+        [RequirePermission("PR.Clients")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
@@ -58,11 +64,13 @@ namespace AtharERP_System.Controllers
             _context.Clients.Add(model);
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(Client), model.Id.ToString(), $"إنشاء عميل: {model.Name}");
+
             TempData["Success"] = $"تم إضافة العميل {model.Name} بنجاح";
             return RedirectToAction("Index");
         }
 
-        [RequirePermission("Clients.Edit")]
+        [RequirePermission("PR.Clients")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -73,7 +81,7 @@ namespace AtharERP_System.Controllers
             return View(client);
         }
 
-        [RequirePermission("Clients.Edit")]
+        [RequirePermission("PR.Clients")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
@@ -98,11 +106,13 @@ namespace AtharERP_System.Controllers
 
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(Client), client.Id.ToString(), $"تعديل بيانات العميل: {client.Name}");
+
             TempData["Success"] = $"تم تحديث بيانات العميل {client.Name} بنجاح";
             return RedirectToAction("Index");
         }
 
-        [RequirePermission("Clients.Delete")]
+        [RequirePermission("PR.Clients")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -117,10 +127,13 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Index");
             }
 
+            var clientName = client.Name;
             _context.Clients.Remove(client);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"تم حذف العميل {client.Name} بنجاح";
+            await _audit.LogAsync(CurrentUserId, "Delete", nameof(Client), id.ToString(), $"حذف العميل: {clientName}");
+
+            TempData["Success"] = $"تم حذف العميل {clientName} بنجاح";
             return RedirectToAction("Index");
         }
     }

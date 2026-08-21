@@ -81,7 +81,7 @@ namespace AtharERP_System.Data
                 }
             }
 
-            // ========== كتالوج الصلاحيات (47 صلاحية - القسم 6) ==========
+            // ========== كتالوج الصلاحيات (47 صلاحية - القسم 6 من الوحدة 1) ==========
             var permissions = new[]
             {
                 // 6.1 عام / المستخدمون
@@ -170,7 +170,7 @@ namespace AtharERP_System.Data
 
             await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[]
             {
-                "Projects.ViewAll", "Projects.Create", "Projects.Tasks.Manage",
+                "Projects.ViewAll", "Projects.Create", "Projects.Stages.Manage", "Projects.Tasks.Manage",
                 "Quality.View", "Quality.Approve", "Quality.Reports",
                 "Reports.View"
             });
@@ -213,7 +213,7 @@ namespace AtharERP_System.Data
                 }
             }
 
-            // ========== عملاء ومشروع تجريبي (Module 2 سابق - بدون تغيير) ==========
+            // ========== عملاء ومشروع تجريبي ==========
             if (!await context.Clients.AnyAsync())
             {
                 var sampleClients = new[]
@@ -258,18 +258,30 @@ namespace AtharERP_System.Data
 
                 if (!await context.Projects.AnyAsync())
                 {
-                    context.Projects.Add(new Project
+                    var sampleProject = new Project
                     {
                         Code = $"PRJ-{DateTime.UtcNow.Year}-001",
                         Name = "مشروع تجريبي - مجمع سكني",
                         Description = "مشروع تجريبي لتهيئة النظام",
-                        Location = "طرابلس",
-                        StartDate = DateTime.UtcNow,
-                        Status = ProjectStatus.New,
-                        Budget = 500000,
                         ClientId = sampleClients[0].Id,
-                        IsActive = true,
+                        Type = ProjectType.Main,
+                        Status = ProjectStatus.New,
+                        PlannedStartDate = DateTime.UtcNow,
+                        Budget = 500000,
+                        Priority = Priority.Normal,
+                        CreatedById = admin.Id,
                         CreatedAt = DateTime.UtcNow
+                    };
+
+                    context.Projects.Add(sampleProject);
+                    await context.SaveChangesAsync();
+
+                    context.ProjectTeamMembers.Add(new ProjectTeamMember
+                    {
+                        ProjectId = sampleProject.Id,
+                        UserId = admin.Id,
+                        Role = TeamRole.ProjectManager,
+                        JoinedAt = DateTime.UtcNow
                     });
                     await context.SaveChangesAsync();
                 }
