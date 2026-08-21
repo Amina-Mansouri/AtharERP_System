@@ -2,13 +2,13 @@
 
 namespace AtharERP_System.Models.Entities
 {
-    public enum Priority
+    public enum TaskPriority
     {
         [Display(Name = "منخفضة")]
         Low = 1,
 
-        [Display(Name = "عادية")]
-        Normal = 2,
+        [Display(Name = "متوسطة")]
+        Medium = 2,
 
         [Display(Name = "عالية")]
         High = 3,

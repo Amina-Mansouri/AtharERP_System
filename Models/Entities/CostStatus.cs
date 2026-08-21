@@ -2,21 +2,18 @@
 
 namespace AtharERP_System.Models.Entities
 {
-    public enum ProjectStatus
+    public enum CostStatus
     {
-        [Display(Name = "جديد")]
-        New = 1,
+        [Display(Name = "معلق")]
+        Pending = 1,
 
         [Display(Name = "قيد التنفيذ")]
         InProgress = 2,
 
-        [Display(Name = "متوقف مؤقتاً")]
-        OnHold = 3,
-
         [Display(Name = "مكتمل")]
-        Completed = 4,
+        Completed = 3,
 
         [Display(Name = "ملغى")]
-        Cancelled = 5
+        Cancelled = 4
     }
 }
