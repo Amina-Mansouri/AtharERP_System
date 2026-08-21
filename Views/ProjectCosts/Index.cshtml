@@ -1,0 +1,191 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ProjectCost>
+@{
+    ViewData["Title"] = "تكاليف المشروع";
+    var project = ViewBag.Project as Project;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+
+    string CostStatusLabel(CostStatus s) => s switch
+    {
+        CostStatus.Pending => "معلق",
+        CostStatus.InProgress => "قيد التنفيذ",
+        CostStatus.Completed => "مكتمل",
+        CostStatus.Cancelled => "ملغى",
+        _ => s.ToString()
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">تكاليف مشروع: @project?.Name <small class="text-muted">(@project?.Code)</small></h1>
+    <a asp-controller="Projects" asp-action="Details" asp-route-id="@project?.Id" class="btn athar-btn-outline">العودة إلى المشروع</a>
+</div>
+
+<div class="athar-card mt-3">
+    <div class="table-responsive">
+        <table class="table athar-table align-middle">
+            <thead>
+                <tr>
+                    <th>نوع التكلفة</th>
+                    <th>المساحة (م²)</th>
+                    <th>السعر/م²</th>
+                    <th>المبلغ</th>
+                    <th>الخصم/الإضافة %</th>
+                    <th>المبلغ النهائي</th>
+                    <th>الحالة</th>
+                    <th>مرحّل للمالية</th>
+                    @if (canEdit)
+                    {
+                        <th>إجراءات</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="text-center text-muted">لا توجد بنود تكلفة بعد</td></tr>
+                }
+                @foreach (var cost in Model)
+                {
+                    <tr>
+                        <td>
+                            @cost.CostType
+                            @if (!string.IsNullOrEmpty(cost.Description))
+                            {
+                                <br /><small class="text-muted">@cost.Description</small>
+                            }
+                        </td>
+                        <td>@(cost.Area?.ToString("N2") ?? "-")</td>
+                        <td>@(cost.PricePerMeter?.ToString("N2") ?? "-")</td>
+                        <td>@cost.Amount.ToString("N2")</td>
+                        <td>@cost.DiscountOrAdditionPercent.ToString("N1")%</td>
+                        <td><strong>@cost.FinalAmount.ToString("N2")</strong></td>
+                        <td>
+                            @if (canEdit)
+                            {
+                                <form method="post" asp-action="Edit" asp-route-id="@cost.Id" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="CostType" value="@cost.CostType" />
+                                    <input type="hidden" name="Description" value="@cost.Description" />
+                                    <input type="hidden" name="Area" value="@cost.Area" />
+                                    <input type="hidden" name="PricePerMeter" value="@cost.PricePerMeter" />
+                                    <input type="hidden" name="Amount" value="@cost.Amount" />
+                                    <input type="hidden" name="DiscountOrAdditionPercent" value="@cost.DiscountOrAdditionPercent" />
+                                    <select name="Status" class="form-select form-select-sm" onchange="this.form.submit()" @(cost.IsTransferredToFinance ? "disabled" : "")>
+                                        <option value="Pending" selected="@(cost.Status == CostStatus.Pending)">معلق</option>
+                                        <option value="InProgress" selected="@(cost.Status == CostStatus.InProgress)">قيد التنفيذ</option>
+                                        <option value="Completed" selected="@(cost.Status == CostStatus.Completed)">مكتمل</option>
+                                        <option value="Cancelled" selected="@(cost.Status == CostStatus.Cancelled)">ملغى</option>
+                                    </select>
+                                </form>
+                            }
+                            else
+                            {
+                                @CostStatusLabel(cost.Status)
+                            }
+                        </td>
+                        <td>@(cost.IsTransferredToFinance ? "نعم" : "لا")</td>
+                        @if (canEdit)
+                        {
+                            <td>
+                                @if (!cost.IsTransferredToFinance)
+                                {
+                                    <form method="post" asp-action="Delete" asp-route-id="@cost.Id" class="d-inline"
+                                          onsubmit="return confirm('حذف بند التكلفة هذا؟');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                                    </form>
+                                }
+                            </td>
+                        }
+                    </tr>
+                    @if (cost.Subtasks.Any() || canEdit)
+                    {
+                        <tr>
+                            <td colspan="9">
+                                <div class="ps-3">
+                                    <small class="text-muted">مهام فرعية:</small>
+                                    <ul class="list-unstyled mb-1">
+                                        @foreach (var st in cost.Subtasks)
+                                        {
+                                            <li class="d-flex align-items-center gap-2">
+                                                @if (canEdit)
+                                                {
+                                                    <form method="post" asp-action="ToggleSubtask" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@st.Id" />
+                                                        <input type="hidden" name="projectId" value="@project?.Id" />
+                                                        <button type="submit" class="btn btn-sm @(st.IsCompleted ? "btn-success" : "btn-outline-secondary")">@(st.IsCompleted ? "✓" : "○")</button>
+                                                    </form>
+                                                }
+                                                <span class="@(st.IsCompleted ? "text-decoration-line-through text-muted" : "")">@st.Name</span>
+                                                @if (canEdit)
+                                                {
+                                                    <form method="post" asp-action="DeleteSubtask" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@st.Id" />
+                                                        <input type="hidden" name="projectId" value="@project?.Id" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                                                    </form>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                    @if (canEdit)
+                                    {
+                                        <form method="post" asp-action="AddSubtask" class="row g-2 align-items-end">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="projectCostId" value="@cost.Id" />
+                                            <div class="col-md-6">
+                                                <input type="text" name="name" class="form-control form-control-sm" placeholder="اسم المهمة الفرعية" required />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <button type="submit" class="btn btn-sm athar-btn-outline">+ إضافة</button>
+                                            </div>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (canEdit)
+    {
+        <hr />
+        <h6>إضافة بند تكلفة جديد</h6>
+        <form method="post" asp-action="Create" class="row g-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ProjectId" value="@project?.Id" />
+            <div class="col-md-2">
+                <label class="form-label">نوع التكلفة</label>
+                <input type="text" name="CostType" class="form-control form-control-sm" placeholder="معماري، إنشائي..." required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">الوصف</label>
+                <input type="text" name="Description" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">المساحة م²</label>
+                <input type="number" step="0.01" min="0" name="Area" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">السعر/م²</label>
+                <input type="number" step="0.01" min="0" name="PricePerMeter" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">المبلغ (إن لم تُحسب من المساحة)</label>
+                <input type="number" step="0.01" min="0" name="Amount" class="form-control form-control-sm" value="0" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">الخصم/الإضافة %</label>
+                <input type="number" step="0.01" name="DiscountOrAdditionPercent" class="form-control form-control-sm" value="0" />
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة</button>
+            </div>
+        </form>
+    }
+</div>
