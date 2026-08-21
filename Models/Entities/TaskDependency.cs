@@ -19,5 +19,8 @@ namespace AtharERP_System.Models.Entities
 
         [ForeignKey("DependsOnTaskId")]
         public virtual ProjectTask DependsOnTask { get; set; } = null!;
+
+        [Display(Name = "نوع التبعية")]
+        public DependencyType Type { get; set; } = DependencyType.FinishToStart;
     }
 }

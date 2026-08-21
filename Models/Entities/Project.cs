@@ -8,63 +8,25 @@ namespace AtharERP_System.Models.Entities
         public int Id { get; set; }
 
         [Required]
-        [StringLength(20)]
+        [StringLength(50)]
         [Display(Name = "رمز المشروع")]
         public string Code { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "اسم المشروع مطلوب")]
-        [StringLength(200)]
+        [StringLength(255)]
         [Display(Name = "اسم المشروع")]
         public string Name { get; set; } = string.Empty;
 
-        [StringLength(1000)]
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
-        [StringLength(250)]
-        [Display(Name = "الموقع")]
-        public string? Location { get; set; }
-
-        [Display(Name = "خط العرض")]
-        public double? Latitude { get; set; }
-
-        [Display(Name = "خط الطول")]
-        public double? Longitude { get; set; }
-
-        [Required(ErrorMessage = "تاريخ البدء مطلوب")]
-        [DataType(DataType.Date)]
-        [Display(Name = "تاريخ البدء")]
-        public DateTime StartDate { get; set; } = DateTime.UtcNow;
-
-        [DataType(DataType.Date)]
-        [Display(Name = "تاريخ الانتهاء المتوقع")]
-        public DateTime? EndDate { get; set; }
-
-        [Display(Name = "الحالة")]
-        public ProjectStatus Status { get; set; } = ProjectStatus.New;
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "الميزانية")]
-        public decimal Budget { get; set; }
-
-        [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "نسبة الإنجاز")]
-        public decimal CompletionPercentage { get; set; }
-
-        [Display(Name = "نشط")]
-        public bool IsActive { get; set; } = true;
-
-        [Display(Name = "تاريخ الإنشاء")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // ========== العميل ==========
+        [Required]
         [Display(Name = "العميل")]
-        public int? ClientId { get; set; }
+        public int ClientId { get; set; }
 
         [ForeignKey("ClientId")]
-        public virtual Client? Client { get; set; }
+        public virtual Client Client { get; set; } = null!;
 
-        // ========== التسلسل الهرمي: مشروع رئيسي / فرعي ==========
         [Display(Name = "المشروع الرئيسي")]
         public int? ParentProjectId { get; set; }
 
@@ -73,17 +35,61 @@ namespace AtharERP_System.Models.Entities
 
         public virtual ICollection<Project> ChildProjects { get; set; } = new List<Project>();
 
-        // ========== مدير المشروع ==========
-        [Display(Name = "مدير المشروع")]
-        public string? ProjectManagerId { get; set; }
+        [Display(Name = "نوع المشروع")]
+        public ProjectType Type { get; set; } = ProjectType.Main;
 
-        [ForeignKey("ProjectManagerId")]
-        public virtual ApplicationUser? ProjectManager { get; set; }
+        [Display(Name = "الحالة")]
+        public ProjectStatus Status { get; set; } = ProjectStatus.New;
 
-        // ========== المهندسون المكلفون ==========
-        public virtual ICollection<ProjectEngineer> ProjectEngineers { get; set; } = new List<ProjectEngineer>();
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ البدء المخطط")]
+        public DateTime? PlannedStartDate { get; set; }
 
-        // ========== مراحل المشروع ==========
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ الانتهاء المخطط")]
+        public DateTime? PlannedEndDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ البدء الفعلي")]
+        public DateTime? ActualStartDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ الانتهاء الفعلي")]
+        public DateTime? ActualEndDate { get; set; }
+
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "نسبة الإنجاز")]
+        public decimal CompletionPercentage { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "الميزانية")]
+        public decimal? Budget { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "التكلفة الفعلية")]
+        public decimal ActualCost { get; set; }
+
+        [Display(Name = "الأولوية")]
+        public Priority Priority { get; set; } = Priority.Normal;
+
+        [Display(Name = "عاجل")]
+        public bool IsUrgent { get; set; }
+
+        [Display(Name = "تاريخ الإنشاء")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        [Display(Name = "أُنشئ بواسطة")]
+        public string CreatedById { get; set; } = string.Empty;
+
+        [ForeignKey("CreatedById")]
+        public virtual ApplicationUser CreatedBy { get; set; } = null!;
+
         public virtual ICollection<ProjectStage> Stages { get; set; } = new List<ProjectStage>();
+        public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+        public virtual ICollection<ProjectTeamMember> TeamMembers { get; set; } = new List<ProjectTeamMember>();
+        public virtual ICollection<ProjectCost> Costs { get; set; } = new List<ProjectCost>();
+        public virtual ICollection<ProjectDocument> Documents { get; set; } = new List<ProjectDocument>();
+        public virtual ICollection<ProjectTimeline> Timelines { get; set; } = new List<ProjectTimeline>();
     }
 }

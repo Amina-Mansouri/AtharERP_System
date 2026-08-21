@@ -8,26 +8,35 @@ namespace AtharERP_System.Models.Entities
         public int Id { get; set; }
 
         [Required]
-        public int ProjectStageId { get; set; }
+        public int StageId { get; set; }
 
-        [ForeignKey("ProjectStageId")]
-        public virtual ProjectStage ProjectStage { get; set; } = null!;
+        [ForeignKey("StageId")]
+        public virtual ProjectStage Stage { get; set; } = null!;
 
         [Required(ErrorMessage = "اسم الخطوة مطلوب")]
-        [StringLength(200)]
+        [StringLength(255)]
         [Display(Name = "اسم الخطوة")]
         public string Name { get; set; } = string.Empty;
 
-        // الوزن ثابت بعد الإنشاء ولا يُعدَّل لاحقاً (قاعدة عمل)
+        // الوزن ثابت بعد الإنشاء (قاعدة عمل من الوحدة 1، لا تزال سارية)
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "الوزن (% داخل المرحلة)")]
         public decimal Weight { get; set; }
 
         [Display(Name = "الحالة")]
-        public ProjectStatus Status { get; set; } = ProjectStatus.New;
+        public StepStatus Status { get; set; } = StepStatus.NotStarted;
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "التكلفة الفعلية")]
         public decimal ActualCost { get; set; }
+
+        [Display(Name = "تاريخ الإكمال")]
+        public DateTime? CompletedDate { get; set; }
+
+        [Display(Name = "أُكملت بواسطة")]
+        public string? CompletedById { get; set; }
+
+        [ForeignKey("CompletedById")]
+        public virtual ApplicationUser? CompletedBy { get; set; }
     }
 }

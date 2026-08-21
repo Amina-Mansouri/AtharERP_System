@@ -8,35 +8,59 @@ namespace AtharERP_System.Models.Entities
         public int Id { get; set; }
 
         [Required]
-        public int ProjectStageId { get; set; }
+        public int ProjectId { get; set; }
 
-        [ForeignKey("ProjectStageId")]
-        public virtual ProjectStage ProjectStage { get; set; } = null!;
+        [ForeignKey("ProjectId")]
+        public virtual Project Project { get; set; } = null!;
+
+        [Display(Name = "المرحلة")]
+        public int? StageId { get; set; }
+
+        [ForeignKey("StageId")]
+        public virtual ProjectStage? Stage { get; set; }
 
         [Required(ErrorMessage = "عنوان المهمة مطلوب")]
-        [StringLength(200)]
+        [StringLength(255)]
         [Display(Name = "العنوان")]
         public string Title { get; set; } = string.Empty;
 
-        [StringLength(1000)]
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
-        [Display(Name = "المكلَّف")]
-        public string? AssignedToId { get; set; }
-
-        [ForeignKey("AssignedToId")]
-        public virtual ApplicationUser? AssignedTo { get; set; }
-
-        [Display(Name = "تاريخ الاستحقاق")]
         [DataType(DataType.Date)]
+        [Display(Name = "تاريخ الاستحقاق")]
         public DateTime? DueDate { get; set; }
 
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ البدء المخطط")]
+        public DateTime? PlannedStartDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ الانتهاء المخطط")]
+        public DateTime? PlannedEndDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ التسليم الفعلي")]
+        public DateTime? ActualDeliveryDate { get; set; }
+
+        [Display(Name = "أيام التأخير")]
+        public int DelayDays { get; set; }
+
+        [Display(Name = "أيام التسليم المبكر")]
+        public int EarlyDeliveryDays { get; set; }
+
         [Display(Name = "الأولوية")]
-        public Priority Priority { get; set; } = Priority.Medium;
+        public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
         [Display(Name = "الحالة")]
         public ProjectTaskStatus Status { get; set; } = ProjectTaskStatus.NotStarted;
+
+        [Display(Name = "عاجلة")]
+        public bool IsUrgent { get; set; }
+
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "نسبة الإنجاز")]
+        public decimal CompletionPercentage { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "مبلغ المكافأة")]
@@ -46,14 +70,19 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "مبلغ الغرامة")]
         public decimal PenaltyAmount { get; set; }
 
-        [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "نسبة الإنجاز")]
-        public decimal CompletionPercentage { get; set; }
+        [Display(Name = "تاريخ الإنشاء")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // المهام التي تعتمد عليها هذه المهمة
+        [Required]
+        [Display(Name = "أُنشئت بواسطة")]
+        public string CreatedById { get; set; } = string.Empty;
+
+        [ForeignKey("CreatedById")]
+        public virtual ApplicationUser CreatedBy { get; set; } = null!;
+
+        public virtual ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
+        public virtual ICollection<TaskTodo> Todos { get; set; } = new List<TaskTodo>();
         public virtual ICollection<TaskDependency> Dependencies { get; set; } = new List<TaskDependency>();
-
-        // المهام التي تعتمد على هذه المهمة
         public virtual ICollection<TaskDependency> DependentTasks { get; set; } = new List<TaskDependency>();
     }
 }
