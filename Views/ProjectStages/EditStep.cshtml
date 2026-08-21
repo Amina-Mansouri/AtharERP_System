@@ -35,10 +35,9 @@
             <div class="col-md-3 mb-3">
                 <label class="form-label">الحالة</label>
                 <select name="Status" class="form-select">
-                    <option value="New" selected="@(Model.Status == ProjectStatus.New)">جديد</option>
-                    <option value="InProgress" selected="@(Model.Status == ProjectStatus.InProgress)">قيد التنفيذ</option>
-                    <option value="ClientReview" selected="@(Model.Status == ProjectStatus.ClientReview)">مراجعة العميل</option>
-                    <option value="Completed" selected="@(Model.Status == ProjectStatus.Completed)">مكتمل</option>
+                    <option value="NotStarted" selected="@(Model.Status == StepStatus.NotStarted)">لم تبدأ</option>
+                    <option value="InProgress" selected="@(Model.Status == StepStatus.InProgress)">قيد التنفيذ</option>
+                    <option value="Completed" selected="@(Model.Status == StepStatus.Completed)">مكتملة</option>
                 </select>
             </div>
         </div>
@@ -50,7 +49,12 @@
             </div>
         </div>
 
+        @if (Model.CompletedDate.HasValue)
+        {
+            <p class="text-muted small">اكتملت بتاريخ @Model.CompletedDate.Value.ToString("yyyy-MM-dd")</p>
+        }
+
         <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
-        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectStage.ProjectId" class="btn athar-btn-outline">إلغاء</a>
+        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Stage.ProjectId" class="btn athar-btn-outline">إلغاء</a>
     </form>
 </div>

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AtharERP_System.Models.Entities
 {
@@ -11,6 +12,7 @@ namespace AtharERP_System.Models.Entities
         public int StageId { get; set; }
 
         [ForeignKey("StageId")]
+        [ValidateNever]
         public virtual ProjectStage Stage { get; set; } = null!;
 
         [Required(ErrorMessage = "اسم الخطوة مطلوب")]
@@ -18,7 +20,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "اسم الخطوة")]
         public string Name { get; set; } = string.Empty;
 
-        // الوزن ثابت بعد الإنشاء (قاعدة عمل من الوحدة 1، لا تزال سارية)
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "الوزن (% داخل المرحلة)")]
         public decimal Weight { get; set; }

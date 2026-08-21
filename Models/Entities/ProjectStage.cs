@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AtharERP_System.Models.Entities
 {
@@ -11,6 +12,7 @@ namespace AtharERP_System.Models.Entities
         public int ProjectId { get; set; }
 
         [ForeignKey("ProjectId")]
+        [ValidateNever]
         public virtual Project Project { get; set; } = null!;
 
         [Required(ErrorMessage = "اسم المرحلة مطلوب")]

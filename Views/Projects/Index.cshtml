@@ -6,9 +6,21 @@
     ViewData["Title"] = "المشاريع";
     var search = ViewBag.Search as string;
     var status = ViewBag.Status as ProjectStatus?;
+    var type = ViewBag.Type as ProjectType?;
+    var canViewClient = ViewBag.CanViewClient as bool? ?? false;
     var canCreate = await PermissionService.HasPermissionAsync(User, "Projects.Create");
     var canEdit = await PermissionService.HasPermissionAsync(User, "Projects.Edit");
     var canDelete = await PermissionService.HasPermissionAsync(User, "Projects.Delete");
+
+    string StatusLabel(ProjectStatus s) => s switch
+    {
+        ProjectStatus.New => "جديد",
+        ProjectStatus.InProgress => "قيد التنفيذ",
+        ProjectStatus.OnHold => "متوقف مؤقتاً",
+        ProjectStatus.Completed => "مكتمل",
+        ProjectStatus.Cancelled => "ملغى",
+        _ => s.ToString()
+    };
 }
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -21,16 +33,24 @@
 
 <div class="athar-card mt-3">
     <form method="get" asp-action="Index" class="row g-2 mb-3">
-        <div class="col-md-6">
-            <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث بالاسم أو الرمز أو الموقع..." />
+        <div class="col-md-5">
+            <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث بالاسم أو الرمز..." />
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <select name="status" class="form-select">
                 <option value="">-- كل الحالات --</option>
                 <option value="New" selected="@(status == ProjectStatus.New)">جديد</option>
                 <option value="InProgress" selected="@(status == ProjectStatus.InProgress)">قيد التنفيذ</option>
-                <option value="ClientReview" selected="@(status == ProjectStatus.ClientReview)">مراجعة العميل</option>
+                <option value="OnHold" selected="@(status == ProjectStatus.OnHold)">متوقف مؤقتاً</option>
                 <option value="Completed" selected="@(status == ProjectStatus.Completed)">مكتمل</option>
+                <option value="Cancelled" selected="@(status == ProjectStatus.Cancelled)">ملغى</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="type" class="form-select">
+                <option value="">-- كل الأنواع --</option>
+                <option value="Main" selected="@(type == ProjectType.Main)">رئيسي</option>
+                <option value="Sub" selected="@(type == ProjectType.Sub)">فرعي</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -44,10 +64,13 @@
                 <tr>
                     <th>الرمز</th>
                     <th>اسم المشروع</th>
-                    <th>الموقع</th>
-                    <th>مدير المشروع</th>
-                    <th>تاريخ البدء</th>
+                    @if (canViewClient)
+                    {
+                        <th>العميل</th>
+                    }
+                    <th>النوع</th>
                     <th>الحالة</th>
+                    <th>نسبة الإنجاز</th>
                     <th>الميزانية</th>
                     <th>إجراءات</th>
                 </tr>
@@ -70,22 +93,20 @@
                                 <br /><small class="text-muted">فرعي من: @project.ParentProject.Name</small>
                             }
                         </td>
-                        <td>@(project.Location ?? "-")</td>
-                        <td>@(project.ProjectManager?.FullName ?? "-")</td>
-                        <td>@project.StartDate.ToString("yyyy-MM-dd")</td>
+                        @if (canViewClient)
+                        {
+                            <td>@(project.Client?.Name ?? "-")</td>
+                        }
+                        <td>@(project.Type == ProjectType.Main ? "رئيسي" : "فرعي")</td>
                         <td>
-                            <span class="badge athar-status-badge athar-status-@project.Status">
-                                @(project.Status switch
-                                {
-                                    ProjectStatus.New => "جديد",
-                                    ProjectStatus.InProgress => "قيد التنفيذ",
-                                    ProjectStatus.ClientReview => "مراجعة العميل",
-                                    ProjectStatus.Completed => "مكتمل",
-                                    _ => project.Status.ToString()
-                                })
-                            </span>
+                            <span class="badge athar-status-badge athar-status-@project.Status">@StatusLabel(project.Status)</span>
+                            @if (project.IsUrgent)
+                            {
+                                <span class="badge bg-danger">عاجل</span>
+                            }
                         </td>
-                        <td>@project.Budget.ToString("N2")</td>
+                        <td>@project.CompletionPercentage.ToString("N1")%</td>
+                        <td>@(project.Budget?.ToString("N2") ?? "-")</td>
                         <td>
                             <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm athar-btn-outline">عرض</a>
                             @if (canEdit)

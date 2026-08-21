@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AtharERP_System.Models.Entities
 {
@@ -11,6 +12,7 @@ namespace AtharERP_System.Models.Entities
         public int ProjectId { get; set; }
 
         [ForeignKey("ProjectId")]
+        [ValidateNever]
         public virtual Project Project { get; set; } = null!;
 
         [Display(Name = "المرحلة")]
@@ -75,9 +77,11 @@ namespace AtharERP_System.Models.Entities
 
         [Required]
         [Display(Name = "أُنشئت بواسطة")]
+        [ValidateNever]
         public string CreatedById { get; set; } = string.Empty;
 
         [ForeignKey("CreatedById")]
+        [ValidateNever]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
 
         public virtual ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();

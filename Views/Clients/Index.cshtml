@@ -5,14 +5,12 @@
 @{
     ViewData["Title"] = "العملاء";
     var search = ViewBag.Search as string;
-    var canCreate = await PermissionService.HasPermissionAsync(User, "Clients.Create");
-    var canEdit = await PermissionService.HasPermissionAsync(User, "Clients.Edit");
-    var canDelete = await PermissionService.HasPermissionAsync(User, "Clients.Delete");
+    var canManage = await PermissionService.HasPermissionAsync(User, "PR.Clients");
 }
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h1 class="athar-page-title">العملاء</h1>
-    @if (canCreate)
+    @if (canManage)
     {
         <a asp-action="Create" class="btn athar-btn">+ عميل جديد</a>
     }
@@ -67,12 +65,9 @@
                             }
                         </td>
                         <td>
-                            @if (canEdit)
+                            @if (canManage)
                             {
                                 <a asp-action="Edit" asp-route-id="@client.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
-                            }
-                            @if (canDelete)
-                            {
                                 <form method="post" asp-action="Delete" asp-route-id="@client.Id" class="d-inline"
                                       onsubmit="return confirm('هل أنت متأكد من حذف هذا العميل؟');">
                                     @Html.AntiForgeryToken()

@@ -3,9 +3,7 @@
 @{
     ViewData["Title"] = "تعديل المشروع";
     var parentProjects = ViewBag.ParentProjects as List<Project> ?? new List<Project>();
-    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var clients = ViewBag.Clients as List<Client> ?? new List<Client>();
-    var selectedEngineerIds = ViewBag.SelectedEngineerIds as List<string> ?? new List<string>();
 }
 
 <h1 class="athar-page-title">تعديل المشروع: @Model.Code</h1>
@@ -27,17 +25,25 @@
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <div class="col-md-8 mb-3">
+            <div class="col-md-6 mb-3">
                 <label class="form-label">اسم المشروع</label>
                 <input type="text" name="Name" class="form-control" value="@Model.Name" required />
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">نوع المشروع</label>
+                <select name="Type" class="form-select">
+                    <option value="Main" selected="@(Model.Type == ProjectType.Main)">مشروع رئيسي</option>
+                    <option value="Sub" selected="@(Model.Type == ProjectType.Sub)">مشروع فرعي</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
                 <label class="form-label">الحالة</label>
                 <select name="Status" class="form-select">
                     <option value="New" selected="@(Model.Status == ProjectStatus.New)">جديد</option>
                     <option value="InProgress" selected="@(Model.Status == ProjectStatus.InProgress)">قيد التنفيذ</option>
-                    <option value="ClientReview" selected="@(Model.Status == ProjectStatus.ClientReview)">مراجعة العميل</option>
+                    <option value="OnHold" selected="@(Model.Status == ProjectStatus.OnHold)">متوقف مؤقتاً</option>
                     <option value="Completed" selected="@(Model.Status == ProjectStatus.Completed)">مكتمل</option>
+                    <option value="Cancelled" selected="@(Model.Status == ProjectStatus.Cancelled)">ملغى</option>
                 </select>
             </div>
         </div>
@@ -50,29 +56,9 @@
         </div>
 
         <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">الموقع</label>
-                <input type="text" name="Location" class="form-control" value="@Model.Location" />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ البدء</label>
-                <input type="date" name="StartDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")" required />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ الانتهاء المتوقع</label>
-                <input type="date" name="EndDate" class="form-control" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">الميزانية</label>
-                <input type="number" step="0.01" min="0" name="Budget" class="form-control" value="@Model.Budget" />
-            </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">العميل</label>
-                <select name="ClientId" class="form-select">
-                    <option value="">-- لا يوجد --</option>
+                <select name="ClientId" class="form-select" required>
                     @foreach (var c in clients)
                     {
                         <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name@(string.IsNullOrEmpty(c.CompanyName) ? "" : $" - {c.CompanyName}")</option>
@@ -80,7 +66,7 @@
                 </select>
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">المشروع الرئيسي (اختياري)</label>
+                <label class="form-label">المشروع الرئيسي (إن كان فرعياً)</label>
                 <select name="ParentProjectId" class="form-select">
                     <option value="">-- لا يوجد --</option>
                     @foreach (var p in parentProjects)
@@ -90,39 +76,43 @@
                 </select>
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">مدير المشروع</label>
-                <select name="ProjectManagerId" class="form-select">
-                    <option value="">-- لا يوجد --</option>
-                    @foreach (var eng in engineers)
-                    {
-                        <option value="@eng.Id" selected="@(Model.ProjectManagerId == eng.Id)">@eng.FullName</option>
-                    }
+                <label class="form-label">الأولوية</label>
+                <select name="Priority" class="form-select">
+                    <option value="Low" selected="@(Model.Priority == Priority.Low)">منخفضة</option>
+                    <option value="Normal" selected="@(Model.Priority == Priority.Normal)">عادية</option>
+                    <option value="High" selected="@(Model.Priority == Priority.High)">عالية</option>
+                    <option value="Critical" selected="@(Model.Priority == Priority.Critical)">حرجة</option>
                 </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">الميزانية</label>
+                <input type="number" step="0.01" min="0" name="Budget" class="form-control" value="@Model.Budget" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">تاريخ البدء المخطط</label>
+                <input type="date" name="PlannedStartDate" class="form-control" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">تاريخ الانتهاء المخطط</label>
+                <input type="date" name="PlannedEndDate" class="form-control" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">تاريخ البدء الفعلي</label>
+                <input type="date" name="ActualStartDate" class="form-control" value="@(Model.ActualStartDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">تاريخ الانتهاء الفعلي</label>
+                <input type="date" name="ActualEndDate" class="form-control" value="@(Model.ActualEndDate?.ToString("yyyy-MM-dd"))" />
             </div>
         </div>
 
         <div class="mb-3 form-check form-switch">
-            <input type="checkbox" name="IsActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
-            <input type="hidden" name="IsActive" value="false" />
-            <label class="form-check-label" for="isActive">نشط</label>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">المهندسون المكلفون بالمشروع</label>
-            <div class="athar-permission-group">
-                <div class="row">
-                    @foreach (var eng in engineers)
-                    {
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="assignedEngineerIds" value="@eng.Id"
-                                       id="eng_@eng.Id" checked="@selectedEngineerIds.Contains(eng.Id)" />
-                                <label class="form-check-label" for="eng_@eng.Id">@eng.FullName</label>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
+            <input type="checkbox" name="IsUrgent" value="true" class="form-check-input" id="isUrgent" checked="@Model.IsUrgent" />
+            <input type="hidden" name="IsUrgent" value="false" />
+            <label class="form-check-label" for="isUrgent">مشروع عاجل</label>
         </div>
 
         <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
