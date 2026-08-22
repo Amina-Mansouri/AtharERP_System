@@ -27,13 +27,13 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Home" asp-action="Dashboard">لوحة التحكم</a>
                             </li>
-                            @if (await PermissionService.HasPermissionAsync(User, "Projects.View"))
+                            @if (await PermissionService.HasPermissionAsync(User, "Projects.ViewOwn"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Projects" asp-action="Index">المشاريع</a>
                                 </li>
                             }
-                            @if (await PermissionService.HasPermissionAsync(User, "Clients.View"))
+                            @if (await PermissionService.HasPermissionAsync(User, "PR.Clients"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Clients" asp-action="Index">العملاء</a>
