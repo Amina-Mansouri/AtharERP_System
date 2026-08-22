@@ -2,7 +2,6 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -12,36 +11,26 @@ namespace AtharERP_System.Controllers
     public class ProjectTasksController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ProjectCalculationService _calc;
-        private readonly AuditService _audit;
         private readonly NotificationService _notify;
 
-        public ProjectTasksController(
-            AppDbContext context,
-            UserManager<ApplicationUser> userManager,
-            ProjectCalculationService calc,
-            AuditService audit,
-            NotificationService notify)
+        public ProjectTasksController(AppDbContext context, ProjectCalculationService calc, NotificationService notify)
         {
             _context = context;
-            _userManager = userManager;
             _calc = calc;
-            _audit = audit;
             _notify = notify;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         // ============================================
-        // إنشاء مهمة داخل مرحلة (مع مكلَّف رئيسي اختياري - نسبة مساهمة 100%)
+        // إنشاء مهمة داخل مرحلة
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("StageId,Title,Description,DueDate,Priority,IsUrgent,BonusAmount,PenaltyAmount")] ProjectTask model,
-            string? assigneeId)
+            [Bind("StageId,Title,Description,DueDate,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var stage = await _context.ProjectStages.FindAsync(model.StageId);
             if (stage == null)
@@ -56,42 +45,26 @@ namespace AtharERP_System.Controllers
             model.ProjectId = stage.ProjectId;
             model.Status = ProjectTaskStatus.NotStarted;
             model.CompletionPercentage = 0;
+            model.DelayDays = 0;
+            model.EarlyDeliveryDays = 0;
             model.CreatedAt = DateTime.UtcNow;
             model.CreatedById = CurrentUserId;
 
             _context.ProjectTasks.Add(model);
             await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrEmpty(assigneeId))
-            {
-                _context.TaskAssignees.Add(new TaskAssignee
-                {
-                    TaskId = model.Id,
-                    UserId = assigneeId,
-                    ContributionPercentage = 100,
-                    AssignedAt = DateTime.UtcNow
-                });
-                await _context.SaveChangesAsync();
-
-                // إشعار تلقائي عند تكليف المهندس بمهمة (القسم 6.3.2)
-                await _notify.NotifyAsync(assigneeId, $"تم تكليفك بمهمة جديدة: {model.Title}", $"/Projects/Details/{stage.ProjectId}");
-            }
-
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectTask), model.Id.ToString(), $"إضافة مهمة: {model.Title}");
-
             TempData["Success"] = $"تمت إضافة المهمة {model.Title} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
         }
 
         // ============================================
-        // تعديل مهمة (تشمل عرض وإدارة المكلَّفين، البنود، والتبعيات)
+        // تعديل مهمة (تشمل المكلَّفين، بنود To-Do، والتبعيات)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             var task = await _context.ProjectTasks
-                .Include(t => t.Stage)
                 .Include(t => t.Assignees).ThenInclude(a => a.User)
                 .Include(t => t.Todos)
                 .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
@@ -100,20 +73,17 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
-            ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
 
-            // كل مهام نفس المشروع كخيارات للتبعية (باستثناء المهمة نفسها والتبعيات الحالية)
             var existingDependencyIds = task.Dependencies.Select(d => d.DependsOnTaskId).ToList();
             ViewBag.AvailableTasksForDependency = await _context.ProjectTasks
-                .Where(t => t.ProjectId == task.ProjectId
-                         && t.Id != task.Id
-                         && !existingDependencyIds.Contains(t.Id))
+                .Where(t => t.ProjectId == task.ProjectId && t.Id != task.Id && !existingDependencyIds.Contains(t.Id))
                 .ToListAsync();
 
             return View(task);
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
@@ -138,21 +108,27 @@ namespace AtharERP_System.Controllers
             task.BonusAmount = model.BonusAmount;
             task.PenaltyAmount = model.PenaltyAmount;
 
-            // حساب أيام التأخير/التبكير تلقائياً عند تسجيل تاريخ التسليم الفعلي (القسم 5.4/5.5)
             _calc.UpdateDeliveryMetrics(task);
 
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectTask), task.Id.ToString(), $"تعديل مهمة: {task.Title}");
+            if (task.DelayDays > 0)
+            {
+                var pmIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == task.ProjectId && tm.Role == TeamRole.ProjectManager)
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+                await _notify.NotifyManyAsync(pmIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم", $"/ProjectTasks/Edit/{task.Id}");
+            }
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";
-            return RedirectToAction("Edit", new { id });
+            return RedirectToAction("Details", "Projects", new { id = task.ProjectId });
         }
 
         // ============================================
         // حذف مهمة (يحذف روابط التبعية أولاً لأن علاقتها Restrict)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -162,7 +138,6 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             var projectId = task.ProjectId;
-            var taskTitle = task.Title;
 
             var dependencyLinks = await _context.TaskDependencies
                 .Where(d => d.TaskId == id || d.DependsOnTaskId == id)
@@ -172,8 +147,6 @@ namespace AtharERP_System.Controllers
             _context.ProjectTasks.Remove(task);
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectTask), id.ToString(), $"حذف مهمة: {taskTitle}");
-
             TempData["Success"] = "تم حذف المهمة بنجاح";
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
@@ -181,7 +154,7 @@ namespace AtharERP_System.Controllers
         // ============================================
         // تحديث حالة المهمة (لوحة Kanban) - يمنع بدء المهمة قبل اكتمال تبعياتها
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, ProjectTaskStatus status)
@@ -208,63 +181,63 @@ namespace AtharERP_System.Controllers
             }
 
             task.Status = status;
+
             if (status == ProjectTaskStatus.Completed)
             {
                 task.CompletionPercentage = 100;
-                if (task.ActualDeliveryDate == null)
-                    task.ActualDeliveryDate = DateTime.UtcNow.Date;
+                task.ActualDeliveryDate ??= DateTime.UtcNow.Date;
                 _calc.UpdateDeliveryMetrics(task);
             }
 
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "UpdateStatus", nameof(ProjectTask), task.Id.ToString(), $"{task.Title} -> {status}");
+            var recipientIds = await _context.ProjectTeamMembers
+                .Where(tm => tm.ProjectId == task.ProjectId)
+                .Select(tm => tm.UserId)
+                .ToListAsync();
+            await _notify.NotifyManyAsync(recipientIds, $"تغيّرت حالة المهمة \"{task.Title}\"", $"/ProjectTasks/Edit/{task.Id}");
 
             TempData["Success"] = $"تم تحديث حالة المهمة {task.Title}";
             return RedirectToAction("Details", "Projects", new { id = task.ProjectId });
         }
 
         // ============================================
-        // المكلَّفون بالمهمة (تكليف عدة مهندسين بنسب مساهمة - القسم 3.6/6.3.1)
+        // المكلَّفون بالمهمة (TaskAssignee) - تعدد المهندسين بنسب مساهمة
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddAssignee(int taskId, string userId, decimal contributionPercentage)
+        public async Task<IActionResult> AddAssignee(int taskId, string userId, decimal contributionPercentage = 100)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
-            if (string.IsNullOrEmpty(userId))
-            {
-                TempData["Error"] = "الرجاء اختيار مهندس";
-                return RedirectToAction("Edit", new { id = taskId });
-            }
-
             var exists = await _context.TaskAssignees.AnyAsync(a => a.TaskId == taskId && a.UserId == userId);
-            if (exists)
+            if (!exists)
+            {
+                _context.TaskAssignees.Add(new TaskAssignee
+                {
+                    TaskId = taskId,
+                    UserId = userId,
+                    ContributionPercentage = contributionPercentage,
+                    AssignedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+
+                // إشعار فوري عند تكليف مهندس بمهمة (القسم 6.3.2)
+                await _notify.NotifyAsync(userId, $"تم تكليفك بمهمة: {task.Title}", $"/ProjectTasks/Edit/{task.Id}");
+                TempData["Success"] = "تمت إضافة المكلَّف بنجاح";
+            }
+            else
             {
                 TempData["Error"] = "هذا المهندس مكلَّف بالفعل بهذه المهمة";
-                return RedirectToAction("Edit", new { id = taskId });
             }
 
-            _context.TaskAssignees.Add(new TaskAssignee
-            {
-                TaskId = taskId,
-                UserId = userId,
-                ContributionPercentage = contributionPercentage <= 0 ? 100 : contributionPercentage,
-                AssignedAt = DateTime.UtcNow
-            });
-            await _context.SaveChangesAsync();
-
-            await _notify.NotifyAsync(userId, $"تم تكليفك بمهمة: {task.Title}", $"/Projects/Details/{task.ProjectId}");
-
-            TempData["Success"] = "تمت إضافة المكلَّف بنجاح";
             return RedirectToAction("Edit", new { id = taskId });
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveAssignee(int id, int taskId)
@@ -280,20 +253,20 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // قائمة To-Do داخل المهمة (نسبة الإنجاز تُحسب منها تلقائياً - القسم 5.6)
+        // قائمة To-Do داخل المهمة - تقود نسبة الإنجاز تلقائياً (القسم 5.6)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddTodo(int taskId, string item)
         {
-            var task = await _context.ProjectTasks.FindAsync(taskId);
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
             if (!string.IsNullOrWhiteSpace(item))
             {
-                _context.TaskTodos.Add(new TaskTodo { TaskId = taskId, Item = item, IsCompleted = false });
+                _context.TaskTodos.Add(new TaskTodo { TaskId = taskId, Item = item });
                 await _context.SaveChangesAsync();
                 await _calc.RecalculateTaskCompletionAsync(taskId);
             }
@@ -301,7 +274,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Edit", new { id = taskId });
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleTodo(int id, int taskId)
@@ -318,10 +291,10 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Edit", new { id = taskId });
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteTodo(int id, int taskId)
+        public async Task<IActionResult> RemoveTodo(int id, int taskId)
         {
             var todo = await _context.TaskTodos.FindAsync(id);
             if (todo != null)
@@ -335,12 +308,12 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // إضافة تبعية بين مهمتين (مع نوع التبعية - القسم 3.8)
+        // إضافة/حذف تبعية بين مهمتين
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddDependency(int taskId, int dependsOnTaskId, DependencyType type)
+        public async Task<IActionResult> AddDependency(int taskId, int dependsOnTaskId)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
@@ -370,17 +343,14 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Edit", new { id = taskId });
             }
 
-            _context.TaskDependencies.Add(new TaskDependency { TaskId = taskId, DependsOnTaskId = dependsOnTaskId, Type = type });
+            _context.TaskDependencies.Add(new TaskDependency { TaskId = taskId, DependsOnTaskId = dependsOnTaskId });
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تمت إضافة التبعية بنجاح";
             return RedirectToAction("Edit", new { id = taskId });
         }
 
-        // ============================================
-        // حذف تبعية
-        // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveDependency(int id, int taskId)

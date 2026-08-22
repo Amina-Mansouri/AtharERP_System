@@ -12,33 +12,32 @@ namespace AtharERP_System.Controllers
     public class ProjectStagesController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ProjectCalculationService _calc;
-        private readonly AuditService _audit;
+        private readonly NotificationService _notify;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public ProjectStagesController(
             AppDbContext context,
-            UserManager<ApplicationUser> userManager,
             ProjectCalculationService calc,
-            AuditService audit)
+            NotificationService notify,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
-            _userManager = userManager;
             _calc = calc;
-            _audit = audit;
+            _notify = notify;
+            _userManager = userManager;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         // ============================================
         // إنشاء مرحلة جديدة (نموذج مضمّن داخل صفحة تفاصيل المشروع)
-        // مجموع أوزان مراحل المشروع يجب ألا يتجاوز 100% (القسم 6.1)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("ProjectId,Name,Sequence,Weight,Cost,AssignedEngineerId,DepartmentId,PlannedStartDate,PlannedEndDate")] ProjectStage model)
+            [Bind("ProjectId,Name,Sequence,Weight,Cost,AssignedEngineerId,DepartmentId")] ProjectStage model)
         {
             var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == model.ProjectId);
             if (project == null)
@@ -50,9 +49,7 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
             }
 
-            if (string.IsNullOrEmpty(model.AssignedEngineerId))
-                model.AssignedEngineerId = null;
-
+            // مجموع أوزان المراحل داخل المشروع يجب ألا يتجاوز 100% (القسم 6.1)
             var currentTotal = project.Stages.Sum(s => s.Weight);
             if (currentTotal + model.Weight > 100)
             {
@@ -62,13 +59,12 @@ namespace AtharERP_System.Controllers
 
             model.Status = StageStatus.New;
             model.CompletionPercentage = 0;
+            model.ActualCost = 0;
 
             _context.ProjectStages.Add(model);
             await _context.SaveChangesAsync();
 
             await _calc.RecalculateProjectAsync(model.ProjectId);
-
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectStage), model.Id.ToString(), $"إضافة مرحلة: {model.Name} (مشروع {project.Code})");
 
             TempData["Success"] = $"تمت إضافة المرحلة {model.Name} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
@@ -77,7 +73,7 @@ namespace AtharERP_System.Controllers
         // ============================================
         // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -85,17 +81,16 @@ namespace AtharERP_System.Controllers
             if (stage == null)
                 return NotFound();
 
-            ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
-            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            await LoadDropdownsAsync();
             return View(stage);
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,Sequence,Cost,Status,AssignedEngineerId,DepartmentId,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,WorkDocumentation")] ProjectStage model)
+            [Bind("Name,Sequence,Status,Cost,AssignedEngineerId,DepartmentId,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,WorkDocumentation")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.FindAsync(id);
             if (stage == null)
@@ -103,17 +98,17 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
-                ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+                await LoadDropdownsAsync();
                 return View(model);
             }
 
-            // ملاحظة: الوزن (Weight) لا يمكن تعديله بعد الإنشاء حسب قواعد العمل (القسم 6.1)
+            var wasCompleted = stage.Status == StageStatus.Completed;
+
             stage.Name = model.Name;
             stage.Sequence = model.Sequence;
-            stage.Cost = model.Cost;
             stage.Status = model.Status;
-            stage.AssignedEngineerId = string.IsNullOrEmpty(model.AssignedEngineerId) ? null : model.AssignedEngineerId;
+            stage.Cost = model.Cost;
+            stage.AssignedEngineerId = model.AssignedEngineerId;
             stage.DepartmentId = model.DepartmentId;
             stage.PlannedStartDate = model.PlannedStartDate;
             stage.PlannedEndDate = model.PlannedEndDate;
@@ -124,16 +119,27 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
             await _calc.RecalculateProjectAsync(stage.ProjectId);
 
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectStage), stage.Id.ToString(), $"تعديل مرحلة: {stage.Name}");
+            // إشعار اكتمال المرحلة (الإدارة + فريق المشروع) - القسم 10 بند 3
+            if (!wasCompleted && stage.Status == StageStatus.Completed)
+            {
+                var teamIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == stage.ProjectId)
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+                var adminIds = (await _userManager.GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
+                var recipients = teamIds.Union(adminIds).Distinct();
+
+                await _notify.NotifyManyAsync(recipients, $"اكتملت المرحلة: {stage.Name}", $"/Projects/Details/{stage.ProjectId}");
+            }
 
             TempData["Success"] = $"تم تحديث المرحلة {stage.Name} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
         }
 
         // ============================================
-        // حذف مرحلة (يحذف خطواتها تلقائياً، ويفصل مهامها بدلاً من حذفها لأن علاقة المهمة بالمرحلة Restrict)
+        // حذف مرحلة (يحذف خطواتها ومهامها تلقائياً عبر Cascade)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -143,29 +149,20 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             var projectId = stage.ProjectId;
-            var stageName = stage.Name;
-
-            var linkedTasks = await _context.ProjectTasks.Where(t => t.StageId == id).ToListAsync();
-            foreach (var t in linkedTasks)
-                t.StageId = null;
-            if (linkedTasks.Count > 0)
-                await _context.SaveChangesAsync();
 
             _context.ProjectStages.Remove(stage);
             await _context.SaveChangesAsync();
 
             await _calc.RecalculateProjectAsync(projectId);
 
-            await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectStage), id.ToString(), $"حذف مرحلة: {stageName}");
-
             TempData["Success"] = "تم حذف المرحلة بنجاح";
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
         // ============================================
-        // إنشاء خطوة داخل مرحلة (مجموع أوزان الخطوات يجب ألا يتجاوز 100%)
+        // إنشاء خطوة داخل مرحلة
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateStep(
@@ -194,17 +191,15 @@ namespace AtharERP_System.Controllers
 
             await _calc.RecalculateStageAsync(stage.Id);
 
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectStep), model.Id.ToString(), $"إضافة خطوة: {model.Name} (مرحلة {stage.Name})");
-
             TempData["Success"] = $"تمت إضافة الخطوة {model.Name} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
         }
 
         // ============================================
         // تعديل خطوة (الوزن غير قابل للتعديل بعد الإنشاء)
-        // إكمال الخطوة يسجّل تاريخ الإكمال والمُكمِل تلقائياً، ويحدّث نسبة إنجاز المرحلة والمشروع
+        // اكتمال الخطوة يُسجَّل تاريخه ومُكمِلها تلقائياً
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpGet]
         public async Task<IActionResult> EditStep(int id)
         {
@@ -215,7 +210,7 @@ namespace AtharERP_System.Controllers
             return View(step);
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditStep(
@@ -235,12 +230,12 @@ namespace AtharERP_System.Controllers
             step.Status = model.Status;
             step.ActualCost = model.ActualCost;
 
-            if (!wasCompleted && model.Status == StepStatus.Completed)
+            if (!wasCompleted && step.Status == StepStatus.Completed)
             {
                 step.CompletedDate = DateTime.UtcNow;
                 step.CompletedById = CurrentUserId;
             }
-            else if (model.Status != StepStatus.Completed)
+            else if (step.Status != StepStatus.Completed)
             {
                 step.CompletedDate = null;
                 step.CompletedById = null;
@@ -249,8 +244,6 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(step.StageId);
 
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectStep), step.Id.ToString(), $"تعديل خطوة: {step.Name}");
-
             TempData["Success"] = $"تم تحديث الخطوة {step.Name} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = step.Stage.ProjectId });
         }
@@ -258,7 +251,7 @@ namespace AtharERP_System.Controllers
         // ============================================
         // حذف خطوة
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteStep(int id)
@@ -269,17 +262,20 @@ namespace AtharERP_System.Controllers
 
             var stageId = step.StageId;
             var projectId = step.Stage.ProjectId;
-            var stepName = step.Name;
 
             _context.ProjectSteps.Remove(step);
             await _context.SaveChangesAsync();
 
             await _calc.RecalculateStageAsync(stageId);
 
-            await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectStep), id.ToString(), $"حذف خطوة: {stepName}");
-
             TempData["Success"] = "تم حذف الخطوة بنجاح";
             return RedirectToAction("Details", "Projects", new { id = projectId });
+        }
+
+        private async Task LoadDropdownsAsync()
+        {
+            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            ViewBag.Departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
         }
     }
 }

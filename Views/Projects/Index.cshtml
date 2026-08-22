@@ -7,10 +7,10 @@
     var search = ViewBag.Search as string;
     var status = ViewBag.Status as ProjectStatus?;
     var type = ViewBag.Type as ProjectType?;
-    var canViewClient = ViewBag.CanViewClient as bool? ?? false;
     var canCreate = await PermissionService.HasPermissionAsync(User, "Projects.Create");
     var canEdit = await PermissionService.HasPermissionAsync(User, "Projects.Edit");
     var canDelete = await PermissionService.HasPermissionAsync(User, "Projects.Delete");
+    var canViewClient = ViewBag.CanViewClient as bool? ?? false;
 
     string StatusLabel(ProjectStatus s) => s switch
     {
@@ -68,10 +68,13 @@
                     {
                         <th>العميل</th>
                     }
-                    <th>النوع</th>
+                    <th>تاريخ البدء المخطط</th>
                     <th>الحالة</th>
                     <th>نسبة الإنجاز</th>
-                    <th>الميزانية</th>
+                    @if (canViewClient)
+                    {
+                        <th>الميزانية</th>
+                    }
                     <th>إجراءات</th>
                 </tr>
             </thead>
@@ -97,16 +100,15 @@
                         {
                             <td>@(project.Client?.Name ?? "-")</td>
                         }
-                        <td>@(project.Type == ProjectType.Main ? "رئيسي" : "فرعي")</td>
+                        <td>@(project.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                         <td>
                             <span class="badge athar-status-badge athar-status-@project.Status">@StatusLabel(project.Status)</span>
-                            @if (project.IsUrgent)
-                            {
-                                <span class="badge bg-danger">عاجل</span>
-                            }
                         </td>
                         <td>@project.CompletionPercentage.ToString("N1")%</td>
-                        <td>@(project.Budget?.ToString("N2") ?? "-")</td>
+                        @if (canViewClient)
+                        {
+                            <td>@(project.Budget?.ToString("N2") ?? "-")</td>
+                        }
                         <td>
                             <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm athar-btn-outline">عرض</a>
                             @if (canEdit)

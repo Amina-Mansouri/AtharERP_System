@@ -30,7 +30,7 @@
                 <input type="text" name="Name" class="form-control" value="@Model.Name" required />
             </div>
             <div class="col-md-3 mb-3">
-                <label class="form-label">نوع المشروع</label>
+                <label class="form-label">النوع</label>
                 <select name="Type" class="form-select">
                     <option value="Main" selected="@(Model.Type == ProjectType.Main)">مشروع رئيسي</option>
                     <option value="Sub" selected="@(Model.Type == ProjectType.Sub)">مشروع فرعي</option>
@@ -56,7 +56,7 @@
         </div>
 
         <div class="row">
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">العميل</label>
                 <select name="ClientId" class="form-select" required>
                     @foreach (var c in clients)
@@ -65,8 +65,8 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">المشروع الرئيسي (إن كان فرعياً)</label>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">المشروع الرئيسي (للمشاريع الفرعية فقط)</label>
                 <select name="ParentProjectId" class="form-select">
                     <option value="">-- لا يوجد --</option>
                     @foreach (var p in parentProjects)
@@ -75,7 +75,7 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">الأولوية</label>
                 <select name="Priority" class="form-select">
                     <option value="Low" selected="@(Model.Priority == Priority.Low)">منخفضة</option>
@@ -83,10 +83,6 @@
                     <option value="High" selected="@(Model.Priority == Priority.High)">عالية</option>
                     <option value="Critical" selected="@(Model.Priority == Priority.Critical)">حرجة</option>
                 </select>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">الميزانية</label>
-                <input type="number" step="0.01" min="0" name="Budget" class="form-control" value="@Model.Budget" />
             </div>
         </div>
 
@@ -109,10 +105,16 @@
             </div>
         </div>
 
-        <div class="mb-3 form-check form-switch">
-            <input type="checkbox" name="IsUrgent" value="true" class="form-check-input" id="isUrgent" checked="@Model.IsUrgent" />
-            <input type="hidden" name="IsUrgent" value="false" />
-            <label class="form-check-label" for="isUrgent">مشروع عاجل</label>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">الميزانية</label>
+                <input type="number" step="0.01" min="0" name="Budget" class="form-control" value="@Model.Budget" />
+            </div>
+            <div class="col-md-3 mb-3 form-check form-switch mt-4">
+                <input type="checkbox" name="IsUrgent" value="true" class="form-check-input" id="isUrgent" checked="@Model.IsUrgent" />
+                <input type="hidden" name="IsUrgent" value="false" />
+                <label class="form-check-label" for="isUrgent">عاجل</label>
+            </div>
         </div>
 
         <button type="submit" class="btn athar-btn">حفظ التعديلات</button>

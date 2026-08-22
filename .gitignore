@@ -43,3 +43,6 @@ logs/
 *.db
 *.db-shm
 *.db-wal
+
+## Uploaded user files (documents/photos) - not part of source control
+wwwroot/uploads/

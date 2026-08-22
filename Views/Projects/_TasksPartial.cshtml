@@ -2,6 +2,7 @@
 @model ProjectStage
 @{
     var engineers = ViewBag.Engineers as List<ApplicationUser>;
+
     string PriorityLabel(TaskPriority p) => p switch
     {
         TaskPriority.Low => "منخفضة",
@@ -10,27 +11,28 @@
         TaskPriority.Critical => "حرجة",
         _ => p.ToString()
     };
+
     var columns = new[]
     {
         (Status: ProjectTaskStatus.NotStarted, Label: "لم تبدأ"),
         (Status: ProjectTaskStatus.InProgress, Label: "قيد التنفيذ"),
         (Status: ProjectTaskStatus.Completed, Label: "مكتملة"),
-        (Status: ProjectTaskStatus.Blocked, Label: "معلّقة")
+        (Status: ProjectTaskStatus.Blocked, Label: "محظورة")
     };
 }
 
 <div class="athar-card mt-3">
     <h5>مهام مرحلة: @Model.Name</h5>
 
-    <div class="row">
+    <div class="row athar-kanban-board">
         @foreach (var col in columns)
         {
             <div class="col-md-3 mb-3">
-                <div class="athar-kanban-column">
+                <div class="athar-kanban-column" data-status="@col.Status" ondragover="event.preventDefault()" ondrop="atharKanbanDrop(event, '@col.Status')">
                     <div class="athar-kanban-header">@col.Label (@Model.Tasks.Count(t => t.Status == col.Status))</div>
                     @foreach (var task in Model.Tasks.Where(t => t.Status == col.Status))
                     {
-                        <div class="athar-kanban-card">
+                        <div class="athar-kanban-card" draggable="true" data-task-id="@task.Id" ondragstart="atharKanbanDragStart(event, @task.Id)">
                             <div class="d-flex justify-content-between">
                                 <strong>@task.Title</strong>
                                 <span class="badge athar-priority-@task.Priority">@PriorityLabel(task.Priority)</span>
@@ -47,9 +49,9 @@
                             {
                                 <div class="small">الاستحقاق: @task.DueDate.Value.ToString("yyyy-MM-dd")</div>
                             }
-                            @if (task.Todos.Any())
+                            @if (task.DelayDays > 0)
                             {
-                                <div class="small">الإنجاز: @task.CompletionPercentage.ToString("N0")% (@task.Todos.Count(t => t.IsCompleted)/@task.Todos.Count)</div>
+                                <div class="small text-danger">متأخرة @task.DelayDays يوم</div>
                             }
                             @if (task.Dependencies.Any())
                             {
@@ -58,20 +60,8 @@
                                 </div>
                             }
 
-                            <div class="d-flex gap-1 mt-2">
-                                <form method="post" asp-controller="ProjectTasks" asp-action="UpdateStatus" class="d-inline flex-grow-1">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@task.Id" />
-                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                        <option value="NotStarted" selected="@(task.Status == ProjectTaskStatus.NotStarted)">لم تبدأ</option>
-                                        <option value="InProgress" selected="@(task.Status == ProjectTaskStatus.InProgress)">قيد التنفيذ</option>
-                                        <option value="Completed" selected="@(task.Status == ProjectTaskStatus.Completed)">مكتملة</option>
-                                        <option value="Blocked" selected="@(task.Status == ProjectTaskStatus.Blocked)">معلّقة</option>
-                                    </select>
-                                </form>
-                            </div>
                             <div class="mt-1">
-                                <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm athar-btn-outline w-100">تعديل / التبعيات</a>
+                                <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm athar-btn-outline w-100">تعديل / التبعيات / المكلَّفون</a>
                             </div>
                         </div>
                     }
@@ -94,23 +84,10 @@
             <input type="text" name="Description" class="form-control form-control-sm" />
         </div>
         <div class="col-md-2">
-            <label class="form-label">المكلَّف</label>
-            <select name="assigneeId" class="form-select form-select-sm">
-                <option value="">-- لا يوجد --</option>
-                @if (engineers != null)
-                {
-                    @foreach (var eng in engineers)
-                    {
-                        <option value="@eng.Id">@eng.FullName</option>
-                    }
-                }
-            </select>
-        </div>
-        <div class="col-md-2">
             <label class="form-label">تاريخ الاستحقاق</label>
             <input type="date" name="DueDate" class="form-control form-control-sm" />
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
             <label class="form-label">الأولوية</label>
             <select name="Priority" class="form-select form-select-sm">
                 <option value="Low">منخفضة</option>
@@ -119,8 +96,29 @@
                 <option value="Critical">حرجة</option>
             </select>
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
             <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة</button>
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <form id="atharKanbanForm" method="post" asp-controller="ProjectTasks" asp-action="UpdateStatus" style="display:none;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="atharKanbanTaskId" />
+        <input type="hidden" name="status" id="atharKanbanStatus" />
+    </form>
+    <script>
+        function atharKanbanDragStart(ev, taskId) {
+            ev.dataTransfer.setData("text/plain", taskId);
+        }
+        function atharKanbanDrop(ev, status) {
+            ev.preventDefault();
+            var taskId = ev.dataTransfer.getData("text/plain");
+            if (!taskId) return;
+            document.getElementById("atharKanbanTaskId").value = taskId;
+            document.getElementById("atharKanbanStatus").value = status;
+            document.getElementById("atharKanbanForm").submit();
+        }
+    </script>
+}

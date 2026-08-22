@@ -42,17 +42,20 @@
             </div>
         </div>
 
+        @if (Model.Status == StepStatus.Completed)
+        {
+            <p class="small text-muted">
+                أُكملت بتاريخ: @(Model.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")
+                بواسطة: @(Model.CompletedBy?.FullName ?? "-")
+            </p>
+        }
+
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">التكلفة الفعلية</label>
                 <input type="number" step="0.01" min="0" name="ActualCost" class="form-control" value="@Model.ActualCost" />
             </div>
         </div>
-
-        @if (Model.CompletedDate.HasValue)
-        {
-            <p class="text-muted small">اكتملت بتاريخ @Model.CompletedDate.Value.ToString("yyyy-MM-dd")</p>
-        }
 
         <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
         <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Stage.ProjectId" class="btn athar-btn-outline">إلغاء</a>

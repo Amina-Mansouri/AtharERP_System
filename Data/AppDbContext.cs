@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AtharERP_System.Data
 {
@@ -171,14 +172,12 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ========== مهام المشروع (ProjectTask) ==========
-            // المسار الأساسي للحذف عبر Project مباشرة (ProjectId إلزامي)
             builder.Entity<ProjectTask>()
                 .HasOne(t => t.Project)
                 .WithMany(p => p.Tasks)
                 .HasForeignKey(t => t.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Restrict لتفادي تعارض مسارات الحذف المتعددة مع المسار أعلاه (StageId اختياري أصلاً)
             builder.Entity<ProjectTask>()
                 .HasOne(t => t.Stage)
                 .WithMany(s => s.Tasks)
@@ -283,14 +282,12 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ========== السجلات المالية (FinancialRecord) ==========
-            // Restrict: البيانات المالية لا تُحذف تلقائياً عند حذف المشروع (سجل تدقيق)
             builder.Entity<FinancialRecord>()
                 .HasOne(f => f.Project)
                 .WithMany()
                 .HasForeignKey(f => f.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // SetNull: يمكن أن يبقى السجل المالي حتى لو حُذفت التكلفة المصدر (ProjectCostId اختياري)
             builder.Entity<FinancialRecord>()
                 .HasOne(f => f.ProjectCost)
                 .WithMany()
@@ -305,12 +302,36 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ========== سجل التدقيق (AuditLog) ==========
-            // Restrict: سجل التدقيق لا يُحذف أبداً تلقائياً
             builder.Entity<AuditLog>()
                 .HasOne(a => a.User)
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== إصلاح عام: فرض UTC على كل خصائص DateTime قبل حفظها في Postgres ==========
+            // أعمدة timestamptz ترفض DateTime.Kind=Unspecified (وهو ما يصل من <input type="date">
+            // في المتصفح)، فيفشل الحفظ بخطأ ArgumentException. هذا المحوّل يطبَّق تلقائياً على كل
+            // خاصية DateTime/DateTime? في كل الكيانات دون تعديل كل كيان على حدة.
+            var utcConverter = new ValueConverter<DateTime, DateTime>(
+                v => v.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(v, DateTimeKind.Utc) : v.ToUniversalTime(),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            var nullableUtcConverter = new ValueConverter<DateTime?, DateTime?>(
+                v => v.HasValue
+                    ? (v.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v.Value.ToUniversalTime())
+                    : v,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                        property.SetValueConverter(utcConverter);
+                    else if (property.ClrType == typeof(DateTime?))
+                        property.SetValueConverter(nullableUtcConverter);
+                }
+            }
         }
     }
 }

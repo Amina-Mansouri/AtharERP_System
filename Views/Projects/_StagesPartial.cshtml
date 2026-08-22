@@ -1,8 +1,12 @@
-﻿@using AtharERP_System.Models.Entities
+﻿@using AtharERP_System.Data
+@using AtharERP_System.Models.Entities
+@using Microsoft.EntityFrameworkCore
 @model Project
+@inject AppDbContext DbContext
 @{
     var engineers = ViewBag.Engineers as List<ApplicationUser>;
-    var departments = ViewBag.Departments as List<Department>;
+    var departments = await DbContext.Departments.OrderBy(d => d.Name).ToListAsync();
+
     string StageStatusLabel(StageStatus s) => s switch
     {
         StageStatus.New => "جديدة",
@@ -12,6 +16,7 @@
         StageStatus.Delayed => "متأخرة",
         _ => s.ToString()
     };
+
     string StepStatusLabel(StepStatus s) => s switch
     {
         StepStatus.NotStarted => "لم تبدأ",
@@ -19,13 +24,11 @@
         StepStatus.Completed => "مكتملة",
         _ => s.ToString()
     };
-    var totalStageWeight = Model.Stages.Sum(s => s.Weight);
 }
 
 <div class="athar-card mt-3">
     <div class="d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">مراحل المشروع</h5>
-        <span class="text-muted small">مجموع الأوزان: @totalStageWeight.ToString("N0")% / 100%</span>
+        <h5 class="mb-0">إدارة مراحل المشروع</h5>
     </div>
 
     @if (!Model.Stages.Any())
@@ -40,16 +43,12 @@
                 <div>
                     <strong>@stage.Sequence. @stage.Name</strong>
                     <span class="text-muted">(وزن @stage.Weight.ToString("N0")% من المشروع)</span>
-                    @if (stage.Department != null)
-                    {
-                        <span class="text-muted">- @stage.Department.Name</span>
-                    }
                 </div>
                 <div>
                     <span class="badge athar-status-badge athar-status-@stage.Status">@StageStatusLabel(stage.Status)</span>
                     <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
                     <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" class="d-inline"
-                          onsubmit="return confirm('حذف هذه المرحلة سيحذف خطواتها أيضاً. متابعة؟');">
+                          onsubmit="return confirm('حذف هذه المرحلة سيحذف خطواتها ومهامها أيضاً. متابعة؟');">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
                     </form>
@@ -59,7 +58,11 @@
             <div class="progress mt-2" style="height: 10px;">
                 <div class="progress-bar athar-progress-bar" style="width: @stage.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
             </div>
-            <small class="text-muted">نسبة الإنجاز: @stage.CompletionPercentage.ToString("N1")% - المهندس المسؤول: @(stage.AssignedEngineer?.FullName ?? "-")</small>
+            <small class="text-muted">
+                نسبة الإنجاز: @stage.CompletionPercentage.ToString("N1")% -
+                المهندس المسؤول: @(stage.AssignedEngineer?.FullName ?? "-") -
+                القسم: @(stage.Department?.Name ?? "-")
+            </small>
 
             <table class="table table-sm mt-2 mb-1">
                 <thead>
@@ -132,15 +135,16 @@
             <input type="number" step="0.01" min="0" max="100" name="Weight" class="form-control form-control-sm" required />
         </div>
         <div class="col-md-2">
+            <label class="form-label">التكلفة</label>
+            <input type="number" step="0.01" min="0" name="Cost" class="form-control form-control-sm" value="0" />
+        </div>
+        <div class="col-md-2">
             <label class="form-label">القسم</label>
             <select name="DepartmentId" class="form-select form-select-sm">
                 <option value="">-- لا يوجد --</option>
-                @if (departments != null)
+                @foreach (var dept in departments)
                 {
-                    @foreach (var d in departments)
-                    {
-                        <option value="@d.Id">@d.Name</option>
-                    }
+                    <option value="@dept.Id">@dept.Name</option>
                 }
             </select>
         </div>
@@ -156,9 +160,6 @@
                     }
                 }
             </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة</button>
         </div>
     </form>
 </div>
