@@ -1,0 +1,98 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<SiteDocument>
+@inject PermissionService PermissionService
+@{
+    var site = ViewBag.Site as Site;
+    ViewData["Title"] = $"مستندات الموقع - {site?.Name}";
+    var canManage = await PermissionService.HasPermissionAsync(User, "Sites.Manage");
+
+    string TypeLabel(SiteDocumentType t) => t switch
+    {
+        SiteDocumentType.ApprovedMap => "خريطة معتمدة",
+        SiteDocumentType.ContractorContract => "عقد مقاول",
+        SiteDocumentType.QualityReport => "تقرير جودة",
+        SiteDocumentType.SafetyReport => "تقرير سلامة",
+        SiteDocumentType.DailyReport => "تقرير يومي",
+        SiteDocumentType.Other => "أخرى",
+        _ => t.ToString()
+    };
+}
+
+<h1 class="athar-page-title">مستندات الموقع - @site?.Name</h1>
+
+<div class="athar-card mt-3">
+    @if (canManage)
+    {
+        <form method="post" asp-action="Upload" enctype="multipart/form-data" class="row g-2 align-items-end mb-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="siteId" value="@site?.Id" />
+            <div class="col-md-3">
+                <label class="form-label">نوع المستند</label>
+                <select name="documentType" class="form-select form-select-sm">
+                    <option value="ApprovedMap">خريطة معتمدة</option>
+                    <option value="ContractorContract">عقد مقاول</option>
+                    <option value="QualityReport">تقرير جودة</option>
+                    <option value="SafetyReport">تقرير سلامة</option>
+                    <option value="DailyReport">تقرير يومي</option>
+                    <option value="Other" selected>أخرى</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">الملف</label>
+                <input type="file" name="file" class="form-control form-control-sm" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">الوصف</label>
+                <input type="text" name="description" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm athar-btn w-100">+ رفع</button>
+            </div>
+        </form>
+    }
+
+    <div class="table-responsive">
+        <table class="table athar-table align-middle">
+            <thead>
+                <tr>
+                    <th>الملف</th>
+                    <th>النوع</th>
+                    <th>الوصف</th>
+                    <th>تاريخ الرفع</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted">لا توجد مستندات مرفوعة بعد</td></tr>
+                }
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td><a href="@d.FilePath" target="_blank">@d.FileName</a></td>
+                        <td>@TypeLabel(d.DocumentType)</td>
+                        <td>@(d.Description ?? "-")</td>
+                        <td>@d.UploadedAt.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <a href="@d.FilePath" download class="btn btn-sm athar-btn-outline">تنزيل</a>
+                            @if (canManage)
+                            {
+                                <form method="post" asp-action="Delete" asp-route-id="@d.Id" class="d-inline"
+                                      onsubmit="return confirm('حذف هذا المستند؟');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-controller="Sites" asp-action="Details" asp-route-id="@site?.Id" class="btn athar-btn-outline">العودة للموقع</a>
+</div>

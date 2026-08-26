@@ -39,6 +39,12 @@
                                     <a class="nav-link" asp-controller="Clients" asp-action="Index">العملاء</a>
                                 </li>
                             }
+                            @if (await PermissionService.HasPermissionAsync(User, "Sites.View"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Sites" asp-action="Index">المواقع</a>
+                                </li>
+                            }
                             @if (User.IsInRole("مدير النظام"))
                             {
                                 <li class="nav-item dropdown">
