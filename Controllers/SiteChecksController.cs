@@ -1,0 +1,182 @@
+﻿using AtharERP_System.Authorization;
+using AtharERP_System.Data;
+using AtharERP_System.Models.Entities;
+using AtharERP_System.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+
+namespace AtharERP_System.Controllers
+{
+    public class SiteChecksController : Controller
+    {
+        private readonly AppDbContext _context;
+        private readonly NotificationService _notify;
+        private readonly AuditService _audit;
+
+        public SiteChecksController(AppDbContext context, NotificationService notify, AuditService audit)
+        {
+            _context = context;
+            _notify = notify;
+            _audit = audit;
+        }
+
+        private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        // ============================================
+        // قائمة فحوصات الجودة والسلامة لموقع معيّن
+        // ============================================
+        [RequirePermission("Quality.View")]
+        public async Task<IActionResult> Index(int siteId)
+        {
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            var qualityChecks = await _context.SiteQualityChecks
+                .Include(q => q.CheckedBy)
+                .Include(q => q.ApprovedBy)
+                .Where(q => q.SiteId == siteId)
+                .OrderByDescending(q => q.CheckDate)
+                .ToListAsync();
+
+            var safetyChecks = await _context.SiteSafetyChecks
+                .Include(s => s.CheckedBy)
+                .Where(s => s.SiteId == siteId)
+                .OrderByDescending(s => s.CheckDate)
+                .ToListAsync();
+
+            ViewBag.Site = site;
+            ViewBag.SafetyChecks = safetyChecks;
+
+            return View(qualityChecks);
+        }
+
+        // ============================================
+        // فحوصات الجودة (SiteQualityCheck)
+        // ============================================
+        [RequirePermission("Quality.View")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateQualityCheck(
+            [Bind("SiteId,QualityType,CheckType,Description,Notes")] SiteQualityCheck model)
+        {
+            var site = await _context.Sites.FindAsync(model.SiteId);
+            if (site == null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "بيانات فحص الجودة غير صحيحة";
+                return RedirectToAction("Index", new { siteId = model.SiteId });
+            }
+
+            model.Result = QualityCheckResult.Pending;
+            model.CheckDate = DateTime.UtcNow;
+            model.CheckedById = CurrentUserId;
+            model.IsApproved = false;
+
+            _context.SiteQualityChecks.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تمت إضافة فحص الجودة بنجاح";
+            return RedirectToAction("Index", new { siteId = model.SiteId });
+        }
+
+        [RequirePermission("Quality.Approve")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveQualityCheck(int id, QualityCheckResult result, string? notes)
+        {
+            var check = await _context.SiteQualityChecks.Include(q => q.Site).FirstOrDefaultAsync(q => q.Id == id);
+            if (check == null)
+                return NotFound();
+
+            check.Result = result;
+            check.Notes = notes;
+            check.IsApproved = true;
+            check.ApprovedAt = DateTime.UtcNow;
+            check.ApprovedById = CurrentUserId;
+
+            await _context.SaveChangesAsync();
+
+            if (result == QualityCheckResult.Fail)
+            {
+                var recipientIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == check.Site.ProjectId)
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+                await _notify.NotifyManyAsync(recipientIds, $"فشل فحص جودة في موقع: {check.Site.Name} ({check.CheckType})", $"/SiteChecks/Index?siteId={check.SiteId}");
+            }
+
+            await _audit.LogAsync(CurrentUserId, "Approve", nameof(SiteQualityCheck), id.ToString(), $"اعتماد فحص جودة بنتيجة: {result}");
+
+            TempData["Success"] = "تم اعتماد فحص الجودة بنجاح";
+            return RedirectToAction("Index", new { siteId = check.SiteId });
+        }
+
+        // ============================================
+        // فحوصات السلامة (SiteSafetyCheck)
+        // ============================================
+        [RequirePermission("Quality.View")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateSafetyCheck(
+            [Bind("SiteId,CheckType,Description,Notes")] SiteSafetyCheck model)
+        {
+            var site = await _context.Sites.FindAsync(model.SiteId);
+            if (site == null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "بيانات فحص السلامة غير صحيحة";
+                return RedirectToAction("Index", new { siteId = model.SiteId });
+            }
+
+            model.Result = SafetyResult.Safe;
+            model.CheckDate = DateTime.UtcNow;
+            model.CheckedById = CurrentUserId;
+            model.IsApproved = false;
+
+            _context.SiteSafetyChecks.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تمت إضافة فحص السلامة بنجاح";
+            return RedirectToAction("Index", new { siteId = model.SiteId });
+        }
+
+        [RequirePermission("Quality.Approve")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveSafetyCheck(int id, SafetyResult result, string? notes)
+        {
+            var check = await _context.SiteSafetyChecks.Include(s => s.Site).FirstOrDefaultAsync(s => s.Id == id);
+            if (check == null)
+                return NotFound();
+
+            check.Result = result;
+            check.Notes = notes;
+            check.IsApproved = true;
+
+            await _context.SaveChangesAsync();
+
+            if (result == SafetyResult.Danger)
+            {
+                var recipientIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == check.Site.ProjectId)
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+                var adminIds = (await HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>()
+                    .GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
+
+                await _notify.NotifyManyAsync(recipientIds.Union(adminIds).Distinct(), $"خطر سلامة في موقع: {check.Site.Name} ({check.CheckType})", $"/SiteChecks/Index?siteId={check.SiteId}");
+            }
+
+            await _audit.LogAsync(CurrentUserId, "Approve", nameof(SiteSafetyCheck), id.ToString(), $"اعتماد فحص سلامة بنتيجة: {result}");
+
+            TempData["Success"] = "تم اعتماد فحص السلامة بنجاح";
+            return RedirectToAction("Index", new { siteId = check.SiteId });
+        }
+    }
+}

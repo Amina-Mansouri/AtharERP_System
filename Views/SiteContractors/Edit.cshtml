@@ -1,0 +1,74 @@
+﻿@using AtharERP_System.Models.Entities
+@model SiteContractor
+@{
+    ViewData["Title"] = "تعديل بيانات المقاول";
+}
+
+<h1 class="athar-page-title">تعديل المقاول: @Model.Name</h1>
+
+<div class="athar-card mt-3">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الاسم</label>
+                <input type="text" name="Name" class="form-control" value="@Model.Name" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الشركة</label>
+                <input type="text" name="CompanyName" class="form-control" value="@Model.CompanyName" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الهاتف</label>
+                <input type="text" name="Phone" class="form-control" value="@Model.Phone" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">التخصص</label>
+                <input type="text" name="Specialty" class="form-control" value="@Model.Specialty" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الحالة</label>
+                <select name="Status" class="form-select">
+                    <option value="Active" selected="@(Model.Status == ContractorStatus.Active)">نشط</option>
+                    <option value="Completed" selected="@(Model.Status == ContractorStatus.Completed)">منتهي</option>
+                    <option value="Cancelled" selected="@(Model.Status == ContractorStatus.Cancelled)">ملغى</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">تاريخ البدء</label>
+                <input type="date" name="StartDate" class="form-control" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">تاريخ الانتهاء</label>
+                <input type="date" name="EndDate" class="form-control" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">ملاحظات</label>
+            <textarea name="Notes" class="form-control" rows="2">@Model.Notes</textarea>
+        </div>
+
+        <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
+        <a asp-action="Index" asp-route-siteId="@Model.SiteId" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>
