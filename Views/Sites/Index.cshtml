@@ -1,0 +1,81 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<Site>
+@{
+    ViewData["Title"] = "المواقع";
+    var search = ViewBag.Search as string;
+    var status = ViewBag.Status as SiteStatus?;
+    var canManage = ViewBag.CanManage as bool? ?? false;
+
+    string StatusLabel(SiteStatus s) => s switch
+    {
+        SiteStatus.Active => "نشط",
+        SiteStatus.OnHold => "متوقف",
+        SiteStatus.Completed => "مكتمل",
+        _ => s.ToString()
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">المواقع</h1>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn athar-btn">+ موقع جديد</a>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    <form method="get" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-6">
+            <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث باسم الموقع أو المشروع..." />
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">-- كل الحالات --</option>
+                <option value="Active" selected="@(status == SiteStatus.Active)">نشط</option>
+                <option value="OnHold" selected="@(status == SiteStatus.OnHold)">متوقف</option>
+                <option value="Completed" selected="@(status == SiteStatus.Completed)">مكتمل</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn athar-btn w-100">بحث</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table athar-table align-middle">
+            <thead>
+                <tr>
+                    <th>اسم الموقع</th>
+                    <th>المشروع</th>
+                    <th>الحالة</th>
+                    <th>تاريخ البدء</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">لا توجد مواقع مطابقة</td>
+                    </tr>
+                }
+                @foreach (var site in Model)
+                {
+                    <tr>
+                        <td>@site.Name</td>
+                        <td>@site.Project.Name</td>
+                        <td><span class="badge athar-status-badge athar-status-@site.Status">@StatusLabel(site.Status)</span></td>
+                        <td>@(site.StartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@site.Id" class="btn btn-sm athar-btn-outline">عرض</a>
+                            @if (canManage)
+                            {
+                                <a asp-action="Edit" asp-route-id="@site.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

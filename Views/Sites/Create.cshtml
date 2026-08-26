@@ -1,0 +1,94 @@
+﻿@using AtharERP_System.Models.Entities
+@model Site
+@{
+    ViewData["Title"] = "موقع جديد";
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+}
+
+<h1 class="athar-page-title">إنشاء موقع جديد</h1>
+
+<div class="athar-card mt-3">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="Create">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم الموقع</label>
+                <input type="text" name="Name" class="form-control" value="@Model?.Name" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المشروع</label>
+                <select name="ProjectId" class="form-select" required>
+                    <option value="">-- اختر المشروع --</option>
+                    @foreach (var p in projects)
+                    {
+                        <option value="@p.Id">@p.Code - @p.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">الوصف</label>
+                <textarea name="Description" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">العنوان</label>
+                <input type="text" name="Address" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">خط العرض (Latitude)</label>
+                <input type="number" step="0.000001" name="Latitude" class="form-control" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">خط الطول (Longitude)</label>
+                <input type="number" step="0.000001" name="Longitude" class="form-control" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">نصف القطر المسموح (متر)</label>
+                <input type="number" name="AllowedRadiusMeters" class="form-control" value="100" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الحالة</label>
+                <select name="Status" class="form-select">
+                    <option value="Active">نشط</option>
+                    <option value="OnHold">متوقف</option>
+                    <option value="Completed">مكتمل</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ البدء</label>
+                <input type="date" name="StartDate" class="form-control" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ الانتهاء المتوقع</label>
+                <input type="date" name="ExpectedEndDate" class="form-control" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn athar-btn">إنشاء الموقع</button>
+        <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>

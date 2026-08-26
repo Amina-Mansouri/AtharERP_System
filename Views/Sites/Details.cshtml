@@ -1,0 +1,148 @@
+﻿@using AtharERP_System.Models.Entities
+@model Site
+@{
+    ViewData["Title"] = $"تفاصيل الموقع - {Model.Name}";
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
+
+    string StatusLabel(SiteStatus s) => s switch
+    {
+        SiteStatus.Active => "نشط",
+        SiteStatus.OnHold => "متوقف",
+        SiteStatus.Completed => "مكتمل",
+        _ => s.ToString()
+    };
+
+    string OpStatusLabel(OperationStatus s) => s switch
+    {
+        OperationStatus.NotStarted => "لم تبدأ",
+        OperationStatus.InProgress => "قيد التنفيذ",
+        OperationStatus.Completed => "مكتملة",
+        OperationStatus.Delayed => "متأخرة",
+        _ => s.ToString()
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1 class="athar-page-title">@Model.Name</h1>
+    @if (canManage)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn athar-btn">تعديل الموقع</a>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <strong>المشروع:</strong> <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId">@Model.Project.Code - @Model.Project.Name</a>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>الحالة:</strong> <span class="badge athar-status-badge athar-status-@Model.Status">@StatusLabel(Model.Status)</span>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>العنوان:</strong> @(Model.Address ?? "-")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>الإحداثيات:</strong> @(Model.Latitude.HasValue ? $"{Model.Latitude}, {Model.Longitude}" : "-") (نصف قطر مسموح: @Model.AllowedRadiusMeters م)
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>تاريخ البدء:</strong> @(Model.StartDate?.ToString("yyyy-MM-dd") ?? "-")
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>تاريخ الانتهاء المتوقع:</strong> @(Model.ExpectedEndDate?.ToString("yyyy-MM-dd") ?? "-")
+        </div>
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="col-12 mb-3">
+                <strong>الوصف:</strong>
+                <p class="mb-0">@Model.Description</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="athar-card mt-3">
+    <h5>روابط سريعة</h5>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+        <a asp-controller="SiteDailyReports" asp-action="Index" asp-route-siteId="@Model.Id" class="btn btn-sm athar-btn-outline">التقارير اليومية</a>
+        <a asp-controller="SiteChecks" asp-action="Index" asp-route-siteId="@Model.Id" class="btn btn-sm athar-btn-outline">فحوصات الجودة والسلامة</a>
+        <a asp-controller="SiteContractors" asp-action="Index" asp-route-siteId="@Model.Id" class="btn btn-sm athar-btn-outline">المقاولون</a>
+        <a asp-controller="SiteMaintenance" asp-action="Index" asp-route-siteId="@Model.Id" class="btn btn-sm athar-btn-outline">الصيانة</a>
+        <a asp-controller="SiteDocuments" asp-action="Index" asp-route-siteId="@Model.Id" class="btn btn-sm athar-btn-outline">المستندات</a>
+        <a asp-controller="SiteSupplyRequests" asp-action="Index" asp-route-siteId="@Model.Id" class="btn btn-sm athar-btn-outline">طلبات التوريد</a>
+    </div>
+    <small class="text-muted d-block mt-2">هذه الروابط ستعمل بعد لصق الدفعات القادمة من هذه الوحدة (كل كنترولر بدوره).</small>
+</div>
+
+<div class="athar-card mt-3">
+    <h5>مراحل العمل</h5>
+    @if (!Model.Operations.Any())
+    {
+        <p class="text-muted mt-2">لا توجد مراحل عمل مضافة بعد</p>
+    }
+    @foreach (var op in Model.Operations.OrderBy(o => o.Sequence))
+    {
+        <div class="athar-permission-group mt-2">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <strong>@op.Sequence. @op.Name</strong>
+                    <span class="badge athar-status-badge athar-status-@op.Status">@OpStatusLabel(op.Status)</span>
+                </div>
+                @if (canManage)
+                {
+                    <div>
+                        <a asp-action="EditOperation" asp-route-id="@op.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
+                        <form method="post" asp-action="DeleteOperation" asp-route-id="@op.Id" class="d-inline"
+                              onsubmit="return confirm('حذف هذه المرحلة؟');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                        </form>
+                    </div>
+                }
+            </div>
+            <div class="progress mt-2" style="height: 10px;">
+                <div class="progress-bar athar-progress-bar" style="width: @op.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+            </div>
+            <small class="text-muted">@op.CompletionPercentage.ToString("N1")% - المسؤول: @(op.Responsible?.FullName ?? "-")</small>
+        </div>
+    }
+
+    @if (canManage)
+    {
+        <hr />
+        <h6>إضافة مرحلة عمل جديدة</h6>
+        <form method="post" asp-action="CreateOperation" class="row g-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SiteId" value="@Model.Id" />
+            <div class="col-md-3">
+                <label class="form-label">اسم المرحلة</label>
+                <input type="text" name="Name" class="form-control form-control-sm" required />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">الترتيب</label>
+                <input type="number" name="Sequence" class="form-control form-control-sm" value="@(Model.Operations.Any() ? Model.Operations.Max(o => o.Sequence) + 1 : 1)" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">بدء مخطط</label>
+                <input type="date" name="PlannedStartDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">انتهاء مخطط</label>
+                <input type="date" name="PlannedEndDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">المسؤول</label>
+                <select name="ResponsibleId" class="form-select form-select-sm">
+                    <option value="">-- لا يوجد --</option>
+                    @foreach (var eng in engineers)
+                    {
+                        <option value="@eng.Id">@eng.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة</button>
+            </div>
+        </form>
+    }
+</div>
