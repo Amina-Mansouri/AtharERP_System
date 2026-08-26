@@ -135,7 +135,8 @@ namespace AtharERP_System.Data
                 // 6.7 المواقع
                 new Permission { Code = "Sites.View", Name = "المواقع.عرض", Module = "Site" },
                 new Permission { Code = "Sites.Reports", Name = "المواقع.تقارير", Module = "Site" },
-
+                new Permission { Code = "Sites.Manage", Name = "المواقع.إدارة", Module = "Site" },
+               
                 // 6.8 العلاقات العامة / CRM
                 new Permission { Code = "PR.View", Name = "العلاقات_العامة.عرض", Module = "CRM" },
                 new Permission { Code = "PR.Contracts", Name = "العلاقات_العامة.عقود", Module = "CRM" },

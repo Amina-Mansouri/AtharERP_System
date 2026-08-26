@@ -36,7 +36,17 @@ namespace AtharERP_System.Data
         public DbSet<FinancialRecord> FinancialRecords { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
-
+        // Module 03: إدارة المواقع
+        public DbSet<Site> Sites { get; set; } = null!;
+        public DbSet<SiteOperation> SiteOperations { get; set; } = null!;
+        public DbSet<SiteDailyReport> SiteDailyReports { get; set; } = null!;
+        public DbSet<SiteDailyReportPhoto> SiteDailyReportPhotos { get; set; } = null!;
+        public DbSet<SiteQualityCheck> SiteQualityChecks { get; set; } = null!;
+        public DbSet<SiteSafetyCheck> SiteSafetyChecks { get; set; } = null!;
+        public DbSet<SiteContractor> SiteContractors { get; set; } = null!;
+        public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
+        public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;
+        public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -307,6 +317,124 @@ namespace AtharERP_System.Data
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // ========== المواقع (Site) ==========
+            builder.Entity<Site>()
+                .HasOne(s => s.Project)
+                .WithMany()
+                .HasForeignKey(s => s.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== مراحل الموقع (SiteOperation) ==========
+            builder.Entity<SiteOperation>()
+                .HasOne(o => o.Site)
+                .WithMany(s => s.Operations)
+                .HasForeignKey(o => o.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteOperation>()
+                .HasOne(o => o.Responsible)
+                .WithMany()
+                .HasForeignKey(o => o.ResponsibleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== التقارير اليومية (SiteDailyReport) ==========
+            builder.Entity<SiteDailyReport>()
+                .HasOne(r => r.Site)
+                .WithMany(s => s.DailyReports)
+                .HasForeignKey(r => r.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteDailyReport>()
+                .HasOne(r => r.CreatedBy)
+                .WithMany()
+                .HasForeignKey(r => r.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== صور التقرير اليومي (SiteDailyReportPhoto) ==========
+            builder.Entity<SiteDailyReportPhoto>()
+                .HasOne(p => p.DailyReport)
+                .WithMany(r => r.Photos)
+                .HasForeignKey(p => p.DailyReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== فحوصات الجودة (SiteQualityCheck) ==========
+            builder.Entity<SiteQualityCheck>()
+                .HasOne(q => q.Site)
+                .WithMany(s => s.QualityChecks)
+                .HasForeignKey(q => q.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteQualityCheck>()
+                .HasOne(q => q.CheckedBy)
+                .WithMany()
+                .HasForeignKey(q => q.CheckedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteQualityCheck>()
+                .HasOne(q => q.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(q => q.ApprovedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== فحوصات السلامة (SiteSafetyCheck) ==========
+            builder.Entity<SiteSafetyCheck>()
+                .HasOne(sc => sc.Site)
+                .WithMany(s => s.SafetyChecks)
+                .HasForeignKey(sc => sc.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteSafetyCheck>()
+                .HasOne(sc => sc.CheckedBy)
+                .WithMany()
+                .HasForeignKey(sc => sc.CheckedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== المقاولون (SiteContractor) ==========
+            builder.Entity<SiteContractor>()
+                .HasOne(c => c.Site)
+                .WithMany(s => s.Contractors)
+                .HasForeignKey(c => c.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== الصيانة (SiteMaintenance) ==========
+            builder.Entity<SiteMaintenance>()
+                .HasOne(m => m.Site)
+                .WithMany(s => s.MaintenanceRequests)
+                .HasForeignKey(m => m.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteMaintenance>()
+                .HasOne(m => m.Responsible)
+                .WithMany()
+                .HasForeignKey(m => m.ResponsibleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== مستندات الموقع (SiteDocument) ==========
+            builder.Entity<SiteDocument>()
+                .HasOne(d => d.Site)
+                .WithMany(s => s.Documents)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== طلبات توريد الموقع (SiteSupplyRequest) ==========
+            builder.Entity<SiteSupplyRequest>()
+                .HasOne(sr => sr.Site)
+                .WithMany(s => s.SupplyRequests)
+                .HasForeignKey(sr => sr.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteSupplyRequest>()
+                .HasOne(sr => sr.Project)
+                .WithMany()
+                .HasForeignKey(sr => sr.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteSupplyRequest>()
+                .HasOne(sr => sr.RequestedBy)
+                .WithMany()
+                .HasForeignKey(sr => sr.RequestedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
             // ========== إصلاح عام: فرض UTC على كل خصائص DateTime قبل حفظها في Postgres ==========
             // أعمدة timestamptz ترفض DateTime.Kind=Unspecified (وهو ما يصل من <input type="date">
