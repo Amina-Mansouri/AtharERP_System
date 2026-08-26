@@ -164,7 +164,7 @@ namespace AtharERP_System.Data
             await LinkPermissionsToRole(context, roleManager, "مدير النظام", permissions.Select(p => p.Code).ToArray());
 
             await LinkPermissionsToRole(context, roleManager, "مهندس تصميم", new[]
-            {
+ {
                 "Projects.ViewOwn",
                 "Supply.View", "Supply.Create"
             });
