@@ -1,0 +1,81 @@
+﻿@using AtharERP_System.Models.Entities
+@model SiteDailyReport
+@{
+    var site = ViewBag.Site as Site;
+    ViewData["Title"] = "تقرير يومي جديد";
+}
+
+<h1 class="athar-page-title">تقرير يومي جديد - @site?.Name</h1>
+
+<div class="athar-card mt-3">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="Create" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SiteId" value="@site?.Id" />
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">تاريخ التقرير</label>
+                <input type="date" name="ReportDate" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">حالة الطقس</label>
+                <input type="text" name="Weather" class="form-control" placeholder="مثال: مشمس" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">عدد العمال</label>
+                <input type="number" name="WorkersCount" class="form-control" value="0" min="0" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">الأعمال المنجزة</label>
+            <textarea name="WorkCompleted" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">المشاكل والعوائق</label>
+            <textarea name="Issues" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المواد المستخدمة</label>
+                <textarea name="MaterialsUsed" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">المعدات المستخدمة</label>
+                <textarea name="EquipmentUsed" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">الزيارات</label>
+            <textarea name="Visits" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">ملاحظات</label>
+            <textarea name="Notes" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">صور (يمكن اختيار أكثر من صورة)</label>
+            <input type="file" name="photos" class="form-control" multiple accept="image/*" />
+        </div>
+
+        <button type="submit" class="btn athar-btn">حفظ التقرير</button>
+        <a asp-action="Index" asp-route-siteId="@site?.Id" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>
