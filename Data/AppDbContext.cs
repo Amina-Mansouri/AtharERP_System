@@ -93,6 +93,13 @@ namespace AtharERP_System.Data
                 .WithMany(d => d.Users)
                 .HasForeignKey(u => u.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<ApplicationUser>()
+    .HasIndex(u => u.JobNumber)
+    .IsUnique();
+
+            builder.Entity<ApplicationUser>()
+                .HasIndex(u => u.PersonalId)
+                .IsUnique();
 
             builder.Entity<EmployeePosition>()
                 .HasOne(ep => ep.User)

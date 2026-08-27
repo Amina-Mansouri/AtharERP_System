@@ -30,7 +30,7 @@
         </div>
     }
 
-    <form method="post" asp-action="EditUser" asp-route-id="@Model.Id">
+      <form method="post" asp-action="EditUser" asp-route-id="@Model.Id" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
         <h5>البيانات الأساسية</h5>
@@ -58,9 +58,16 @@
                 <label class="form-label">الرقم الشخصي</label>
                 <input type="text" name="PersonalId" class="form-control" value="@Model.PersonalId" />
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">الصورة الشخصية (مسار/رابط)</label>
-                <input type="text" name="ProfilePhotoPath" class="form-control" value="@Model.ProfilePhotoPath" />
+                  <div class="col-md-4 mb-3">
+                <label class="form-label">الصورة الشخصية</label>
+                @if (!string.IsNullOrEmpty(Model.ProfilePhotoPath))
+                {
+                    <div class="mb-1">
+                        <img src="@Model.ProfilePhotoPath" alt="الصورة الحالية" style="max-width:80px; max-height:80px; border-radius:6px;" />
+                    </div>
+                }
+                <input type="file" name="profilePhoto" class="form-control" accept="image/*" />
+                <small class="text-muted">اتركي هذا الحقل فارغاً للإبقاء على الصورة الحالية</small>
             </div>
         </div>
 
@@ -165,7 +172,10 @@
                 <label class="form-label">اسم الموقع</label>
                 <input type="text" id="ExpectedLocationName" name="ExpectedLocationName" class="form-control" value="@Model.ExpectedLocationName" />
             </div>
-
+                        <div class="mb-2">
+                <label class="form-label">بحث عن عنوان</label>
+                <input type="text" id="edituser-address-search" class="form-control" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" />
+            </div>
             <div id="edituser-map" class="athar-map"></div>
 
             <div class="athar-coords-display mt-2" id="edituser-coords-display">
@@ -346,11 +356,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             initAtharLocationPicker({
-                mapId: 'edituser-map',
+                mapId: 'edituser-map',searchInputId: 'edituser-address-search',
                 latInputId: 'ExpectedLatitude',
                 lngInputId: 'ExpectedLongitude',
                 nameInputId: 'ExpectedLocationName',
-                coordsDisplayId: 'edituser-coords-display',
+                coordsDisplayId: 'edituser-coords-display',                
                 initialLat: @initialLat,
                 initialLng: @initialLng
             });

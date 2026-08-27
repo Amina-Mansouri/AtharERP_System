@@ -24,7 +24,7 @@
         </div>
     }
 
-    <form method="post" asp-controller="Account" asp-action="Register">
+       <form method="post" asp-controller="Account" asp-action="Register" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
         <div class="row">
@@ -63,7 +63,12 @@
                 <input type="tel" name="phoneNumber" class="form-control" />
             </div>
         </div>
-
+                <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الصورة الشخصية (اختياري)</label>
+                <input type="file" name="profilePhoto" class="form-control" accept="image/*" />
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-4 mb-3">
                 <label class="form-label">القسم</label>
@@ -116,14 +121,19 @@
             </div>
         </div>
 
-        <div class="athar-map-section mb-3">
+             <div class="athar-map-section mb-3">
             <label class="form-label d-block">تحديد موقع الحضور المتوقع (اختياري)</label>
-            <p class="athar-map-hint">انقر على الخريطة لتحديد الموقع، أو اسحب العلامة بعد وضعها لتعديل الموقع</p>
+            <p class="athar-map-hint">ابحثي عن عنوان لتقريب الخريطة تلقائياً، أو انقري مباشرة لتحديد الموقع، أو اسحبي العلامة بعد وضعها لتعديله</p>
+
+            <div class="mb-2">
+                <label class="form-label">بحث عن عنوان</label>
+                <input type="text" id="register-address-search" class="form-control" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" />
+            </div>
 
             <div class="mb-2">
                 <label class="form-label">اسم الموقع</label>
                 <input type="text" id="expectedLocationName" name="expectedLocationName" class="form-control"
-                       placeholder="يُعبَّأ تلقائياً بعد اختيار نقطة على الخريطة، ويمكنك تعديله يدوياً" />
+                       placeholder="يُعبَّأ تلقائياً بعد البحث أو اختيار نقطة على الخريطة، ويمكنك تعديله يدوياً" />
             </div>
 
             <div id="register-map" class="athar-map"></div>
@@ -155,13 +165,14 @@
             crossorigin=""></script>
     <script src="~/js/location-picker.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+               document.addEventListener('DOMContentLoaded', function () {
             initAtharLocationPicker({
                 mapId: 'register-map',
                 latInputId: 'expectedLatitude',
                 lngInputId: 'expectedLongitude',
                 nameInputId: 'expectedLocationName',
-                coordsDisplayId: 'register-coords-display'
+                coordsDisplayId: 'register-coords-display',
+                searchInputId: 'register-address-search'
             });
         });
     </script>

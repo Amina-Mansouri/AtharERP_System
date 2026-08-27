@@ -473,3 +473,28 @@ body {
         opacity: 0.08;
     }
 }
+.athar-address-suggestions {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.athar-address-suggestion {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+    .athar-address-suggestion:hover {
+        background: #f5f0e8;
+    }
+
+.athar-address-suggestion-empty {
+    color: #999;
+    cursor: default;
+}

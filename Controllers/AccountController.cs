@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AtharERP_System.Controllers
 {
-    // [AllowAnonymous] = أي شخص يمكنه الدخول حتى لو لم يسجل
     [AllowAnonymous]
     public class AccountController : Controller
     {
@@ -17,24 +16,24 @@ namespace AtharERP_System.Controllers
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly AppDbContext _context;
         private readonly IEmailSender _emailSender;
+        private readonly FileUploadService _fileUpload;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             AppDbContext context,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            FileUploadService fileUpload)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _context = context;
             _emailSender = emailSender;
+            _fileUpload = fileUpload;
         }
 
-        // ============================================
-        // Login (GET)
-        // ============================================
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -42,9 +41,6 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        // ============================================
-        // Login (POST)
-        // ============================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password, bool rememberMe, string? returnUrl = null)
@@ -79,9 +75,6 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        // ============================================
-        // Register (GET)
-        // ============================================
         [HttpGet]
         [Authorize(Roles = "مدير النظام")]
         public async Task<IActionResult> Register()
@@ -90,9 +83,6 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        // ============================================
-        // Register (POST)
-        // ============================================
         [HttpPost]
         [Authorize(Roles = "مدير النظام")]
         [ValidateAntiForgeryToken]
@@ -103,6 +93,7 @@ namespace AtharERP_System.Controllers
             string confirmPassword,
             string? jobNumber,
             string? personalId,
+            IFormFile? profilePhoto,
             int? departmentId,
             JobRank rank,
             CareerTrack careerTrack,
@@ -129,10 +120,25 @@ namespace AtharERP_System.Controllers
                 return View();
             }
 
-            // قاعدة العمل 3: كل موظف يجب أن يكون مرتبطاً بقسم واحد على الأقل
             if (departmentId == null)
             {
                 ModelState.AddModelError(string.Empty, "القسم مطلوب");
+                return View();
+            }
+
+            // تطبيع الحقول الفارغة إلى null لتفادي تعارض القيم الفارغة مع قيد التفرّد
+            jobNumber = string.IsNullOrWhiteSpace(jobNumber) ? null : jobNumber.Trim();
+            personalId = string.IsNullOrWhiteSpace(personalId) ? null : personalId.Trim();
+
+            if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber))
+            {
+                ModelState.AddModelError(string.Empty, "الرقم الوظيفي مستخدم بالفعل لموظف آخر");
+                return View();
+            }
+
+            if (personalId != null && await _userManager.Users.AnyAsync(u => u.PersonalId == personalId))
+            {
+                ModelState.AddModelError(string.Empty, "الرقم الشخصي مستخدم بالفعل لموظف آخر");
                 return View();
             }
 
@@ -176,6 +182,16 @@ namespace AtharERP_System.Controllers
                 });
                 await _context.SaveChangesAsync();
 
+                if (profilePhoto != null && profilePhoto.Length > 0)
+                {
+                    var photoResult = await _fileUpload.SaveFileAsync(profilePhoto, $"users/{user.Id}");
+                    if (photoResult.Success)
+                    {
+                        user.ProfilePhotoPath = photoResult.FilePath;
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+
                 TempData["Success"] = $"تم إنشاء المستخدم {fullName} بنجاح";
                 return RedirectToAction("Users", "Admin");
             }
@@ -186,18 +202,12 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        // ============================================
-        // Forgot Password (GET)
-        // ============================================
         [HttpGet]
         public IActionResult ForgotPassword()
         {
             return View();
         }
 
-        // ============================================
-        // Forgot Password (POST)
-        // ============================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(string email)
@@ -216,14 +226,10 @@ namespace AtharERP_System.Controllers
                 await _emailSender.SendEmailAsync(user.Email!, "إعادة تعيين كلمة المرور - أثر", body);
             }
 
-            // نفس الرسالة سواء وُجد البريد أم لا، لمنع تسريب معلومات عن الحسابات الموجودة
             TempData["Success"] = "إذا كان البريد الإلكتروني مسجلاً لدينا، فسيصلك رابط لإعادة تعيين كلمة المرور";
             return RedirectToAction("Login");
         }
 
-        // ============================================
-        // Reset Password (GET)
-        // ============================================
         [HttpGet]
         public IActionResult ResetPassword(string? email = null, string? token = null)
         {
@@ -235,9 +241,6 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        // ============================================
-        // Reset Password (POST)
-        // ============================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(string email, string token, string newPassword, string confirmPassword)
@@ -253,7 +256,6 @@ namespace AtharERP_System.Controllers
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
-                // لا نكشف عدم وجود المستخدم
                 TempData["Success"] = "تم تحديث كلمة المرور بنجاح";
                 return RedirectToAction("Login");
             }
@@ -274,9 +276,6 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        // ============================================
-        // Logout
-        // ============================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -285,17 +284,11 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Login");
         }
 
-        // ============================================
-        // AccessDenied
-        // ============================================
         public IActionResult AccessDenied()
         {
             return View();
         }
 
-        // ============================================
-        // دالة مساعدة
-        // ============================================
         private async Task LoadRegisterDropdownsAsync()
         {
             ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();

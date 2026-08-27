@@ -14,15 +14,18 @@ namespace AtharERP_System.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly AppDbContext _context;
+        private readonly FileUploadService _fileUpload;
 
         public AdminController(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
-            AppDbContext context)
+            AppDbContext context,
+            FileUploadService fileUpload)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
+            _fileUpload = fileUpload;
         }
 
         // ============================================
@@ -45,21 +48,96 @@ namespace AtharERP_System.Controllers
             return View(users);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> EditUser(string id)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(
+     string id,
+     [Bind("FullName,JobNumber,PersonalId,Responsibilities,DocumentsPath,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+     IFormFile? profilePhoto,
+     string role)
         {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
-
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound();
 
-            var currentRoles = await _userManager.GetRolesAsync(user);
-            ViewBag.CurrentRole = currentRoles.FirstOrDefault();
-            await ReloadEditUserViewBagsAsync(id, ViewBag.CurrentRole);
+            if (model.DepartmentId == null)
+            {
+                ModelState.AddModelError(string.Empty, "القسم مطلوب");
+            }
 
-            return View(user);
+            var jobNumber = string.IsNullOrWhiteSpace(model.JobNumber) ? null : model.JobNumber.Trim();
+            var personalId = string.IsNullOrWhiteSpace(model.PersonalId) ? null : model.PersonalId.Trim();
+
+            if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber && u.Id != id))
+            {
+                ModelState.AddModelError(string.Empty, "الرقم الوظيفي مستخدم بالفعل لموظف آخر");
+            }
+
+            if (personalId != null && await _userManager.Users.AnyAsync(u => u.PersonalId == personalId && u.Id != id))
+            {
+                ModelState.AddModelError(string.Empty, "الرقم الشخصي مستخدم بالفعل لموظف آخر");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await ReloadEditUserViewBagsAsync(id, role);
+                return View(user);
+            }
+
+            user.FullName = model.FullName;
+            user.JobNumber = jobNumber;
+            user.PersonalId = personalId;
+            user.Responsibilities = model.Responsibilities;
+            user.DocumentsPath = model.DocumentsPath;
+            user.DepartmentId = model.DepartmentId;
+            user.Rank = model.Rank;
+            user.CareerTrack = model.CareerTrack;
+            user.ContractSalary = model.ContractSalary;
+            user.ContractStartDate = model.ContractStartDate;
+            user.ContractEndDate = model.ContractEndDate;
+            user.MonthlyEvaluationDate = model.MonthlyEvaluationDate;
+            user.YearlyEvaluationDate = model.YearlyEvaluationDate;
+            user.ContractTerminationDate = model.ContractTerminationDate;
+            user.Pledge = model.Pledge;
+            user.PhoneNumber = model.PhoneNumber;
+            user.ExpectedLocationName = model.ExpectedLocationName;
+            user.ExpectedLatitude = model.ExpectedLatitude;
+            user.ExpectedLongitude = model.ExpectedLongitude;
+            user.AllowedRadiusMeters = model.AllowedRadiusMeters;
+
+            if (profilePhoto != null && profilePhoto.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(user.ProfilePhotoPath))
+                    _fileUpload.DeleteFile(user.ProfilePhotoPath);
+
+                var photoResult = await _fileUpload.SaveFileAsync(profilePhoto, $"users/{user.Id}");
+                if (photoResult.Success)
+                    user.ProfilePhotoPath = photoResult.FilePath;
+                else
+                    ModelState.AddModelError(string.Empty, photoResult.ErrorMessage ?? "فشل رفع الصورة");
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                await ReloadEditUserViewBagsAsync(id, role);
+                return View(user);
+            }
+
+            if (!string.IsNullOrEmpty(role))
+            {
+                var currentRoles = await _userManager.GetRolesAsync(user);
+                if (currentRoles.Count > 0)
+                    await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                await _userManager.AddToRoleAsync(user, role);
+            }
+
+            TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
+            return RedirectToAction("Users");
         }
 
         [HttpPost]
