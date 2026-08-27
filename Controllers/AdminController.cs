@@ -52,7 +52,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
      string id,
-     [Bind("FullName,JobNumber,PersonalId,Responsibilities,DocumentsPath,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+     [Bind("FullName,JobNumber,PersonalId,Responsibilities,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
      IFormFile? profilePhoto,
      string role)
         {
@@ -88,7 +88,6 @@ namespace AtharERP_System.Controllers
             user.JobNumber = jobNumber;
             user.PersonalId = personalId;
             user.Responsibilities = model.Responsibilities;
-            user.DocumentsPath = model.DocumentsPath;
             user.DepartmentId = model.DepartmentId;
             user.Rank = model.Rank;
             user.CareerTrack = model.CareerTrack;
@@ -140,73 +139,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Users");
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditUser(
-            string id,
-            [Bind("FullName,JobNumber,PersonalId,Responsibilities,ProfilePhotoPath,DocumentsPath,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
-            string role)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
-                return NotFound();
-
-            // قاعدة العمل 3: كل موظف يجب أن يكون مرتبطاً بقسم
-            if (model.DepartmentId == null)
-            {
-                ModelState.AddModelError(string.Empty, "القسم مطلوب");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                await ReloadEditUserViewBagsAsync(id, role);
-                return View(user);
-            }
-
-            user.FullName = model.FullName;
-            user.JobNumber = model.JobNumber;
-            user.PersonalId = model.PersonalId;
-            user.Responsibilities = model.Responsibilities;
-            user.ProfilePhotoPath = model.ProfilePhotoPath;
-            user.DocumentsPath = model.DocumentsPath;
-            user.DepartmentId = model.DepartmentId;
-            user.Rank = model.Rank;
-            user.CareerTrack = model.CareerTrack;
-            user.ContractSalary = model.ContractSalary;
-            user.ContractStartDate = model.ContractStartDate;
-            user.ContractEndDate = model.ContractEndDate;
-            user.MonthlyEvaluationDate = model.MonthlyEvaluationDate;
-            user.YearlyEvaluationDate = model.YearlyEvaluationDate;
-            user.ContractTerminationDate = model.ContractTerminationDate;
-            user.Pledge = model.Pledge;
-            user.PhoneNumber = model.PhoneNumber;
-            user.ExpectedLocationName = model.ExpectedLocationName;
-            user.ExpectedLatitude = model.ExpectedLatitude;
-            user.ExpectedLongitude = model.ExpectedLongitude;
-            user.AllowedRadiusMeters = model.AllowedRadiusMeters;
-
-            var result = await _userManager.UpdateAsync(user);
-
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
-
-                await ReloadEditUserViewBagsAsync(id, role);
-                return View(user);
-            }
-
-            if (!string.IsNullOrEmpty(role))
-            {
-                var currentRoles = await _userManager.GetRolesAsync(user);
-                if (currentRoles.Count > 0)
-                    await _userManager.RemoveFromRolesAsync(user, currentRoles);
-                await _userManager.AddToRoleAsync(user, role);
-            }
-
-            TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
-            return RedirectToAction("Users");
-        }
+      
 
         [HttpPost]
         [ValidateAntiForgeryToken]

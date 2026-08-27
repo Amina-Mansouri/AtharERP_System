@@ -22,9 +22,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الصورة الشخصية")]
         public string? ProfilePhotoPath { get; set; }
 
-        [Display(Name = "مسار المستندات")]
-        public string? DocumentsPath { get; set; }
-
         [Display(Name = "القسم")]
         public int? DepartmentId { get; set; }
 
