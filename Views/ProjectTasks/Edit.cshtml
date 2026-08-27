@@ -102,19 +102,20 @@
             <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn athar-btn-outline">إلغاء</a>
         </form>
     }
-    else
+     else
     {
-        <div class="mb-3">
-            <p><strong>الوصف:</strong> @(Model.Description ?? "-")</p>
-            <p><strong>تاريخ الاستحقاق:</strong> @(Model.DueDate?.ToString("yyyy-MM-dd") ?? "-")</p>
+         <div class="mb-3">
+              <p><strong>الوصف:</strong> @(Model.Description ?? "-")</p>
+              <p><strong>تاريخ الاستحقاق:</strong> @(Model.DueDate?.ToString("yyyy-MM-dd") ?? "-")</p>
             <p><strong>نسبة الإنجاز:</strong> @Model.CompletionPercentage.ToString("N1")%</p>
-            @if (Model.DelayDays > 0)
-            {
-                <p class="text-danger">متأخرة @Model.DelayDays يوم</p>
-            }
-        </div>
-        <a asp-controller="ProjectTasks" asp-action="MyTasks" class="btn athar-btn-outline">العودة لمهامي</a>
-    }
+               @if (Model.DelayDays > 0)
+             {
+                     <p class="text-danger">متأخرة @Model.DelayDays يوم</p>
+                    }
+       
+    </div>
+         <a asp-controller="ProjectTasks" asp-action="MyTasks" class="btn athar-btn-outline">العودة لمهامي</a>
+       }
 
     <hr />
     <h5>قائمة To-Do (تقود نسبة الإنجاز تلقائياً)</h5>
@@ -223,21 +224,29 @@
         {
             <p class="text-muted">لا توجد تبعيات حالياً</p>
         }
-        <form method="post" asp-action="AddDependency" class="row g-2 align-items-end">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="taskId" value="@Model.Id" />
-            <div class="col-md-8">
-                <label class="form-label">إضافة تبعية على مهمة</label>
-                <select name="dependsOnTaskId" class="form-select">
-                    @foreach (var t in availableTasks)
-                    {
-                        <option value="@t.Id">@t.Title</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn athar-btn w-100">+ إضافة تبعية</button>
-            </div>
-        </form>
+        
+        @if (availableTasks.Any())
+        {
+            <form method="post" asp-action="AddDependency" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="taskId" value="@Model.Id" />
+                <div class="col-md-8">
+                    <label class="form-label">إضافة تبعية على مهمة</label>
+                    <select name="dependsOnTaskId" class="form-select">
+                        @foreach (var t in availableTasks)
+                        {
+                            <option value="@t.Id">@t.Title</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn athar-btn w-100">+ إضافة تبعية</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <p class="text-muted small">لا توجد مهام أخرى في هذا المشروع يمكن اعتماد هذه المهمة عليها حالياً</p>
+        }
     }
 </div>

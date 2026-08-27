@@ -102,23 +102,3 @@
     </form>
 </div>
 
-@section Scripts {
-    <form id="atharKanbanForm" method="post" asp-controller="ProjectTasks" asp-action="UpdateStatus" style="display:none;">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="id" id="atharKanbanTaskId" />
-        <input type="hidden" name="status" id="atharKanbanStatus" />
-    </form>
-    <script>
-        function atharKanbanDragStart(ev, taskId) {
-            ev.dataTransfer.setData("text/plain", taskId);
-        }
-        function atharKanbanDrop(ev, status) {
-            ev.preventDefault();
-            var taskId = ev.dataTransfer.getData("text/plain");
-            if (!taskId) return;
-            document.getElementById("atharKanbanTaskId").value = taskId;
-            document.getElementById("atharKanbanStatus").value = status;
-            document.getElementById("atharKanbanForm").submit();
-        }
-    </script>
-}

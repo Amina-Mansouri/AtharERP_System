@@ -385,6 +385,13 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
+            var dependsOnTaskExists = await _context.ProjectTasks.AnyAsync(t => t.Id == dependsOnTaskId);
+            if (!dependsOnTaskExists)
+            {
+                TempData["Error"] = "لم يتم اختيار مهمة صحيحة للاعتماد عليها";
+                return RedirectToAction("Edit", new { id = taskId });
+            }
+
             if (taskId == dependsOnTaskId)
             {
                 TempData["Error"] = "لا يمكن أن تعتمد المهمة على نفسها";
