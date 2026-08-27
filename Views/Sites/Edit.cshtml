@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "تعديل الموقع";
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var initialLat = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
+    var initialLng = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
 }
 
 <h1 class="athar-page-title">تعديل الموقع: @Model.Name</h1>
@@ -46,26 +48,27 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-12 mb-3">
-                <label class="form-label">العنوان</label>
-                <input type="text" name="Address" class="form-control" value="@Model.Address" />
-            </div>
-        </div>
+        <div class="athar-map-section mb-3">
+            <label class="form-label d-block">تحديد موقع الموقع</label>
+            <p class="athar-map-hint">ابحثي عن عنوان لتقريب الخريطة تلقائياً، أو انقري مباشرة لتحديد الموقع، أو اسحبي العلامة بعد وضعها لتعديله</p>
 
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">خط العرض (Latitude)</label>
-                <input type="number" step="0.000001" name="Latitude" class="form-control" value="@Model.Latitude" />
+            <div class="mb-2">
+                <label class="form-label">بحث عن عنوان</label>
+                <input type="text" id="site-edit-address-search" class="form-control" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" />
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">خط الطول (Longitude)</label>
-                <input type="number" step="0.000001" name="Longitude" class="form-control" value="@Model.Longitude" />
+
+            <div class="mb-2">
+                <label class="form-label">العنوان</label>
+                <input type="text" id="siteEditAddress" name="Address" class="form-control" value="@Model.Address" readonly
+                       placeholder="يُعبَّأ تلقائياً بعد البحث أو اختيار نقطة على الخريطة" />
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">نصف القطر المسموح (متر)</label>
-                <input type="number" name="AllowedRadiusMeters" class="form-control" value="@Model.AllowedRadiusMeters" />
-            </div>
+
+            <div id="site-edit-map" class="athar-map"></div>
+
+            <div class="athar-coords-display mt-2" id="site-edit-coords-display">لم يتم تحديد موقع بعد</div>
+
+            <input type="hidden" id="siteEditLatitude" name="Latitude" value="@Model.Latitude" />
+            <input type="hidden" id="siteEditLongitude" name="Longitude" value="@Model.Longitude" />
         </div>
 
         <div class="row">
@@ -101,3 +104,27 @@
         <a asp-action="Details" asp-route-id="@Model.Id" class="btn athar-btn-outline">إلغاء</a>
     </form>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="~/js/location-picker.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initAtharLocationPicker({
+                mapId: 'site-edit-map',
+                searchInputId: 'site-edit-address-search',
+                latInputId: 'siteEditLatitude',
+                lngInputId: 'siteEditLongitude',
+                nameInputId: 'siteEditAddress',
+                coordsDisplayId: 'site-edit-coords-display',
+                initialLat: @initialLat,
+                initialLng: @initialLng
+            });
+        });
+    </script>
+}

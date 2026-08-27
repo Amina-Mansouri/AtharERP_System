@@ -78,7 +78,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,AllowedRadiusMeters,Status,StartDate,ExpectedEndDate,ActualEndDate")] Site model)
+            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,Status,StartDate,ExpectedEndDate,ActualEndDate")] Site model)
         {
             if (!ModelState.IsValid)
             {
@@ -118,7 +118,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,AllowedRadiusMeters,Status,StartDate,ExpectedEndDate,ActualEndDate,IsActive")] Site model)
+            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,Status,StartDate,ExpectedEndDate,ActualEndDate,IsActive")] Site model)
         {
             var site = await _context.Sites.FindAsync(id);
             if (site == null)
@@ -136,7 +136,7 @@ namespace AtharERP_System.Controllers
             site.Address = model.Address;
             site.Latitude = model.Latitude;
             site.Longitude = model.Longitude;
-            site.AllowedRadiusMeters = model.AllowedRadiusMeters;
+         
             site.Status = model.Status;
             site.StartDate = model.StartDate;
             site.ExpectedEndDate = model.ExpectedEndDate;

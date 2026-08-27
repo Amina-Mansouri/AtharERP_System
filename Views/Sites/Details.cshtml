@@ -43,7 +43,7 @@
             <strong>العنوان:</strong> @(Model.Address ?? "-")
         </div>
         <div class="col-md-6 mb-3">
-            <strong>الإحداثيات:</strong> @(Model.Latitude.HasValue ? $"{Model.Latitude}, {Model.Longitude}" : "-") (نصف قطر مسموح: @Model.AllowedRadiusMeters م)
+            <strong>الإحداثيات:</strong> @(Model.Latitude.HasValue ? $"{Model.Latitude}, {Model.Longitude}" : "-")
         </div>
         <div class="col-md-6 mb-3">
             <strong>تاريخ البدء:</strong> @(Model.StartDate?.ToString("yyyy-MM-dd") ?? "-")

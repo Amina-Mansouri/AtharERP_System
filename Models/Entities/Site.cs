@@ -34,9 +34,7 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "خط الطول")]
         public double? Longitude { get; set; }
 
-        [Display(Name = "نصف القطر المسموح (متر)")]
-        public int AllowedRadiusMeters { get; set; } = 100;
-
+       
         [Display(Name = "الحالة")]
         public SiteStatus Status { get; set; } = SiteStatus.Active;
 
