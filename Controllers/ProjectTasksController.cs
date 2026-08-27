@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -13,15 +14,47 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly ProjectCalculationService _calc;
         private readonly NotificationService _notify;
+        private readonly PermissionService _permissionService;
 
-        public ProjectTasksController(AppDbContext context, ProjectCalculationService calc, NotificationService notify)
+        public ProjectTasksController(
+            AppDbContext context,
+            ProjectCalculationService calc,
+            NotificationService notify,
+            PermissionService permissionService)
         {
             _context = context;
             _calc = calc;
             _notify = notify;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        private async Task<bool> CanExecuteAsync(ProjectTask task)
+        {
+            if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+                return true;
+            return task.Assignees.Any(a => a.UserId == CurrentUserId);
+        }
+
+        // ============================================
+        // مهامي (كل المهام المكلَّف بها المستخدم الحالي عبر أي مشروع)
+        // ============================================
+        [Authorize]
+        public async Task<IActionResult> MyTasks()
+        {
+            var tasks = await _context.ProjectTasks
+                .Include(t => t.Project)
+                .Include(t => t.Stage)
+                .Include(t => t.Assignees).ThenInclude(a => a.User)
+                .Include(t => t.Todos)
+                .Where(t => t.Assignees.Any(a => a.UserId == CurrentUserId))
+                .OrderBy(t => t.Status)
+                .ThenBy(t => t.DueDate)
+                .ToListAsync();
+
+            return View(tasks);
+        }
 
         // ============================================
         // إنشاء مهمة داخل مرحلة
@@ -58,9 +91,9 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // تعديل مهمة (تشمل المكلَّفين، بنود To-Do، والتبعيات)
+        // عرض/تعديل مهمة - العرض متاح للمكلَّف بالمهمة أيضاً، والحفظ (تعديل البيانات) للإدارة فقط
         // ============================================
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -73,12 +106,25 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
-            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            if (!await CanExecuteAsync(task))
+                return Forbid();
 
-            var existingDependencyIds = task.Dependencies.Select(d => d.DependsOnTaskId).ToList();
-            ViewBag.AvailableTasksForDependency = await _context.ProjectTasks
-                .Where(t => t.ProjectId == task.ProjectId && t.Id != task.Id && !existingDependencyIds.Contains(t.Id))
-                .ToListAsync();
+            var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+            ViewBag.CanManage = canManage;
+
+            if (canManage)
+            {
+                ViewBag.Engineers = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == task.ProjectId)
+                    .Select(tm => tm.User)
+                    .OrderBy(u => u.FullName)
+                    .ToListAsync();
+
+                var existingDependencyIds = task.Dependencies.Select(d => d.DependsOnTaskId).ToList();
+                ViewBag.AvailableTasksForDependency = await _context.ProjectTasks
+                    .Where(t => t.ProjectId == task.ProjectId && t.Id != task.Id && !existingDependencyIds.Contains(t.Id))
+                    .ToListAsync();
+            }
 
             return View(task);
         }
@@ -126,7 +172,7 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // حذف مهمة (يحذف روابط التبعية أولاً لأن علاقتها Restrict)
+        // حذف مهمة
         // ============================================
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
@@ -152,19 +198,23 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // تحديث حالة المهمة (لوحة Kanban) - يمنع بدء المهمة قبل اكتمال تبعياتها
+        // تحديث حالة المهمة - مسموح للمدير أو للمكلَّف بالمهمة نفسها فقط
         // ============================================
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, ProjectTaskStatus status)
         {
             var task = await _context.ProjectTasks
                 .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
+                .Include(t => t.Assignees)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
                 return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
 
             if (status == ProjectTaskStatus.InProgress)
             {
@@ -176,7 +226,7 @@ namespace AtharERP_System.Controllers
                 if (incompleteDependencies.Any())
                 {
                     TempData["Error"] = $"لا يمكن بدء هذه المهمة قبل إكمال: {string.Join("، ", incompleteDependencies)}";
-                    return RedirectToAction("Details", "Projects", new { id = task.ProjectId });
+                    return RedirectToAction("Edit", new { id = task.Id });
                 }
             }
 
@@ -198,11 +248,11 @@ namespace AtharERP_System.Controllers
             await _notify.NotifyManyAsync(recipientIds, $"تغيّرت حالة المهمة \"{task.Title}\"", $"/ProjectTasks/Edit/{task.Id}");
 
             TempData["Success"] = $"تم تحديث حالة المهمة {task.Title}";
-            return RedirectToAction("Details", "Projects", new { id = task.ProjectId });
+            return RedirectToAction("Edit", new { id = task.Id });
         }
 
         // ============================================
-        // المكلَّفون بالمهمة (TaskAssignee) - تعدد المهندسين بنسب مساهمة
+        // المكلَّفون بالمهمة (TaskAssignee) - إدارة فقط
         // ============================================
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
@@ -225,7 +275,6 @@ namespace AtharERP_System.Controllers
                 });
                 await _context.SaveChangesAsync();
 
-                // إشعار فوري عند تكليف مهندس بمهمة (القسم 6.3.2)
                 await _notify.NotifyAsync(userId, $"تم تكليفك بمهمة: {task.Title}", $"/ProjectTasks/Edit/{task.Id}");
                 TempData["Success"] = "تمت إضافة المكلَّف بنجاح";
             }
@@ -253,16 +302,19 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // قائمة To-Do داخل المهمة - تقود نسبة الإنجاز تلقائياً (القسم 5.6)
+        // قائمة To-Do - مسموح للمدير أو للمكلَّف بالمهمة نفسها فقط
         // ============================================
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddTodo(int taskId, string item)
         {
-            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
 
             if (!string.IsNullOrWhiteSpace(item))
             {
@@ -274,11 +326,18 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Edit", new { id = taskId });
         }
 
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleTodo(int id, int taskId)
         {
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+            if (task == null)
+                return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
+
             var todo = await _context.TaskTodos.FindAsync(id);
             if (todo != null)
             {
@@ -291,11 +350,18 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Edit", new { id = taskId });
         }
 
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveTodo(int id, int taskId)
         {
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+            if (task == null)
+                return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
+
             var todo = await _context.TaskTodos.FindAsync(id);
             if (todo != null)
             {
@@ -308,7 +374,7 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
-        // إضافة/حذف تبعية بين مهمتين
+        // إضافة/حذف تبعية بين مهمتين - إدارة فقط
         // ============================================
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]

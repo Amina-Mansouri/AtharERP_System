@@ -106,7 +106,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CanViewClient = await CanViewClientAsync();
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Costs.View");
             ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
-            ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            ViewBag.Engineers = project.TeamMembers.Select(tm => tm.User).OrderBy(u => u.FullName).ToList();
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             return View(project);
         }
@@ -259,7 +259,7 @@ namespace AtharERP_System.Controllers
         // ============================================
         // فريق المشروع (ProjectTeamMember)
         // ============================================
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Edit", "Projects.Stages.Manage", "Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddTeamMember(int projectId, string userId, TeamRole role)
@@ -289,7 +289,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", new { id = projectId });
         }
 
-        [RequirePermission("Projects.Edit")]
+        [RequirePermission("Projects.Edit", "Projects.Stages.Manage", "Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveTeamMember(int id, int projectId)

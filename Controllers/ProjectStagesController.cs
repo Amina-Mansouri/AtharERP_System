@@ -81,7 +81,7 @@ namespace AtharERP_System.Controllers
             if (stage == null)
                 return NotFound();
 
-            await LoadDropdownsAsync();
+            await LoadDropdownsAsync(stage.ProjectId);
             return View(stage);
         }
 
@@ -98,7 +98,7 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                await LoadDropdownsAsync();
+                await LoadDropdownsAsync(stage.ProjectId);
                 return View(model);
             }
 
@@ -272,9 +272,13 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
-        private async Task LoadDropdownsAsync()
+        private async Task LoadDropdownsAsync(int projectId)
         {
-            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            ViewBag.Engineers = await _context.ProjectTeamMembers
+                .Where(tm => tm.ProjectId == projectId)
+                .Select(tm => tm.User)
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
             ViewBag.Departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
         }
     }

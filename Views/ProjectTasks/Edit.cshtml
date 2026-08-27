@@ -4,6 +4,7 @@
     ViewData["Title"] = "تعديل المهمة";
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var availableTasks = ViewBag.AvailableTasksForDependency as List<ProjectTask> ?? new List<ProjectTask>();
+    var canManage = ViewBag.CanManage as bool? ?? false;
 }
 
 <h1 class="athar-page-title">تعديل المهمة: @Model.Title</h1>
@@ -21,125 +22,99 @@
         </div>
     }
 
-    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
-        @Html.AntiForgeryToken()
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">العنوان</label>
-                <input type="text" name="Title" class="form-control" value="@Model.Title" required />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">الوصف</label>
-                <input type="text" name="Description" class="form-control" value="@Model.Description" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ الاستحقاق</label>
-                <input type="date" name="DueDate" class="form-control" value="@(Model.DueDate?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ البدء المخطط</label>
-                <input type="date" name="PlannedStartDate" class="form-control" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ الانتهاء المخطط</label>
-                <input type="date" name="PlannedEndDate" class="form-control" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ التسليم الفعلي</label>
-                <input type="date" name="ActualDeliveryDate" class="form-control" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" />
-            </div>
-        </div>
-
-        @if (Model.DelayDays > 0)
-        {
-            <p class="text-danger small">متأخرة @Model.DelayDays يوم</p>
-        }
-        else if (Model.EarlyDeliveryDays > 0)
-        {
-            <p class="text-success small">تسليم مبكر بـ @Model.EarlyDeliveryDays يوم</p>
-        }
-
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">الأولوية</label>
-                <select name="Priority" class="form-select">
-                    <option value="Low" selected="@(Model.Priority == TaskPriority.Low)">منخفضة</option>
-                    <option value="Medium" selected="@(Model.Priority == TaskPriority.Medium)">متوسطة</option>
-                    <option value="High" selected="@(Model.Priority == TaskPriority.High)">عالية</option>
-                    <option value="Critical" selected="@(Model.Priority == TaskPriority.Critical)">حرجة</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3 form-check form-switch mt-4">
-                <input type="checkbox" name="IsUrgent" value="true" class="form-check-input" id="isUrgent" checked="@Model.IsUrgent" />
-                <input type="hidden" name="IsUrgent" value="false" />
-                <label class="form-check-label" for="isUrgent">عاجلة (مستقلة عن الأولوية)</label>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">نسبة الإنجاز % (تُحسب تلقائياً من To-Do)</label>
-                <input type="text" class="form-control" value="@Model.CompletionPercentage.ToString("N1")%" disabled />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">مبلغ المكافأة</label>
-                <input type="number" step="0.01" min="0" name="BonusAmount" class="form-control" value="@Model.BonusAmount" />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">مبلغ الغرامة</label>
-                <input type="number" step="0.01" min="0" name="PenaltyAmount" class="form-control" value="@Model.PenaltyAmount" />
-            </div>
-        </div>
-
-        <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
-        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn athar-btn-outline">إلغاء</a>
-    </form>
-
-    <hr />
-    <h5>المكلَّفون بالمهمة (تعدد المهندسين مع نسبة المساهمة)</h5>
-    @if (Model.Assignees.Any())
+    @if (canManage)
     {
-        <ul class="list-group mb-3">
-            @foreach (var a in Model.Assignees)
+        <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">العنوان</label>
+                    <input type="text" name="Title" class="form-control" value="@Model.Title" required />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الوصف</label>
+                    <input type="text" name="Description" class="form-control" value="@Model.Description" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">تاريخ الاستحقاق</label>
+                    <input type="date" name="DueDate" class="form-control" value="@(Model.DueDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">تاريخ البدء المخطط</label>
+                    <input type="date" name="PlannedStartDate" class="form-control" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">تاريخ الانتهاء المخطط</label>
+                    <input type="date" name="PlannedEndDate" class="form-control" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">تاريخ التسليم الفعلي</label>
+                    <input type="date" name="ActualDeliveryDate" class="form-control" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" />
+                </div>
+            </div>
+
+            @if (Model.DelayDays > 0)
             {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    @a.User.FullName <span class="text-muted small">مساهمة: @a.ContributionPercentage.ToString("N0")%</span>
-                    <form method="post" asp-action="RemoveAssignee" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@a.Id" />
-                        <input type="hidden" name="taskId" value="@Model.Id" />
-                        <button type="submit" class="btn btn-sm btn-outline-danger">إزالة</button>
-                    </form>
-                </li>
+                <p class="text-danger small">متأخرة @Model.DelayDays يوم</p>
             }
-        </ul>
+            else if (Model.EarlyDeliveryDays > 0)
+            {
+                <p class="text-success small">تسليم مبكر بـ @Model.EarlyDeliveryDays يوم</p>
+            }
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">الأولوية</label>
+                    <select name="Priority" class="form-select">
+                        <option value="Low" selected="@(Model.Priority == TaskPriority.Low)">منخفضة</option>
+                        <option value="Medium" selected="@(Model.Priority == TaskPriority.Medium)">متوسطة</option>
+                        <option value="High" selected="@(Model.Priority == TaskPriority.High)">عالية</option>
+                        <option value="Critical" selected="@(Model.Priority == TaskPriority.Critical)">حرجة</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3 form-check form-switch mt-4">
+                    <input type="checkbox" name="IsUrgent" value="true" class="form-check-input" id="isUrgent" checked="@Model.IsUrgent" />
+                    <input type="hidden" name="IsUrgent" value="false" />
+                    <label class="form-check-label" for="isUrgent">عاجلة (مستقلة عن الأولوية)</label>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">نسبة الإنجاز % (تُحسب تلقائياً من To-Do)</label>
+                    <input type="text" class="form-control" value="@Model.CompletionPercentage.ToString("N1")%" disabled />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">مبلغ المكافأة</label>
+                    <input type="number" step="0.01" min="0" name="BonusAmount" class="form-control" value="@Model.BonusAmount" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">مبلغ الغرامة</label>
+                    <input type="number" step="0.01" min="0" name="PenaltyAmount" class="form-control" value="@Model.PenaltyAmount" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
+            <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="btn athar-btn-outline">إلغاء</a>
+        </form>
     }
     else
     {
-        <p class="text-muted">لا يوجد مكلَّفون بعد</p>
+        <div class="mb-3">
+            <p><strong>الوصف:</strong> @(Model.Description ?? "-")</p>
+            <p><strong>تاريخ الاستحقاق:</strong> @(Model.DueDate?.ToString("yyyy-MM-dd") ?? "-")</p>
+            <p><strong>نسبة الإنجاز:</strong> @Model.CompletionPercentage.ToString("N1")%</p>
+            @if (Model.DelayDays > 0)
+            {
+                <p class="text-danger">متأخرة @Model.DelayDays يوم</p>
+            }
+        </div>
+        <a asp-controller="ProjectTasks" asp-action="MyTasks" class="btn athar-btn-outline">العودة لمهامي</a>
     }
-    <form method="post" asp-action="AddAssignee" class="row g-2 align-items-end mb-4">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="taskId" value="@Model.Id" />
-        <div class="col-md-6">
-            <select name="userId" class="form-select">
-                @foreach (var eng in engineers)
-                {
-                    <option value="@eng.Id">@eng.FullName</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-3">
-            <input type="number" step="0.01" min="0" max="100" name="contributionPercentage" class="form-control" value="100" placeholder="نسبة المساهمة %" />
-        </div>
-        <div class="col-md-3">
-            <button type="submit" class="btn athar-btn w-100">+ إضافة مكلَّف</button>
-        </div>
-    </form>
 
     <hr />
     <h5>قائمة To-Do (تقود نسبة الإنجاز تلقائياً)</h5>
@@ -181,43 +156,88 @@
         </div>
     </form>
 
-    <hr />
-    <h5>التبعيات (المهام التي يجب إكمالها أولاً)</h5>
-    @if (Model.Dependencies.Any())
+    @if (canManage)
     {
-        <ul class="list-group mb-3">
-            @foreach (var dep in Model.Dependencies)
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    @dep.DependsOnTask.Title
-                    <form method="post" asp-action="RemoveDependency" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@dep.Id" />
-                        <input type="hidden" name="taskId" value="@Model.Id" />
-                        <button type="submit" class="btn btn-sm btn-outline-danger">إزالة</button>
-                    </form>
-                </li>
-            }
-        </ul>
-    }
-    else
-    {
-        <p class="text-muted">لا توجد تبعيات حالياً</p>
-    }
-    <form method="post" asp-action="AddDependency" class="row g-2 align-items-end">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="taskId" value="@Model.Id" />
-        <div class="col-md-8">
-            <label class="form-label">إضافة تبعية على مهمة</label>
-            <select name="dependsOnTaskId" class="form-select">
-                @foreach (var t in availableTasks)
+        <hr />
+        <h5>المكلَّفون بالمهمة (تعدد المهندسين مع نسبة المساهمة)</h5>
+        @if (Model.Assignees.Any())
+        {
+            <ul class="list-group mb-3">
+                @foreach (var a in Model.Assignees)
                 {
-                    <option value="@t.Id">@t.Title</option>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @a.User.FullName <span class="text-muted small">مساهمة: @a.ContributionPercentage.ToString("N0")%</span>
+                        <form method="post" asp-action="RemoveAssignee" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <input type="hidden" name="taskId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">إزالة</button>
+                        </form>
+                    </li>
                 }
-            </select>
-        </div>
-        <div class="col-md-4">
-            <button type="submit" class="btn athar-btn w-100">+ إضافة تبعية</button>
-        </div>
-    </form>
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted">لا يوجد مكلَّفون بعد</p>
+        }
+        <form method="post" asp-action="AddAssignee" class="row g-2 align-items-end mb-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="taskId" value="@Model.Id" />
+            <div class="col-md-6">
+                <select name="userId" class="form-select">
+                    @foreach (var eng in engineers)
+                    {
+                        <option value="@eng.Id">@eng.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="number" step="0.01" min="0" max="100" name="contributionPercentage" class="form-control" value="100" placeholder="نسبة المساهمة %" />
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn athar-btn w-100">+ إضافة مكلَّف</button>
+            </div>
+        </form>
+
+        <hr />
+        <h5>التبعيات (المهام التي يجب إكمالها أولاً)</h5>
+        @if (Model.Dependencies.Any())
+        {
+            <ul class="list-group mb-3">
+                @foreach (var dep in Model.Dependencies)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @dep.DependsOnTask.Title
+                        <form method="post" asp-action="RemoveDependency" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@dep.Id" />
+                            <input type="hidden" name="taskId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">إزالة</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted">لا توجد تبعيات حالياً</p>
+        }
+        <form method="post" asp-action="AddDependency" class="row g-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="taskId" value="@Model.Id" />
+            <div class="col-md-8">
+                <label class="form-label">إضافة تبعية على مهمة</label>
+                <select name="dependsOnTaskId" class="form-select">
+                    @foreach (var t in availableTasks)
+                    {
+                        <option value="@t.Id">@t.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn athar-btn w-100">+ إضافة تبعية</button>
+            </div>
+        </form>
+    }
 </div>

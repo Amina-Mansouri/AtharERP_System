@@ -4,7 +4,7 @@
 @inject PermissionService PermissionService
 @{
     ViewData["Title"] = $"تفاصيل المشروع - {Model.Name}";
-    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var canManageTeam = canEdit || canManageStages || canManageTasks;
     var canViewClient = ViewBag.CanViewClient as bool? ?? false;
     var canViewCosts = ViewBag.CanViewCosts as bool? ?? false;
     var canManageStages = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Stages.Manage");

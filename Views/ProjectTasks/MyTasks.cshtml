@@ -1,0 +1,55 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ProjectTask>
+@{
+    ViewData["Title"] = "مهامي";
+
+    string StatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.NotStarted => "لم تبدأ",
+        ProjectTaskStatus.InProgress => "قيد التنفيذ",
+        ProjectTaskStatus.Completed => "مكتملة",
+        ProjectTaskStatus.Blocked => "محظورة",
+        _ => s.ToString()
+    };
+}
+
+<h1 class="athar-page-title">مهامي</h1>
+
+<div class="athar-card mt-3">
+    @if (!Model.Any())
+    {
+        <p class="text-muted">لا توجد مهام مكلَّف بها حالياً</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table athar-table align-middle">
+                <thead>
+                    <tr>
+                        <th>المهمة</th>
+                        <th>المشروع</th>
+                        <th>المرحلة</th>
+                        <th>الحالة</th>
+                        <th>نسبة الإنجاز</th>
+                        <th>تاريخ الاستحقاق</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td>@t.Title</td>
+                            <td>@t.Project.Name</td>
+                            <td>@(t.Stage?.Name ?? "-")</td>
+                            <td><span class="badge athar-status-badge athar-status-@t.Status">@StatusLabel(t.Status)</span></td>
+                            <td>@t.CompletionPercentage.ToString("N0")%</td>
+                            <td>@(t.DueDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                            <td><a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm athar-btn-outline">فتح</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

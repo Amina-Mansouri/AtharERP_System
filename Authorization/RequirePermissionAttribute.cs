@@ -4,23 +4,24 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AtharERP_System.Authorization
 {
-    // استخدم: [RequirePermission("Projects.View")] فوق أي Action أو Controller
+    // استخدم: [RequirePermission("Projects.Edit")] أو [RequirePermission("Projects.Edit", "Projects.Stages.Manage")]
+    // (يكفي أن يملك المستخدم واحدة من الصلاحيات المذكورة)
     public class RequirePermissionAttribute : TypeFilterAttribute
     {
-        public RequirePermissionAttribute(string permissionName) : base(typeof(RequirePermissionFilter))
+        public RequirePermissionAttribute(params string[] permissionNames) : base(typeof(RequirePermissionFilter))
         {
-            Arguments = new object[] { permissionName };
+            Arguments = new object[] { permissionNames };
         }
     }
 
     public class RequirePermissionFilter : IAsyncAuthorizationFilter
     {
-        private readonly string _permissionName;
+        private readonly string[] _permissionNames;
         private readonly PermissionService _permissionService;
 
-        public RequirePermissionFilter(string permissionName, PermissionService permissionService)
+        public RequirePermissionFilter(string[] permissionNames, PermissionService permissionService)
         {
-            _permissionName = permissionName;
+            _permissionNames = permissionNames;
             _permissionService = permissionService;
         }
 
@@ -35,11 +36,13 @@ namespace AtharERP_System.Authorization
                 return;
             }
 
-            var hasPermission = await _permissionService.HasPermissionAsync(httpContext.User, _permissionName);
-            if (!hasPermission)
+            foreach (var permissionName in _permissionNames)
             {
-                context.Result = new RedirectToActionResult("AccessDenied", "Account", null);
+                if (await _permissionService.HasPermissionAsync(httpContext.User, permissionName))
+                    return;
             }
+
+            context.Result = new RedirectToActionResult("AccessDenied", "Account", null);
         }
     }
 }

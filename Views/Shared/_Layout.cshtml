@@ -27,6 +27,9 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Home" asp-action="Dashboard">لوحة التحكم</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="ProjectTasks" asp-action="MyTasks">مهامي</a>
+                            </li>
                             @if (await PermissionService.HasPermissionAsync(User, "Projects.ViewOwn"))
                             {
                                 <li class="nav-item">
