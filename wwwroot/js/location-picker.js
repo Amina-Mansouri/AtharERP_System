@@ -6,6 +6,7 @@ function initAtharLocationPicker(options) {
         lngInputId,
         nameInputId,
         coordsDisplayId,
+        searchInputId,
         initialLat,
         initialLng,
         defaultLat = 32.8872,   // طرابلس، ليبيا كموقع افتراضي
@@ -82,10 +83,86 @@ function initAtharLocationPicker(options) {
         updateCoordsDisplay(startLat, startLng);
     }
 
-    // تصحيح مقاس الخريطة إذا كانت داخل عنصر لم يكن مرئياً بالكامل عند التحميل الأول
     setTimeout(function () {
         map.invalidateSize();
     }, 200);
+
+    // ========== البحث عن عنوان (Forward Geocoding) وتقريب الخريطة تلقائياً ==========
+    if (searchInputId) {
+        const searchInput = document.getElementById(searchInputId);
+        if (searchInput) {
+            let debounceTimer = null;
+            let suggestionsBox = document.createElement('div');
+            suggestionsBox.className = 'athar-address-suggestions';
+            suggestionsBox.style.cssText = 'position:relative; z-index:1000;';
+            searchInput.insertAdjacentElement('afterend', suggestionsBox);
+
+            function clearSuggestions() {
+                suggestionsBox.innerHTML = '';
+            }
+
+            function selectSuggestion(item) {
+                const lat = parseFloat(item.lat);
+                const lon = parseFloat(item.lon);
+                map.setView([lat, lon], 16);
+                placeMarker(lat, lon);
+                document.getElementById(latInputId).value = lat.toFixed(6);
+                document.getElementById(lngInputId).value = lon.toFixed(6);
+                updateCoordsDisplay(lat, lon);
+                if (nameInputId) {
+                    const nameInput = document.getElementById(nameInputId);
+                    if (nameInput) nameInput.value = item.display_name;
+                }
+                searchInput.value = item.display_name;
+                clearSuggestions();
+            }
+
+            async function searchAddress(query) {
+                if (!query || query.trim().length < 3) {
+                    clearSuggestions();
+                    return;
+                }
+                try {
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=ar`
+                    );
+                    if (!res.ok) return;
+                    const results = await res.json();
+                    clearSuggestions();
+
+                    if (!results || results.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.className = 'athar-address-suggestion athar-address-suggestion-empty';
+                        empty.textContent = 'لا توجد نتائج مطابقة';
+                        suggestionsBox.appendChild(empty);
+                        return;
+                    }
+
+                    results.forEach(item => {
+                        const el = document.createElement('div');
+                        el.className = 'athar-address-suggestion';
+                        el.textContent = item.display_name;
+                        el.addEventListener('click', () => selectSuggestion(item));
+                        suggestionsBox.appendChild(el);
+                    });
+                } catch (err) {
+                    // فشل البحث لا يمنع التحديد اليدوي عبر النقر على الخريطة
+                }
+            }
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                const query = this.value;
+                debounceTimer = setTimeout(() => searchAddress(query), 500);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (e.target !== searchInput && !suggestionsBox.contains(e.target)) {
+                    clearSuggestions();
+                }
+            });
+        }
+    }
 
     return map;
 }
