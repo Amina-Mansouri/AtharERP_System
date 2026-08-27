@@ -36,6 +36,7 @@ namespace AtharERP_System.Data
         public DbSet<FinancialRecord> FinancialRecords { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+        public DbSet<EmployeeDocument> EmployeeDocuments { get; set; } = null!;
         // Module 03: إدارة المواقع
         public DbSet<Site> Sites { get; set; } = null!;
         public DbSet<SiteOperation> SiteOperations { get; set; } = null!;
@@ -440,6 +441,18 @@ namespace AtharERP_System.Data
                 .HasOne(sr => sr.RequestedBy)
                 .WithMany()
                 .HasForeignKey(sr => sr.RequestedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            // ========== مستندات الموظف (EmployeeDocument) ==========
+            builder.Entity<EmployeeDocument>()
+                .HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<EmployeeDocument>()
+                .HasOne(d => d.UploadedBy)
+                .WithMany()
+                .HasForeignKey(d => d.UploadedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
 

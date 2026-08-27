@@ -16,7 +16,7 @@
 }
 
 <h1 class="athar-page-title">تعديل بيانات المستخدم: @Model.FullName</h1>
-
+<a asp-controller="EmployeeDocuments" asp-action="Index" asp-route-userId="@Model.Id" class="btn athar-btn-outline mb-3">مستندات الموظف</a>
 <div class="athar-card mt-3">
     @if (!ViewData.ModelState.IsValid)
     {
