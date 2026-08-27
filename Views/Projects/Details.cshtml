@@ -11,6 +11,7 @@
     var canManageTasks = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
     var canManageTeam = canEdit || canManageStages || canManageTasks;
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var allEmployees = ViewBag.AllEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
     var aggregatedTasks = ViewBag.AggregatedSubProjectTasks as List<ProjectTask>;
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
 
@@ -131,7 +132,7 @@
             <input type="hidden" name="projectId" value="@Model.Id" />
             <div class="col-md-6">
                 <select name="userId" class="form-select form-select-sm">
-                    @foreach (var eng in engineers)
+                    @foreach (var eng in allEmployees)
                     {
                         <option value="@eng.Id">@eng.FullName</option>
                     }

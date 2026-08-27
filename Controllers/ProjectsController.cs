@@ -33,7 +33,7 @@ namespace AtharERP_System.Controllers
         // ============================================
         // قائمة المشاريع + عزل الرؤية (القسم 6.6.2)
         // ============================================
-        [RequirePermission("Projects.ViewOwn")]
+        [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
         public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectType? type)
         {
             var query = _context.Projects
@@ -66,7 +66,7 @@ namespace AtharERP_System.Controllers
         // ============================================
         // تفاصيل مشروع (يشمل تجميعاً حياً للمشاريع الفرعية إن كان رئيسياً)
         // ============================================
-        [RequirePermission("Projects.ViewOwn")]
+        [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
         public async Task<IActionResult> Details(int id)
         {
             var project = await _context.Projects
@@ -106,6 +106,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CanViewClient = await CanViewClientAsync();
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Costs.View");
             ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
+            ViewBag.AllEmployees = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
             ViewBag.Engineers = project.TeamMembers.Select(tm => tm.User).OrderBy(u => u.FullName).ToList();
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             return View(project);
