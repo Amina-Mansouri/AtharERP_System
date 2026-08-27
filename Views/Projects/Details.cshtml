@@ -4,11 +4,12 @@
 @inject PermissionService PermissionService
 @{
     ViewData["Title"] = $"تفاصيل المشروع - {Model.Name}";
-    var canManageTeam = canEdit || canManageStages || canManageTasks;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
     var canViewClient = ViewBag.CanViewClient as bool? ?? false;
     var canViewCosts = ViewBag.CanViewCosts as bool? ?? false;
     var canManageStages = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Stages.Manage");
     var canManageTasks = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+    var canManageTeam = canEdit || canManageStages || canManageTasks;
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var aggregatedTasks = ViewBag.AggregatedSubProjectTasks as List<ProjectTask>;
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
