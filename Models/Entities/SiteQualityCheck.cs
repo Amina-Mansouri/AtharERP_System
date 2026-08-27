@@ -37,6 +37,7 @@ namespace AtharERP_System.Models.Entities
         public DateTime CheckDate { get; set; } = DateTime.UtcNow;
 
         [Required]
+        [ValidateNever]
         [Display(Name = "فحصه")]
         public string CheckedById { get; set; } = string.Empty;
 

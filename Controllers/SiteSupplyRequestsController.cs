@@ -65,7 +65,8 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = "بيانات طلب التوريد غير صحيحة";
+                var errors = string.Join("، ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = $"بيانات طلب التوريد غير صحيحة: {errors}";
                 return RedirectToAction("Index", new { siteId = model.SiteId });
             }
 

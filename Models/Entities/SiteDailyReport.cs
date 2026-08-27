@@ -47,6 +47,7 @@ namespace AtharERP_System.Models.Entities
         public string? Notes { get; set; }
 
         [Required]
+        [ValidateNever]
         [Display(Name = "أُنشئ بواسطة")]
         public string CreatedById { get; set; } = string.Empty;
 

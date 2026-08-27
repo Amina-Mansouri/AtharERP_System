@@ -39,6 +39,7 @@ namespace AtharERP_System.Models.Entities
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
         [Required]
+        [ValidateNever]
         [Display(Name = "رفعه")]
         public string UploadedById { get; set; } = string.Empty;
 

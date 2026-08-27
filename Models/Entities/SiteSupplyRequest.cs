@@ -53,6 +53,7 @@ namespace AtharERP_System.Models.Entities
         public DateTime RequestDate { get; set; } = DateTime.UtcNow;
 
         [Required]
+        [ValidateNever]
         [Display(Name = "طلبه")]
         public string RequestedById { get; set; } = string.Empty;
 
