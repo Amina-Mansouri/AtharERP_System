@@ -63,7 +63,12 @@
                 المهندس المسؤول: @(stage.AssignedEngineer?.FullName ?? "-") -
                 القسم: @(stage.Department?.Name ?? "-")
             </small>
-
+            @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
+            {
+                <div class="alert alert-warning py-1 px-2 mt-1 mb-0 small">
+                    ⚠ تجاوزت التكلفة الفعلية (@stage.ActualCost.ToString("N2")) الميزانية المخصصة (@stage.Cost.Value.ToString("N2")) بمقدار @((stage.ActualCost - stage.Cost.Value).ToString("N2"))
+                </div>
+            }
             <table class="table table-sm mt-2 mb-1">
                 <thead>
                     <tr>
@@ -161,5 +166,9 @@
                 }
             </select>
         </div>
+        <div class="col-md-12 mt-2">
+            <button type="submit" class="btn btn-sm athar-btn">+ إضافة المرحلة</button>
+        </div>
+   
     </form>
 </div>

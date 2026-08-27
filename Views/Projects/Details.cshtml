@@ -46,7 +46,14 @@
                 <div class="progress-bar athar-progress-bar" style="width: @Model.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
             </div>
             <small>@Model.CompletionPercentage.ToString("N1")%</small>
+
         </div>
+        @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
+        {
+            <div class="alert alert-warning py-1 px-2 mt-1 mb-0 small">
+                ⚠ تجاوزت التكلفة الفعلية الميزانية المخصصة لهذه المرحلة
+            </div>
+        }
         @if (canViewClient)
         {
             <div class="col-md-6 mb-3">

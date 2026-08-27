@@ -30,7 +30,15 @@ namespace AtharERP_System.Services
             stage.CompletionPercentage = totalWeight > 0
                 ? Math.Round((completedWeight / totalWeight) * 100, 2)
                 : 0;
+            stage.CompletionPercentage = totalWeight > 0
+    ? Math.Round((completedWeight / totalWeight) * 100, 2)
+    : 0;
 
+            // تجميع التكلفة الفعلية للمرحلة من مجموع تكاليف خطواتها
+            stage.ActualCost = stage.Steps.Sum(s => s.ActualCost);
+
+            await _context.SaveChangesAsync();
+            await RecalculateProjectAsync(stage.ProjectId);
             await _context.SaveChangesAsync();
             await RecalculateProjectAsync(stage.ProjectId);
         }
