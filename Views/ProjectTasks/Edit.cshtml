@@ -5,10 +5,36 @@
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var availableTasks = ViewBag.AvailableTasksForDependency as List<ProjectTask> ?? new List<ProjectTask>();
     var canManage = ViewBag.CanManage as bool? ?? false;
+    string StatusLabel(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.NotStarted => "لم تبدأ",
+        ProjectTaskStatus.InProgress => "قيد التنفيذ",
+        ProjectTaskStatus.Completed => "مكتملة",
+        ProjectTaskStatus.Blocked => "محظورة",
+        _ => s.ToString()
+    };
 }
 
 <h1 class="athar-page-title">تعديل المهمة: @Model.Title</h1>
-
+<div class="athar-card mt-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <strong>الحالة الحالية:</strong>
+            <span class="badge athar-status-badge athar-status-@Model.Status">@StatusLabel(Model.Status)</span>
+        </div>
+        <form method="post" asp-action="UpdateStatus" class="d-flex gap-2">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <select name="status" class="form-select form-select-sm">
+                <option value="NotStarted" selected="@(Model.Status == ProjectTaskStatus.NotStarted)">لم تبدأ</option>
+                <option value="InProgress" selected="@(Model.Status == ProjectTaskStatus.InProgress)">قيد التنفيذ</option>
+                <option value="Completed" selected="@(Model.Status == ProjectTaskStatus.Completed)">مكتملة</option>
+                <option value="Blocked" selected="@(Model.Status == ProjectTaskStatus.Blocked)">محظورة</option>
+            </select>
+            <button type="submit" class="btn btn-sm athar-btn">تحديث الحالة</button>
+        </form>
+    </div>
+</div>
 <div class="athar-card mt-3">
     @if (!ViewData.ModelState.IsValid)
     {
