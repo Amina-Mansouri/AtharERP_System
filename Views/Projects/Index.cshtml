@@ -118,7 +118,7 @@
                             @if (canDelete)
                             {
                                 <form method="post" asp-action="Delete" asp-route-id="@project.Id" class="d-inline"
-                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا المشروع؟');">
+                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف كل بياناته نهائياً: المراحل، الخطوات، المهام، الفريق، التكاليف، المستندات، والجدول الزمني. لا يمكن التراجع عن هذا الإجراء.');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
                                 </form>

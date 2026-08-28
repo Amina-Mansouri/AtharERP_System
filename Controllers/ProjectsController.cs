@@ -229,6 +229,7 @@ namespace AtharERP_System.Controllers
         {
             var project = await _context.Projects
                 .Include(p => p.ChildProjects)
+                .Include(p => p.Tasks)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
@@ -246,6 +247,20 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "لا يمكن حذف المشروع لوجود سجلات مالية مرتبطة به";
                 return RedirectToAction("Index");
             }
+
+            var hasSites = await _context.Sites.AnyAsync(s => s.ProjectId == id);
+            if (hasSites)
+            {
+                TempData["Error"] = "لا يمكن حذف المشروع لوجود مواقع ميدانية مرتبطة به";
+                return RedirectToAction("Index");
+            }
+
+            // تنظيف روابط تبعيات المهام أولاً (علاقتها Restrict) قبل حذف المشروع بالكامل
+            var taskIds = project.Tasks.Select(t => t.Id).ToList();
+            var dependencyLinks = await _context.TaskDependencies
+                .Where(d => taskIds.Contains(d.TaskId) || taskIds.Contains(d.DependsOnTaskId))
+                .ToListAsync();
+            _context.TaskDependencies.RemoveRange(dependencyLinks);
 
             var projectName = project.Name;
             _context.Projects.Remove(project);
@@ -296,11 +311,20 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> RemoveTeamMember(int id, int projectId)
         {
             var member = await _context.ProjectTeamMembers.FindAsync(id);
-            if (member != null)
+            if (member == null)
+                return RedirectToAction("Details", new { id = projectId });
+
+            var isAssignedToAnyTask = await _context.TaskAssignees
+                .AnyAsync(a => a.UserId == member.UserId && a.Task.ProjectId == projectId);
+
+            if (isAssignedToAnyTask)
             {
-                _context.ProjectTeamMembers.Remove(member);
-                await _context.SaveChangesAsync();
+                TempData["Error"] = "لا يمكن إزالة هذا العضو من الفريق لأنه لا يزال مكلَّفاً بمهمة واحدة أو أكثر داخل هذا المشروع. أزيليه من المهام أولاً";
+                return RedirectToAction("Details", new { id = projectId });
             }
+
+            _context.ProjectTeamMembers.Remove(member);
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = "تمت إزالة العضو من الفريق";
             return RedirectToAction("Details", new { id = projectId });
