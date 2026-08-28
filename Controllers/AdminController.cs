@@ -47,6 +47,22 @@ namespace AtharERP_System.Controllers
             ViewBag.UserRoles = userRoles;
             return View(users);
         }
+        [HttpGet]
+        public async Task<IActionResult> EditUser(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return NotFound();
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            ViewBag.CurrentRole = currentRoles.FirstOrDefault();
+            await ReloadEditUserViewBagsAsync(id, ViewBag.CurrentRole);
+
+            return View(user);
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
