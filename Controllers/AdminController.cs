@@ -15,17 +15,23 @@ namespace AtharERP_System.Controllers
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly AppDbContext _context;
         private readonly FileUploadService _fileUpload;
+        private readonly PermissionService _permissionService;
+        private readonly AuditService _auditService;
 
         public AdminController(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
             AppDbContext context,
-            FileUploadService fileUpload)
+            FileUploadService fileUpload,
+            PermissionService permissionService,
+            AuditService auditService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _fileUpload = fileUpload;
+            _permissionService = permissionService;
+            _auditService = auditService;
         }
 
         // ============================================
@@ -204,11 +210,12 @@ namespace AtharERP_System.Controllers
                 await _userManager.AddToRoleAsync(user, role);
             }
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل", "ApplicationUser", user.Id, $"تعديل بيانات {user.FullName}");
             TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
             return RedirectToAction("Users");
         }
 
-      
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -244,6 +251,7 @@ namespace AtharERP_System.Controllers
                 await _userManager.UpdateSecurityStampAsync(user);
             }
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, user.IsActive ? "تفعيل" : "تعطيل", "ApplicationUser", user.Id, user.IsActive ? "تم تفعيل الحساب" : "تم تعطيل الحساب");
             TempData["Success"] = user.IsActive ? $"تم تفعيل {user.FullName}" : $"تم تعطيل {user.FullName}";
             return RedirectToAction("Users");
         }
@@ -259,12 +267,52 @@ namespace AtharERP_System.Controllers
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
 
+            if (result.Succeeded)
+                await _auditService.LogAsync(_userManager.GetUserId(User)!, "إعادة تعيين كلمة المرور", "ApplicationUser", user.Id, "تم تحديث كلمة المرور");
+
             TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded
                 ? $"تم تحديث كلمة مرور {user.FullName} بنجاح"
                 : string.Join("، ", result.Errors.Select(e => e.Description));
 
             return RedirectToAction("EditUser", new { id });
         }
+        [HttpGet]
+        public async Task<IActionResult> UserDetails(string id)
+        {
+            var user = await _userManager.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+                return NotFound();
+
+            ViewBag.Positions = await _context.EmployeePositions
+                .Include(p => p.Department)
+                .Where(p => p.UserId == id)
+                .OrderByDescending(p => p.IsPrimary).ThenByDescending(p => p.StartDate)
+                .ToListAsync();
+
+            ViewBag.EffectivePermissions = await _permissionService.GetEffectivePermissionsAsync(id);
+
+            ViewBag.Documents = await _context.EmployeeDocuments
+                .Where(d => d.UserId == id)
+                .OrderByDescending(d => d.UploadedAt)
+                .ToListAsync();
+
+            var auditLogs = await _context.AuditLogs
+                .Where(a => a.EntityName == "ApplicationUser" && a.EntityId == id)
+                .OrderByDescending(a => a.Timestamp)
+                .Take(30)
+                .ToListAsync();
+            ViewBag.AuditLogs = auditLogs;
+
+            var actorIds = auditLogs.Select(a => a.UserId).Distinct().ToList();
+            ViewBag.AuditActors = await _userManager.Users
+                .Where(u => actorIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FullName);
+
+            return View(user);
+        }
+
 
         // ============================================
         // المناصب المتعددة (EmployeePosition)

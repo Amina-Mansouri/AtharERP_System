@@ -57,6 +57,59 @@ namespace AtharERP_System.Services
 
             return await _context.RolePermissions
                 .AnyAsync(rp => roleIds.Contains(rp.RoleId) && rp.PermissionId == permissionId.Value && rp.IsGranted);
+       
+        
+        }
+        public class EffectivePermission
+        {
+            public string Code { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
+            public string Module { get; set; } = string.Empty;
+            public string Source { get; set; } = string.Empty; // "دور" أو "يدوي"
+        }
+
+        // البند 8 في BACKEND.md: صلاحيات الدور ∪ الاستثناءات اليدوية، مع تعليم مصدر كل صلاحية.
+        // لا يوجد آلية "حجب" في المخطط الحالي (UserPermission منح إضافي فقط)، فمصدر "محجوب" غير ممثَّل.
+        public async Task<List<EffectivePermission>> GetEffectivePermissionsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return new List<EffectivePermission>();
+
+            var roleNames = (await _userManager.GetRolesAsync(user)).ToList();
+            var roleIds = await _context.Roles
+                .Where(r => roleNames.Contains(r.Name) && r.IsActive)
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            var rolePermissionIds = roleIds.Count == 0
+                ? new List<int>()
+                : await _context.RolePermissions
+                    .Where(rp => roleIds.Contains(rp.RoleId) && rp.IsGranted)
+                    .Select(rp => rp.PermissionId)
+                    .Distinct()
+                    .ToListAsync();
+
+            var manualPermissionIds = await _context.UserPermissions
+                .Where(up => up.UserId == userId)
+                .Select(up => up.PermissionId)
+                .ToListAsync();
+
+            var allIds = rolePermissionIds.Union(manualPermissionIds).ToList();
+
+            var permissions = await _context.Permissions
+                .Where(p => allIds.Contains(p.Id) && p.IsActive)
+                .OrderBy(p => p.Module).ThenBy(p => p.Code)
+                .ToListAsync();
+
+            return permissions.Select(p => new EffectivePermission
+            {
+                Code = p.Code,
+                Name = p.Name,
+                Module = p.Module,
+                Source = !rolePermissionIds.Contains(p.Id) && manualPermissionIds.Contains(p.Id) ? "يدوي" : "دور"
+            }).ToList();
         }
     }
+
 }
