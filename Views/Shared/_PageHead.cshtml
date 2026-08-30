@@ -1,0 +1,23 @@
+﻿@{
+    var kicker = ViewData["Kicker"] as string;
+    var pageTitle = ViewData["PageTitle"] as string;
+    var actions = ViewData["Actions"] as List<(string Label, string Url, bool Accent)> ?? new();
+}
+<div class="page-head">
+    <div>
+        @if (!string.IsNullOrEmpty(kicker))
+        {
+            <span class="kicker">@kicker</span>
+        }
+        <h1>@pageTitle</h1>
+    </div>
+    @if (actions.Any())
+    {
+        <div class="page-head-actions">
+            @foreach (var a in actions)
+            {
+                <a href="@a.Url" class="btn-line @(a.Accent ? "btn-line-accent" : "")">@a.Label</a>
+            }
+        </div>
+    }
+</div>

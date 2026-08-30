@@ -1,500 +1,449 @@
-@font-face {
-    font-family: 'Tajawal';
-    src: url('/fonts/tajawal/Tajawal-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Tajawal';
-    src: url('/fonts/tajawal/Tajawal-Medium.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Tajawal';
-    src: url('/fonts/tajawal/Tajawal-Bold.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Tajawal';
-    src: url('/fonts/tajawal/Tajawal-Black.woff2') format('woff2');
-    font-weight: 900;
-    font-style: normal;
-    font-display: swap;
-}
-
+/* ============================================================
+   طبقة تصميم جديدة (Design Handoff) — تُضاف فوق أنماط athar-* القائمة
+   ولا تحذف أو تعدّل أي منها. جسر بين النظامين إلى حين اكتمال إعادة التصميم.
+   ============================================================ */
 :root {
-    --athar-primary: #6B4226;
-    --athar-primary-dark: #3D2412;
-    --athar-primary-light: #8B5A2B;
-    --athar-accent: #D9A441;
-    --athar-bg: #FAF6F0;
-    --athar-text: #2B1D12;
-    --athar-border: #E6D9C6;
-    --athar-danger: #B3372C;
-    --athar-success: #5C7A3A;
+    --ds-bg: #f3f2f2;
+    --ds-surface: #ffffff;
+    --ds-text: #201f1d;
+    --ds-text-secondary: rgba(32,31,29,.72);
+    --ds-text-light: rgba(32,31,29,.5);
+    --ds-text-faint: rgba(32,31,29,.35);
+    --ds-gold: #b68235;
+    --ds-gold-text: #8a6a2a;
+    --ds-hair: 1px solid rgba(32,31,29,.18);
+    --ds-row-line: 1px solid rgba(32,31,29,.10);
+    --ds-section-line: 1px solid rgba(32,31,29,.16);
+    --ds-th-bg: rgba(32,31,29,.035);
+    --ds-row-selected: rgba(182,130,53,.05);
+    --ds-nav-active-bg: rgba(182,130,53,.07);
+    --ds-track: rgba(32,31,29,.10);
+    --ds-radius: 4px;
+    --ds-shadow-card: 0 1px 3px rgba(0,0,0,.06);
+    --ds-shadow-dropdown: 0 10px 28px rgba(32,31,29,.14);
+    /* Cormorant Garamond وLora: أسماء فقط بلا CDN (بلا حزم جديدة)؛ أضيفي ملفات
+       الخط في wwwroot/fonts إن أردت التطابق البصري الكامل، وإلا تتساقط للاحتياطي */
+    --ds-font-ar: 'Noto Naskh Arabic', 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+    --ds-font-num: 'Cormorant Garamond', Georgia, serif;
+    --ds-font-kicker: 'Lora', Georgia, serif;
 }
 
-html, body {
-    height: 100%;
-}
-
-body {
-    font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
-    background-color: var(--athar-bg);
-    color: var(--athar-text);
-    margin: 0;
-}
-
-/* ===== Navbar ===== */
-.athar-navbar {
-    background: linear-gradient(90deg, var(--athar-primary-dark), var(--athar-primary));
-    padding: 0.75rem 0;
-}
-
-.athar-brand {
-    font-weight: 900;
-    font-size: 1.5rem;
-    color: #fff !important;
-}
-
-    .athar-brand span {
-        color: var(--athar-accent);
-        font-size: 0.9rem;
-        margin-right: 0.4rem;
-    }
-
-.athar-navbar .nav-link {
-    color: rgba(255, 255, 255, 0.85) !important;
-    font-weight: 500;
-}
-
-    .athar-navbar .nav-link:hover {
-        color: var(--athar-accent) !important;
-    }
-
-.athar-navbar .dropdown-menu {
-    background-color: var(--athar-primary-dark);
-    border: none;
-}
-
-.athar-navbar .dropdown-item {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-    .athar-navbar .dropdown-item:hover {
-        background-color: var(--athar-primary-light);
-        color: #fff;
-    }
-
-.athar-user-greeting {
-    color: #fff !important;
-}
-
-/* ===== Buttons ===== */
-.athar-btn {
-    background-color: var(--athar-primary);
-    color: #fff;
-    border: 1px solid var(--athar-primary);
-    font-weight: 500;
-    border-radius: 6px;
-    padding: 0.5rem 1.25rem;
-}
-
-    .athar-btn:hover {
-        background-color: var(--athar-primary-dark);
-        color: #fff;
-    }
-
-.athar-btn-outline {
-    background-color: transparent;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 6px;
-    padding: 0.4rem 1rem;
-}
-
-    .athar-btn-outline:hover {
-        background-color: rgba(255, 255, 255, 0.12);
-        color: #fff;
-    }
-
-/* outline buttons used outside dark backgrounds (cards) need dark text */
-.athar-card .athar-btn-outline,
-.athar-auth-card .athar-btn-outline {
-    color: var(--athar-primary);
-    border-color: var(--athar-primary);
-}
-
-    .athar-card .athar-btn-outline:hover,
-    .athar-auth-card .athar-btn-outline:hover {
-        background-color: var(--athar-primary);
-        color: #fff;
-    }
-
-.athar-btn-accent {
-    background-color: var(--athar-accent);
-    color: var(--athar-primary-dark);
-    border: 1px solid var(--athar-accent);
-    font-weight: 700;
-    border-radius: 6px;
-    padding: 0.6rem 1.5rem;
-}
-
-    .athar-btn-accent:hover {
-        background-color: #c4922f;
-        color: var(--athar-primary-dark);
-    }
-
-/* ===== Content / Cards ===== */
-.athar-content {
-    padding-top: 1.5rem;
-    padding-bottom: 3rem;
-    min-height: calc(100vh - 140px);
-}
-
-.athar-page-title {
-    color: var(--athar-primary-dark);
-    font-weight: 900;
-}
-
-.athar-card {
-    background: #fff;
-    border: 1px solid var(--athar-border);
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 10px rgba(107, 66, 38, 0.08);
-}
-
-.athar-permission-group {
-    background: var(--athar-bg);
-    border: 1px solid var(--athar-border);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    height: 100%;
-}
-
-    .athar-permission-group h6 {
-        color: var(--athar-primary);
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-/* ===== Table ===== */
-.athar-table thead {
-    background-color: var(--athar-primary);
-    color: #fff;
-}
-
-    .athar-table thead th {
-        border: none;
-        font-weight: 500;
-    }
-
-.athar-table tbody tr:hover {
-    background-color: rgba(107, 66, 38, 0.06);
-}
-
-/* ===== Badges ===== */
-.athar-badge-active {
-    background-color: var(--athar-success);
-    color: #fff;
-}
-
-.athar-badge-inactive {
-    background-color: var(--athar-danger);
-    color: #fff;
-}
-
-/* ===== Stat cards (Dashboard) ===== */
-.athar-stat-card {
-    background: #fff;
-    border: 1px solid var(--athar-border);
-    border-radius: 10px;
-    padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(107, 66, 38, 0.08);
-}
-
-.athar-stat-value {
-    font-size: 2.25rem;
-    font-weight: 900;
-    color: var(--athar-primary);
-}
-
-.athar-stat-label {
-    color: #6c757d;
-    margin-top: 0.25rem;
-}
-
-/* ===== Hero (Home landing page) ===== */
-.athar-hero {
-    background: linear-gradient(135deg, var(--athar-primary-dark), var(--athar-primary));
-    border-radius: 14px;
-    padding: 4rem 1.5rem;
-    margin-top: 1rem;
-    color: #fff;
-}
-
-.athar-hero-title {
-    font-size: 3.5rem;
-    font-weight: 900;
-    color: var(--athar-accent);
-    margin-bottom: 0;
-}
-
-.athar-hero-subtitle {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-top: 0.25rem;
-}
-
-.athar-hero-text {
-    max-width: 640px;
-    margin: 1rem auto 0;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.athar-hero-welcome {
-    font-size: 1.1rem;
-    color: var(--athar-accent);
-    font-weight: 700;
-}
-
-/* ===== Auth pages (Login / Register / AccessDenied) ===== */
-.athar-auth-wrapper {
-    min-height: 100vh;
+/* ===== هيكل التطبيق (Topbar + Sidebar) ===== */
+.app-topbar {
+    height: 46px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--athar-primary-dark), var(--athar-primary));
-    padding: 2rem 1rem;
+    gap: 12px;
+    padding: 0 14px;
+    background: var(--ds-surface);
+    border-bottom: var(--ds-hair);
+    font-family: var(--ds-font-ar);
 }
 
-.athar-auth-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 2.5rem;
-    width: 100%;
-    max-width: 420px;
-    box-shadow: 0 10px 40px rgba(61, 36, 18, 0.3);
+    .app-topbar .ds-logo {
+        width: 24px;
+        height: 24px;
+    }
+
+    .app-topbar .ds-brand {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ds-text);
+        white-space: nowrap;
+    }
+
+    .app-topbar .ds-search {
+        flex: 1;
+        height: 26px;
+        border: var(--ds-hair);
+        border-radius: var(--ds-radius);
+        padding: 0 10px;
+        font-size: 10.5px;
+        color: var(--ds-text-secondary);
+        background: var(--ds-bg);
+    }
+
+    .app-topbar .ds-bell {
+        width: 24px;
+        height: 24px;
+        border: var(--ds-hair);
+        border-radius: var(--ds-radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        cursor: pointer;
+        background: var(--ds-surface);
+    }
+
+        .app-topbar .ds-bell svg {
+            width: 13px;
+            height: 13px;
+            stroke: rgba(32,31,29,.8);
+            stroke-width: 1.7;
+        }
+
+        .app-topbar .ds-bell.open {
+            border-color: var(--ds-gold);
+            background: rgba(182,130,53,.12);
+        }
+
+            .app-topbar .ds-bell.open svg {
+                stroke: var(--ds-gold-text);
+            }
+
+        .app-topbar .ds-bell .ds-bell-count {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--ds-gold);
+            color: #fff;
+            font-size: 8.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+    .app-topbar .ds-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: var(--ds-hair);
+    }
+
+    .app-topbar .ds-role {
+        font-size: 10.5px;
+        color: var(--ds-text-secondary);
+        white-space: nowrap;
+    }
+
+.app-body {
+    display: flex;
+    align-items: stretch;
+    min-height: calc(100vh - 46px);
 }
 
-.athar-auth-card-wide {
-    max-width: 760px;
+.app-sidebar {
+    width: 186px;
+    flex-shrink: 0;
+    border-left: var(--ds-hair);
+    background: var(--ds-surface);
+    font-family: var(--ds-font-ar);
+    overflow-y: auto;
 }
 
-.athar-auth-title {
-    color: var(--athar-primary);
-    font-weight: 900;
-    text-align: center;
-    margin-bottom: 0;
+    .app-sidebar .nav-group-title {
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: .09em;
+        color: var(--ds-text-light);
+        padding: 11px 12px 5px;
+        font-family: var(--ds-font-kicker);
+    }
+
+.nav-item {
+    display: block;
+    font-size: 11.5px;
+    padding: 6px 12px;
+    color: var(--ds-text);
+    text-decoration: none;
+    border-right: 2px solid transparent;
 }
 
-.athar-auth-subtitle {
-    text-align: center;
-    color: #6c757d;
-    margin-bottom: 1.5rem;
+    .nav-item:hover {
+        color: var(--ds-text);
+        background: rgba(32,31,29,.02);
+        text-decoration: none;
+    }
+
+    .nav-item.active {
+        background: var(--ds-nav-active-bg);
+        border-right-color: var(--ds-gold);
+        font-weight: 600;
+    }
+
+.app-content {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 18px;
+    background: var(--ds-bg);
+    font-family: var(--ds-font-ar);
 }
 
-/* ===== Footer ===== */
-.athar-footer {
-    background-color: var(--athar-primary-dark);
-    color: rgba(255, 255, 255, 0.75);
-    padding: 1rem 0;
-    font-size: 0.9rem;
+/* ===== ترويسة الصفحة ===== */
+.kicker {
+    font-family: var(--ds-font-kicker);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--ds-text-light);
+    display: block;
+    margin-bottom: 2px;
 }
 
-/* ===== Location picker (map) ===== */
-.athar-map-section {
-    background: var(--athar-bg);
-    border: 1px solid var(--athar-border);
-    border-radius: 8px;
-    padding: 1rem;
-}
-
-.athar-map-hint {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-bottom: 0.75rem;
-}
-
-.athar-map {
-    /* عزل اتجاه الخريطة عن باقي الصفحة، فـ Leaflet غير مصمم لسياق RTL */
-    direction: ltr;
-    height: 350px;
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid var(--athar-border);
-    z-index: 0;
-}
-
-.athar-coords-display {
-    font-size: 0.9rem;
-    color: var(--athar-primary);
-    font-weight: 500;
-}
-
-/* ===== Project status badges (Module 2) ===== */
-.athar-status-badge {
-    color: #fff;
-    font-weight: 500;
-}
-
-.athar-status-New {
-    background-color: #6c757d;
-}
-
-.athar-status-InProgress {
-    background-color: var(--athar-accent);
-    color: var(--athar-primary-dark);
-}
-
-.athar-status-ClientReview {
-    background-color: #3D6B8B;
-}
-
-.athar-status-Completed {
-    background-color: var(--athar-success);
-}
-
-/* ===== Project completion progress bar (Module 2) ===== */
-.athar-progress-bar {
-    background-color: var(--athar-accent);
-}
-
-/* ===== Kanban board (Module 2 - Tasks) ===== */
-.athar-kanban-column {
-    background: var(--athar-bg);
-    border: 1px solid var(--athar-border);
-    border-radius: 8px;
-    padding: 0.75rem;
-    min-height: 150px;
-}
-
-.athar-kanban-header {
-    font-weight: 700;
-    color: var(--athar-primary);
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--athar-border);
-    padding-bottom: 0.4rem;
-}
-
-.athar-kanban-card {
-    background: #fff;
-    border: 1px solid var(--athar-border);
-    border-radius: 6px;
-    padding: 0.6rem;
-    margin-bottom: 0.6rem;
-}
-
-.athar-priority-Low {
-    background-color: #6c757d;
-    color: #fff;
-}
-
-.athar-priority-Medium {
-    background-color: var(--athar-accent);
-    color: var(--athar-primary-dark);
-}
-
-.athar-priority-High {
-    background-color: #B3372C;
-    color: #fff;
-}
-
-.athar-priority-Critical {
-    background-color: #7A1A1A;
-    color: #fff;
-}
-/* ===== شعار أثر (حماية حقوق النشر) ===== */
-.athar-navbar-logo {
-    height: 42px;
-    width: auto;
-}
-
-.athar-auth-logo {
-    max-width: 260px;
-    width: 100%;
-    height: auto;
-}
-
-.athar-footer-logo {
-    height: 20px;
-    width: auto;
-    opacity: 0.85;
-}
-
-/* ===== ترويسة وعلامة مائية للتقارير المطبوعة (جاهزة لكل الوحدات القادمة) ===== */
-.athar-report-header {
+.page-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid var(--athar-primary);
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 12px;
 }
 
-    .athar-report-header img {
-        height: 60px;
-        width: auto;
+    .page-head h1 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--ds-text);
+        margin: 0;
     }
 
-.athar-report-watermark {
-    position: relative;
+    .page-head .page-head-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+/* ===== شريط الأرقام ===== */
+.stat-strip {
+    display: flex;
+    border-top: var(--ds-section-line);
+    border-bottom: var(--ds-section-line);
+    background: var(--ds-surface);
+    margin-bottom: 12px;
 }
 
-    .athar-report-watermark::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-image: url('/images/logo-outline.png');
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: 55%;
-        opacity: 0.06;
-        pointer-events: none;
-        z-index: 0;
+    .stat-strip .stat-item {
+        flex: 1;
+        padding: 10px 14px;
+        border-left: var(--ds-row-line);
+        text-align: center;
     }
 
-@media print {
-    .athar-navbar, .athar-footer {
-        display: none !important;
-    }
+        .stat-strip .stat-item:first-child {
+            border-left: none;
+        }
 
-    .athar-report-watermark::before {
-        opacity: 0.08;
-    }
+        .stat-strip .stat-item .stat-value {
+            font-family: var(--ds-font-num);
+            font-weight: 400;
+            font-size: 23px;
+            font-variant-numeric: tabular-nums;
+            color: var(--ds-text);
+            display: block;
+        }
+
+        .stat-strip .stat-item .stat-sub {
+            font-size: 10px;
+            color: var(--ds-text-light);
+        }
+
+/* ===== شريط التصفية ===== */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
 }
-.athar-address-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    max-height: 220px;
-    overflow-y: auto;
+
+    .filter-bar .filter-search {
+        height: 27px;
+        border: var(--ds-hair);
+        border-radius: var(--ds-radius);
+        padding: 0 10px;
+        font-size: 11px;
+        flex: 1;
+        max-width: 260px;
+    }
+
+    .filter-bar .filter-chip {
+        height: 27px;
+        padding: 0 11px;
+        font-size: 11px;
+        border: var(--ds-hair);
+        border-radius: var(--ds-radius);
+        background: var(--ds-surface);
+        color: var(--ds-text-secondary);
+        cursor: pointer;
+    }
+
+        .filter-bar .filter-chip.active {
+            border-color: var(--ds-gold);
+            color: var(--ds-gold-text);
+        }
+
+    .filter-bar .filter-clear {
+        margin-inline-start: auto;
+        font-size: 10.5px;
+        color: var(--ds-text-light);
+        cursor: pointer;
+    }
+
+/* ===== الجدول (CSS Grid — عرض كل عمود يُحدَّد مرة واحدة عبر --cols على الغلاف) ===== */
+.data-table {
+    --cols: 1fr; /* كل شاشة تُعيد تعريفها: style="--cols: 28px 100px minmax(0,1fr) 58px" */
     width: 100%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: var(--ds-surface);
+    border: var(--ds-hair);
+    border-radius: var(--ds-radius);
+    box-shadow: var(--ds-shadow-card);
+    overflow-x: auto;
 }
 
-.athar-address-suggestion {
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 0.9rem;
+.data-table-head,
+.data-table-row {
+    display: grid;
+    grid-template-columns: var(--cols);
+    align-items: center;
+    min-width: fit-content;
 }
 
-    .athar-address-suggestion:hover {
-        background: #f5f0e8;
+.data-table-head {
+    background: var(--ds-th-bg);
+    border-bottom: var(--ds-hair);
+}
+
+.data-table-row {
+    border-top: var(--ds-row-line);
+}
+
+    .data-table-row:first-child {
+        border-top: none;
     }
 
-.athar-address-suggestion-empty {
-    color: #999;
-    cursor: default;
+    .data-table-row.row-selected {
+        background: var(--ds-row-selected);
+    }
+
+    .data-table-row.row-faded {
+        opacity: .6;
+    }
+
+    .data-table-row.row-expanded {
+        background: var(--ds-bg);
+        grid-column: 1 / -1;
+        display: block;
+        padding: 10px 12px;
+    }
+
+.cell {
+    font-size: 11.5px;
+    padding: 8px 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
+
+.data-table-head .cell {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ds-text-light);
+    font-weight: 600;
+    white-space: normal;
+}
+
+.cell-num {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ===== شارات ===== */
+.tag {
+    display: inline-block;
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid rgba(32,31,29,.28);
+    color: var(--ds-text-secondary);
+}
+
+.tag-accent {
+    border-color: var(--ds-gold);
+    color: var(--ds-gold-text);
+}
+
+/* ===== أزرار محدَّدة بإطار ===== */
+.btn-line {
+    height: 27px;
+    padding: 0 11px;
+    font-size: 11px;
+    border: var(--ds-hair);
+    border-radius: var(--ds-radius);
+    background: var(--ds-surface);
+    color: var(--ds-text);
+    display: inline-flex;
+    align-items: center;
+}
+
+    .btn-line:hover {
+        background: var(--ds-bg);
+    }
+
+.btn-line-accent {
+    border-color: var(--ds-gold);
+    color: var(--ds-gold-text);
+}
+
+/* ===== شريط تقدّم شعري ===== */
+.progress-hair {
+    height: 3px;
+    width: 100%;
+    background: var(--ds-track);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+    .progress-hair > span {
+        display: block;
+        height: 100%;
+        background: var(--ds-gold);
+    }
+
+/* ===== لوحة جانبية/سفلية ===== */
+.side-panel {
+    background: var(--ds-surface);
+    border: var(--ds-hair);
+    border-radius: var(--ds-radius);
+    box-shadow: var(--ds-shadow-card);
+    padding: 12px;
+}
+
+    .side-panel .side-panel-title {
+        font-size: 12.5px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+/* ===== الترقيم ===== */
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--ds-text-light);
+}
+
+    .pager .pager-pages {
+        display: flex;
+        gap: 4px;
+    }
+
+    .pager .pager-page {
+        width: 21px;
+        height: 19px;
+        border: var(--ds-hair);
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        cursor: pointer;
+    }
+
+        .pager .pager-page.active {
+            border-color: var(--ds-gold);
+            color: var(--ds-gold-text);
+        }

@@ -1,0 +1,17 @@
+﻿@{
+    var searchValue = ViewData["SearchValue"] as string;
+    var placeholder = ViewData["SearchPlaceholder"] as string ?? "بحث...";
+    var filters = ViewData["Filters"] as List<(string Label, string Url, bool Active)> ?? new();
+    var clearUrl = ViewData["ClearUrl"] as string;
+}
+<div class="filter-bar">
+    <input type="text" class="filter-search" placeholder="@placeholder" value="@searchValue" name="search" />
+    @foreach (var f in filters)
+    {
+        <a href="@f.Url" class="filter-chip @(f.Active ? "active" : "")">@f.Label @(f.Active ? "×" : "")</a>
+    }
+    @if (!string.IsNullOrEmpty(clearUrl))
+    {
+        <a href="@clearUrl" class="filter-clear">مسح التصفية</a>
+    }
+</div>

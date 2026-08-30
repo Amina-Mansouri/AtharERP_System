@@ -1,0 +1,11 @@
+﻿@{
+    var columns = ViewData["Columns"] as List<(string Label, string Width)> ?? new();
+    var cols = string.Join(" ", columns.Select(c => c.Width));
+}
+<div class="data-table" style="--cols: @cols">
+    <div class="data-table-head">
+        @foreach (var c in columns)
+        {
+            <div class="cell">@c.Label</div>
+        }
+    </div>

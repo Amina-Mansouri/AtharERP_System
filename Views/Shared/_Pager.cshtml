@@ -1,0 +1,15 @@
+﻿@{
+    var from = ViewData["PagerFrom"] as int? ?? 0;
+    var to = ViewData["PagerTo"] as int? ?? 0;
+    var total = ViewData["PagerTotal"] as int? ?? 0;
+    var pages = ViewData["PagerPages"] as List<(int Page, string Url, bool Active)> ?? new();
+}
+<div class="pager">
+    <span class="cell-num">@from–@to من @total</span>
+    <div class="pager-pages">
+        @foreach (var p in pages)
+        {
+            <a href="@p.Url" class="pager-page @(p.Active ? "active" : "")">@p.Page</a>
+        }
+    </div>
+</div>

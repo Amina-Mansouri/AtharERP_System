@@ -1,0 +1,8 @@
+﻿@{
+    var title = ViewData["SidePanelTitle"] as string;
+}
+<div class="side-panel">
+    @if (!string.IsNullOrEmpty(title))
+    {
+        <div class="side-panel-title">@title</div>
+    }

@@ -1,5 +1,9 @@
 ﻿@using AtharERP_System.Services
+@using Microsoft.AspNetCore.Identity
+@using AtharERP_System.Models.Entities
 @inject PermissionService PermissionService
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -11,95 +15,166 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    @if (ViewData["HideNav"] as bool? != true)
+    @if (ViewData["HideNav"] as bool? == true)
     {
-        <header>
-            <nav class="navbar navbar-expand-lg athar-navbar">
-                <div class="container-fluid">
-                    <a class="navbar-brand athar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
-                        <img src="~/images/logo-icon.png" alt="أثر" class="athar-navbar-logo" />
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#atharNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="atharNav">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Dashboard">لوحة التحكم</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="ProjectTasks" asp-action="MyTasks">مهامي</a>
-                            </li>
-                            @if (await PermissionService.HasPermissionAsync(User, "Projects.ViewOwn"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Projects" asp-action="Index">المشاريع</a>
-                                </li>
-                            }
-                            @if (await PermissionService.HasPermissionAsync(User, "PR.Clients"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Clients" asp-action="Index">العملاء</a>
-                                </li>
-                            }
-                            @if (await PermissionService.HasPermissionAsync(User, "Sites.View"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Sites" asp-action="Index">المواقع</a>
-                                </li>
-                            }
-                            @if (User.IsInRole("مدير النظام"))
-                            {
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">الإدارة</a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="Users">المستخدمون</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="Roles">الأدوار والصلاحيات</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="Departments">الأقسام</a></li>
-                                    </ul>
-                                </li>
-                            }
-                        </ul>
-                        <partial name="_LoginPartial" />
-                    </div>
+        <div class="athar-auth-wrapper">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            </nav>
-        </header>
-    }
-
-    <div class="@(ViewData["HideNav"] as bool? == true ? "athar-auth-wrapper" : "container athar-content")">
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                @TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                @TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-        <main role="main">
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
             @RenderBody()
-        </main>
-    </div>
-
-    @if (ViewData["HideNav"] as bool? != true)
+        </div>
+    }
+    else
     {
-        <footer class="athar-footer text-center">
-            <div class="container d-flex align-items-center justify-content-center gap-2">
-                <img src="~/images/logo-icon.png" alt="أثر" class="athar-footer-logo" />
-                <span>&copy; @DateTime.Now.Year - جميع الحقوق محفوظة لشركة أثر للتصاميم والاستشارات الهندسية</span>
-            </div>
-        </footer>
+        var currentRole = SignInManager.IsSignedIn(User)
+            ? (await UserManager.GetRolesAsync((await UserManager.GetUserAsync(User))!)).FirstOrDefault()
+            : null;
+
+        bool canUsers = await PermissionService.HasPermissionAsync(User, "Users.View") || User.IsInRole("مدير النظام");
+        bool canRoles = User.IsInRole("مدير النظام");
+        bool canDepartments = User.IsInRole("مدير النظام");
+        bool canProjects = await PermissionService.HasPermissionAsync(User, "Projects.ViewOwn") || await PermissionService.HasPermissionAsync(User, "Projects.ViewAll");
+        bool canClients = await PermissionService.HasPermissionAsync(User, "PR.Clients");
+        bool canSites = await PermissionService.HasPermissionAsync(User, "Sites.View");
+
+        <header class="app-topbar">
+            <img src="~/images/logo-icon.png" alt="أثر" class="ds-logo" />
+            <span class="ds-brand">أثر</span>
+            <input type="text" class="ds-search" placeholder="بحث شامل — مشروع، موقع، عميل، مستند…" />
+            <a class="ds-bell" asp-controller="Notifications" asp-action="Index" title="الإشعارات">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                @await Component.InvokeAsync("NavCounters")
+            </a>
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <img src="~/images/logo-badge.png" alt="" class="ds-avatar" />
+                <span class="ds-role">@(currentRole ?? User.Identity!.Name)</span>
+                <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-line">خروج</button>
+                </form>
+            }
+            else
+            {
+                <a class="btn-line" asp-controller="Account" asp-action="Login">دخول</a>
+            }
+        </header>
+
+        <div class="app-body">
+            <nav class="app-sidebar">
+                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
+                   asp-controller="Home" asp-action="Dashboard">لوحة المعلومات</a>
+                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notifications" ? "active" : "")"
+                   asp-controller="Notifications" asp-action="Index">الإشعارات <span id="badge-unread" class="tag tag-accent" hidden></span></a>
+
+                @if (canUsers || canRoles || canDepartments)
+                {
+                    <div class="nav-group-title">٠١ الصلاحيات والمصادقة</div>
+                    @if (canUsers)
+                    {
+                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
+                           asp-controller="Admin" asp-action="Users">المستخدمون</a>
+                    }
+                    @if (canRoles)
+                    {
+                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")"
+                           asp-controller="Admin" asp-action="Roles">الأدوار والصلاحيات</a>
+                    }
+                    @if (canDepartments)
+                    {
+                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Departments" ? "active" : "")"
+                           asp-controller="Admin" asp-action="Departments">الأقسام</a>
+                    }
+                }
+
+                @if (canClients || canProjects)
+                {
+                    <div class="nav-group-title">٠٢ إدارة المشاريع</div>
+                    @if (canClients)
+                    {
+                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
+                           asp-controller="Clients" asp-action="Index">العملاء</a>
+                    }
+                    @if (canProjects)
+                    {
+                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
+                           asp-controller="Projects" asp-action="Index">المشاريع</a>
+                        @* TODO(المرحلة ٤): لا توجد بعد صفحة "كل المهام عبر كل المشاريع" (1j) — تربط مؤقتاً بمهامي *@
+                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyTasks" ? "active" : "")"
+                           asp-controller="ProjectTasks" asp-action="MyTasks">المهام</a>
+                        @* TODO(المرحلة ٤): لا توجد بعد صفحة "كل التكاليف عبر كل المشاريع" (1k) *@
+                        <a class="nav-item" asp-controller="Projects" asp-action="Index">التكاليف</a>
+                        @* TODO(المرحلة ٤): لا توجد بعد صفحة جدول زمني مستقلة (1l) *@
+                        <a class="nav-item" asp-controller="Projects" asp-action="Index">الجدول الزمني</a>
+                    }
+                }
+
+                @if (canSites)
+                {
+                    <div class="nav-group-title">٠٣ المواقع والعمليات</div>
+                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
+                       asp-controller="Sites" asp-action="Index">المواقع</a>
+                    @* TODO(المرحلة ٥): (1o/1p/1q/1r/1s) تحتاج معرِّف موقع حالياً — قوائم شاملة تُبنى بالمرحلة ٥ *@
+                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notifications" ? "active" : "")"
+                       asp-controller="Notifications" asp-action="Index">الإشعارات <span id="badge-unread" class="tag tag-accent" hidden></span></a>
+                    <a class="nav-item" asp-controller="Sites" asp-action="Index">الفحوصات <span id="badge-approvals" class="tag tag-accent" hidden></span></a>
+                    <a class="nav-item" asp-controller="Sites" asp-action="Index">المقاولون</a>
+                    <a class="nav-item" asp-controller="Sites" asp-action="Index">الصيانة</a>
+                    <a class="nav-item" asp-controller="Sites" asp-action="Index">طلبات التوريد <span id="badge-supply" class="tag tag-accent" hidden></span></a>
+                }
+            </nav>
+
+            <main class="app-content">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @RenderBody()
+            </main>
+        </div>
     }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+            $(function() {
+                var d = document.getElementById('nav-counters-data');
+                if (!d) return;
+                function setBadge(id, val) {
+                    var n = parseInt(val, 10);
+                    if (n > 0) { $('#' + id).text(n).prop('hidden', false); }
+                }
+                setBadge('badge-unread', d.dataset.unread);
+                setBadge('badge-approvals', d.dataset.approvals);
+                setBadge('badge-missing-reports', d.dataset.missingReports);
+                setBadge('badge-supply', d.dataset.supply);
+            });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

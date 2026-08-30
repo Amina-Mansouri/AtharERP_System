@@ -1,0 +1,16 @@
+﻿@{
+    var stats = ViewData["Stats"] as List<(string Label, string Value, bool Accent, string? Sub)> ?? new();
+}
+<div class="stat-strip">
+    @foreach (var s in stats)
+    {
+        <div class="stat-item">
+            <span class="kicker">@s.Label</span>
+            <span class="stat-value cell-num" style="@(s.Accent ? "color:var(--ds-gold-text)" : "")">@s.Value</span>
+            @if (!string.IsNullOrEmpty(s.Sub))
+            {
+                <span class="stat-sub">@s.Sub</span>
+            }
+        </div>
+    }
+</div>
