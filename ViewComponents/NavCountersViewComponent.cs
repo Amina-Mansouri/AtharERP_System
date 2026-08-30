@@ -42,21 +42,26 @@ namespace AtharERP_System.ViewComponents
             var canApprove = await _permissionService.HasPermissionAsync(UserClaimsPrincipal, "Quality.Approve");
             var canSupplyApprove = await _permissionService.HasPermissionAsync(UserClaimsPrincipal, "Supply.Approve");
 
-            // جلب متزامن واحد (Task.WhenAll) لكل العدّادات معاً، ونتيجتها تُخزَّن ككتلة واحدة لكل مستخدم لمدة 60 ثانية
-            var unreadTask = _context.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
-            var qualityTask = canApprove ? _context.SiteQualityChecks.CountAsync(q => !q.IsApproved) : Task.FromResult(0);
-            var safetyTask = canApprove ? _context.SiteSafetyChecks.CountAsync(s => !s.IsApproved) : Task.FromResult(0);
-            var supplyTask = canSupplyApprove ? _context.SiteSupplyRequests.CountAsync(r => r.Status == SiteSupplyStatus.Pending) : Task.FromResult(0);
+            // استعلامات متسلسلة (await واحد تلو الآخر) — DbContext واحد لا يدعم التوازي
+            var unread = await _context.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
 
-            await Task.WhenAll(unreadTask, qualityTask, safetyTask, supplyTask);
+            var qualityCount = canApprove
+                ? await _context.SiteQualityChecks.CountAsync(q => !q.IsApproved)
+                : 0;
 
+            var safetyCount = canApprove
+                ? await _context.SiteSafetyChecks.CountAsync(s => !s.IsApproved)
+                : 0;
+
+            var supplyCount = canSupplyApprove
+                ? await _context.SiteSupplyRequests.CountAsync(r => r.Status == SiteSupplyStatus.Pending)
+                : 0;
             var result = new NavCountersViewModel
             {
-                UnreadNotifications = unreadTask.Result,
-                PendingApprovals = qualityTask.Result + safetyTask.Result,
-                // TODO(المرحلة ٥): خوارزمية BACKEND.md §9 (فجوة تواريخ التقارير اليومية ناقص الجمعة) — 0 مؤقتاً
+                UnreadNotifications = unread,
+                PendingApprovals = qualityCount + safetyCount,
                 MissingDailyReports = 0,
-                PendingSupplyRequests = supplyTask.Result
+                PendingSupplyRequests = supplyCount
             };
 
             _cache.Set(cacheKey, result, TimeSpan.FromSeconds(60));
