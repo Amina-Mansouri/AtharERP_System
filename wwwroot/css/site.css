@@ -1173,3 +1173,69 @@ body {
     color: var(--ds-text-light);
     text-align: center;
 }
+/* ===== 1e الأدوار والصلاحيات ===== */
+.role-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.role-card {
+    display: block;
+    padding: 8px 10px;
+    border: var(--ds-hair);
+    border-radius: var(--ds-radius);
+    text-decoration: none;
+    color: var(--ds-text);
+    border-right: 2px solid transparent;
+}
+
+    .role-card .role-card-name {
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .role-card .role-card-sub {
+        font-size: 10px;
+        color: var(--ds-text-light);
+        margin-top: 2px;
+    }
+
+    .role-card.selected {
+        background: rgba(182,130,53,.07);
+        border-right-color: var(--ds-gold);
+    }
+
+input[type="checkbox"].chk-gold {
+    width: 11px;
+    height: 11px;
+    accent-color: var(--ds-gold);
+}
+
+/* ===== 1f الأقسام ===== */
+.dept-tree .dept-node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    padding: 5px 0;
+}
+
+.dept-tree .dept-children {
+    border-right: var(--ds-row-line);
+    padding-right: 12px;
+    margin-right: 6px;
+}
+
+.dept-tree .dept-toggle {
+    cursor: pointer;
+    color: var(--ds-text-light);
+    font-size: 9px;
+    margin-left: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+}

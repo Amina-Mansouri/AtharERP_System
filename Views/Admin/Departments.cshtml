@@ -2,59 +2,53 @@
 @model List<Department>
 @{
     ViewData["Title"] = "الأقسام";
+    var roots = Model.Where(d => d.ParentDepartmentId == null).OrderBy(d => d.Name).ToList();
 }
 
-<div class="d-flex justify-content-between align-items-center">
-    <h1 class="athar-page-title">الأقسام</h1>
-    <a asp-action="CreateDepartment" class="btn athar-btn">+ قسم جديد</a>
+<div class="page-head">
+    <div>
+        <span class="kicker">الصلاحيات والمصادقة</span>
+        <h1>الأقسام</h1>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-line" onclick="document.querySelectorAll('.dept-children').forEach(function(c){ new bootstrap.Collapse(c, {toggle:false}).show(); })">توسيع الكل</button>
+        <a asp-action="CreateDepartment" class="btn-line btn-line-accent">+ قسم</a>
+    </div>
 </div>
 
-<div class="athar-card mt-3">
-    <div class="table-responsive">
-        <table class="table athar-table align-middle">
-            <thead>
-                <tr>
-                    <th>اسم القسم</th>
-                    <th>القسم الرئيسي</th>
-                    <th>عدد الموظفين</th>
-                    <th>الحالة</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
+<div class="side-panel" style="max-width:600px;">
+    <div class="side-panel-title">الإدارة العليا</div>
+    <div class="dept-tree">
+        @{
+            async Task RenderNode(Department d)
+            {
+                var children = Model.Where(x => x.ParentDepartmentId == d.Id).OrderBy(x => x.Name).ToList();
+                var activeUsers = d.Users.Count(u => u.IsActive);
+                var nodeId = "dept-children-" + d.Id;
+                <div class="dept-node">
+                    <span>
+                        @if (children.Any())
+                        {
+                            <button type="button" class="dept-toggle" data-bs-toggle="collapse" data-bs-target="#@nodeId">▾</button>
+                        }
+                        <a asp-action="EditDepartment" asp-route-id="@d.Id" style="color:inherit; text-decoration:none; font-weight:@(d.ParentDepartmentId == null ? "600" : "400")">@d.Name</a>
+                    </span>
+                    <span class="cell-num stat-sub">@activeUsers</span>
+                </div>
+                if (children.Any())
                 {
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">لا توجد أقسام</td>
-                    </tr>
+                    <div class="collapse show dept-children" id="@nodeId">
+                        @foreach (var c in children)
+                        {
+                            await RenderNode(c);
+                        }
+                    </div>
                 }
-                @foreach (var dept in Model)
-                {
-                    <tr>
-                        <td>@dept.Name</td>
-                        <td>@(dept.ParentDepartment?.Name ?? "-")</td>
-                        <td>@dept.Users.Count</td>
-                        <td>
-                            @if (dept.IsActive)
-                            {
-                                <span class="badge athar-badge-active">نشط</span>
-                            }
-                            else
-                            {
-                                <span class="badge athar-badge-inactive">معطل</span>
-                            }
-                        </td>
-                        <td>
-                            <a asp-action="EditDepartment" asp-route-id="@dept.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
-                            <form method="post" asp-action="DeleteDepartment" asp-route-id="@dept.Id" class="d-inline"
-                                  onsubmit="return confirm('هل أنت متأكد من حذف هذا القسم؟');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+            }
+        }
+        @foreach (var root in roots)
+        {
+            await RenderNode(root);
+        }
     </div>
 </div>

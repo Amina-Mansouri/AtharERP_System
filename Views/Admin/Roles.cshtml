@@ -1,63 +1,127 @@
 ﻿@using AtharERP_System.Models.Entities
 @model List<ApplicationRole>
 @{
-    ViewData["Title"] = "إدارة الأدوار";
+    ViewData["Title"] = "الأدوار والصلاحيات";
     var permCounts = ViewBag.PermissionCounts as Dictionary<string, int> ?? new Dictionary<string, int>();
     var userCounts = ViewBag.UserCounts as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var selectedRole = ViewBag.SelectedRole as ApplicationRole;
+    var allPermissions = ViewBag.AllPermissions as List<Permission> ?? new List<Permission>();
+    var selectedIds = ViewBag.SelectedPermissionIds as List<int> ?? new List<int>();
 }
 
-<div class="d-flex justify-content-between align-items-center">
-    <h1 class="athar-page-title">الأدوار والصلاحيات</h1>
-    <a asp-action="CreateRole" class="btn athar-btn">+ دور جديد</a>
-</div>
-
-<div class="athar-card mt-3">
-    <div class="table-responsive">
-        <table class="table athar-table align-middle">
-            <thead>
-                <tr>
-                    <th>اسم الدور</th>
-                    <th>الوصف</th>
-                    <th>عدد الصلاحيات</th>
-                    <th>عدد المستخدمين</th>
-                    <th>الحالة</th>
-                    <th>قالب جاهز</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var role in Model)
-                {
-                    <tr>
-                        <td>@role.Name</td>
-                        <td>@(role.Description ?? "-")</td>
-                        <td>@(permCounts.ContainsKey(role.Id) ? permCounts[role.Id] : 0)</td>
-                        <td>@(userCounts.ContainsKey(role.Id) ? userCounts[role.Id] : 0)</td>
-                        <td>
-                            @if (role.IsActive)
-                            {
-                                <span class="badge athar-badge-active">نشط</span>
-                            }
-                            else
-                            {
-                                <span class="badge athar-badge-inactive">معطل</span>
-                            }
-                        </td>
-                        <td>@(role.IsTemplate ? "نعم" : "لا")</td>
-                        <td>
-                            <a asp-action="EditRole" asp-route-id="@role.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
-                            @if (!role.IsTemplate)
-                            {
-                                <form method="post" asp-action="DeleteRole" asp-route-id="@role.Id" class="d-inline"
-                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا الدور؟');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<div class="page-head">
+    <div>
+        <span class="kicker">الصلاحيات والمصادقة</span>
+        <h1>الأدوار والصلاحيات</h1>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-line" onclick="document.getElementById('copyRoleBox').hidden=false">نسخ صلاحيات دور</button>
+        <a asp-action="CreateRole" class="btn-line btn-line-accent">+ دور مخصص</a>
     </div>
 </div>
+
+<div style="display:grid; grid-template-columns: 236px 1fr; gap:12px; align-items:start;">
+    <div>
+        <div class="side-panel-title">الأدوار · @Model.Count</div>
+        <div class="role-list">
+            @foreach (var role in Model)
+            {
+                <a class="role-card @(selectedRole?.Id == role.Id ? "selected" : "")" href="@Url.Action("Roles", new { roleId = role.Id })">
+                    <div class="role-card-name">
+                        @role.Name
+                        @if (role.IsTemplate)
+                        {
+                            <span class="tag">قالب</span>
+                        }
+                    </div>
+                    <div class="role-card-sub">@(permCounts.ContainsKey(role.Id) ? permCounts[role.Id] : 0) صلاحية · @(userCounts.ContainsKey(role.Id) ? userCounts[role.Id] : 0) مستخدماً</div>
+                </a>
+            }
+        </div>
+        <div class="side-panel" style="margin-top:10px;">
+            <p class="stat-sub mb-0">أدوار القوالب لا تُحذف · لا يمكن حذف آخر مدير نظام</p>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        @if (selectedRole == null)
+        {
+            <p class="mb-0">لا توجد أدوار بعد</p>
+        }
+        else
+        {
+            var totalCount = allPermissions.Count;
+            var selectedCount = selectedIds.Count;
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <div class="side-panel-title" style="margin:0;">صلاحيات «@selectedRole.Name» · مجمّعة بالوحدة</div>
+                <span class="cell-num stat-sub">@selectedCount من @totalCount</span>
+            </div>
+
+            <div id="copyRoleBox" hidden style="margin-bottom:10px; display:flex; gap:6px;">
+                <select id="copySourceRole" class="filter-chip">
+                    <option value="">اختر دوراً لنسخ صلاحياته…</option>
+                    @foreach (var r in Model.Where(r => r.Id != selectedRole.Id))
+                    {
+                        <option value="@r.Id">@r.Name</option>
+                    }
+                </select>
+                <button type="button" class="btn-line" onclick="copyRolePermissions()">نسخ</button>
+            </div>
+
+            <form method="post" asp-action="EditRole" asp-route-id="@selectedRole.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Name" value="@selectedRole.Name" />
+                <input type="hidden" name="Description" value="@selectedRole.Description" />
+                <input type="hidden" name="IsActive" value="@selectedRole.IsActive.ToString().ToLower()" />
+
+                <div class="data-table" style="--cols: 1fr 168px 54px">
+                    <div class="data-table-head">
+                        <div class="cell">الصلاحية</div>
+                        <div class="cell">الرمز</div>
+                        <div class="cell">مفعّلة</div>
+                    </div>
+                    @foreach (var group in allPermissions.GroupBy(p => p.Module).OrderBy(g => g.Key))
+                    {
+                        var groupSelected = group.Count(p => selectedIds.Contains(p.Id));
+                        <div class="data-table-row" style="background: rgba(32,31,29,.02);">
+                            <div class="cell" style="grid-column:1/-1; font-family:var(--ds-font-kicker); text-transform:uppercase; font-size:9.5px; color:var(--ds-text-light);">
+                                @group.Key · @group.Count()@(groupSelected == 0 ? " — لا شيء مفعّل" : "")
+                            </div>
+                        </div>
+                        @foreach (var p in group)
+                        {
+                            <div class="data-table-row">
+                                <div class="cell">@p.Name</div>
+                                <div class="cell stat-sub">@p.Code</div>
+                                <div class="cell">
+                                    <input type="checkbox" class="chk-gold" name="selectedPermissions" value="@p.Id" checked="@selectedIds.Contains(p.Id)" />
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+                    <a asp-action="Roles" class="btn-line">إلغاء</a>
+                    <button type="submit" class="btn-line btn-line-accent">حفظ الصلاحيات</button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyRolePermissions() {
+            var roleId = document.getElementById('copySourceRole').value;
+            if (!roleId) return;
+            fetch('@Url.Action("GetRolePermissionIds", "Admin")?roleId=' + encodeURIComponent(roleId))
+                .then(function(r) { return r.json(); })
+                .then(function(ids) {
+                    document.querySelectorAll('input[name="selectedPermissions"]').forEach(function(cb) {
+                        cb.checked = ids.indexOf(parseInt(cb.value, 10)) !== -1;
+                    });
+                });
+        }
+    </script>
+}

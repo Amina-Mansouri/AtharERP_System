@@ -415,7 +415,7 @@ namespace AtharERP_System.Controllers
         // ============================================
 
         [HttpGet]
-        public async Task<IActionResult> Roles()
+        public async Task<IActionResult> Roles(string? roleId)
         {
             var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
 
@@ -431,7 +431,34 @@ namespace AtharERP_System.Controllers
             ViewBag.PermissionCounts = permissionCounts;
             ViewBag.UserCounts = userCounts;
 
+            var selectedRole = !string.IsNullOrEmpty(roleId)
+                ? roles.FirstOrDefault(r => r.Id == roleId)
+                : roles.FirstOrDefault();
+
+            if (selectedRole != null)
+            {
+                ViewBag.SelectedRole = selectedRole;
+                ViewBag.AllPermissions = await _context.Permissions
+                    .Where(p => p.IsActive)
+                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
+                    .ToListAsync();
+                ViewBag.SelectedPermissionIds = await _context.RolePermissions
+                    .Where(rp => rp.RoleId == selectedRole.Id && rp.IsGranted)
+                    .Select(rp => rp.PermissionId)
+                    .ToListAsync();
+            }
+
             return View(roles);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRolePermissionIds(string roleId)
+        {
+            var ids = await _context.RolePermissions
+                .Where(rp => rp.RoleId == roleId && rp.IsGranted)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+            return Json(ids);
         }
 
         [HttpGet]
