@@ -41,9 +41,9 @@
             ? (await UserManager.GetRolesAsync((await UserManager.GetUserAsync(User))!)).FirstOrDefault()
             : null;
 
-        bool canUsers = await PermissionService.HasPermissionAsync(User, "Users.View") || User.IsInRole("مدير النظام");
-        bool canRoles = User.IsInRole("مدير النظام");
-        bool canDepartments = User.IsInRole("مدير النظام");
+        bool canUsers = User.IsInRole("مدير النظام");
+        bool canRoles = canUsers;
+        bool canDepartments = canUsers;
         bool canProjects = await PermissionService.HasPermissionAsync(User, "Projects.ViewOwn") || await PermissionService.HasPermissionAsync(User, "Projects.ViewAll");
         bool canClients = await PermissionService.HasPermissionAsync(User, "PR.Clients");
         bool canSites = await PermissionService.HasPermissionAsync(User, "Sites.View");
@@ -129,9 +129,7 @@
                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
                        asp-controller="Sites" asp-action="Index">المواقع</a>
                     @* TODO(المرحلة ٥): (1o/1p/1q/1r/1s) تحتاج معرِّف موقع حالياً — قوائم شاملة تُبنى بالمرحلة ٥ *@
-                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notifications" ? "active" : "")"
-                       asp-controller="Notifications" asp-action="Index">الإشعارات <span id="badge-unread" class="tag tag-accent" hidden></span></a>
-                    <a class="nav-item" asp-controller="Sites" asp-action="Index">الفحوصات <span id="badge-approvals" class="tag tag-accent" hidden></span></a>
+                    <a class="nav-item" asp-controller="Sites" asp-action="Index">التقارير اليومية</a>     <a class="nav-item" asp-controller="Sites" asp-action="Index">الفحوصات <span id="badge-approvals" class="tag tag-accent" hidden></span></a>
                     <a class="nav-item" asp-controller="Sites" asp-action="Index">المقاولون</a>
                     <a class="nav-item" asp-controller="Sites" asp-action="Index">الصيانة</a>
                     <a class="nav-item" asp-controller="Sites" asp-action="Index">طلبات التوريد <span id="badge-supply" class="tag tag-accent" hidden></span></a>
