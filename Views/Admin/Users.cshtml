@@ -1,72 +1,147 @@
 ﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
 @model List<ApplicationUser>
 @{
     ViewData["Title"] = "إدارة المستخدمين";
     var userRoles = ViewBag.UserRoles as Dictionary<string, IList<string>> ?? new Dictionary<string, IList<string>>();
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var roles = ViewBag.Roles as List<ApplicationRole> ?? new List<ApplicationRole>();
+    var rankOptions = EnumDisplayHelper.GetDisplayList<JobRank>();
+    var trackOptions = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+
+    string q = ViewBag.CurrentQ as string ?? "";
+    int? departmentId = ViewBag.CurrentDepartmentId as int?;
+    JobRank? rank = ViewBag.CurrentRank as JobRank?;
+    CareerTrack? track = ViewBag.CurrentTrack as CareerTrack?;
+    string? roleFilter = ViewBag.CurrentRoleFilter as string;
+    string status = ViewBag.CurrentStatus as string ?? "all";
+    int page = ViewBag.Page as int? ?? 1;
+    int pageSize = ViewBag.PageSize as int? ?? 20;
+    int totalCount = ViewBag.TotalCount as int? ?? 0;
+    int countAll = ViewBag.CountAll as int? ?? 0;
+    int countActive = ViewBag.CountActive as int? ?? 0;
+    int countInactive = ViewBag.CountInactive as int? ?? 0;
+    int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+    string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status = s, page = 1 })!;
 }
 
-<div class="d-flex justify-content-between align-items-center">
-    <h1 class="athar-page-title">إدارة المستخدمين</h1>
-    <a asp-controller="Account" asp-action="Register" class="btn athar-btn">+ مستخدم جديد</a>
+<div class="page-head">
+    <div>
+        <span class="kicker">الصلاحيات والمصادقة</span>
+        <h1>المستخدمون</h1>
+    </div>
+    <div class="page-head-actions">
+        <a class="btn-line">تصدير</a>
+        <a asp-controller="Account" asp-action="Register" class="btn-line btn-line-accent">+ مستخدم جديد</a>
+    </div>
 </div>
 
-<div class="athar-card mt-3">
-    <div class="table-responsive">
-        <table class="table athar-table align-middle">
-            <thead>
-                <tr>
-                    <th>الاسم الكامل</th>
-                    <th>البريد الإلكتروني</th>
-                    <th>القسم</th>
-                    <th>الدور</th>
-                    <th>الحالة</th>
-                    <th>آخر دخول</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in Model)
-                {
-                    <tr>
-                        <td>@user.FullName</td>
-                        <td>@user.Email</td>
-                        <td>@(user.Department?.Name ?? "-")</td>
-                        <td>@string.Join("، ", userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : new List<string>())</td>
-                        <td>
-                            @if (user.IsActive)
-                            {
-                                <span class="badge athar-badge-active">نشط</span>
-                            }
-                            else
-                            {
-                                <span class="badge athar-badge-inactive">معطل</span>
-                            }
-                        </td>
-                        <td>@(user.LastLogin?.ToString("yyyy-MM-dd HH:mm") ?? "لم يسجل بعد")</td>
-                        <td>
-                            <a asp-action="EditUser" asp-route-id="@user.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
-                            <form method="post" asp-action="ToggleUserStatus" asp-route-id="@user.Id" class="d-inline"
-                                  onsubmit="return confirm('هل أنت متأكد من @(user.IsActive ? "تعطيل" : "تفعيل") هذا المستخدم؟');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-outline-danger" : "btn-outline-success")">
-                                    @(user.IsActive ? "تعطيل" : "تفعيل")
-                                </button>
-                            </form>
-                            <button type="button" class="btn btn-sm athar-btn-outline" data-bs-toggle="collapse" data-bs-target="#resetPw_@user.Id">
-                                إعادة تعيين كلمة المرور
-                            </button>
-                            <div class="collapse mt-2" id="resetPw_@user.Id">
-                                <form method="post" asp-action="ResetUserPassword" asp-route-id="@user.Id" class="d-flex gap-1"
-                                      onsubmit="return confirm('هل أنت متأكد من تغيير كلمة مرور هذا المستخدم؟');">
-                                    @Html.AntiForgeryToken()
-                                    <input type="password" name="newPassword" class="form-control form-control-sm" placeholder="كلمة مرور جديدة" required minlength="8" />
-                                    <button type="submit" class="btn btn-sm athar-btn">تحديث</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<div class="tabs">
+    <a class="tab-item @(status == "all" ? "active" : "")" href="@TabUrl("all")">الكل @countAll</a>
+    <a class="tab-item @(status == "active" ? "active" : "")" href="@TabUrl("active")">نشط @countActive</a>
+    <a class="tab-item @(status == "inactive" ? "active" : "")" href="@TabUrl("inactive")">غير نشط @countInactive</a>
+</div>
+
+<form method="get" class="filter-bar">
+    <input type="hidden" name="status" value="@status" />
+    <input type="text" name="q" class="filter-search" placeholder="الاسم أو الرقم الوظيفي…" value="@q" />
+
+    <select name="departmentId" class="filter-chip" onchange="this.form.submit()">
+        <option value="">القسم ▾</option>
+        @foreach (var d in departments)
+        {
+            <option value="@d.Id" selected="@(departmentId == d.Id)">@d.Name</option>
+        }
+    </select>
+
+    <select name="rank" class="filter-chip" onchange="this.form.submit()">
+        <option value="">الرتبة ▾</option>
+        @foreach (var r in rankOptions)
+        {
+            <option value="@r.Value" selected="@(rank?.ToString() == r.Value)">@r.Label</option>
+        }
+    </select>
+
+    <select name="track" class="filter-chip" onchange="this.form.submit()">
+        <option value="">المسار ▾</option>
+        @foreach (var t in trackOptions)
+        {
+            <option value="@t.Value" selected="@(track?.ToString() == t.Value)">@t.Label</option>
+        }
+    </select>
+
+    <select name="role" class="filter-chip" onchange="this.form.submit()">
+        <option value="">الدور ▾</option>
+        @foreach (var r in roles)
+        {
+            <option value="@r.Name" selected="@(roleFilter == r.Name)">@r.Name</option>
+        }
+    </select>
+
+    @if (!string.IsNullOrEmpty(q) || departmentId.HasValue || rank.HasValue || track.HasValue || !string.IsNullOrEmpty(roleFilter))
+    {
+        <a href="@Url.Action("Users", new { status })" class="filter-clear">مسح التصفية</a>
+    }
+</form>
+
+<div class="data-table" style="--cols: 28px 1fr 78px 140px 98px 86px 104px 66px">
+    <div class="data-table-head">
+        <div class="cell"></div>
+        <div class="cell">الاسم</div>
+        <div class="cell">الرقم</div>
+        <div class="cell">القسم</div>
+        <div class="cell">الرتبة</div>
+        <div class="cell">المسار</div>
+        <div class="cell">الدور</div>
+        <div class="cell">الحالة</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد مستخدمون مطابقون</div></div>
+    }
+    else
+    {
+        @foreach (var user in Model)
+        {
+            var rankLabel = rankOptions.FirstOrDefault(x => x.Value == user.Rank.ToString()).Label;
+            var rankCode = user.Rank.ToString().Split('_')[0];
+            var trackLabel = trackOptions.FirstOrDefault(x => x.Value == user.CareerTrack.ToString()).Label;
+            <div class="data-table-row @(user.IsActive ? "" : "row-faded")">
+                <div class="cell"><input type="checkbox" /></div>
+                <div class="cell">
+                    @user.FullName
+                    @if (user.EmployeePositions.Count > 1)
+                    {
+                        <span class="tag tag-accent">وظيفتان</span>
+                    }
+                </div>
+                <div class="cell cell-num">@(user.JobNumber ?? "-")</div>
+                <div class="cell">@(user.Department?.Name ?? "-")</div>
+                <div class="cell">@rankCode <span class="stat-sub">@rankLabel</span></div>
+                <div class="cell">@trackLabel</div>
+                <div class="cell">@string.Join("، ", userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : new List<string>())</div>
+                <div class="cell">
+                    @if (user.IsActive)
+                    {
+                        <span class="tag tag-accent">نشط</span>
+                    }
+                    else
+                    {
+                        <span class="tag">معطل</span>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="pager">
+    <span class="cell-num">@(totalCount == 0 ? 0 : (page - 1) * pageSize + 1)–@Math.Min(page * pageSize, totalCount) من @totalCount</span>
+    <div class="pager-pages">
+        @for (int p = 1; p <= totalPages; p++)
+        {
+            <a href="@Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status, page = p })" class="pager-page @(p == page ? "active" : "")">@p</a>
+        }
     </div>
 </div>

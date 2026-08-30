@@ -33,11 +33,52 @@ namespace AtharERP_System.Controllers
         // ============================================
 
         [HttpGet]
-        public async Task<IActionResult> Users()
+        public async Task<IActionResult> Users(string? q, int? departmentId, JobRank? rank, CareerTrack? track, string? role, string status = "all", int page = 1)
         {
-            var users = await _userManager.Users
+            const int pageSize = 20;
+
+            var query = _userManager.Users
                 .Include(u => u.Department)
+                .Include(u => u.EmployeePositions)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+                query = query.Where(u => u.FullName.Contains(q) || (u.JobNumber != null && u.JobNumber.Contains(q)));
+
+            if (departmentId.HasValue)
+                query = query.Where(u => u.DepartmentId == departmentId);
+
+            if (rank.HasValue)
+                query = query.Where(u => u.Rank == rank);
+
+            if (track.HasValue)
+                query = query.Where(u => u.CareerTrack == track);
+
+            if (!string.IsNullOrEmpty(role))
+            {
+                var idsInRole = (await _userManager.GetUsersInRoleAsync(role)).Select(u => u.Id).ToList();
+                query = query.Where(u => idsInRole.Contains(u.Id));
+            }
+
+            var statusCounts = await query
+                .GroupBy(u => u.IsActive)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            ViewBag.CountAll = statusCounts.Sum(c => c.Count);
+            ViewBag.CountActive = statusCounts.FirstOrDefault(c => c.Key)?.Count ?? 0;
+            ViewBag.CountInactive = statusCounts.FirstOrDefault(c => !c.Key)?.Count ?? 0;
+
+            if (status == "active")
+                query = query.Where(u => u.IsActive);
+            else if (status == "inactive")
+                query = query.Where(u => !u.IsActive);
+
+            var totalCount = await query.CountAsync();
+            var users = await query
                 .OrderBy(u => u.FullName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             var userRoles = new Dictionary<string, IList<string>>();
@@ -45,6 +86,18 @@ namespace AtharERP_System.Controllers
                 userRoles[user.Id] = await _userManager.GetRolesAsync(user);
 
             ViewBag.UserRoles = userRoles;
+            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.Roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
+            ViewBag.CurrentQ = q;
+            ViewBag.CurrentDepartmentId = departmentId;
+            ViewBag.CurrentRank = rank;
+            ViewBag.CurrentTrack = track;
+            ViewBag.CurrentRoleFilter = role;
+            ViewBag.CurrentStatus = status;
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalCount = totalCount;
+
             return View(users);
         }
         [HttpGet]

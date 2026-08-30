@@ -1074,3 +1074,30 @@ body {
         color: var(--ds-text-light);
         text-align: center;
     }
+
+/* ===== تبويبات (1c وما بعدها) ===== */
+.tabs {
+    display: flex;
+    gap: 16px;
+    border-bottom: var(--ds-section-line);
+    margin-bottom: 10px;
+}
+
+    .tabs .tab-item {
+        font-size: 11.5px;
+        padding: 6px 2px;
+        color: var(--ds-text-secondary);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+    }
+
+        .tabs .tab-item.active {
+            font-weight: 600;
+            color: var(--ds-text);
+            border-bottom-color: var(--ds-gold);
+        }
+
+/* ===== قوائم منسدلة داخل شريط التصفية (نفس مقاس filter-chip) ===== */
+.filter-bar select.filter-chip {
+    cursor: pointer;
+}
