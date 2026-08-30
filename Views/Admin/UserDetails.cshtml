@@ -10,6 +10,7 @@
     var auditActors = ViewBag.AuditActors as Dictionary<string, string> ?? new Dictionary<string, string>();
     var rankLabel = EnumDisplayHelper.GetDisplayList<JobRank>().FirstOrDefault(x => x.Value == Model.Rank.ToString()).Label;
     var trackLabel = EnumDisplayHelper.GetDisplayList<CareerTrack>().FirstOrDefault(x => x.Value == Model.CareerTrack.ToString()).Label;
+    var trackOptions = EnumDisplayHelper.GetDisplayList<CareerTrack>();
     var contractRange = (Model.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-") + " → " + (Model.ContractEndDate?.ToString("yyyy-MM-dd") ?? "مفتوح");
 }
 
@@ -84,7 +85,7 @@
                         <div class="data-table-row">
                             <div class="cell">@p.Department.Name</div>
                             <div class="cell">@p.Rank.ToString().Split('_')[0]</div>
-                            <div class="cell">@EnumDisplayHelper.GetDisplayList<CareerTrack>().FirstOrDefault(x => x.Value == p.Track.ToString()).Label</div>
+                            <div class="cell">@trackOptions.FirstOrDefault(x => x.Value == p.Track.ToString()).Label</div>
                             <div class="cell cell-num">@p.StartDate.ToString("yyyy-MM-dd")</div>
                             <div class="cell">@(p.IsPrimary ? "✓" : "")</div>
                         </div>
