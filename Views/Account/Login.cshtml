@@ -1,47 +1,50 @@
 ﻿@{
     ViewData["Title"] = "تسجيل الدخول";
     ViewData["HideNav"] = true;
+    ViewData["AuthTheme"] = "ds";
 }
 
-<div class="athar-auth-card">
-    <partial name="_AuthLogo" />
-    <p class="athar-auth-subtitle">تسجيل الدخول إلى النظام</p>
-
-    @if (!ViewData.ModelState.IsValid)
-    {
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <li>@error.ErrorMessage</li>
-                }
-            </ul>
-        </div>
-    }
+<div class="ds-auth-card">
+    <img src="~/images/logo-icon.png" alt="أثر" class="ds-auth-logo" />
+    <span class="ds-auth-brand">أثر</span>
+    <span class="ds-auth-kicker">نظام إدارة المشاريع الهندسية</span>
 
     <form method="post" asp-controller="Account" asp-action="Login">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
 
-        <div class="mb-3">
-            <label class="form-label">البريد الإلكتروني</label>
-            <input type="email" name="email" class="form-control" required autofocus />
+        <div class="ds-field">
+            <label>البريد الإلكتروني</label>
+            <input type="email" name="email" required autofocus />
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">كلمة المرور</label>
-            <input type="password" name="password" class="form-control" required />
+        <div class="ds-field">
+            <label>كلمة المرور</label>
+            <input type="password" name="password" required />
         </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="rememberMe" value="true" class="form-check-input" id="rememberMe" />
-            <input type="hidden" name="rememberMe" value="false" />
-            <label class="form-check-label" for="rememberMe">تذكرني</label>
+        <div class="ds-auth-row">
+            <label>
+                <input type="checkbox" name="rememberMe" value="true" />
+                <input type="hidden" name="rememberMe" value="false" />
+                تذكّرني
+            </label>
+            <a asp-controller="Account" asp-action="ForgotPassword">نسيت كلمة المرور؟</a>
         </div>
 
-        <button type="submit" class="btn athar-btn w-100">دخول</button>
-        <div class="text-center mt-3">
-            <a asp-controller="Account" asp-action="ForgotPassword" class="small">نسيت كلمة المرور؟</a>
-        </div>
+        <button type="submit" class="ds-btn-gold-block">تسجيل الدخول</button>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="ds-alert-gold">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <span>@error.ErrorMessage</span>
+                }
+                <span class="ds-alert-sub">يُقفل الحساب بعد ٥ محاولات فاشلة</span>
+            </div>
+        }
     </form>
+
+    <div class="ds-auth-footer">الحسابات غير النشطة لا تستطيع الدخول</div>
 </div>

@@ -49,7 +49,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.TotalUsers = await _userManager.Users.CountAsync();
                 ViewBag.ActiveUsers = await _userManager.Users.CountAsync(u => u.IsActive);
                 ViewBag.TotalRoles = await _roleManager.Roles.CountAsync();
-                ViewBag.TotalPermissions = await _context.Permissions.CountAsync();
+                ViewBag.TotalDepartments = await _context.Departments.CountAsync(d => d.IsActive);
 
                 ViewBag.LatestUsers = await _userManager.Users
                     .Include(u => u.Department)

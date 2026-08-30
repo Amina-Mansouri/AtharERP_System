@@ -3,6 +3,7 @@
     ViewData["Title"] = "لوحة التحكم";
     var latestUsers = ViewBag.LatestUsers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var deptDistribution = ViewBag.DepartmentDistribution as List<KeyValuePair<string, int>> ?? new List<KeyValuePair<string, int>>();
+    var maxDept = deptDistribution.Any() ? deptDistribution.Max(d => d.Value) : 1;
 
     var canViewModule01 = ViewBag.CanViewModule01 as bool? ?? false;
     var canViewModule02 = ViewBag.CanViewModule02 as bool? ?? false;
@@ -10,177 +11,121 @@
     var projectsScopeIsAll = ViewBag.ProjectsScopeIsAll as bool? ?? false;
 }
 
-<h1 class="athar-page-title">لوحة التحكم</h1>
-<p class="text-muted">مرحباً بك في نظام أثر لإدارة المشاريع الهندسية</p>
+<div class="page-head">
+    <div>
+        <span class="kicker">الصلاحيات والمصادقة</span>
+        <h1>لوحة المعلومات</h1>
+    </div>
+    @if (User.IsInRole("مدير النظام"))
+    {
+        <div class="page-head-actions">
+            <a class="btn-line">تصدير</a>
+            <a asp-controller="Account" asp-action="Register" class="btn-line btn-line-accent">+ مستخدم</a>
+        </div>
+    }
+</div>
 
 @if (!canViewModule01 && !canViewModule02 && !canViewModule03)
 {
-    <div class="athar-card mt-3">
-        <p class="text-muted mb-0">لا توجد إحصائيات لعرضها حسب صلاحياتك الحالية.</p>
-    </div>
+    <div class="side-panel"><p class="mb-0">لا توجد إحصائيات لعرضها حسب صلاحياتك الحالية.</p></div>
 }
 
 @if (canViewModule01)
 {
-    <h5 class="mt-4">الهوية والصلاحيات</h5>
-    <div class="row g-3 mt-1">
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.TotalUsers</div>
-                <div class="athar-stat-label">إجمالي المستخدمين</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.ActiveUsers</div>
-                <div class="athar-stat-label">المستخدمون النشطون</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.TotalRoles</div>
-                <div class="athar-stat-label">عدد الأدوار</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.TotalPermissions</div>
-                <div class="athar-stat-label">عدد الصلاحيات</div>
-            </div>
-        </div>
+    <div class="stat-strip">
+        <div class="stat-item"><span class="kicker">المستخدمون</span><span class="stat-value">@ViewBag.TotalUsers</span></div>
+        <div class="stat-item"><span class="kicker">النشطون</span><span class="stat-value">@ViewBag.ActiveUsers</span></div>
+        <div class="stat-item"><span class="kicker">الأدوار</span><span class="stat-value">@ViewBag.TotalRoles</span></div>
+        <div class="stat-item"><span class="kicker">الصلاحيات</span><span class="stat-value">@ViewBag.TotalPermissions</span></div>
+        <div class="stat-item"><span class="kicker">الأقسام</span><span class="stat-value">@ViewBag.TotalDepartments</span></div>
     </div>
 
-    <div class="row g-3 mt-1">
-        <div class="col-md-6">
-            <div class="athar-card">
-                <h5>أحدث المستخدمين المسجلين</h5>
-                @if (!latestUsers.Any())
-                {
-                    <p class="text-muted">لا يوجد مستخدمون بعد</p>
-                }
-                else
-                {
-                    <table class="table table-sm mt-2">
-                        <thead>
-                            <tr>
-                                <th>الاسم</th>
-                                <th>القسم</th>
-                                <th>تاريخ التسجيل</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var u in latestUsers)
-                            {
-                                <tr>
-                                    <td>@u.FullName</td>
-                                    <td>@(u.Department?.Name ?? "-")</td>
-                                    <td>@u.CreatedAt.ToString("yyyy-MM-dd")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
+    <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:12px; margin-bottom:16px;">
+        <div class="data-table" style="--cols: 1fr 120px 90px 70px">
+            <div class="data-table-head">
+                <div class="cell">الاسم</div>
+                <div class="cell">القسم</div>
+                <div class="cell">الرتبة</div>
+                <div class="cell">الحالة</div>
             </div>
+            @if (!latestUsers.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد مستخدمون بعد</div></div>
+            }
+            else
+            {
+                @foreach (var u in latestUsers)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@u.FullName</div>
+                        <div class="cell">@(u.Department?.Name ?? "-")</div>
+                        <div class="cell">@u.Rank</div>
+                        <div class="cell">
+                            @if (u.IsActive)
+                            {
+                                <span class="tag tag-accent">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="tag">غير نشط</span>
+                            }
+                        </div>
+                    </div>
+                }
+            }
         </div>
-        <div class="col-md-6">
-            <div class="athar-card">
-                <h5>توزيع المستخدمين حسب القسم</h5>
-                @if (!deptDistribution.Any())
+
+        <div class="side-panel">
+            <div class="side-panel-title">التوزيع على الأقسام</div>
+            @if (!deptDistribution.Any())
+            {
+                <p class="mb-0">لا توجد بيانات بعد</p>
+            }
+            else
+            {
+                @foreach (var d in deptDistribution)
                 {
-                    <p class="text-muted">لا توجد بيانات بعد</p>
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
+                        <span>@d.Key</span>
+                        <span class="cell-num">@d.Value</span>
+                    </div>
+                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
+                        <span style="width:@(d.Value * 100 / maxDept)%"></span>
+                    </div>
                 }
-                else
-                {
-                    <table class="table table-sm mt-2">
-                        <thead>
-                            <tr>
-                                <th>القسم</th>
-                                <th>عدد الموظفين النشطين</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var d in deptDistribution)
-                            {
-                                <tr>
-                                    <td>@d.Key</td>
-                                    <td>@d.Value</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-            </div>
+                <a asp-controller="Admin" asp-action="Departments" class="btn-line btn-line-accent" style="margin-top:6px;">عرض الأقسام الـ@ViewBag.TotalDepartments</a>
+            }
         </div>
     </div>
 }
 
 @if (canViewModule02)
 {
-    <h5 class="mt-4">إدارة المشاريع @(projectsScopeIsAll ? "" : "(مشاريعك)")</h5>
-    <div class="row g-3 mt-1">
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.TotalProjects</div>
-                <div class="athar-stat-label">@(projectsScopeIsAll ? "إجمالي المشاريع" : "مشاريعي")</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.ActiveProjects</div>
-                <div class="athar-stat-label">قيد التنفيذ</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.CompletedProjects</div>
-                <div class="athar-stat-label">مكتملة</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.MyActiveTasks</div>
-                <div class="athar-stat-label">مهامي النشطة</div>
-            </div>
-        </div>
+    <div class="kicker" style="margin-top:8px;">إدارة المشاريع @(projectsScopeIsAll ? "" : "(مشاريعك)")</div>
+    <div class="stat-strip">
+        <div class="stat-item"><span class="kicker">@(projectsScopeIsAll ? "إجمالي المشاريع" : "مشاريعي")</span><span class="stat-value">@ViewBag.TotalProjects</span></div>
+        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.ActiveProjects</span></div>
+        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedProjects</span></div>
+        <div class="stat-item"><span class="kicker">مهامي النشطة</span><span class="stat-value">@ViewBag.MyActiveTasks</span></div>
     </div>
 }
 
 @if (canViewModule03)
 {
-    <h5 class="mt-4">إدارة المواقع @(projectsScopeIsAll ? "" : "(مواقع مشاريعك)")</h5>
-    <div class="row g-3 mt-1">
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.TotalSites</div>
-                <div class="athar-stat-label">إجمالي المواقع</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.ActiveSites</div>
-                <div class="athar-stat-label">مواقع نشطة</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.PendingQualityChecks</div>
-                <div class="athar-stat-label">فحوصات جودة معلقة</div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="athar-stat-card">
-                <div class="athar-stat-value">@ViewBag.PendingSupplyRequests</div>
-                <div class="athar-stat-label">طلبات توريد معلقة</div>
-            </div>
-        </div>
+    <div class="kicker" style="margin-top:8px;">المواقع والعمليات @(projectsScopeIsAll ? "" : "(مواقع مشاريعك)")</div>
+    <div class="stat-strip">
+        <div class="stat-item"><span class="kicker">إجمالي المواقع</span><span class="stat-value">@ViewBag.TotalSites</span></div>
+        <div class="stat-item"><span class="kicker">مواقع نشطة</span><span class="stat-value">@ViewBag.ActiveSites</span></div>
+        <div class="stat-item"><span class="kicker">فحوصات معلقة</span><span class="stat-value">@ViewBag.PendingQualityChecks</span></div>
+        <div class="stat-item"><span class="kicker">توريد معلق</span><span class="stat-value">@ViewBag.PendingSupplyRequests</span></div>
     </div>
 }
 
 @if (User.IsInRole("مدير النظام"))
 {
-    <div class="mt-4">
-        <a asp-controller="Admin" asp-action="Users" class="btn athar-btn me-2">إدارة المستخدمين</a>
-        <a asp-controller="Admin" asp-action="Roles" class="btn athar-btn-outline me-2">إدارة الأدوار</a>
-        <a asp-controller="Admin" asp-action="Departments" class="btn athar-btn-outline">إدارة الأقسام</a>
+    <div class="mt-3">
+        <a asp-controller="Admin" asp-action="Users" class="btn-line">إدارة المستخدمين</a>
+        <a asp-controller="Admin" asp-action="Roles" class="btn-line">إدارة الأدوار</a>
+        <a asp-controller="Admin" asp-action="Departments" class="btn-line">إدارة الأقسام</a>
     </div>
 }

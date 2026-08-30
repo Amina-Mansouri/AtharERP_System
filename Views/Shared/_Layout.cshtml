@@ -17,7 +17,7 @@
 <body>
     @if (ViewData["HideNav"] as bool? == true)
     {
-        <div class="athar-auth-wrapper">
+        <div class="athar-auth-wrapper @(ViewData["AuthTheme"] as string == "ds" ? "ds-auth-wrap" : "")">
             @if (TempData["Success"] != null)
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
