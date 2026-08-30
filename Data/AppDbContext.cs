@@ -35,6 +35,7 @@ namespace AtharERP_System.Data
         public DbSet<ProjectTimeline> ProjectTimelines { get; set; } = null!;
         public DbSet<FinancialRecord> FinancialRecords { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<NotificationSetting> NotificationSettings { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<EmployeeDocument> EmployeeDocuments { get; set; } = null!;
         // Module 03: إدارة المواقع
@@ -313,11 +314,35 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             // ========== الإشعارات (Notification) ==========
+            // ========== الإشعارات (Notification) ==========
             builder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Notification>()
+                .Property(n => n.EventType)
+                .HasDefaultValue(NotificationEventType.TaskAssigned);
+
+            builder.Entity<Notification>()
+                .Property(n => n.SourceModule)
+                .HasDefaultValue("02");
+
+            builder.Entity<Notification>()
+                .Property(n => n.RequiresAction)
+                .HasDefaultValue(false);
+
+            // ========== تفضيلات الإشعارات (NotificationSetting) ==========
+            builder.Entity<NotificationSetting>()
+                .HasOne(ns => ns.User)
+                .WithMany()
+                .HasForeignKey(ns => ns.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<NotificationSetting>()
+                .HasIndex(ns => new { ns.UserId, ns.EventType })
+                .IsUnique();
 
             // ========== سجل التدقيق (AuditLog) ==========
             builder.Entity<AuditLog>()

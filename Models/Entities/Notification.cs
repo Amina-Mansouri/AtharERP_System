@@ -27,5 +27,23 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Display(Name = "نوع الحدث")]
+        public NotificationEventType EventType { get; set; }
+
+        [Required]
+        [StringLength(10)]
+        [Display(Name = "الوحدة المصدر")]
+        public string SourceModule { get; set; } = "02";
+
+        [Display(Name = "تحتاج إجراءً")]
+        public bool RequiresAction { get; set; }
+
+        [StringLength(50)]
+        [Display(Name = "نوع الكيان")]
+        public string? EntityType { get; set; }
+
+        [Display(Name = "معرّف الكيان")]
+        public int? EntityId { get; set; }
     }
 }
