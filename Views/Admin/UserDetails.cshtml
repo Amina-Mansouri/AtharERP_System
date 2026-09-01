@@ -24,7 +24,7 @@
         <img src="~/images/logo-badge.png" class="profile-avatar" alt="" />
     }
     <div style="flex:1">
-        <span class="kicker">@(Model.JobNumber ?? "-") · الرقم الشخصي @(Model.PersonalId ?? "-")</span>
+        <span class="kicker">@(Model.JobNumber ?? "-") · أقرب الأقارب @(Model.NextOfKinPhone ?? "-")</span>
         <h1>@Model.FullName</h1>
     </div>
     <div class="page-head-actions">
@@ -59,7 +59,7 @@
     <div class="tab-pane fade show active" id="pane-data">
         <p><strong>البريد الإلكتروني:</strong> @Model.Email</p>
         <p><strong>رقم الهاتف:</strong> @(Model.PhoneNumber ?? "-")</p>
-        <p><strong>الرقم الشخصي:</strong> @(Model.PersonalId ?? "-")</p>
+        <p><strong>رقم أقرب الأقارب:</strong> @(Model.NextOfKinPhone ?? "-")</p>
         <p><strong>المسؤوليات:</strong> @(Model.Responsibilities ?? "-")</p>
         <p><strong>آخر دخول:</strong> @(Model.LastLogin?.ToString("yyyy-MM-dd HH:mm") ?? "لم يسجل بعد")</p>
     </div>

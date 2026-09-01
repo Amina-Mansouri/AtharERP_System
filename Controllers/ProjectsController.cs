@@ -34,7 +34,7 @@ namespace AtharERP_System.Controllers
         // قائمة المشاريع + عزل الرؤية (القسم 6.6.2)
         // ============================================
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
-        public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectType? type)
+        public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectScope? scope)
         {
             var query = _context.Projects
                 .Include(p => p.Client)
@@ -51,12 +51,12 @@ namespace AtharERP_System.Controllers
             if (status.HasValue)
                 query = query.Where(p => p.Status == status.Value);
 
-            if (type.HasValue)
-                query = query.Where(p => p.Type == type.Value);
+            if (scope.HasValue)
+                query = query.Where(p => p.Scope == scope.Value);
 
             ViewBag.Search = search;
             ViewBag.Status = status;
-            ViewBag.Type = type;
+            ViewBag.Scope = scope;
             ViewBag.CanViewClient = await CanViewClientAsync();
 
             var projects = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
@@ -89,7 +89,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             // تجميع حي (بدون تكرار بيانات) لمهام المشاريع الفرعية داخل المشروع الرئيسي (القسم 2.2)
-            if (project.Type == ProjectType.Main && project.ChildProjects.Any())
+            if (project.Scope == ProjectScope.Main && project.ChildProjects.Any())
             {
                 var childIds = project.ChildProjects.Select(c => c.Id).ToList();
                 var aggregatedTasks = await _context.ProjectTasks
@@ -409,7 +409,7 @@ namespace AtharERP_System.Controllers
 
         private async Task LoadDropdownsAsync(int? excludeProjectId = null)
         {
-            var parentQuery = _context.Projects.Where(p => p.Type == ProjectType.Main);
+            var parentQuery = _context.Projects.Where(p => p.Scope == ProjectScope.Main);
             if (excludeProjectId.HasValue)
                 parentQuery = parentQuery.Where(p => p.Id != excludeProjectId.Value);
 

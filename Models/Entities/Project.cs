@@ -39,8 +39,13 @@ namespace AtharERP_System.Models.Entities
 
         public virtual ICollection<Project> ChildProjects { get; set; } = new List<Project>();
 
+        // رئيسي/فرعي — الاسم السابق لهذه الخاصية كان Type من نوع ProjectType (قبل إعادة التسمية)
+        [Display(Name = "نطاق المشروع")]
+        public ProjectScope Scope { get; set; } = ProjectScope.Main;
+
+        // التصنيف القطاعي الجديد (بند P5) — منفصل تماماً عن Scope
         [Display(Name = "نوع المشروع")]
-        public ProjectType Type { get; set; } = ProjectType.Main;
+        public ProjectType? Type { get; set; }
 
         [Display(Name = "الحالة")]
         public ProjectStatus Status { get; set; } = ProjectStatus.New;

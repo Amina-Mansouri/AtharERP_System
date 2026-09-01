@@ -267,7 +267,7 @@ namespace AtharERP_System.Data
                         Name = "مشروع تجريبي - مجمع سكني",
                         Description = "مشروع تجريبي لتهيئة النظام",
                         ClientId = sampleClients[0].Id,
-                        Type = ProjectType.Main,
+                        Scope = ProjectScope.Main,
                         Status = ProjectStatus.New,
                         PlannedStartDate = DateTime.UtcNow,
                         Budget = 500000,
