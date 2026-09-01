@@ -49,6 +49,12 @@ namespace AtharERP_System.Data
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
         public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
+        public DbSet<StageTaskTemplate> StageTaskTemplates { get; set; } = null!;
+        public DbSet<DesignProposal> DesignProposals { get; set; } = null!;
+        public DbSet<FinancialClaim> FinancialClaims { get; set; } = null!;
+        public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
+        public DbSet<Custody> Custodies { get; set; } = null!;
+        public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -500,6 +506,89 @@ namespace AtharERP_System.Data
                 .HasForeignKey(d => d.UploadedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ========== قوالب مهام المرحلة (StageTaskTemplate) ==========
+            builder.Entity<StageTaskTemplate>()
+                .HasOne(t => t.ProjectStage)
+                .WithMany()
+                .HasForeignKey(t => t.ProjectStageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== المقترحات التصميمية (DesignProposal) ==========
+            builder.Entity<DesignProposal>()
+                .HasOne(p => p.Project)
+                .WithMany()
+                .HasForeignKey(p => p.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<DesignProposal>()
+                .HasOne(p => p.PreparedBy)
+                .WithMany()
+                .HasForeignKey(p => p.PreparedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== المطالبات المالية (FinancialClaim) ==========
+            builder.Entity<FinancialClaim>()
+                .HasOne(c => c.Project)
+                .WithMany()
+                .HasForeignKey(c => c.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<FinancialClaim>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== الطلبات الفنية (TechnicalRequest) ==========
+            builder.Entity<TechnicalRequest>()
+                .HasOne(r => r.Site)
+                .WithMany()
+                .HasForeignKey(r => r.SiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<TechnicalRequest>()
+                .HasOne(r => r.Stage)
+                .WithMany()
+                .HasForeignKey(r => r.StageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<TechnicalRequest>()
+                .HasOne(r => r.RequestedBy)
+                .WithMany()
+                .HasForeignKey(r => r.RequestedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TechnicalRequest>()
+                .HasOne(r => r.RoutedToDepartment)
+                .WithMany()
+                .HasForeignKey(r => r.RoutedToDepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ========== العهد (Custody) ==========
+            builder.Entity<Custody>()
+                .HasOne(c => c.Holder)
+                .WithMany()
+                .HasForeignKey(c => c.HolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Custody>()
+                .HasOne(c => c.Department)
+                .WithMany()
+                .HasForeignKey(c => c.DepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ========== إصدارات ضبط الوثائق (DocumentRevision) ==========
+            builder.Entity<DocumentRevision>()
+                .HasOne(r => r.Document)
+                .WithMany()
+                .HasForeignKey(r => r.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<DocumentRevision>()
+                .HasOne(r => r.PreparedBy)
+                .WithMany()
+                .HasForeignKey(r => r.PreparedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ========== إصلاح عام: فرض UTC على كل خصائص DateTime قبل حفظها في Postgres ==========
             // أعمدة timestamptz ترفض DateTime.Kind=Unspecified (وهو ما يصل من <input type="date">
