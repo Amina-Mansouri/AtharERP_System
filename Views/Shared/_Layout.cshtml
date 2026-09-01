@@ -48,6 +48,15 @@
         bool canClients = await PermissionService.HasPermissionAsync(User, "PR.Clients");
         bool canSites = await PermissionService.HasPermissionAsync(User, "Sites.View");
 
+        string activeSystem = ViewContext.RouteData.Values["controller"]?.ToString() switch
+        {
+            "Admin" => "sys01",
+            "Projects" or "ProjectTasks" or "ProjectStages" => "sys02",
+            "Sites" => "sys03",
+            "Clients" => "sys07",
+            _ => ""
+        };
+
         <header class="app-topbar">
             <img src="~/images/logo-icon.png" alt="أثر" class="ds-logo" />
             <span class="ds-brand">منظومة أثر</span>
@@ -104,11 +113,11 @@
                 @if (canUsers || canRoles || canDepartments)
                 {
                     <div class="nav-group">
-                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys01">
-                            <span>٠١ الصلاحيات والمصادقة <span class="tag tag-success">كاملة</span></span>
+                        <button type="button" class="nav-group-header @(activeSystem == "sys01" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys01">
+                            <span>الصلاحيات والمصادقة <span class="tag tag-success">كاملة</span></span>
                             <span class="nav-group-caret">▾</span>
                         </button>
-                        <div class="collapse show" id="sys01">
+                        <div class="collapse @(activeSystem == "sys01" ? "show" : "")" id="sys01">
                             <div class="nav-subgroup-title">الموظفون والصلاحيات</div>
                             @if (canUsers)
                             {
@@ -132,11 +141,11 @@
                 @if (canProjects)
                 {
                     <div class="nav-group">
-                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys02">
-                            <span>٠٢ المشاريع <span class="tag tag-success">كاملة</span></span>
+                        <button type="button" class="nav-group-header @(activeSystem == "sys02" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys02">
+                            <span>المشاريع <span class="tag tag-success">كاملة</span></span>
                             <span class="nav-group-caret">▾</span>
                         </button>
-                        <div class="collapse show" id="sys02">
+                        <div class="collapse @(activeSystem == "sys02" ? "show" : "")" id="sys02">
                             <div class="nav-subgroup-title">المشاريع والتكليفات</div>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
                                asp-controller="Projects" asp-action="Index">المشاريع</a>
@@ -158,11 +167,11 @@
                 @if (canSites)
                 {
                     <div class="nav-group">
-                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys03">
-                            <span>٠٣ المواقع <span class="tag tag-success">كاملة</span></span>
+                        <button type="button" class="nav-group-header @(activeSystem == "sys03" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys03">
+                            <span>المواقع <span class="tag tag-success">كاملة</span></span>
                             <span class="nav-group-caret">▾</span>
                         </button>
-                        <div class="collapse show" id="sys03">
+                        <div class="collapse @(activeSystem == "sys03" ? "show" : "")" id="sys03">
                             <div class="nav-subgroup-title">المواقع والعمليات</div>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
                                asp-controller="Sites" asp-action="Index">إدارة المواقع</a>
@@ -176,11 +185,11 @@
                 }
 
                 <div class="nav-group">
-                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys04">
-                        <span>٠٤ المالية <span class="tag tag-warning">جزئية</span></span>
+                    <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
+                        <span>المالية <span class="tag tag-warning">جزئية</span></span>
                         <span class="nav-group-caret">▾</span>
                     </button>
-                    <div class="collapse show" id="sys04">
+                    <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
                         <span class="nav-item disabled">المطالبات المالية <span class="tag tag-muted">قادمة</span></span>
                         <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
                         <span class="nav-item disabled">جدول التكاليف العام <span class="tag tag-muted">قادمة</span></span>
@@ -191,11 +200,11 @@
                 </div>
 
                 <div class="nav-group">
-                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys05">
-                        <span>٠٥ التوريدات <span class="tag tag-warning">جزئية</span></span>
+                    <button type="button" class="nav-group-header @(activeSystem == "sys05" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys05">
+                        <span>التوريدات <span class="tag tag-warning">جزئية</span></span>
                         <span class="nav-group-caret">▾</span>
                     </button>
-                    <div class="collapse show" id="sys05">
+                    <div class="collapse @(activeSystem == "sys05" ? "show" : "")" id="sys05">
                         <span class="nav-item disabled">طلبات التوريد <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">الموردون <span class="tag tag-muted">قادمة</span></span>
                         <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
@@ -205,11 +214,11 @@
                 </div>
 
                 <div class="nav-group">
-                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys06">
-                        <span>٠٦ الموارد البشرية <span class="tag tag-warning">جزئية</span></span>
+                    <button type="button" class="nav-group-header @(activeSystem == "sys06" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys06">
+                        <span>الموارد البشرية <span class="tag tag-warning">جزئية</span></span>
                         <span class="nav-group-caret">▾</span>
                     </button>
-                    <div class="collapse show" id="sys06">
+                    <div class="collapse @(activeSystem == "sys06" ? "show" : "")" id="sys06">
                         <span class="nav-item disabled">لوحة الموارد البشرية <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">الشؤون الإدارية <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>
@@ -224,11 +233,11 @@
                 @if (canClients)
                 {
                     <div class="nav-group">
-                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys07">
-                            <span>٠٧ العلاقات العامة <span class="tag tag-warning">جزئية</span></span>
+                        <button type="button" class="nav-group-header @(activeSystem == "sys07" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys07">
+                            <span>العلاقات العامة <span class="tag tag-warning">جزئية</span></span>
                             <span class="nav-group-caret">▾</span>
                         </button>
-                        <div class="collapse show" id="sys07">
+                        <div class="collapse @(activeSystem == "sys07" ? "show" : "")" id="sys07">
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
                                asp-controller="Clients" asp-action="Index">العملاء</a>
                             <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
@@ -241,11 +250,11 @@
                 }
 
                 <div class="nav-group">
-                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys08">
-                        <span>٠٨ التقارير <span class="tag tag-warning">جزئية</span></span>
+                    <button type="button" class="nav-group-header @(activeSystem == "sys08" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys08">
+                        <span>التقارير <span class="tag tag-warning">جزئية</span></span>
                         <span class="nav-group-caret">▾</span>
                     </button>
-                    <div class="collapse show" id="sys08">
+                    <div class="collapse @(activeSystem == "sys08" ? "show" : "")" id="sys08">
                         <span class="nav-item disabled">تقارير المشاريع <span class="tag tag-muted">قادمة</span></span>
                         <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
                         <span class="nav-item disabled">الفواتير وسندات القبض <span class="tag tag-muted">قادمة</span></span>
