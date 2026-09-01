@@ -50,8 +50,15 @@
 
         <header class="app-topbar">
             <img src="~/images/logo-icon.png" alt="أثر" class="ds-logo" />
-            <span class="ds-brand">أثر</span>
-            <input type="text" class="ds-search" placeholder="بحث شامل — مشروع، موقع، عميل، مستند…" />
+            <span class="ds-brand">منظومة أثر</span>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-search-wrap">
+                <input type="text" class="ds-search" placeholder="بحث شامل…" />
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="M20 20l-3.5-3.5"></path>
+                </svg>
+            </div>
             <a class="ds-bell" asp-controller="Notifications" asp-action="Index" title="الإشعارات">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round" />
@@ -63,10 +70,6 @@
             {
                 <img src="~/images/logo-badge.png" alt="" class="ds-avatar" />
                 <span class="ds-role">@(currentRole ?? User.Identity!.Name)</span>
-                <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-line">خروج</button>
-                </form>
             }
             else
             {
@@ -75,84 +78,229 @@
         </header>
 
         <div class="app-body">
-            <nav class="app-sidebar">
+            <nav class="app-sidebar sb">
+                <div class="nav-section-title">وصول سريع</div>
                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
-                   asp-controller="Home" asp-action="Dashboard">لوحة المعلومات</a>
-                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notifications" ? "active" : "")"
-                   asp-controller="Notifications" asp-action="Index">الإشعارات <span id="badge-unread" class="tag tag-accent" hidden></span></a>
+                   asp-controller="Home" asp-action="Dashboard">الرئيسية</a>
+                @if (canProjects)
+                {
+                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
+                       asp-controller="Projects" asp-action="Index">المشاريع</a>
+                }
+                @if (canSites)
+                {
+                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
+                       asp-controller="Sites" asp-action="Index">المواقع</a>
+                }
+                @if (canUsers)
+                {
+                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
+                       asp-controller="Admin" asp-action="Users">الموظفون</a>
+                }
+
+                <div class="nav-quick-divider"></div>
+                <div class="nav-section-title">الإدارات</div>
 
                 @if (canUsers || canRoles || canDepartments)
                 {
-                    <div class="nav-group-title">٠١ الصلاحيات والمصادقة</div>
-                    @if (canUsers)
-                    {
-                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
-                           asp-controller="Admin" asp-action="Users">المستخدمون</a>
-                    }
-                    @if (canRoles)
-                    {
-                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")"
-                           asp-controller="Admin" asp-action="Roles">الأدوار والصلاحيات</a>
-                    }
-                    @if (canDepartments)
-                    {
-                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Departments" ? "active" : "")"
-                           asp-controller="Admin" asp-action="Departments">الأقسام</a>
-                    }
+                    <div class="nav-group">
+                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys01">
+                            <span>٠١ الصلاحيات والمصادقة <span class="tag tag-success">كاملة</span></span>
+                            <span class="nav-group-caret">▾</span>
+                        </button>
+                        <div class="collapse show" id="sys01">
+                            <div class="nav-subgroup-title">الموظفون والصلاحيات</div>
+                            @if (canUsers)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
+                                   asp-controller="Admin" asp-action="Users">إدارة الموظفين</a>
+                            }
+                            @if (canRoles)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")"
+                                   asp-controller="Admin" asp-action="Roles">إدارة الأدوار والصلاحيات</a>
+                            }
+                            @if (canDepartments)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Departments" ? "active" : "")"
+                                   asp-controller="Admin" asp-action="Departments">الإدارات والأقسام</a>
+                            }
+                        </div>
+                    </div>
                 }
 
-                @if (canClients || canProjects)
+                @if (canProjects)
                 {
-                    <div class="nav-group-title">٠٢ إدارة المشاريع</div>
-                    @if (canClients)
-                    {
-                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
-                           asp-controller="Clients" asp-action="Index">العملاء</a>
-                    }
-                    @if (canProjects)
-                    {
-                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
-                           asp-controller="Projects" asp-action="Index">المشاريع</a>
-                        @* TODO(المرحلة ٤): لا توجد بعد صفحة "كل المهام عبر كل المشاريع" (1j) — تربط مؤقتاً بمهامي *@
-                        <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyTasks" ? "active" : "")"
-                           asp-controller="ProjectTasks" asp-action="MyTasks">المهام</a>
-                        @* TODO(المرحلة ٤): لا توجد بعد صفحة "كل التكاليف عبر كل المشاريع" (1k) *@
-                        <a class="nav-item" asp-controller="Projects" asp-action="Index">التكاليف</a>
-                        @* TODO(المرحلة ٤): لا توجد بعد صفحة جدول زمني مستقلة (1l) *@
-                        <a class="nav-item" asp-controller="Projects" asp-action="Index">الجدول الزمني</a>
-                    }
+                    <div class="nav-group">
+                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys02">
+                            <span>٠٢ المشاريع <span class="tag tag-success">كاملة</span></span>
+                            <span class="nav-group-caret">▾</span>
+                        </button>
+                        <div class="collapse show" id="sys02">
+                            <div class="nav-subgroup-title">المشاريع والتكليفات</div>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
+                               asp-controller="Projects" asp-action="Index">المشاريع</a>
+                            <span class="nav-item disabled">مراحل المشروع <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">تكليفات المشروع <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">مهام المشروع <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">لوحة المهندسة <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">تكليفاتي <span class="tag tag-muted">قادمة</span></span>
+                            <div class="nav-subgroup-title">التسليم والمتابعة</div>
+                            <span class="nav-item disabled">المقترحات التصميمية <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">الجدول الزمني العام <span class="tag tag-muted">قادمة</span></span>
+                            <div class="nav-subgroup-title">الجودة والوثائق</div>
+                            <span class="nav-item disabled">التدقيق والجودة <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">ضبط الوثائق <span class="tag tag-muted">قادمة</span></span>
+                        </div>
+                    </div>
                 }
 
                 @if (canSites)
                 {
-                    <div class="nav-group-title">٠٣ المواقع والعمليات</div>
-                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
-                       asp-controller="Sites" asp-action="Index">المواقع</a>
-                    @* TODO(المرحلة ٥): (1o/1p/1q/1r/1s) تحتاج معرِّف موقع حالياً — قوائم شاملة تُبنى بالمرحلة ٥ *@
-                    <a class="nav-item" asp-controller="Sites" asp-action="Index">التقارير اليومية</a>     <a class="nav-item" asp-controller="Sites" asp-action="Index">الفحوصات <span id="badge-approvals" class="tag tag-accent" hidden></span></a>
-                    <a class="nav-item" asp-controller="Sites" asp-action="Index">المقاولون</a>
-                    <a class="nav-item" asp-controller="Sites" asp-action="Index">الصيانة</a>
-                    <a class="nav-item" asp-controller="Sites" asp-action="Index">طلبات التوريد <span id="badge-supply" class="tag tag-accent" hidden></span></a>
+                    <div class="nav-group">
+                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys03">
+                            <span>٠٣ المواقع <span class="tag tag-success">كاملة</span></span>
+                            <span class="nav-group-caret">▾</span>
+                        </button>
+                        <div class="collapse show" id="sys03">
+                            <div class="nav-subgroup-title">المواقع والعمليات</div>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
+                               asp-controller="Sites" asp-action="Index">إدارة المواقع</a>
+                            <span class="nav-item disabled">المقاولون <span class="tag tag-muted">قادمة</span></span>
+                            <div class="nav-subgroup-title">طلبات الموقع والسلامة</div>
+                            <span class="nav-item disabled">الطلبات الفنية <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">طلبات الصيانة <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">تقارير السلامة <span class="tag tag-muted">قادمة</span></span>
+                        </div>
+                    </div>
+                }
+
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys04">
+                        <span>٠٤ المالية <span class="tag tag-warning">جزئية</span></span>
+                        <span class="nav-group-caret">▾</span>
+                    </button>
+                    <div class="collapse show" id="sys04">
+                        <span class="nav-item disabled">المطالبات المالية <span class="tag tag-muted">قادمة</span></span>
+                        <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
+                        <span class="nav-item disabled">جدول التكاليف العام <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">جدول البيع النهائي <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">الرواتب والمصاريف <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">الأرباح والخسائر <span class="tag tag-muted">قادمة</span></span>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys05">
+                        <span>٠٥ التوريدات <span class="tag tag-warning">جزئية</span></span>
+                        <span class="nav-group-caret">▾</span>
+                    </button>
+                    <div class="collapse show" id="sys05">
+                        <span class="nav-item disabled">طلبات التوريد <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">الموردون <span class="tag tag-muted">قادمة</span></span>
+                        <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
+                        <span class="nav-item disabled">المخازن والأصناف <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">أوامر الشراء والاستلام <span class="tag tag-muted">قادمة</span></span>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys06">
+                        <span>٠٦ الموارد البشرية <span class="tag tag-warning">جزئية</span></span>
+                        <span class="nav-group-caret">▾</span>
+                    </button>
+                    <div class="collapse show" id="sys06">
+                        <span class="nav-item disabled">لوحة الموارد البشرية <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">الشؤون الإدارية <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>
+                        <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
+                        <span class="nav-item disabled">الحضور والانصراف <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">الرواتب والخصومات <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
+                    </div>
+                </div>
+
+                @if (canClients)
+                {
+                    <div class="nav-group">
+                        <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys07">
+                            <span>٠٧ العلاقات العامة <span class="tag tag-warning">جزئية</span></span>
+                            <span class="nav-group-caret">▾</span>
+                        </button>
+                        <div class="collapse show" id="sys07">
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
+                               asp-controller="Clients" asp-action="Index">العملاء</a>
+                            <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
+                            <span class="nav-item disabled">واجهة الزبون <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">المقايسات <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">العقود القانونية <span class="tag tag-muted">قادمة</span></span>
+                            <span class="nav-item disabled">الإعلانات والإعلام <span class="tag tag-muted">قادمة</span></span>
+                        </div>
+                    </div>
+                }
+
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header" data-bs-toggle="collapse" data-bs-target="#sys08">
+                        <span>٠٨ التقارير <span class="tag tag-warning">جزئية</span></span>
+                        <span class="nav-group-caret">▾</span>
+                    </button>
+                    <div class="collapse show" id="sys08">
+                        <span class="nav-item disabled">تقارير المشاريع <span class="tag tag-muted">قادمة</span></span>
+                        <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
+                        <span class="nav-item disabled">الفواتير وسندات القبض <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">التقارير المالية <span class="tag tag-muted">قادمة</span></span>
+                        <span class="nav-item disabled">أداء الموظفين <span class="tag tag-muted">قادمة</span></span>
+                    </div>
+                </div>
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="nav-logout">
+                        <form method="post" asp-controller="Account" asp-action="Logout">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="nav-logout-btn">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><path d="M16 17l5-5-5-5M21 12H9"></path></svg>
+                                <span>تسجيل الخروج</span>
+                            </button>
+                        </form>
+                    </div>
                 }
             </nav>
 
-            <main class="app-content">
-                @if (TempData["Success"] != null)
-                {
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        @TempData["Success"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="app-content">
+                <div class="app-subbar">
+                    <button type="button" class="btn-back" onclick="history.back()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+                        رجوع
+                    </button>
+                    <div class="app-crumb">
+                        @if (!string.IsNullOrEmpty(ViewData["Kicker"] as string))
+                        {
+                            <span>@ViewData["Kicker"]</span>
+                            <span class="crumb-sep">/</span>
+                        }
+                        <span class="crumb-leaf">@(ViewData["PageTitle"] as string ?? ViewData["Title"] as string)</span>
                     </div>
-                }
-                @if (TempData["Error"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        @TempData["Error"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                }
-                @RenderBody()
-            </main>
+                </div>
+                <div class="app-content-body cs">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @RenderBody()
+                </div>
+            </div>
         </div>
     }
 

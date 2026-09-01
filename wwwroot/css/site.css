@@ -523,14 +523,12 @@ body {
     --ds-radius: 4px;
     --ds-shadow-card: 0 1px 3px rgba(0,0,0,.06);
     --ds-shadow-dropdown: 0 10px 28px rgba(32,31,29,.14);
-    /* Cormorant Garamond وLora: أسماء فقط بلا CDN (بلا حزم جديدة)؛ أضيفي ملفات
-       الخط في wwwroot/fonts إن أردت التطابق البصري الكامل، وإلا تتساقط للاحتياطي */
     --ds-font-ar: 'Noto Naskh Arabic', 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
     --ds-font-num: 'Cormorant Garamond', Georgia, serif;
     --ds-font-kicker: 'Lora', Georgia, serif;
 }
 
-/* ===== هيكل التطبيق (Topbar + Sidebar) ===== */
+/* ===== هيكل التطبيق (Topbar + Sidebar) — طبقة ذهبية أولى (تبقى، غير مستخدمة الآن) ===== */
 .app-topbar {
     height: 46px;
     display: flex;
@@ -784,7 +782,7 @@ body {
 
 /* ===== الجدول (CSS Grid — عرض كل عمود يُحدَّد مرة واحدة عبر --cols على الغلاف) ===== */
 .data-table {
-    --cols: 1fr; /* كل شاشة تُعيد تعريفها: style="--cols: 28px 100px minmax(0,1fr) 58px" */
+    --cols: 1fr;
     width: 100%;
     background: var(--ds-surface);
     border: var(--ds-hair);
@@ -1239,3 +1237,765 @@ input[type="checkbox"].chk-gold {
     border: none;
     padding: 0;
 }
+
+/* ============================================================
+   منظومة أثر — هوية الأنظمة الثمانية (athar-handoff) — تحلّ محل ما فوقها بصرياً
+   (نفس الأصناف: .app-topbar/.app-sidebar/.nav-item/.page-head/.stat-strip/
+   .filter-bar/.data-table/.tag/.btn-line/.progress-hair/.side-panel/.pager)
+   عبر ترتيب الكاسكيد — القيم أدناه هي الأحدث فتُطبَّق تلقائياً بلا تغيير أي View.
+   القيم مطابقة حرفياً لكتلة <helmet> والشريط العلوي/الجانبي في المرجع البصري.
+   ============================================================ */
+:root {
+    --sys-nav-bg: #221837;
+    --sys-nav-active-bg: #342a4c;
+    --sys-nav-active-bar: #8c7ce6;
+    --sys-primary: #7b6bd6;
+    --sys-primary-hover: #6455c4;
+    --sys-primary-text: #6455c4;
+    --sys-success: #3fae6f;
+    --sys-success-text: #2f8a57;
+    --sys-danger: #e35d54;
+    --sys-danger-text: #c94a42;
+    --sys-warning: #ff9130;
+    --sys-warning-text: #c9700f;
+    --sys-info: #5090b0;
+    --sys-info-text: #3f7590;
+    --sys-bg: #f8f7fb;
+    --sys-surface: #ffffff;
+    --sys-text: #241f33;
+    --sys-text-secondary: #5a5370;
+    --sys-text-light: #8a83a0;
+    --sys-text-faint: #c6c1d6;
+    --sys-border: #ecebf2;
+    --sys-row-line: #f1f0f6;
+    --sys-row-line-light: #f6f5fa;
+    --sys-th-bg: #faf9fd;
+    --sys-row-selected: rgba(123,107,214,.05);
+    --sys-radius-card: 11px;
+    --sys-radius-btn: 8px;
+    --sys-shadow: 0 1px 2px rgba(36,31,51,.04);
+    --sys-font: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+}
+
+html {
+    direction: rtl;
+}
+
+a {
+    color: #6455c4;
+    text-decoration: none;
+}
+
+    a:hover {
+        color: #7b6bd6;
+    }
+
+button:focus-visible {
+    outline: 2px solid #7b6bd6;
+    outline-offset: 2px;
+}
+
+.n {
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.sb::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sb::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.14);
+    border-radius: 3px;
+}
+
+.cs::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cs::-webkit-scrollbar-thumb {
+    background: rgba(36,31,51,.16);
+    border-radius: 4px;
+}
+
+/* ===== الشريط العلوي (50px) ===== */
+.app-topbar {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    background: var(--sys-nav-bg);
+    font-family: var(--sys-font);
+}
+
+    .app-topbar .ds-logo {
+        width: 30px;
+        height: 30px;
+    }
+
+    .app-topbar .ds-brand {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+    }
+
+    .app-topbar .topbar-spacer {
+        flex: 1;
+    }
+
+    .app-topbar .ds-search {
+        width: 200px;
+        height: 29px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: var(--sys-radius-btn);
+        padding: 0 30px 0 11px;
+        font-size: 11.5px;
+        background: rgba(255,255,255,.07);
+        color: #fff;
+    }
+
+        .app-topbar .ds-search::placeholder {
+            color: rgba(255,255,255,.5);
+        }
+
+.topbar-search-wrap {
+    position: relative;
+    width: 200px;
+}
+
+    .topbar-search-wrap svg {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        width: 13px;
+        height: 13px;
+        stroke: rgba(255,255,255,.45);
+    }
+
+.app-topbar .ds-bell {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    background: rgba(255,255,255,.08);
+}
+
+    .app-topbar .ds-bell svg {
+        width: 14px;
+        height: 14px;
+        stroke: #fff;
+        stroke-width: 1.7;
+    }
+
+    .app-topbar .ds-bell .ds-bell-count {
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: var(--sys-danger);
+        color: #fff;
+        font-size: 8.5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+.app-topbar .ds-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.app-topbar .ds-role {
+    font-size: 9.5px;
+    color: rgba(255,255,255,.45);
+    white-space: nowrap;
+}
+
+/* ===== القائمة الجانبية (200px) ===== */
+.app-body {
+    display: flex;
+    align-items: stretch;
+    min-height: calc(100vh - 50px);
+}
+
+.app-sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--sys-nav-bg);
+    border-left: 1px solid rgba(255,255,255,.07);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    font-family: var(--sys-font);
+}
+
+.nav-section-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(255,255,255,.32);
+    padding: 5px 14px 5px;
+}
+
+.nav-quick-divider {
+    height: 1px;
+    background: rgba(255,255,255,.09);
+    margin: 2px 14px 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 7px 14px;
+    color: rgba(255,255,255,.82);
+    text-decoration: none;
+    border-right: 3px solid transparent;
+    background: none;
+    border-left: none;
+    border-top: none;
+    border-bottom: none;
+    width: 100%;
+    text-align: right;
+    cursor: pointer;
+}
+
+    .nav-item:hover {
+        color: #fff;
+        background: rgba(255,255,255,.04);
+        text-decoration: none;
+    }
+
+    .nav-item.active {
+        background: var(--sys-nav-active-bg);
+        border-right-color: var(--sys-nav-active-bar);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .nav-item.disabled {
+        color: rgba(255,255,255,.32);
+        cursor: default;
+        justify-content: space-between;
+    }
+
+        .nav-item.disabled:hover {
+            background: none;
+        }
+
+.nav-group {
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.nav-group-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 9px 14px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: right;
+}
+
+    .nav-group-header .nav-group-caret {
+        font-size: 9px;
+        color: rgba(255,255,255,.4);
+        transition: transform .15s;
+    }
+
+    .nav-group-header.collapsed .nav-group-caret {
+        transform: rotate(-90deg);
+    }
+
+.nav-subgroup-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: rgba(255,255,255,.32);
+    padding: 11px 14px 5px;
+}
+
+.nav-logout {
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,.07);
+    padding: 12px 14px;
+}
+
+.nav-logout-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 7px;
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.6);
+    font-size: 11.5px;
+    text-align: right;
+    cursor: pointer;
+}
+
+    .nav-logout-btn:hover {
+        background: rgba(255,255,255,.1);
+        color: #fff;
+    }
+
+/* ===== شريط رجوع/مسار التنقّل (38px) ===== */
+.app-subbar {
+    height: 38px;
+    flex-shrink: 0;
+    background: var(--sys-surface);
+    border-bottom: 1px solid var(--sys-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+}
+
+    .app-subbar .btn-back {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 30px;
+        padding: 0 10px;
+        background: #fff;
+        border: 1px solid #e4e2ec;
+        border-radius: 7px;
+        font-size: 12px;
+        color: var(--sys-text-secondary);
+        cursor: pointer;
+    }
+
+        .app-subbar .btn-back:hover {
+            background: #f4f2fa;
+            border-color: #c9c2e6;
+            color: var(--sys-primary-text);
+        }
+
+    .app-subbar .app-crumb {
+        font-size: 12px;
+        color: var(--sys-text-light);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .app-subbar .app-crumb .crumb-sep {
+            color: var(--sys-text-faint);
+        }
+
+        .app-subbar .app-crumb .crumb-leaf {
+            color: var(--sys-text);
+        }
+
+    .app-subbar .app-crumb-dept {
+        font-size: 11px;
+        color: #a8a2bd;
+    }
+
+/* ===== منطقة المحتوى ===== */
+.app-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: var(--sys-bg);
+    font-family: var(--sys-font);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.app-content-body {
+    padding: 18px 20px 40px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* ===== ترويسة الصفحة ===== */
+.kicker {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--sys-text-light);
+    display: block;
+    margin-bottom: 3px;
+}
+
+.page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+    .page-head h1 {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--sys-text);
+        margin: 0;
+    }
+
+    .page-head .page-head-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+/* ===== شريط الأرقام ===== */
+.stat-strip {
+    display: flex;
+    background: var(--sys-surface);
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-card);
+    box-shadow: var(--sys-shadow);
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+    .stat-strip .stat-item {
+        flex: 1;
+        padding: 12px 16px;
+        border-left: 1px solid var(--sys-row-line);
+        text-align: center;
+    }
+
+        .stat-strip .stat-item:first-child {
+            border-left: none;
+        }
+
+        .stat-strip .stat-item .stat-value {
+            font-weight: 700;
+            font-size: 22px;
+            font-variant-numeric: tabular-nums;
+            direction: ltr;
+            color: var(--sys-text);
+            display: block;
+        }
+
+        .stat-strip .stat-item .stat-sub {
+            font-size: 10px;
+            color: var(--sys-text-light);
+        }
+
+    .stat-strip.stat-strip-text .stat-value {
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+
+/* ===== شريط التصفية ===== */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+    .filter-bar .filter-search {
+        height: 30px;
+        border: 1px solid var(--sys-border);
+        border-radius: var(--sys-radius-btn);
+        padding: 0 12px;
+        font-size: 11.5px;
+        flex: 1;
+        max-width: 260px;
+    }
+
+    .filter-bar .filter-chip {
+        height: 30px;
+        padding: 0 12px;
+        font-size: 11.5px;
+        border: 1px solid var(--sys-border);
+        border-radius: var(--sys-radius-btn);
+        background: var(--sys-surface);
+        color: var(--sys-text-secondary);
+        cursor: pointer;
+    }
+
+        .filter-bar .filter-chip.active {
+            border-color: var(--sys-primary);
+            color: var(--sys-primary-text);
+        }
+
+    .filter-bar .filter-clear {
+        margin-inline-start: auto;
+        font-size: 11px;
+        color: var(--sys-text-light);
+        cursor: pointer;
+    }
+
+/* ===== زر «+» متقطّع لإضافة خيار من مكانه ===== */
+.chip-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px dashed var(--sys-text-faint);
+    border-radius: var(--sys-radius-btn);
+    background: none;
+    color: var(--sys-text-light);
+    font-size: 15px;
+    cursor: pointer;
+}
+
+    .chip-add:hover {
+        border-color: var(--sys-primary);
+        color: var(--sys-primary-text);
+    }
+
+/* ===== الجدول (CSS Grid بمتغيّر --cols) ===== */
+.data-table {
+    --cols: 1fr;
+    width: 100%;
+    background: var(--sys-surface);
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-card);
+    box-shadow: var(--sys-shadow);
+    overflow-x: auto;
+}
+
+.data-table-head,
+.data-table-row {
+    display: grid;
+    grid-template-columns: var(--cols);
+    align-items: center;
+    min-width: fit-content;
+}
+
+.data-table-head {
+    background: var(--sys-th-bg);
+    border-bottom: 1px solid var(--sys-border);
+}
+
+.data-table-row {
+    border-top: 1px solid var(--sys-row-line);
+}
+
+    .data-table-row:first-child {
+        border-top: none;
+    }
+
+    .data-table-row.row-selected {
+        background: var(--sys-row-selected);
+    }
+
+    .data-table-row.row-faded {
+        opacity: .55;
+    }
+
+    .data-table-row.row-expanded {
+        background: var(--sys-bg);
+        grid-column: 1 / -1;
+        display: block;
+        padding: 10px 14px;
+    }
+
+.cell {
+    font-size: 11.5px;
+    padding: 9px 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    color: var(--sys-text);
+}
+
+.data-table-head .cell {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--sys-text-light);
+    font-weight: 600;
+    white-space: normal;
+}
+
+.cell-num {
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    text-align: right;
+}
+
+/* ===== شارات ملوّنة ===== */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--sys-border);
+    color: var(--sys-text-secondary);
+    background: var(--sys-surface);
+    white-space: nowrap;
+}
+
+.tag-accent {
+    border-color: var(--sys-primary);
+    color: var(--sys-primary-text);
+    background: rgba(123,107,214,.06);
+}
+
+.tag-success {
+    border-color: var(--sys-success);
+    color: var(--sys-success-text);
+    background: rgba(63,174,111,.08);
+}
+
+.tag-danger {
+    border-color: var(--sys-danger);
+    color: var(--sys-danger-text);
+    background: rgba(227,93,84,.08);
+}
+
+.tag-warning {
+    border-color: var(--sys-warning);
+    color: var(--sys-warning-text);
+    background: rgba(255,145,48,.08);
+}
+
+.tag-info {
+    border-color: var(--sys-info);
+    color: var(--sys-info-text);
+    background: rgba(80,144,176,.08);
+}
+
+.tag-muted {
+    border-color: var(--sys-text-faint);
+    color: var(--sys-text-light);
+    background: var(--sys-row-line-light);
+}
+
+/* ===== الأزرار ===== */
+.btn-line {
+    height: 30px;
+    padding: 0 13px;
+    font-size: 11.5px;
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-btn);
+    background: var(--sys-surface);
+    color: var(--sys-text);
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+    .btn-line:hover {
+        background: var(--sys-row-line-light);
+        color: var(--sys-text);
+        text-decoration: none;
+    }
+
+.btn-line-accent {
+    border-color: var(--sys-primary);
+    color: var(--sys-primary-text);
+}
+
+.btn-primary {
+    height: 30px;
+    padding: 0 15px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px solid var(--sys-primary);
+    border-radius: var(--sys-radius-btn);
+    background: var(--sys-primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+    .btn-primary:hover {
+        background: var(--sys-primary-hover);
+        border-color: var(--sys-primary-hover);
+        color: #fff;
+        text-decoration: none;
+    }
+
+/* ===== شريط تقدّم شعري ===== */
+.progress-hair {
+    height: 3px;
+    width: 100%;
+    background: var(--sys-row-line);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+    .progress-hair > span {
+        display: block;
+        height: 100%;
+        background: var(--sys-primary);
+    }
+
+/* ===== لوحة جانبية/سفلية ===== */
+.side-panel {
+    background: var(--sys-surface);
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-card);
+    box-shadow: var(--sys-shadow);
+    padding: 14px;
+}
+
+    .side-panel .side-panel-title {
+        font-size: 12.5px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--sys-text);
+    }
+
+/* ===== الترقيم ===== */
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--sys-text-light);
+}
+
+    .pager .pager-pages {
+        display: flex;
+        gap: 4px;
+    }
+
+    .pager .pager-page {
+        min-width: 22px;
+        height: 22px;
+        padding: 0 4px;
+        border: 1px solid var(--sys-border);
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10.5px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--sys-text-secondary);
+    }
+
+        .pager .pager-page.active {
+            border-color: var(--sys-primary);
+            color: var(--sys-primary-text);
+        }
