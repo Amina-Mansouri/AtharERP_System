@@ -60,6 +60,15 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "عاجلة")]
         public bool IsUrgent { get; set; }
 
+        [Display(Name = "المخرَج المطلوب")]
+        public TaskOutputType? OutputType { get; set; }
+
+        [Display(Name = "المدة المتوقعة (أيام)")]
+        public int? ExpectedDays { get; set; }
+
+        [Display(Name = "المدة المستغرقة فعلياً (أيام)")]
+        public int? ActualDays { get; set; }
+
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "نسبة الإنجاز")]
         public decimal CompletionPercentage { get; set; }

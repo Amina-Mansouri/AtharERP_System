@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AtharERP_System.Models.Entities
 {
-    public class ProjectCost
+    // التكليف — الاسم السابق ProjectCost كان مضلِّلاً (يمثّل تكليفاً لا تكلفة مالية حقيقية)
+    // أُعيدت التسمية حسب 06-CONFLICTS.md · C7؛ Area/PricePerMeter تخصّ تسعير هذا التكليف
+    // نفسه، منفصلة عن ProjectStage.Area/PricePerMeter/StageValue (قيمة المرحلة — C1).
+    public class ProjectAssignment
     {
         public int Id { get; set; }
 
@@ -14,6 +17,12 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("ProjectId")]
         [ValidateNever]
         public virtual Project Project { get; set; } = null!;
+
+        [Display(Name = "المرحلة")]
+        public int? StageId { get; set; }
+
+        [ForeignKey("StageId")]
+        public virtual ProjectStage? Stage { get; set; }
 
         [Required(ErrorMessage = "نوع التكلفة مطلوب")]
         [StringLength(100)]
@@ -44,7 +53,34 @@ namespace AtharERP_System.Models.Entities
         public decimal FinalAmount { get; set; }
 
         [Display(Name = "الحالة")]
-        public CostStatus Status { get; set; } = CostStatus.Pending;
+        public AssignmentStatus Status { get; set; } = AssignmentStatus.Pending;
+
+        [Display(Name = "عاجل")]
+        public bool IsUrgent { get; set; }
+
+        [Display(Name = "المهندسة الرئيسية")]
+        public string? LeadEngineerId { get; set; }
+
+        [ForeignKey("LeadEngineerId")]
+        public virtual ApplicationUser? LeadEngineer { get; set; }
+
+        [Display(Name = "المهندسة المساعدة")]
+        public string? AssistantEngineerId { get; set; }
+
+        [ForeignKey("AssistantEngineerId")]
+        public virtual ApplicationUser? AssistantEngineer { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ الاستلام")]
+        public DateTime? ReceivedDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "التاريخ المتفق عليه")]
+        public DateTime? AgreedDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "التاريخ الفعلي")]
+        public DateTime? ActualDate { get; set; }
 
         [Display(Name = "مرحّل إلى المالية")]
         public bool IsTransferredToFinance { get; set; }
@@ -55,6 +91,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public virtual ICollection<ProjectCostSubtask> Subtasks { get; set; } = new List<ProjectCostSubtask>();
+        public virtual ICollection<ProjectAssignmentSubtask> Subtasks { get; set; } = new List<ProjectAssignmentSubtask>();
     }
 }

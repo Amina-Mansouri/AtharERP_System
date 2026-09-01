@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AtharERP_System.Models.Entities
 {
     // كيان مبسّط تم تقديمه من الوحدة 05 (المالية) لاستقبال التكاليف المرحّلة تلقائياً
-    // عند اكتمال ProjectCost، حسب القسم 5.7/6.5 من مواصفة الوحدة 02.
+    // عند اكتمال ProjectAssignment، حسب القسم 5.7/6.5 من مواصفة الوحدة 02.
     public class FinancialRecord
     {
         public int Id { get; set; }
@@ -15,10 +15,10 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("ProjectId")]
         public virtual Project Project { get; set; } = null!;
 
-        public int? ProjectCostId { get; set; }
+        public int? ProjectAssignmentId { get; set; }
 
-        [ForeignKey("ProjectCostId")]
-        public virtual ProjectCost? ProjectCost { get; set; }
+        [ForeignKey("ProjectAssignmentId")]
+        public virtual ProjectAssignment? ProjectAssignment { get; set; }
 
         [Required]
         [StringLength(100)]

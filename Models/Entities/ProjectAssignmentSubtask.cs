@@ -3,15 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AtharERP_System.Models.Entities
 {
-    public class ProjectCostSubtask
+    public class ProjectAssignmentSubtask
     {
         public int Id { get; set; }
 
         [Required]
-        public int ProjectCostId { get; set; }
+        public int ProjectAssignmentId { get; set; }
 
-        [ForeignKey("ProjectCostId")]
-        public virtual ProjectCost ProjectCost { get; set; } = null!;
+        [ForeignKey("ProjectAssignmentId")]
+        public virtual ProjectAssignment ProjectAssignment { get; set; } = null!;
 
         [Required(ErrorMessage = "اسم المهمة الفرعية مطلوب")]
         [StringLength(255)]

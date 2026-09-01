@@ -26,6 +26,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نسبة المساهمة")]
         public decimal ContributionPercentage { get; set; } = 100;
 
+        [Display(Name = "المسؤولة")]
+        public bool IsLead { get; set; }
+
         [Display(Name = "تاريخ التكليف")]
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
     }

@@ -38,6 +38,19 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "التكلفة الفعلية")]
         public decimal ActualCost { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "المساحة (م²)")]
+        public decimal? Area { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "سعر المتر")]
+        public decimal? PricePerMeter { get; set; }
+
+        // محسوبة = المساحة × سعر المتر (بند L1) — للقراءة فقط
+        [NotMapped]
+        [Display(Name = "قيمة المرحلة")]
+        public decimal StageValue => (Area ?? 0) * (PricePerMeter ?? 0);
+
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "نسبة الإنجاز")]
         public decimal CompletionPercentage { get; set; }
@@ -70,10 +83,15 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الانتهاء الفعلي")]
         public DateTime? ActualEndDate { get; set; }
 
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ التسليم الفعلي")]
+        public DateTime? ActualDeliveryDate { get; set; }
+
         [Display(Name = "توثيق العمل الدوري")]
         public string? WorkDocumentation { get; set; }
 
         public virtual ICollection<ProjectStep> Steps { get; set; } = new List<ProjectStep>();
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+        public virtual ICollection<ProjectAssignment> Assignments { get; set; } = new List<ProjectAssignment>();
     }
 }

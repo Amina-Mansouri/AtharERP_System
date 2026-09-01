@@ -2,7 +2,7 @@
 
 namespace AtharERP_System.Models.Entities
 {
-    public enum CostStatus
+    public enum AssignmentStatus
     {
         [Display(Name = "معلق")]
         Pending = 1,
