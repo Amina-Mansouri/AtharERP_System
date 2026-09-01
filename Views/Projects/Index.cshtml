@@ -6,7 +6,7 @@
     ViewData["Title"] = "المشاريع";
     var search = ViewBag.Search as string;
     var status = ViewBag.Status as ProjectStatus?;
-    var type = ViewBag.Type as ProjectType?;
+    var scope = ViewBag.Scope as ProjectScope?;
     var canCreate = await PermissionService.HasPermissionAsync(User, "Projects.Create");
     var canEdit = await PermissionService.HasPermissionAsync(User, "Projects.Edit");
     var canDelete = await PermissionService.HasPermissionAsync(User, "Projects.Delete");
@@ -47,10 +47,10 @@
             </select>
         </div>
         <div class="col-md-2">
-            <select name="type" class="form-select">
+            <select name="scope" class="form-select">
                 <option value="">-- كل الأنواع --</option>
-                <option value="Main" selected="@(type == ProjectType.Main)">رئيسي</option>
-                <option value="Sub" selected="@(type == ProjectType.Sub)">فرعي</option>
+                <option value="Main" selected="@(scope == ProjectScope.Main)">رئيسي</option>
+                <option value="Sub" selected="@(scope == ProjectScope.Sub)">فرعي</option>
             </select>
         </div>
         <div class="col-md-2">

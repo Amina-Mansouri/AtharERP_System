@@ -127,7 +127,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,Description,ClientId,ParentProjectId,Type,Status,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Budget,Priority,IsUrgent")] Project model)
+                   [Bind("Name,Description,ClientId,ParentProjectId,Scope,Status,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Budget,Priority,IsUrgent")] Project model)
         {
             if (!ModelState.IsValid)
             {
@@ -180,7 +180,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,Description,ClientId,ParentProjectId,Type,Status,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Budget,Priority,IsUrgent")] Project model)
+                       [Bind("Name,Description,ClientId,ParentProjectId,Scope,Status,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Budget,Priority,IsUrgent")] Project model)
         {
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
