@@ -13,32 +13,30 @@ namespace AtharERP_System.Services
             _context = context;
         }
 
-        // نسبة إنجاز المرحلة = مجموع أوزان الخطوات المكتملة ÷ مجموع أوزان كل الخطوات × 100 (القسم 5.2)
+        // نسبة إنجاز المرحلة = مجموع قيمة التكليفات المكتملة ÷ مجموع قيمة كل التكليفات × 100
+        // (بعد 06-CONFLICTS.md · C6: ProjectAssignment حلّ محل ProjectStep في مسار الحساب.
+        // FinalAmount بديل مؤقت لوزن الخطوة القديم — الحساب التصاعدي الكامل عبر
+        // CompletionPercentage خاص بالتكليف نفسه يُبنى في المرحلة ٤ حسب 04-BACKEND.md §8)
         public async Task RecalculateStageAsync(int stageId)
         {
             var stage = await _context.ProjectStages
-                .Include(s => s.Steps)
+                .Include(s => s.Assignments)
                 .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null) return;
 
-            var totalWeight = stage.Steps.Sum(s => s.Weight);
-            var completedWeight = stage.Steps
-                .Where(s => s.Status == StepStatus.Completed)
-                .Sum(s => s.Weight);
+            var totalValue = stage.Assignments.Sum(a => a.FinalAmount);
+            var completedValue = stage.Assignments
+                .Where(a => a.Status == AssignmentStatus.Completed)
+                .Sum(a => a.FinalAmount);
 
-            stage.CompletionPercentage = totalWeight > 0
-                ? Math.Round((completedWeight / totalWeight) * 100, 2)
+            stage.CompletionPercentage = totalValue > 0
+                ? Math.Round((completedValue / totalValue) * 100, 2)
                 : 0;
-            stage.CompletionPercentage = totalWeight > 0
-    ? Math.Round((completedWeight / totalWeight) * 100, 2)
-    : 0;
 
-            // تجميع التكلفة الفعلية للمرحلة من مجموع تكاليف خطواتها
-            stage.ActualCost = stage.Steps.Sum(s => s.ActualCost);
+            // تجميع التكلفة الفعلية للمرحلة من مجموع القيم النهائية لتكليفاتها
+            stage.ActualCost = stage.Assignments.Sum(a => a.FinalAmount);
 
-            await _context.SaveChangesAsync();
-            await RecalculateProjectAsync(stage.ProjectId);
             await _context.SaveChangesAsync();
             await RecalculateProjectAsync(stage.ProjectId);
         }
