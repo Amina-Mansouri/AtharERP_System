@@ -17,45 +17,68 @@ namespace AtharERP_System.Data
             // ينشئ الجداول إذا لم تكن موجودة
             await context.Database.MigrateAsync();
 
-            // ========== الأقسام الافتراضية (Section 10.3) ==========
+            // ========== شجرة الإدارات والأقسام (02-ARCHITECTURE.md §2 · بند P3) ==========
             Department? topManagement = null;
             if (!await context.Departments.AnyAsync())
             {
-                topManagement = new Department { Name = "الإدارة العليا", IsActive = true, CreatedAt = DateTime.UtcNow };
-                context.Departments.Add(topManagement);
-                await context.SaveChangesAsync();
-
-                var childDepartmentNames = new[]
+                var departmentTree = new (string Name, string[] Children)[]
                 {
-                    "قسم التصميم المعماري والداخلي",
-                    "قسم التصميم الإنشائي",
-                    "قسم التصميم الميكانيكي",
-                    "قسم التصميم الكهربائي",
-                    "قسم التصميم الجرافيكي",
-                    "قسم إدارة المشاريع",
-                    "قسم إدارة العمليات الميدانية",
-                    "قسم إدارة التوريدات",
-                    "قسم شؤون الإدارة والموارد البشرية",
-                    "قسم المالية",
-                    "قسم الجودة والتدقيق",
-                    "قسم Document Control"
+                    ("الإدارة العليا", new[]
+                    {
+                        "التصميم المعماري والداخلي والتخطيط",
+                        "التصميم الإنشائي",
+                        "التصميم الميكانيكي",
+                        "التصميم الجرافيكي",
+                        "التصميم الكهربائي"
+                    }),
+                    ("الإدارة الفنية", new[]
+                    {
+                        "المشاريع",
+                        "المواقع",
+                        "ضبط الوثائق",
+                        "الإشراف الميداني"
+                    }),
+                    ("الشؤون الإدارية والمالية", new[]
+                    {
+                        "الموارد البشرية",
+                        "المالية"
+                    }),
+                    ("الجودة والتدقيق", new[]
+                    {
+                        "جودة فنية",
+                        "جودة مواقع",
+                        "جودة مالية",
+                        "جودة إدارية",
+                        "ضبط الوثائق"
+                    })
                 };
 
-                foreach (var name in childDepartmentNames)
+                foreach (var (name, children) in departmentTree)
                 {
-                    context.Departments.Add(new Department
+                    var parent = new Department { Name = name, IsActive = true, CreatedAt = DateTime.UtcNow };
+                    context.Departments.Add(parent);
+                    await context.SaveChangesAsync();
+
+                    foreach (var childName in children)
                     {
-                        Name = name,
-                        ParentDepartmentId = topManagement.Id,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    });
+                        context.Departments.Add(new Department
+                        {
+                            Name = childName,
+                            ParentDepartmentId = parent.Id,
+                            IsActive = true,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                    await context.SaveChangesAsync();
+
+                    if (name == "الإدارة العليا")
+                        topManagement = parent;
                 }
-                await context.SaveChangesAsync();
             }
             else
             {
-                topManagement = await context.Departments.FirstOrDefaultAsync(d => d.ParentDepartmentId == null);
+                topManagement = await context.Departments.FirstOrDefaultAsync(d => d.Name == "الإدارة العليا")
+                    ?? await context.Departments.FirstOrDefaultAsync(d => d.ParentDepartmentId == null);
             }
 
             // ========== الأدوار القوالب الجاهزة (محمية من الحذف) ==========
@@ -81,7 +104,7 @@ namespace AtharERP_System.Data
                 }
             }
 
-            // ========== كتالوج الصلاحيات (47 صلاحية - القسم 6 من الوحدة 1) ==========
+            // ========== كتالوج الصلاحيات ==========
             var permissions = new[]
             {
                 // 6.1 عام / المستخدمون
@@ -90,6 +113,7 @@ namespace AtharERP_System.Data
                 new Permission { Code = "Users.Edit", Name = "المستخدمين.تعديل", Module = "Users" },
                 new Permission { Code = "Users.Delete", Name = "المستخدمين.حذف", Module = "Users" },
                 new Permission { Code = "Users.ToggleActive", Name = "المستخدمين.تفعيل", Module = "Users" },
+                new Permission { Code = "Employees.Manage", Name = "الموظفين.إدارة", Module = "Users" }, // بند L8
 
                 // 6.2 الأدوار
                 new Permission { Code = "Roles.View", Name = "الأدوار.عرض", Module = "Roles" },
@@ -106,8 +130,11 @@ namespace AtharERP_System.Data
                 new Permission { Code = "Projects.Delete", Name = "المشاريع.حذف", Module = "Projects" },
                 new Permission { Code = "Projects.Stages.Manage", Name = "المشاريع.مراحل.إدارة", Module = "Projects" },
                 new Permission { Code = "Projects.Tasks.Manage", Name = "المشاريع.مهام.إدارة", Module = "Projects" },
-                new Permission { Code = "Projects.Costs.View", Name = "المشاريع.تكاليف.عرض", Module = "Projects" },
-                new Permission { Code = "Projects.Costs.Edit", Name = "المشاريع.تكاليف.تعديل", Module = "Projects" },
+                new Permission { Code = "Projects.Assignments.View", Name = "المشاريع.تكليفات.عرض", Module = "Projects" }, // كان Projects.Costs.View
+                new Permission { Code = "Projects.Assignments.Edit", Name = "المشاريع.تكليفات.تعديل", Module = "Projects" }, // كان Projects.Costs.Edit
+                new Permission { Code = "Projects.Proposals.View", Name = "المشاريع.مقترحات.عرض", Module = "Projects" },
+                new Permission { Code = "Projects.Proposals.Edit", Name = "المشاريع.مقترحات.تعديل", Module = "Projects" },
+                new Permission { Code = "Projects.DocControl.Manage", Name = "المشاريع.ضبط_الوثائق.إدارة", Module = "Projects" },
 
                 // 6.4 المالية
                 new Permission { Code = "Finance.View", Name = "المالية.عرض", Module = "Finance" },
@@ -117,6 +144,8 @@ namespace AtharERP_System.Data
                 new Permission { Code = "Finance.Sales.Edit", Name = "المالية.مبيعات.تعديل", Module = "Finance" },
                 new Permission { Code = "Finance.Reports", Name = "المالية.تقارير", Module = "Finance" },
                 new Permission { Code = "Finance.Print", Name = "المالية.طباعة", Module = "Finance" },
+                new Permission { Code = "Finance.Claims.View", Name = "المالية.مطالبات.عرض", Module = "Finance" },
+                new Permission { Code = "Finance.Claims.Manage", Name = "المالية.مطالبات.إدارة", Module = "Finance" },
 
                 // 6.5 الموارد البشرية
                 new Permission { Code = "HR.View", Name = "الموارد_البشرية.عرض", Module = "HR" },
@@ -126,6 +155,7 @@ namespace AtharERP_System.Data
                 new Permission { Code = "HR.Salaries.Edit", Name = "الموارد_البشرية.رواتب.تعديل", Module = "HR" },
                 new Permission { Code = "HR.Leaves.Manage", Name = "الموارد_البشرية.إجازات.إدارة", Module = "HR" },
                 new Permission { Code = "HR.Evaluation", Name = "الموارد_البشرية.تقييم", Module = "HR" },
+                new Permission { Code = "HR.Custody.Manage", Name = "الموارد_البشرية.عهد.إدارة", Module = "HR" }, // بند L6
 
                 // 6.6 التوريدات
                 new Permission { Code = "Supply.View", Name = "التوريدات.عرض", Module = "Supply" },
@@ -136,7 +166,9 @@ namespace AtharERP_System.Data
                 new Permission { Code = "Sites.View", Name = "المواقع.عرض", Module = "Site" },
                 new Permission { Code = "Sites.Reports", Name = "المواقع.تقارير", Module = "Site" },
                 new Permission { Code = "Sites.Manage", Name = "المواقع.إدارة", Module = "Site" },
-               
+                new Permission { Code = "Sites.TechnicalRequests.Manage", Name = "المواقع.طلبات_فنية.إدارة", Module = "Site" },
+                new Permission { Code = "Sites.Maintenance.Manage", Name = "المواقع.صيانة.إدارة", Module = "Site" }, // بند L6
+
                 // 6.8 العلاقات العامة / CRM
                 new Permission { Code = "PR.View", Name = "العلاقات_العامة.عرض", Module = "CRM" },
                 new Permission { Code = "PR.Contracts", Name = "العلاقات_العامة.عقود", Module = "CRM" },
@@ -163,16 +195,24 @@ namespace AtharERP_System.Data
             // ========== ربط الصلاحيات بالأدوار ==========
             await LinkPermissionsToRole(context, roleManager, "مدير النظام", permissions.Select(p => p.Code).ToArray());
 
+            // مهندسة تصميم (03-SCREENS.md): مشاريعها ومهامها · حضورها · راتبها وخصوماتها ومكافآتها ·
+            // إضافة طلبات توريد · المقترحات التصميمية. ممنوعة من الميزانيات وبيانات المالك والمالية العامة.
             await LinkPermissionsToRole(context, roleManager, "مهندس تصميم", new[]
-  {
+            {
                 "Projects.ViewOwn",
+                "Projects.Proposals.View", "Projects.Proposals.Edit",
+                "HR.Attendance.View",
+                "HR.Salaries.View",
                 "Sites.View",
                 "Supply.View", "Supply.Create"
             });
 
+            // مهندسة جودة (03-SCREENS.md): إضافة المشاريع والمهام · متابعة جميع المشاريع وأعمال التصميم ·
+            // الاطلاع على جميع المهام والحضور · اعتماد الجودة والتقارير. نفس الممنوعات الثلاثة.
             await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[]
             {
                 "Projects.ViewAll", "Projects.Create", "Projects.Stages.Manage", "Projects.Tasks.Manage",
+                "HR.Attendance.View",
                 "Sites.View",
                 "Quality.View", "Quality.Approve", "Quality.Reports",
                 "Reports.View"
