@@ -18,7 +18,8 @@
 - لا حزم جديدة: Bootstrap 5 وjQuery الموجودان في wwwroot/lib فقط.
 - كل جدول CSS Grid بمتغيّر --cols، لا <table>.
 - إن احتجت قراراً أو وجدت تعارضاً بين المواصفة والكود، اسألني سؤالاً واحداً مباشراً قبل الكود.
-- لا تعتمد على git fetch للـViews — غير مدفوعة. اعتمد على ما أخبرك به عن نتيجة البناء.
+- الـViews مرفوعة — اقرأها بـgit fetch. لكن نتيجة البناء بعد لصق الكود أخبرك بها أنا.
+- عند أي اختلاف بين الحزمة والكود الفعلي: 06-CONFLICTS.md يحسم، وما ليس فيه أبلِغني عنه ولا تقرّر.
 ```
 
 ---
@@ -30,7 +31,7 @@
 هوية بنفسجية، العملة الدينار الليبي.
 
 في المجلد athar-handoff/ حزمة تحويل الواجهات:
-00-START-HERE.md · 01-DECISIONS.md · 02-ARCHITECTURE.md · 03-SCREENS.md · 04-BACKEND.md · 05-CLEANUP.md
+00-START-HERE.md · 01-DECISIONS.md · 02-ARCHITECTURE.md · 03-SCREENS.md · 04-BACKEND.md · 05-CLEANUP.md · 06-CONFLICTS.md
 
 اقرأها كلها بالكامل، ثم اقرأ من المستودع: Program.cs · Data/AppDbContext.cs ·
 Models/Entities/ (كلها) · Services/ · Controllers/ · 01-Identity-Authentication.md ·
@@ -82,19 +83,26 @@ Models/Entities/ (كلها) · Services/ · Controllers/ · 01-Identity-Authenti
 ## المرحلة ٢ — الكيانات والترحيلات
 
 ```
-المرحلة ٢ — تغييرات الكيانات حسب 02-ARCHITECTURE.md §3 و04-BACKEND.md §2–§7.
+المرحلة ٢ — تغييرات الكيانات. **اقرأ 06-CONFLICTS.md أولاً — هو يحسم خمسة من افتراضات الحزمة.**
+ثم 02-ARCHITECTURE.md §3 و04-BACKEND.md §2–§7.
 
 المطلوب بالترتيب:
-1) تعديلات Project (حذف Area وPricePerMeter، إضافة ActualDeliveryDate، وTotalCost محسوب
-   غير قابل للكتابة) وProjectStage (Area وPricePerMeter وStageValue وActualDeliveryDate).
-2) ProjectTask: Priority وOutputType وExpectedDays وActualDays. وTaskAssignee: IsLead.
-3) ProjectCost: Priority.
+1) ProjectStage: إضافة Area وPricePerMeter وStageValue وActualDeliveryDate.
+   وProject: إضافة ActualDeliveryDate وTotalCost محسوباً غير قابل للكتابة.
+   لا تحذف شيئاً من Project ولا من ProjectCost.
+2) ProjectTask: OutputType وExpectedDays وActualDays. وTaskAssignee: IsLead.
+   لا تُنشئ enum Priority — IsUrgent موجود.
+3) ProjectCost: IsUrgent. **وأعد تسميته إلى ProjectAssignment** ومعه ProjectCostSubtask
+   وCostStatus والـController والـViews — حسب 06-CONFLICTS.md · C7.
+   الترحيل يجب أن يكون RenameTable/RenameColumn لا حذفاً وإنشاءً.
 4) ApplicationUser: حذف PersonalId، وإضافة حقول موقع الحضور الأربعة وIsSuspended وSuspendedReason.
 5) الكيانات الستة الجديدة: StageTaskTemplate · DesignProposal · FinancialClaim ·
    TechnicalRequest · Custody · DocumentRevision.
-6) الـenums الجديدة بـ[Display(Name=...)].
-7) تعديل AppDbContext وSeedData: شجرة الإدارات والأقسام (P3) والرتب السبعة عشر (D4)
-   والأدوار الثلاثة بصلاحياتها والقوائم المُدارة.
+6) الـenums الجديدة بـ[Display(Name=...)] — بلا Priority.
+7) SeedData: شجرة الإدارات والأقسام (P3) وربط الأدوار الثلاثة بمجموعات من الـ٤٨ صلاحية
+   والقوائم المُدارة. لا تمسّ JobRank — مكتمل.
+8) ProjectStep: لا تحذفه الآن. أعد توجيه حساب النِسَب إلى ProjectCost فقط،
+   واترك الحذف لمرحلة التنظيف.
 
 ثم أعطني أمر الـmigration وأرِني ملفه نصاً قبل أن أطبّقه. لا تشغّل dotnet ef.
 ```

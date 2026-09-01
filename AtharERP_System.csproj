@@ -25,7 +25,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Data\Migrations\" />
-	  <Folder Include="Migrations\" />
 	  <Folder Include="wwwroot\fonts\tajawal\" />
 	  <Folder Include="wwwroot\uploads\" />
 	</ItemGroup>

@@ -91,7 +91,7 @@
 ### تُعدَّل
 
 **`Project`**
-- ❌ احذف: `Area` · `PricePerMeter` (تنتقل إلى المرحلة — بند L1)
+- ⚠️ **راجع `06-CONFLICTS.md` · C1** — `Project` لا يملك `Area` ولا `PricePerMeter` أصلاً. لا تحذف شيئاً.
 - ❌ احذف: أي توليد تلقائي لـ`Code` (بند G1). يبقى الحقل، ويصير إدخالاً يدوياً بفحص تكرار
 - ➕ أضف: `ActualDeliveryDate` (nullable) — بند L3
 - ➕ أضف: `TotalCost` **محسوب** = مجموع `ProjectStage.StageValue` — `[NotMapped]` أو عمود محسوب.
@@ -102,13 +102,14 @@
 - ➕ `ActualDeliveryDate`
 
 **`ProjectTask`**
-- ➕ `Priority` (enum `Priority`: مستعجل / غير مستعجل) — بند D2
+- ⚠️ **راجع `06-CONFLICTS.md` · C2** — `IsUrgent` موجود ويكفي. **لا تُنشئ enum باسم `Priority`**
 - ➕ `OutputType` (خيار مُدار: مخطط · تقرير · جدول كميات · عرض تقديمي)
 - ➕ `ExpectedDays` · `ActualDays`
 - التكليف بأكثر من مهندسة عبر `TaskAssignee` الموجود + حقل `IsLead` يميّز المسؤولة (بند P2)
 
-**`ProjectCost`** (= التكليف)
-- ➕ `Priority` (نفس الـenum)
+**`ProjectAssignment`** (= التكليف · كان `ProjectCost` — راجع `06-CONFLICTS.md` · C7)
+- ➕ `IsUrgent` (bool) — ليطابق المهمة (C2)
+- ✅ `Area` و`PricePerMeter` موجودان عليه — **أبقِهما** (C1)
 - تأكد من: `LeadEngineerId` · `AssistantEngineerId` · `ReceivedDate` · `AgreedDate` · `ActualDate` · `Value`
 
 **`ApplicationUser`**
@@ -118,7 +119,7 @@
 - ➕ `IsSuspended` + `SuspendedReason` — لإيقاف الحساب عند انتهاء العقد بلا فقدان البيانات (بند P6)
 
 **`JobRank`**
-- بذر السبعة عشرة رتبة بأكوادها ومساراتها ونطاقات الرواتب ونسب الزيادة (بند D4)
+- ✅ **لا تعديل** — السبع عشرة رتبة مزروعة بأكوادها فعلاً (`06-CONFLICTS.md` · C4)
 
 **`Department`**
 - بذر الشجرة أعلاه، وحذف الأقسام التجريبية القديمة (مرحلة التنظيف)
@@ -137,7 +138,7 @@
 ⚠️ **لا تُنشئ كياناً غير هذه الستة.** الـ٥٩ الباقية موجودة — استخدمها.
 
 ### enums تُضاف أو تُبذَر
-- `Priority`: `Urgent` مستعجل · `Normal` غير مستعجل
+- ~~`Priority`~~ — **أُلغي**، `IsUrgent` موجود (`06-CONFLICTS.md` · C2)
 - `TaskOutputType`: مخطط · تقرير · جدول كميات · عرض تقديمي
 - `MeasurementUnit`: التسع وحدات (بند P4)
 - `ProjectType`: حكومي · بلدي · خاص · استثماري (بند P5)
