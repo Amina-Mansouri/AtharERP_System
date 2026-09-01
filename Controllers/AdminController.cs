@@ -126,10 +126,10 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
-     string id,
-     [Bind("FullName,JobNumber,PersonalId,Responsibilities,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
-     IFormFile? profilePhoto,
-     string role)
+string id,
+[Bind("FullName,JobNumber,NextOfKinPhone,Responsibilities,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+IFormFile? profilePhoto,
+string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -141,16 +141,10 @@ namespace AtharERP_System.Controllers
             }
 
             var jobNumber = string.IsNullOrWhiteSpace(model.JobNumber) ? null : model.JobNumber.Trim();
-            var personalId = string.IsNullOrWhiteSpace(model.PersonalId) ? null : model.PersonalId.Trim();
 
             if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber && u.Id != id))
             {
                 ModelState.AddModelError(string.Empty, "الرقم الوظيفي مستخدم بالفعل لموظف آخر");
-            }
-
-            if (personalId != null && await _userManager.Users.AnyAsync(u => u.PersonalId == personalId && u.Id != id))
-            {
-                ModelState.AddModelError(string.Empty, "الرقم الشخصي مستخدم بالفعل لموظف آخر");
             }
 
             if (!ModelState.IsValid)
@@ -161,7 +155,7 @@ namespace AtharERP_System.Controllers
 
             user.FullName = model.FullName;
             user.JobNumber = jobNumber;
-            user.PersonalId = personalId;
+            user.NextOfKinPhone = model.NextOfKinPhone;
             user.Responsibilities = model.Responsibilities;
             user.DepartmentId = model.DepartmentId;
             user.Rank = model.Rank;

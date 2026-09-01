@@ -28,8 +28,8 @@ namespace AtharERP_System.Data
         public DbSet<TaskAssignee> TaskAssignees { get; set; } = null!;
         public DbSet<TaskTodo> TaskTodos { get; set; } = null!;
         public DbSet<TaskDependency> TaskDependencies { get; set; } = null!;
-        public DbSet<ProjectCost> ProjectCosts { get; set; } = null!;
-        public DbSet<ProjectCostSubtask> ProjectCostSubtasks { get; set; } = null!;
+        public DbSet<ProjectAssignment> ProjectAssignments { get; set; } = null!;
+        public DbSet<ProjectAssignmentSubtask> ProjectAssignmentSubtasks { get; set; } = null!;
         public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; } = null!;
         public DbSet<ProjectDocument> ProjectDocuments { get; set; } = null!;
         public DbSet<ProjectTimeline> ProjectTimelines { get; set; } = null!;
@@ -99,9 +99,7 @@ namespace AtharERP_System.Data
     .HasIndex(u => u.JobNumber)
     .IsUnique();
 
-            builder.Entity<ApplicationUser>()
-                .HasIndex(u => u.PersonalId)
-                .IsUnique();
+           
 
             builder.Entity<EmployeePosition>()
                 .HasOne(ep => ep.User)
@@ -226,6 +224,9 @@ namespace AtharERP_System.Data
                 .HasIndex(ta => new { ta.TaskId, ta.UserId })
                 .IsUnique();
 
+            builder.Entity<TaskAssignee>()
+                .Property(ta => ta.IsLead)
+                .HasDefaultValue(false);
             // ========== قائمة مهام To-Do (TaskTodo) ==========
             builder.Entity<TaskTodo>()
                 .HasOne(tt => tt.Task)
@@ -250,17 +251,36 @@ namespace AtharERP_System.Data
                 .HasIndex(td => new { td.TaskId, td.DependsOnTaskId })
                 .IsUnique();
 
-            // ========== تكاليف المشروع (ProjectCost) ==========
-            builder.Entity<ProjectCost>()
-                .HasOne(c => c.Project)
-                .WithMany(p => p.Costs)
-                .HasForeignKey(c => c.ProjectId)
+            
+            // ========== تكليفات المشروع (ProjectAssignment) ==========
+            builder.Entity<ProjectAssignment>()
+                .HasOne(a => a.Project)
+                .WithMany(p => p.Assignments)
+                .HasForeignKey(a => a.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<ProjectCostSubtask>()
-                .HasOne(cs => cs.ProjectCost)
-                .WithMany(c => c.Subtasks)
-                .HasForeignKey(cs => cs.ProjectCostId)
+            builder.Entity<ProjectAssignment>()
+                .HasOne(a => a.Stage)
+                .WithMany(s => s.Assignments)
+                .HasForeignKey(a => a.StageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<ProjectAssignment>()
+                .HasOne(a => a.LeadEngineer)
+                .WithMany()
+                .HasForeignKey(a => a.LeadEngineerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProjectAssignment>()
+                .HasOne(a => a.AssistantEngineer)
+                .WithMany()
+                .HasForeignKey(a => a.AssistantEngineerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProjectAssignmentSubtask>()
+                .HasOne(cs => cs.ProjectAssignment)
+                .WithMany(a => a.Subtasks)
+                .HasForeignKey(cs => cs.ProjectAssignmentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ========== فريق المشروع (ProjectTeamMember) ==========
@@ -308,10 +328,10 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<FinancialRecord>()
-                .HasOne(f => f.ProjectCost)
-                .WithMany()
-                .HasForeignKey(f => f.ProjectCostId)
-                .OnDelete(DeleteBehavior.SetNull);
+      .HasOne(f => f.ProjectAssignment)
+      .WithMany()
+      .HasForeignKey(f => f.ProjectAssignmentId)
+      .OnDelete(DeleteBehavior.SetNull);
 
             // ========== الإشعارات (Notification) ==========
             // ========== الإشعارات (Notification) ==========

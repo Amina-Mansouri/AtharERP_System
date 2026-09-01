@@ -92,7 +92,7 @@ namespace AtharERP_System.Controllers
             string password,
             string confirmPassword,
             string? jobNumber,
-            string? personalId,
+            string? nextOfKinPhone,
             IFormFile? profilePhoto,
             int? departmentId,
             JobRank rank,
@@ -128,17 +128,10 @@ namespace AtharERP_System.Controllers
 
             // تطبيع الحقول الفارغة إلى null لتفادي تعارض القيم الفارغة مع قيد التفرّد
             jobNumber = string.IsNullOrWhiteSpace(jobNumber) ? null : jobNumber.Trim();
-            personalId = string.IsNullOrWhiteSpace(personalId) ? null : personalId.Trim();
 
             if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber))
             {
                 ModelState.AddModelError(string.Empty, "الرقم الوظيفي مستخدم بالفعل لموظف آخر");
-                return View();
-            }
-
-            if (personalId != null && await _userManager.Users.AnyAsync(u => u.PersonalId == personalId))
-            {
-                ModelState.AddModelError(string.Empty, "الرقم الشخصي مستخدم بالفعل لموظف آخر");
                 return View();
             }
 
@@ -148,7 +141,7 @@ namespace AtharERP_System.Controllers
                 Email = email,
                 FullName = fullName,
                 JobNumber = jobNumber,
-                PersonalId = personalId,
+                NextOfKinPhone = nextOfKinPhone,
                 DepartmentId = departmentId,
                 Rank = rank,
                 CareerTrack = careerTrack,

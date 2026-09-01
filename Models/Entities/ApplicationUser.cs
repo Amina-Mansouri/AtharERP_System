@@ -15,12 +15,15 @@ namespace AtharERP_System.Models.Entities
         [StringLength(50)]
         public string? JobNumber { get; set; }
 
-        [Display(Name = "الرقم الشخصي")]
+        [Display(Name = "رقم أقرب الأقارب")]
         [StringLength(50)]
-        public string? PersonalId { get; set; }
+        public string? NextOfKinPhone { get; set; }
 
         [Display(Name = "الصورة الشخصية")]
         public string? ProfilePhotoPath { get; set; }
+
+        [Display(Name = "صورة العقد")]
+        public string? ContractImagePath { get; set; }
 
         [Display(Name = "القسم")]
         public int? DepartmentId { get; set; }
@@ -66,6 +69,12 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "نشط")]
         public bool IsActive { get; set; } = true;
+
+        [Display(Name = "موقوف")]
+        public bool IsSuspended { get; set; }
+
+        [Display(Name = "سبب الإيقاف")]
+        public string? SuspendedReason { get; set; }
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
