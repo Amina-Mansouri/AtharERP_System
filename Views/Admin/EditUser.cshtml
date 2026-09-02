@@ -355,7 +355,17 @@
             crossorigin=""></script>
        <script src="~/js/location-picker.js" asp-append-version="true"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+               document.addEventListener('DOMContentLoaded', function () {
+            var deptParentSelect = document.getElementById('edit-dept-parent');
+            var deptChildSelect = document.getElementById('edit-dept-child');
+            deptParentSelect.addEventListener('change', function () {
+                var groupId = this.value;
+                Array.from(deptChildSelect.options).forEach(function (opt) {
+                    opt.style.display = (opt.getAttribute('data-group') === groupId) ? '' : 'none';
+                });
+                deptChildSelect.value = groupId || '';
+            });
+
             initAtharLocationPicker({
                 mapId: 'edituser-map',searchInputId: 'edituser-address-search',
                 latInputId: 'ExpectedLatitude',

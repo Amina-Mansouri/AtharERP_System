@@ -100,8 +100,9 @@
         </header>
 
         <div class="app-body">
-            <nav class="app-sidebar sb">
-                <div class="nav-section-title">وصول سريع</div>
+            <nav class="app-sidebar">
+                <div class="sidebar-scroll sb">
+                    <div class="nav-section-title">وصول سريع</div>
                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
                    asp-controller="Home" asp-action="Dashboard">الرئيسية</a>
                 @if (canProjects)
@@ -285,9 +286,10 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><path d="M16 17l5-5-5-5M21 12H9"></path></svg>
                                 <span>تسجيل الخروج</span>
                             </button>
-                        </form>
-                    </div>
-                }
+                            </form>
+                        </div>
+                    }
+                </div>
             </nav>
 
             <div class="app-content">

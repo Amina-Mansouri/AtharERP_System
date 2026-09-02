@@ -906,8 +906,14 @@ button:focus-visible {
     border-left: 1px solid rgba(255,255,255,.07);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
     font-family: var(--sys-font);
+    min-height: 0;
+}
+
+.sidebar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .nav-section-title {
