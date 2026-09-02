@@ -1,0 +1,94 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<EmployeeDocument>
+@{
+    var employee = ViewBag.Employee as ApplicationUser;
+    ViewData["Title"] = "مستندات الموظف";
+    string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return Math.Round(bytes / 1024.0, 1) + " KB";
+        return Math.Round(bytes / (1024.0 * 1024.0), 1) + " MB";
+    }
+}
+
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
+    <div>
+        <div style="font-size:11px; color:#8a83a0; font-weight:500;">إدارة الموظفين</div>
+        <div style="font-size:19px; font-weight:600; margin-top:2px;">مستندات الموظف: @employee?.FullName</div>
+    </div>
+    <div class="page-head-actions">
+        <a asp-controller="Admin" asp-action="EditUser" asp-route-id="@employee?.Id" class="btn-line">رجوع لبيانات الموظف</a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div style="margin-bottom:12px; padding:9px 12px; border:1px solid rgba(63,174,111,.35); background:rgba(63,174,111,.08); border-radius:8px; font-size:11.5px; color:#2f8f5b;">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div style="margin-bottom:12px; padding:9px 12px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.06); border-radius:8px; font-size:11.5px; color:#c94a42;">@TempData["Error"]</div>
+}
+
+<div style="display:grid; grid-template-columns:1.35fr 1fr; gap:12px; margin-bottom:12px;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">رفع مستند جديد</div>
+        <form method="post" asp-action="Upload" enctype="multipart/form-data" style="padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="userId" value="@employee?.Id" />
+            <div style="grid-column:span 2;">
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الملف <span style="color:#e35d54;">*</span></div>
+                <input type="file" name="file" required style="width:100%; font-size:11.5px;" />
+            </div>
+            <div style="grid-column:span 2;">
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوصف</div>
+                <input name="description" placeholder="مثال: صورة الهوية، شهادة خبرة..." style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div style="grid-column:span 2;">
+                <button type="submit" style="height:36px; padding:0 20px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">+ رفع المستند</button>
+            </div>
+        </form>
+    </div>
+
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">إجمالي المستندات</div>
+        <div style="padding:16px; text-align:center;">
+            <div style="font-size:28px; font-weight:700; color:#7b6bd6;">@Model.Count</div>
+            <div style="font-size:11px; color:#8a83a0; margin-top:4px;">مستند مرفوع لهذا الموظف</div>
+        </div>
+    </div>
+</div>
+
+<div class="data-table" style="--cols: minmax(0,1.4fr) 1fr 130px 110px 90px 70px">
+    <div class="data-table-head">
+        <div class="cell">اسم الملف</div>
+        <div class="cell">الوصف</div>
+        <div class="cell">رفعه</div>
+        <div class="cell">تاريخ الرفع</div>
+        <div class="cell">الحجم</div>
+        <div class="cell"></div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مستندات مرفوعة بعد</div></div>
+    }
+    else
+    {
+        @foreach (var d in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell"><a href="@d.FilePath" target="_blank">@d.FileName</a></div>
+                <div class="cell stat-sub">@(d.Description ?? "-")</div>
+                <div class="cell">@d.UploadedBy?.FullName</div>
+                <div class="cell cell-num">@d.UploadedAt.ToString("yyyy-MM-dd")</div>
+                <div class="cell cell-num">@FormatSize(d.FileSize)</div>
+                <div class="cell">
+                    <form method="post" asp-action="Delete" asp-route-id="@d.Id" onsubmit="return confirm('حذف هذا المستند نهائياً؟');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; color:#c94a42;">حذف</button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+</div>

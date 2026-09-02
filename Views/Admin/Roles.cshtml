@@ -53,7 +53,7 @@
             var selectedCount = selectedIds.Count;
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
                 <div class="side-panel-title" style="margin:0;">صلاحيات «@selectedRole.Name» · مجمّعة بالوحدة</div>
-                <span class="cell-num stat-sub">@selectedCount من @totalCount</span>
+                <span class="stat-sub"><span class="cell-num">@selectedCount</span> من <span class="cell-num">@totalCount</span></span>
             </div>
 
             <div id="copyRoleBox" hidden style="margin-bottom:10px; display:flex; gap:6px;">

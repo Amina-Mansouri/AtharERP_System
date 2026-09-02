@@ -336,7 +336,7 @@
 </div>
 
 <div class="pager">
-    <span class="cell-num">@(totalCount == 0 ? 0 : (page - 1) * pageSize + 1)–@Math.Min(page * pageSize, totalCount) من @totalCount</span>
+      <span class="cell-num">@(totalCount == 0 ? 0 : (page - 1) * pageSize + 1)–@Math.Min(page * pageSize, totalCount)</span> من <span class="cell-num">@totalCount</span>
     <div class="pager-pages">
         @for (int p = 1; p <= totalPages; p++)
         {

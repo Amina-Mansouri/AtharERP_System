@@ -5,7 +5,7 @@
     var pages = ViewData["PagerPages"] as List<(int Page, string Url, bool Active)> ?? new();
 }
 <div class="pager">
-    <span class="cell-num">@from–@to من @total</span>
+    <span class="cell-num">@from–@to</span> من <span class="cell-num">@total</span>
     <div class="pager-pages">
         @foreach (var p in pages)
         {
