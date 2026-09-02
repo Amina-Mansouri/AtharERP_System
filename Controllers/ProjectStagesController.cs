@@ -275,10 +275,10 @@ namespace AtharERP_System.Controllers
         private async Task LoadDropdownsAsync(int projectId)
         {
             ViewBag.Engineers = await _context.ProjectTeamMembers
-                .Where(tm => tm.ProjectId == projectId)
-                .Select(tm => tm.User)
-                .OrderBy(u => u.FullName)
-                .ToListAsync();
+    .Where(tm => tm.ProjectId == projectId)
+    .Select(tm => tm.User)
+    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+    .ToListAsync();
             ViewBag.Departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
         }
     }

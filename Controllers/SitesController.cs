@@ -58,7 +58,7 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             ViewBag.CanManage = await HasManagePermissionAsync();
-            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
 
             return View(site);
         }

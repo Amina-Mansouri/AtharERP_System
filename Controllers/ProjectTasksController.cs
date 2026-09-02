@@ -115,10 +115,10 @@ namespace AtharERP_System.Controllers
             if (canManage)
             {
                 ViewBag.Engineers = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == task.ProjectId)
-                    .Select(tm => tm.User)
-                    .OrderBy(u => u.FullName)
-                    .ToListAsync();
+    .Where(tm => tm.ProjectId == task.ProjectId)
+    .Select(tm => tm.User)
+    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+    .ToListAsync();
 
                 var existingDependencyIds = task.Dependencies.Select(d => d.DependsOnTaskId).ToList();
                 ViewBag.AvailableTasksForDependency = await _context.ProjectTasks
