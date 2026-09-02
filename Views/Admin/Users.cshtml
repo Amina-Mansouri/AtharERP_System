@@ -2,10 +2,11 @@
 @using AtharERP_System.Services
 @model List<ApplicationUser>
 @{
-    ViewData["Title"] = "إدارة المستخدمين";
+    ViewData["Title"] = "إدارة الموظفين";
     var userRoles = ViewBag.UserRoles as Dictionary<string, IList<string>> ?? new Dictionary<string, IList<string>>();
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var roles = ViewBag.Roles as List<ApplicationRole> ?? new List<ApplicationRole>();
+    var roleOptions = ViewBag.RoleOptions as List<string> ?? new List<string>();
     var rankOptions = EnumDisplayHelper.GetDisplayList<JobRank>();
     var trackOptions = EnumDisplayHelper.GetDisplayList<CareerTrack>();
 
@@ -23,17 +24,207 @@
     int countInactive = ViewBag.CountInactive as int? ?? 0;
     int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
+    int totalEmployees = ViewBag.TotalEmployees as int? ?? 0;
+    int totalActiveEmployees = ViewBag.TotalActiveEmployees as int? ?? 0;
+    int totalContractsSoon = ViewBag.TotalContractsSoon as int? ?? 0;
+    int totalContractsExpired = ViewBag.TotalContractsExpired as int? ?? 0;
+
     string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status = s, page = 1 })!;
+
+    string DeptLabel(ApplicationUser u) => u.Department == null ? "-" : (u.Department.ParentDepartmentId == null ? u.Department.Name : (u.Department.ParentDepartment?.Name ?? "-"));
+    string SectionLabel(ApplicationUser u) => u.Department == null || u.Department.ParentDepartmentId == null ? "-" : u.Department.Name;
 }
 
 <div class="page-head">
     <div>
         <span class="kicker">الصلاحيات والمصادقة</span>
-        <h1>المستخدمون</h1>
+        <h1>إدارة الموظفين</h1>
     </div>
     <div class="page-head-actions">
         <a class="btn-line">تصدير</a>
-        <a asp-controller="Account" asp-action="Register" class="btn-line btn-line-accent">+ مستخدم جديد</a>
+        <a class="btn-line btn-line-accent" href="#add-employee-form">+ موظف جديد</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-8">
+        <div class="side-panel" id="add-employee-form">
+            <div class="side-panel-title">نموذج إضافة موظف</div>
+            <p class="text-muted small">الاسم واللقب في خانتين · رقم أقرب الأقارب بدل الرقم الشخصي · صورة العقد.</p>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <form method="post" asp-controller="Account" asp-action="Register" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الاسم <span class="text-danger">*</span></label>
+                        <input type="text" name="firstName" class="form-control" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اللقب <span class="text-danger">*</span></label>
+                        <input type="text" name="lastName" class="form-control" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">رقم أقرب الأقارب <span class="text-danger">*</span></label>
+                        <input type="text" name="nextOfKinPhone" class="form-control" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        <input type="email" name="email" class="form-control" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">كلمة المرور <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" required />
+                        <div class="form-text">ثمانية خانات على الأقل، وتبقى شروط الأمان (حرف كبير وحرف صغير ورقم ورمز) لحماية الحساب.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">تأكيد كلمة المرور <span class="text-danger">*</span></label>
+                        <input type="password" name="confirmPassword" class="form-control" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">الرقم الوظيفي</label>
+                        <input type="text" name="jobNumber" class="form-control" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" name="phoneNumber" class="form-control" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">الصورة الشخصية (اختياري)</label>
+                        <input type="file" name="profilePhoto" class="form-control" accept="image/*" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">الرتبة الوظيفية</label>
+                        <select name="rank" class="form-select">
+                            @foreach (var jr in rankOptions)
+                            {
+                                <option value="@jr.Value">@jr.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">المسار الوظيفي</label>
+                        <select name="careerTrack" class="form-select">
+                            @foreach (var ct in trackOptions)
+                            {
+                                <option value="@ct.Value">@ct.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>القسم</span>
+                            <a asp-action="CreateDepartment" class="small">+ إدارة الخيارات</a>
+                        </label>
+                        <select name="departmentId" class="form-select" required>
+                            <option value="">-- اختر القسم --</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">الدور</label>
+                        <select name="role" class="form-select" required>
+                            <option value="">-- اختر --</option>
+                            @foreach (var r in roleOptions)
+                            {
+                                <option value="@r">@r</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">الراتب التعاقدي</label>
+                        <input type="number" step="0.01" min="0" name="contractSalary" class="form-control" value="0" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">بداية العقد</label>
+                        <input type="date" name="contractStartDate" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">صورة العقد</label>
+                        <input type="file" name="contractImage" class="form-control" accept="image/*,application/pdf" />
+                    </div>
+                </div>
+
+                <div class="athar-map-section mb-3">
+                    <label class="form-label d-block">تحديد موقع الحضور المتوقع (اختياري)</label>
+                    <p class="athar-map-hint">ابحثي عن عنوان لتقريب الخريطة تلقائياً، أو انقري مباشرة لتحديد الموقع، أو اسحبي العلامة بعد وضعها لتعديله</p>
+                    <div class="mb-2">
+                        <label class="form-label">بحث عن عنوان</label>
+                        <input type="text" id="register-address-search" class="form-control" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">اسم الموقع</label>
+                        <input type="text" id="expectedLocationName" name="expectedLocationName" class="form-control" readonly placeholder="يُعبَّأ تلقائياً بعد البحث أو اختيار نقطة على الخريطة" />
+                    </div>
+                    <div id="register-map" class="athar-map"></div>
+                    <div class="athar-coords-display mt-2" id="register-coords-display">لم يتم تحديد موقع بعد</div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">نصف القطر المسموح (متر)</label>
+                            <input type="number" min="1" name="allowedRadiusMeters" class="form-control" value="100" />
+                        </div>
+                    </div>
+                    <input type="hidden" id="expectedLatitude" name="expectedLatitude" />
+                    <input type="hidden" id="expectedLongitude" name="expectedLongitude" />
+                </div>
+
+                <button type="submit" class="btn athar-btn">+ إنشاء الموظف</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-4 d-grid gap-3 align-content-start">
+        <div class="side-panel">
+            <div class="side-panel-title">موقع الحضور</div>
+            <p class="text-muted small mb-0">يُحدَّد بالبحث أو النقر على الخريطة داخل نموذج الإضافة، مع نطاق مسموح للحضور.</p>
+        </div>
+        <div class="side-panel">
+            <div class="side-panel-title">إجماليات الموظفين</div>
+            <div class="stat-strip" style="border-bottom:none; margin-bottom:0;">
+                <div class="stat-item">
+                    <span class="stat-value">@totalEmployees</span>
+                    <span class="stat-sub">الإجمالي</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color:#3fae6f;">@totalActiveEmployees</span>
+                    <span class="stat-sub">نشط</span>
+                </div>
+            </div>
+            <div class="stat-strip" style="border-top:none;">
+                <div class="stat-item">
+                    <span class="stat-value" style="color:#ff9130;">@totalContractsSoon</span>
+                    <span class="stat-sub">عقود تنتهي قريباً</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" style="color:#e35d54;">@totalContractsExpired</span>
+                    <span class="stat-sub">عقود منتهية</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -45,7 +236,7 @@
 
 <form method="get" class="filter-bar">
     <input type="hidden" name="status" value="@status" />
-    <input type="text" name="q" class="filter-search" placeholder="الاسم أو الرقم الوظيفي…" value="@q" />
+    <input type="text" name="q" class="filter-search" placeholder="الاسم أو اللقب أو الرقم الوظيفي…" value="@q" />
 
     <select name="departmentId" class="filter-chip" onchange="this.form.submit()">
         <option value="">القسم ▾</option>
@@ -85,20 +276,23 @@
     }
 </form>
 
-<div class="data-table" style="--cols: 28px 1fr 78px 140px 98px 86px 104px 66px">
+<div class="data-table" style="--cols: 28px 1fr 78px 108px 132px 120px 98px 78px 104px 90px 66px">
     <div class="data-table-head">
         <div class="cell"></div>
-        <div class="cell">الاسم</div>
+        <div class="cell">الاسم واللقب</div>
         <div class="cell">الرقم</div>
+        <div class="cell">أقرب الأقارب</div>
+        <div class="cell">الإدارة</div>
         <div class="cell">القسم</div>
         <div class="cell">الرتبة</div>
         <div class="cell">المسار</div>
         <div class="cell">الدور</div>
+        <div class="cell">نهاية العقد</div>
         <div class="cell">الحالة</div>
     </div>
     @if (!Model.Any())
     {
-        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد مستخدمون مطابقون</div></div>
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد موظفون مطابقون</div></div>
     }
     else
     {
@@ -117,12 +311,19 @@
                     }
                 </div>
                 <div class="cell cell-num">@(user.JobNumber ?? "-")</div>
-                <div class="cell">@(user.Department?.Name ?? "-")</div>
+                <div class="cell cell-num">@(user.NextOfKinPhone ?? "-")</div>
+                <div class="cell">@DeptLabel(user)</div>
+                <div class="cell">@SectionLabel(user)</div>
                 <div class="cell">@rankCode <span class="stat-sub">@rankLabel</span></div>
                 <div class="cell">@trackLabel</div>
                 <div class="cell">@string.Join("، ", userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : new List<string>())</div>
+                <div class="cell cell-num">@(user.ContractEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
                 <div class="cell">
-                    @if (user.IsActive)
+                    @if (user.IsSuspended)
+                    {
+                        <span class="tag" style="color:#c94a42;">موقوف</span>
+                    }
+                    else if (user.IsActive)
                     {
                         <span class="tag tag-accent">نشط</span>
                     }
@@ -145,3 +346,25 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="~/js/location-picker.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initAtharLocationPicker({
+                mapId: 'register-map',
+                latInputId: 'expectedLatitude',
+                lngInputId: 'expectedLongitude',
+                nameInputId: 'expectedLocationName',
+                coordsDisplayId: 'register-coords-display',
+                searchInputId: 'register-address-search'
+            });
+        });
+    </script>
+}

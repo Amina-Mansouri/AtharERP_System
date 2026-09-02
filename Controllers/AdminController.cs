@@ -44,9 +44,9 @@ namespace AtharERP_System.Controllers
             const int pageSize = 20;
 
             var query = _userManager.Users
-                .Include(u => u.Department)
-                .Include(u => u.EmployeePositions)
-                .AsQueryable();
+    .Include(u => u.Department).ThenInclude(d => d!.ParentDepartment)
+    .Include(u => u.EmployeePositions)
+    .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
                 query = query.Where(u => (u.FirstName + " " + u.LastName).Contains(q) || (u.JobNumber != null && u.JobNumber.Contains(q)));
@@ -765,7 +765,14 @@ string role)
         // ============================================
         private async Task ReloadEditUserViewBagsAsync(string userId, string? selectedRole)
         {
-            ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
+            ViewBag.Roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
+            ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
+
+            var soonCutoff = DateTime.UtcNow.AddDays(30);
+            ViewBag.TotalEmployees = await _userManager.Users.CountAsync();
+            ViewBag.TotalActiveEmployees = await _userManager.Users.CountAsync(u => u.IsActive);
+            ViewBag.TotalContractsSoon = await _userManager.Users.CountAsync(u => u.ContractEndDate != null && u.ContractEndDate <= soonCutoff && u.ContractEndDate >= DateTime.UtcNow && !u.IsSuspended);
+            ViewBag.TotalContractsExpired = await _userManager.Users.CountAsync(u => u.IsSuspended);
             ViewBag.CurrentRole = selectedRole;
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.JobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();

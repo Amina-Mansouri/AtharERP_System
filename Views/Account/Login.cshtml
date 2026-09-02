@@ -4,27 +4,115 @@
     ViewData["AuthTheme"] = "ds";
 }
 
-<div class="ds-auth-card">
-    <img src="~/images/logo-icon.png" alt="أثر" class="ds-auth-logo" />
-    <span class="ds-auth-brand">أثر</span>
-    <span class="ds-auth-kicker">نظام إدارة المشاريع الهندسية</span>
+<style>
+    .athar-auth-wrapper.ds-auth-wrap {
+        background: #f8f7fb !important;
+    }
+
+    .purple-auth-card {
+        background: #fff;
+        border: 1px solid #ecebf2;
+        border-radius: 14px;
+        padding: 38px 36px;
+        width: 100%;
+        max-width: 392px;
+        box-shadow: 0 2px 10px rgba(36,31,51,.06);
+    }
+
+        .purple-auth-card img {
+            display: block;
+            margin: 0 auto 12px;
+            max-height: 52px;
+        }
+
+        .purple-auth-card .brand {
+            text-align: center;
+            font-size: 19px;
+            font-weight: 600;
+            margin-bottom: 26px;
+            color: #241f33;
+        }
+
+        .purple-auth-card .field {
+            margin-bottom: 13px;
+        }
+
+            .purple-auth-card .field label {
+                display: block;
+                font-size: 11.5px;
+                color: #5a5370;
+                margin-bottom: 6px;
+            }
+
+            .purple-auth-card .field input {
+                width: 100%;
+                height: 38px;
+                border: 1px solid #e4e2ec;
+                border-radius: 9px;
+                background: #faf9fd;
+                padding: 0 12px;
+                font-size: 12.5px;
+                font-family: inherit;
+            }
+
+        .purple-auth-card .btn-purple {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 9px;
+            background: #7b6bd6;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 7px;
+        }
+
+            .purple-auth-card .btn-purple:hover {
+                background: #6455c4;
+            }
+
+        .purple-auth-card .row-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11.5px;
+            margin-bottom: 20px;
+            gap: 8px;
+        }
+
+        .purple-auth-card .alert-purple {
+            margin-top: 14px;
+            font-size: 11.5px;
+            color: #c94a42;
+            background: rgba(227,93,84,.07);
+            border: 1px solid rgba(227,93,84,.3);
+            border-radius: 8px;
+            padding: 9px 11px;
+        }
+</style>
+
+<div class="purple-auth-card">
+    <img src="~/images/logo-full.png" alt="أثر" />
+    <div class="brand">منظومة أثر</div>
 
     <form method="post" asp-controller="Account" asp-action="Login">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+        <input type="hidden" name="latitude" id="loginLatitude" />
+        <input type="hidden" name="longitude" id="loginLongitude" />
 
-        <div class="ds-field">
+        <div class="field">
             <label>البريد الإلكتروني</label>
-            <input type="email" name="email" required autofocus />
+            <input type="email" name="email" required autofocus style="direction:ltr; text-align:right;" />
         </div>
 
-        <div class="ds-field">
+        <div class="field">
             <label>كلمة المرور</label>
             <input type="password" name="password" required />
         </div>
 
-        <div class="ds-auth-row">
-            <label>
+        <div class="row-between">
+            <label class="d-flex align-items-center gap-1 mb-0">
                 <input type="checkbox" name="rememberMe" value="true" />
                 <input type="hidden" name="rememberMe" value="false" />
                 تذكّرني
@@ -32,19 +120,28 @@
             <a asp-controller="Account" asp-action="ForgotPassword">نسيت كلمة المرور؟</a>
         </div>
 
-        <button type="submit" class="ds-btn-gold-block">تسجيل الدخول</button>
+        <button type="submit" class="btn-purple">تسجيل الدخول</button>
 
         @if (!ViewData.ModelState.IsValid)
         {
-            <div class="ds-alert-gold">
+            <div class="alert-purple">
                 @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
                 {
-                    <span>@error.ErrorMessage</span>
+                    <div>@error.ErrorMessage</div>
                 }
-                <span class="ds-alert-sub">يُقفل الحساب بعد ٥ محاولات فاشلة</span>
+                <div>يُقفل الحساب بعد ٥ محاولات فاشلة</div>
             </div>
         }
     </form>
-
-    <div class="ds-auth-footer">الحسابات غير النشطة لا تستطيع الدخول</div>
 </div>
+
+@section Scripts {
+    <script>
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                document.getElementById('loginLatitude').value = pos.coords.latitude;
+                document.getElementById('loginLongitude').value = pos.coords.longitude;
+            });
+        }
+    </script>
+}

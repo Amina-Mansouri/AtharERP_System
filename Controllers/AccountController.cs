@@ -43,7 +43,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string password, bool rememberMe, string? returnUrl = null)
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe, double? latitude, double? longitude, string? returnUrl = null)
         {
             var user = await _userManager.FindByEmailAsync(email);
 
@@ -57,6 +57,24 @@ namespace AtharERP_System.Controllers
 
             if (result.Succeeded)
             {
+                if (user.ExpectedLatitude.HasValue && user.ExpectedLongitude.HasValue)
+                {
+                    if (!latitude.HasValue || !longitude.HasValue)
+                    {
+                        await _signInManager.SignOutAsync();
+                        ModelState.AddModelError(string.Empty, "يلزم السماح بتحديد الموقع في المتصفح لتسجيل الدخول");
+                        return View();
+                    }
+
+                    var distance = GeoHelper.CalculateDistance(user.ExpectedLatitude.Value, user.ExpectedLongitude.Value, latitude.Value, longitude.Value);
+                    if (distance > user.AllowedRadiusMeters)
+                    {
+                        await _signInManager.SignOutAsync();
+                        ModelState.AddModelError(string.Empty, "تعذّر تسجيل الدخول: موقعك الحالي خارج النطاق المسموح به");
+                        return View();
+                    }
+                }
+
                 user.LastLogin = DateTime.UtcNow;
                 await _userManager.UpdateAsync(user);
 
@@ -95,6 +113,7 @@ namespace AtharERP_System.Controllers
             string? jobNumber,
             string? nextOfKinPhone,
             IFormFile? profilePhoto,
+            IFormFile? contractImage,
             int? departmentId,
             JobRank rank,
             CareerTrack careerTrack,
@@ -186,7 +205,15 @@ namespace AtharERP_System.Controllers
                         await _userManager.UpdateAsync(user);
                     }
                 }
-
+                if (contractImage != null && contractImage.Length > 0)
+                {
+                    var contractResult = await _fileUpload.SaveFileAsync(contractImage, $"contracts/{user.Id}");
+                    if (contractResult.Success)
+                    {
+                        user.ContractImagePath = contractResult.FilePath;
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
                 TempData["Success"] = $"تم إنشاء المستخدم {firstName} {lastName} بنجاح";
                 return RedirectToAction("Users", "Admin");
             }

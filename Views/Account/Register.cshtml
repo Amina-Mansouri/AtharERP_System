@@ -27,11 +27,17 @@
        <form method="post" asp-controller="Account" asp-action="Register" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
-        <div class="row">
+                <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">الاسم الكامل</label>
-                <input type="text" name="fullName" class="form-control" required />
+                <label class="form-label">الاسم</label>
+                <input type="text" name="firstName" class="form-control" required />
             </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اللقب</label>
+                <input type="text" name="lastName" class="form-control" required />
+            </div>
+        </div>
+        <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">البريد الإلكتروني</label>
                 <input type="email" name="email" class="form-control" required />
@@ -64,10 +70,15 @@
             </div>
         </div>
                 <div class="row">
-            <div class="col-md-6 mb-3">
+                          <div class="col-md-6 mb-3">
                 <label class="form-label">الصورة الشخصية (اختياري)</label>
                 <input type="file" name="profilePhoto" class="form-control" accept="image/*" />
             </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">صورة العقد (اختياري)</label>
+                <input type="file" name="contractImage" class="form-control" accept="image/*,application/pdf" />
+            </div>
+        </div>
         </div>
         <div class="row">
             <div class="col-md-4 mb-3">
