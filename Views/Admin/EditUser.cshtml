@@ -35,15 +35,19 @@
 
         <h5>البيانات الأساسية</h5>
         <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">الاسم الكامل</label>
-                <input type="text" name="FullName" class="form-control" value="@Model.FullName" required />
+                       <div class="col-md-3 mb-3">
+                <label class="form-label">الاسم</label>
+                <input type="text" name="FirstName" class="form-control" value="@Model.FirstName" required />
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">اللقب</label>
+                <input type="text" name="LastName" class="form-control" value="@Model.LastName" required />
+            </div>
+            <div class="col-md-3 mb-3">
                 <label class="form-label">البريد الإلكتروني</label>
                 <input type="email" class="form-control" value="@Model.Email" disabled />
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-3 mb-3">
                 <label class="form-label">رقم الهاتف</label>
                 <input type="tel" name="PhoneNumber" class="form-control" value="@Model.PhoneNumber" />
             </div>

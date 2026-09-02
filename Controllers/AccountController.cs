@@ -87,7 +87,8 @@ namespace AtharERP_System.Controllers
         [Authorize(Roles = "مدير النظام")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(
-            string fullName,
+            string firstName,
+            string lastName,
             string email,
             string password,
             string confirmPassword,
@@ -139,7 +140,8 @@ namespace AtharERP_System.Controllers
             {
                 UserName = email,
                 Email = email,
-                FullName = fullName,
+                FirstName = firstName,
+                LastName = lastName,
                 JobNumber = jobNumber,
                 NextOfKinPhone = nextOfKinPhone,
                 DepartmentId = departmentId,
@@ -185,7 +187,7 @@ namespace AtharERP_System.Controllers
                     }
                 }
 
-                TempData["Success"] = $"تم إنشاء المستخدم {fullName} بنجاح";
+                TempData["Success"] = $"تم إنشاء المستخدم {firstName} {lastName} بنجاح";
                 return RedirectToAction("Users", "Admin");
             }
 

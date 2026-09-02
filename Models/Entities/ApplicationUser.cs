@@ -6,10 +6,19 @@ namespace AtharERP_System.Models.Entities
 {
     public class ApplicationUser : IdentityUser
     {
-        [Required(ErrorMessage = "الاسم الكامل مطلوب")]
+        [Required(ErrorMessage = "الاسم مطلوب")]
+        [Display(Name = "الاسم")]
+        [StringLength(50)]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "اللقب مطلوب")]
+        [Display(Name = "اللقب")]
+        [StringLength(50)]
+        public string LastName { get; set; } = string.Empty;
+
+        [NotMapped]
         [Display(Name = "الاسم الكامل")]
-        [StringLength(100)]
-        public string FullName { get; set; } = string.Empty;
+        public string FullName => $"{FirstName} {LastName}".Trim();
 
         [Display(Name = "الرقم الوظيفي")]
         [StringLength(50)]

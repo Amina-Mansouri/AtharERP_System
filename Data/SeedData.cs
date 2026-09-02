@@ -227,7 +227,8 @@ namespace AtharERP_System.Data
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
-                    FullName = "مدير النظام",
+                    FirstName = "أحمد",
+                    LastName = "المدير",
                     JobNumber = "EMP-0001",
                     DepartmentId = topManagement?.Id,
                     Responsibilities = "الإدارة الكاملة للنظام",

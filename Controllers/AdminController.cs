@@ -49,7 +49,7 @@ namespace AtharERP_System.Controllers
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
-                query = query.Where(u => u.FullName.Contains(q) || (u.JobNumber != null && u.JobNumber.Contains(q)));
+                query = query.Where(u => (u.FirstName + " " + u.LastName).Contains(q) || (u.JobNumber != null && u.JobNumber.Contains(q)));
 
             if (departmentId.HasValue)
                 query = query.Where(u => u.DepartmentId == departmentId);
@@ -82,8 +82,8 @@ namespace AtharERP_System.Controllers
 
             var totalCount = await query.CountAsync();
             var users = await query
-                .OrderBy(u => u.FullName)
-                .Skip((page - 1) * pageSize)
+    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+    .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
@@ -127,8 +127,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
 string id,
-[Bind("FullName,JobNumber,NextOfKinPhone,Responsibilities,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
-IFormFile? profilePhoto,
+[Bind("FirstName,LastName,JobNumber,NextOfKinPhone,Responsibilities,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model, IFormFile? profilePhoto,
 string role)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -153,7 +152,8 @@ string role)
                 return View(user);
             }
 
-            user.FullName = model.FullName;
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
             user.JobNumber = jobNumber;
             user.NextOfKinPhone = model.NextOfKinPhone;
             user.Responsibilities = model.Responsibilities;
@@ -301,8 +301,8 @@ string role)
 
             var actorIds = auditLogs.Select(a => a.UserId).Distinct().ToList();
             ViewBag.AuditActors = await _userManager.Users
-                .Where(u => actorIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id, u => u.FullName);
+    .Where(u => actorIds.Contains(u.Id))
+    .ToDictionaryAsync(u => u.Id, u => u.FirstName + " " + u.LastName);
 
             return View(user);
         }
