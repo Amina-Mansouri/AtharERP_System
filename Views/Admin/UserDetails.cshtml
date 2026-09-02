@@ -33,7 +33,7 @@
             @Html.AntiForgeryToken()
             <button type="submit" class="btn-line">@(Model.IsActive ? "تعطيل الحساب" : "تفعيل الحساب")</button>
         </form>
-        <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn-line" href="@Url.Action("EditUser", new { id = Model.Id })#permissions">صلاحيات يدوية</a>
+        <a class="btn-line" href="@Url.Action("EditUser", new { id = Model.Id })#permissions">صلاحيات يدوية</a>
         <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل</a>
     </div>
 </div>

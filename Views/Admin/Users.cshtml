@@ -82,7 +82,7 @@
             <div style="grid-column:span 2;">
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">كلمة المرور <span style="color:#e35d54;">*</span></div>
                 <input type="password" name="password" required style="width:100%; height:34px; border:1px solid #7b6bd6; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-                <div style="margin-top:6px; font-size:10.5px; color:#6455c4; background:rgba(123,107,214,.06); border:1px solid #e0dbf2; border-radius:7px; padding:7px 9px; line-height:1.6;">ثمانية خانات على الأقل، وتبقى شروط الأمان (حرف كبير وحرف صغير ورقم ورمز)</div>
+              
             </div>
             <div style="grid-column:span 2;">
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">تأكيد كلمة المرور <span style="color:#e35d54;">*</span></div>
@@ -218,7 +218,7 @@
 </div>
 
 <div style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid #f1f0f6; background:#fcfbfe; margin-bottom:0;">
-    <a href="#add-employee-form" class="btn-line" style="height:26px; padding:0 10px; font-size:11px;">+ إضافة</a>
+   
     <a id="btn-view-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; pointer-events:none; opacity:.4;">عرض</a>
     <a id="btn-edit-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; pointer-events:none; opacity:.4;">تعديل</a>
     <form method="post" asp-action="ToggleUserStatus" id="toggle-status-form" style="display:inline;">
@@ -346,7 +346,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
-    <script src="~/js/location-picker.js"></script>
+        <script src="~/js/location-picker.js" asp-append-version="true"></script>
     <script>
                document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.row-select').forEach(function (cb) {
