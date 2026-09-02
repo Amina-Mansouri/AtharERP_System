@@ -127,15 +127,22 @@ namespace AtharERP_System.Controllers
             ViewBag.CurrentRole = currentRoles.FirstOrDefault();
             await ReloadEditUserViewBagsAsync(id, ViewBag.CurrentRole);
 
+            ViewBag.ProjectCount = await _context.ProjectTeamMembers.CountAsync(tm => tm.UserId == id);
+            ViewBag.ActiveAssignmentCount = await _context.ProjectAssignments.CountAsync(a =>
+                (a.LeadEngineerId == id || a.AssistantEngineerId == id)
+                && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled);
+
             return View(user);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
-string id,
-[Bind("FirstName,LastName,JobNumber,NextOfKinPhone,Responsibilities,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,MonthlyEvaluationDate,YearlyEvaluationDate,ContractTerminationDate,Pledge,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model, IFormFile? profilePhoto,
-string role)
+            string id,
+            [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+            IFormFile? profilePhoto,
+            IFormFile? contractImage,
+            string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -163,7 +170,6 @@ string role)
             user.LastName = model.LastName;
             user.JobNumber = jobNumber;
             user.NextOfKinPhone = model.NextOfKinPhone;
-            user.Responsibilities = model.Responsibilities;
             user.DepartmentId = model.DepartmentId;
             user.Rank = model.Rank;
             user.CareerTrack = model.CareerTrack;
@@ -175,10 +181,6 @@ string role)
                 user.IsSuspended = false;
                 user.SuspendedReason = null;
             }
-            user.MonthlyEvaluationDate = model.MonthlyEvaluationDate;
-            user.YearlyEvaluationDate = model.YearlyEvaluationDate;
-            user.ContractTerminationDate = model.ContractTerminationDate;
-            user.Pledge = model.Pledge;
             user.PhoneNumber = model.PhoneNumber;
             user.ExpectedLocationName = model.ExpectedLocationName;
             user.ExpectedLatitude = model.ExpectedLatitude;
@@ -195,6 +197,18 @@ string role)
                     user.ProfilePhotoPath = photoResult.FilePath;
                 else
                     ModelState.AddModelError(string.Empty, photoResult.ErrorMessage ?? "فشل رفع الصورة");
+            }
+
+            if (contractImage != null && contractImage.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(user.ContractImagePath))
+                    _fileUpload.DeleteFile(user.ContractImagePath);
+
+                var contractResult = await _fileUpload.SaveFileAsync(contractImage, $"contracts/{user.Id}");
+                if (contractResult.Success)
+                    user.ContractImagePath = contractResult.FilePath;
+                else
+                    ModelState.AddModelError(string.Empty, contractResult.ErrorMessage ?? "فشل رفع صورة العقد");
             }
 
             var result = await _userManager.UpdateAsync(user);
@@ -220,7 +234,6 @@ string role)
             TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
             return RedirectToAction("Users");
         }
-
 
 
         [HttpPost]
