@@ -7,6 +7,7 @@ function initAtharLocationPicker(options) {
         nameInputId,
         coordsDisplayId,
         searchInputId,
+        radiusInputId,
         initialLat,
         initialLng,
         defaultLat = 32.8872,   // طرابلس، ليبيا كموقع افتراضي
@@ -39,7 +40,21 @@ function initAtharLocationPicker(options) {
         document.getElementById(latInputId).value = lat.toFixed(6);
         document.getElementById(lngInputId).value = lng.toFixed(6);
         updateCoordsDisplay(lat, lng);
+        if (nameInputId) {
+            const nameInput = document.getElementById(nameInputId);
+            if (nameInput && !nameInput.value) {
+                nameInput.value = 'الموقع الحالي (' + lat.toFixed(4) + '، ' + lng.toFixed(4) + ')';
+            }
+        }
         reverseGeocode(lat, lng);
+    }
+
+    function suggestRadius(accuracyMeters) {
+        if (!radiusInputId || !accuracyMeters) return;
+        const radiusInput = document.getElementById(radiusInputId);
+        if (!radiusInput) return;
+        const suggested = Math.max(50, Math.min(200, Math.round(accuracyMeters * 2)));
+        radiusInput.value = suggested;
     }
 
     function placeMarker(lat, lng) {
@@ -81,14 +96,16 @@ function initAtharLocationPicker(options) {
     if (hasInitial) {
         placeMarker(startLat, startLng);
         updateCoordsDisplay(startLat, startLng);
-    } else if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function (pos) {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            map.setView([lat, lng], 15);
-            placeMarker(lat, lng);
-            updateFields(lat, lng);
-        }, function (err) {
+    }
+ else if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function (pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        map.setView([lat, lng], 15);
+        placeMarker(lat, lng);
+        updateFields(lat, lng);
+        suggestRadius(pos.coords.accuracy);
+    }, function (err) {
             if (coordsDisplayId) {
                 const el = document.getElementById(coordsDisplayId);
                 if (el) {
