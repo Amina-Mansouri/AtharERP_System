@@ -533,26 +533,10 @@ string role)
         }
 
         [HttpGet]
-        public async Task<IActionResult> EditRole(string id)
+        public IActionResult EditRole(string id)
         {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
-
-            var role = await _roleManager.FindByIdAsync(id);
-            if (role == null)
-                return NotFound();
-
-            ViewBag.AllPermissions = await _context.Permissions
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.Module).ThenBy(p => p.Code)
-                .ToListAsync();
-
-            ViewBag.SelectedPermissionIds = await _context.RolePermissions
-                .Where(rp => rp.RoleId == id && rp.IsGranted)
-                .Select(rp => rp.PermissionId)
-                .ToListAsync();
-
-            return View(role);
+            // الشاشة المدمجة في Roles.cshtml (اختيار الدور من القائمة) تغطي نفس الوظيفة الآن
+            return RedirectToAction("Roles", new { roleId = id });
         }
 
         [HttpPost]

@@ -81,6 +81,16 @@ function initAtharLocationPicker(options) {
     if (hasInitial) {
         placeMarker(startLat, startLng);
         updateCoordsDisplay(startLat, startLng);
+    } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            map.setView([lat, lng], 15);
+            placeMarker(lat, lng);
+            updateFields(lat, lng);
+        }, function () {
+            // تعذّر الوصول للموقع أو رفض المستخدم الإذن — يبقى التحديد اليدوي بالخريطة أو البحث متاحاً
+        });
     }
 
     setTimeout(function () {

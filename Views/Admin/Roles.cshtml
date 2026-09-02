@@ -29,9 +29,10 @@
                 <a class="role-card @(selectedRole?.Id == role.Id ? "selected" : "")" href="@Url.Action("Roles", new { roleId = role.Id })">
                     <div class="role-card-name">
                         @role.Name
-                        @if (role.IsTemplate)
+                        <span class="tag @(role.IsTemplate ? "" : "tag-accent")">@(role.IsTemplate ? "قالب" : "مخصص")</span>
+                        @if (!role.IsActive)
                         {
-                            <span class="tag">قالب</span>
+                            <span class="tag" style="color:#c94a42;">معطّل</span>
                         }
                     </div>
                     <div class="role-card-sub">@(permCounts.ContainsKey(role.Id) ? permCounts[role.Id] : 0) صلاحية · @(userCounts.ContainsKey(role.Id) ? userCounts[role.Id] : 0) مستخدماً</div>
