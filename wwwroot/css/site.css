@@ -31,15 +31,15 @@
 }
 
 :root {
-    --athar-primary: #6B4226;
-    --athar-primary-dark: #3D2412;
-    --athar-primary-light: #8B5A2B;
-    --athar-accent: #D9A441;
-    --athar-bg: #FAF6F0;
-    --athar-text: #2B1D12;
-    --athar-border: #E6D9C6;
-    --athar-danger: #B3372C;
-    --athar-success: #5C7A3A;
+    --athar-primary: #7b6bd6;
+    --athar-primary-dark: #6455c4;
+    --athar-primary-light: #9d8df0;
+    --athar-accent: #7b6bd6;
+    --athar-bg: #f8f7fb;
+    --athar-text: #241f33;
+    --athar-border: #ecebf2;
+    --athar-danger: #e35d54;
+    --athar-success: #3fae6f;
 }
 
 html, body {
@@ -141,7 +141,7 @@ body {
 
 .athar-btn-accent {
     background-color: var(--athar-accent);
-    color: var(--athar-primary-dark);
+    color: #fff;
     border: 1px solid var(--athar-accent);
     font-weight: 700;
     border-radius: 6px;
@@ -149,8 +149,8 @@ body {
 }
 
     .athar-btn-accent:hover {
-        background-color: #c4922f;
-        color: var(--athar-primary-dark);
+        background-color: var(--athar-primary-dark);
+        color: #fff;
     }
 
 /* ===== Content / Cards ===== */
@@ -329,7 +329,7 @@ body {
 .athar-map {
     /* عزل اتجاه الخريطة عن باقي الصفحة، فـ Leaflet غير مصمم لسياق RTL */
     direction: ltr;
-    height: 350px;
+    height: 220px;
     width: 100%;
     border-radius: 8px;
     border: 1px solid var(--athar-border);
@@ -354,7 +354,7 @@ body {
 
 .athar-status-InProgress {
     background-color: var(--athar-accent);
-    color: var(--athar-primary-dark);
+    color: #fff;
 }
 
 .athar-status-ClientReview {
@@ -402,7 +402,7 @@ body {
 
 .athar-priority-Medium {
     background-color: var(--athar-accent);
-    color: var(--athar-primary-dark);
+    color: #fff;
 }
 
 .athar-priority-High {

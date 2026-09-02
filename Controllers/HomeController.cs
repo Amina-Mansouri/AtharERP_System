@@ -34,7 +34,9 @@ namespace AtharERP_System.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            if (!(User.Identity?.IsAuthenticated ?? false))
+                return RedirectToAction("Login", "Account");
+            return RedirectToAction("Dashboard");
         }
 
         [Authorize]
