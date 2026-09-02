@@ -501,606 +501,37 @@ body {
 }
 
 /* ============================================================
-   طبقة تصميم جديدة (Design Handoff) — تُضاف فوق أنماط athar-* القائمة
-   ولا تحذف أو تعدّل أي منها. جسر بين النظامين إلى حين اكتمال إعادة التصميم.
+   منظومة أثر — الطبقة البصرية الموحّدة (الطبقة الذهبية القديمة المكرَّرة أُزيلت نهائياً)
+   الأصناف التالية لم تكن مُعاد تعريفها بنفسجياً فبقيت ذهبية — أُعيد ترميزها هنا فقط.
    ============================================================ */
-:root {
-    --ds-bg: #f3f2f2;
-    --ds-surface: #ffffff;
-    --ds-text: #201f1d;
-    --ds-text-secondary: rgba(32,31,29,.72);
-    --ds-text-light: rgba(32,31,29,.5);
-    --ds-text-faint: rgba(32,31,29,.35);
-    --ds-gold: #b68235;
-    --ds-gold-text: #8a6a2a;
-    --ds-hair: 1px solid rgba(32,31,29,.18);
-    --ds-row-line: 1px solid rgba(32,31,29,.10);
-    --ds-section-line: 1px solid rgba(32,31,29,.16);
-    --ds-th-bg: rgba(32,31,29,.035);
-    --ds-row-selected: rgba(182,130,53,.05);
-    --ds-nav-active-bg: rgba(182,130,53,.07);
-    --ds-track: rgba(32,31,29,.10);
-    --ds-radius: 4px;
-    --ds-shadow-card: 0 1px 3px rgba(0,0,0,.06);
-    --ds-shadow-dropdown: 0 10px 28px rgba(32,31,29,.14);
-    --ds-font-ar: 'Noto Naskh Arabic', 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
-    --ds-font-num: 'Cormorant Garamond', Georgia, serif;
-    --ds-font-kicker: 'Lora', Georgia, serif;
-}
 
-/* ===== هيكل التطبيق (Topbar + Sidebar) — طبقة ذهبية أولى (تبقى، غير مستخدمة الآن) ===== */
-.app-topbar {
-    height: 46px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 14px;
-    background: var(--ds-surface);
-    border-bottom: var(--ds-hair);
-    font-family: var(--ds-font-ar);
-}
-
-    .app-topbar .ds-logo {
-        width: 24px;
-        height: 24px;
-    }
-
-    .app-topbar .ds-brand {
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--ds-text);
-        white-space: nowrap;
-    }
-
-    .app-topbar .ds-search {
-        flex: 1;
-        height: 26px;
-        border: var(--ds-hair);
-        border-radius: var(--ds-radius);
-        padding: 0 10px;
-        font-size: 10.5px;
-        color: var(--ds-text-secondary);
-        background: var(--ds-bg);
-    }
-
-    .app-topbar .ds-bell {
-        width: 24px;
-        height: 24px;
-        border: var(--ds-hair);
-        border-radius: var(--ds-radius);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        cursor: pointer;
-        background: var(--ds-surface);
-    }
-
-        .app-topbar .ds-bell svg {
-            width: 13px;
-            height: 13px;
-            stroke: rgba(32,31,29,.8);
-            stroke-width: 1.7;
-        }
-
-        .app-topbar .ds-bell.open {
-            border-color: var(--ds-gold);
-            background: rgba(182,130,53,.12);
-        }
-
-            .app-topbar .ds-bell.open svg {
-                stroke: var(--ds-gold-text);
-            }
-
-        .app-topbar .ds-bell .ds-bell-count {
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--ds-gold);
-            color: #fff;
-            font-size: 8.5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-
-    .app-topbar .ds-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: var(--ds-hair);
-    }
-
-    .app-topbar .ds-role {
-        font-size: 10.5px;
-        color: var(--ds-text-secondary);
-        white-space: nowrap;
-    }
-
-.app-body {
-    display: flex;
-    align-items: stretch;
-    min-height: calc(100vh - 46px);
-}
-
-.app-sidebar {
-    width: 186px;
-    flex-shrink: 0;
-    border-left: var(--ds-hair);
-    background: var(--ds-surface);
-    font-family: var(--ds-font-ar);
-    overflow-y: auto;
-}
-
-    .app-sidebar .nav-group-title {
-        font-size: 9.5px;
-        text-transform: uppercase;
-        letter-spacing: .09em;
-        color: var(--ds-text-light);
-        padding: 11px 12px 5px;
-        font-family: var(--ds-font-kicker);
-    }
-
-.nav-item {
-    display: block;
-    font-size: 11.5px;
-    padding: 6px 12px;
-    color: var(--ds-text);
-    text-decoration: none;
-    border-right: 2px solid transparent;
-}
-
-    .nav-item:hover {
-        color: var(--ds-text);
-        background: rgba(32,31,29,.02);
-        text-decoration: none;
-    }
-
-    .nav-item.active {
-        background: var(--ds-nav-active-bg);
-        border-right-color: var(--ds-gold);
-        font-weight: 600;
-    }
-
-.app-content {
-    flex: 1;
-    min-width: 0;
-    padding: 16px 18px;
-    background: var(--ds-bg);
-    font-family: var(--ds-font-ar);
-}
-
-/* ===== ترويسة الصفحة ===== */
-.kicker {
-    font-family: var(--ds-font-kicker);
-    font-size: 9.5px;
-    text-transform: uppercase;
-    letter-spacing: .09em;
-    color: var(--ds-text-light);
-    display: block;
-    margin-bottom: 2px;
-}
-
-.page-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-    .page-head h1 {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--ds-text);
-        margin: 0;
-    }
-
-    .page-head .page-head-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-/* ===== شريط الأرقام ===== */
-.stat-strip {
-    display: flex;
-    border-top: var(--ds-section-line);
-    border-bottom: var(--ds-section-line);
-    background: var(--ds-surface);
-    margin-bottom: 12px;
-}
-
-    .stat-strip .stat-item {
-        flex: 1;
-        padding: 10px 14px;
-        border-left: var(--ds-row-line);
-        text-align: center;
-    }
-
-        .stat-strip .stat-item:first-child {
-            border-left: none;
-        }
-
-        .stat-strip .stat-item .stat-value {
-            font-family: var(--ds-font-num);
-            font-weight: 400;
-            font-size: 23px;
-            font-variant-numeric: tabular-nums;
-            color: var(--ds-text);
-            display: block;
-        }
-
-        .stat-strip .stat-item .stat-sub {
-            font-size: 10px;
-            color: var(--ds-text-light);
-        }
-
-/* ===== شريط التصفية ===== */
-.filter-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-    .filter-bar .filter-search {
-        height: 27px;
-        border: var(--ds-hair);
-        border-radius: var(--ds-radius);
-        padding: 0 10px;
-        font-size: 11px;
-        flex: 1;
-        max-width: 260px;
-    }
-
-    .filter-bar .filter-chip {
-        height: 27px;
-        padding: 0 11px;
-        font-size: 11px;
-        border: var(--ds-hair);
-        border-radius: var(--ds-radius);
-        background: var(--ds-surface);
-        color: var(--ds-text-secondary);
-        cursor: pointer;
-    }
-
-        .filter-bar .filter-chip.active {
-            border-color: var(--ds-gold);
-            color: var(--ds-gold-text);
-        }
-
-    .filter-bar .filter-clear {
-        margin-inline-start: auto;
-        font-size: 10.5px;
-        color: var(--ds-text-light);
-        cursor: pointer;
-    }
-
-/* ===== الجدول (CSS Grid — عرض كل عمود يُحدَّد مرة واحدة عبر --cols على الغلاف) ===== */
-.data-table {
-    --cols: 1fr;
-    width: 100%;
-    background: var(--ds-surface);
-    border: var(--ds-hair);
-    border-radius: var(--ds-radius);
-    box-shadow: var(--ds-shadow-card);
-    overflow-x: auto;
-}
-
-.data-table-head,
-.data-table-row {
-    display: grid;
-    grid-template-columns: var(--cols);
-    align-items: center;
-    min-width: fit-content;
-}
-
-.data-table-head {
-    background: var(--ds-th-bg);
-    border-bottom: var(--ds-hair);
-}
-
-.data-table-row {
-    border-top: var(--ds-row-line);
-}
-
-    .data-table-row:first-child {
-        border-top: none;
-    }
-
-    .data-table-row.row-selected {
-        background: var(--ds-row-selected);
-    }
-
-    .data-table-row.row-faded {
-        opacity: .6;
-    }
-
-    .data-table-row.row-expanded {
-        background: var(--ds-bg);
-        grid-column: 1 / -1;
-        display: block;
-        padding: 10px 12px;
-    }
-
-.cell {
-    font-size: 11.5px;
-    padding: 8px 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-}
-
-.data-table-head .cell {
-    font-size: 9.5px;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--ds-text-light);
-    font-weight: 600;
-    white-space: normal;
-}
-
-.cell-num {
-    font-variant-numeric: tabular-nums;
-}
-
-/* ===== شارات ===== */
-.tag {
-    display: inline-block;
-    font-size: 9.5px;
-    padding: 2px 7px;
-    border-radius: 3px;
-    border: 1px solid rgba(32,31,29,.28);
-    color: var(--ds-text-secondary);
-}
-
-.tag-accent {
-    border-color: var(--ds-gold);
-    color: var(--ds-gold-text);
-}
-
-/* ===== أزرار محدَّدة بإطار ===== */
-.btn-line {
-    height: 27px;
-    padding: 0 11px;
-    font-size: 11px;
-    border: var(--ds-hair);
-    border-radius: var(--ds-radius);
-    background: var(--ds-surface);
-    color: var(--ds-text);
-    display: inline-flex;
-    align-items: center;
-}
-
-    .btn-line:hover {
-        background: var(--ds-bg);
-    }
-
-.btn-line-accent {
-    border-color: var(--ds-gold);
-    color: var(--ds-gold-text);
-}
-
-/* ===== شريط تقدّم شعري ===== */
-.progress-hair {
-    height: 3px;
-    width: 100%;
-    background: var(--ds-track);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-    .progress-hair > span {
-        display: block;
-        height: 100%;
-        background: var(--ds-gold);
-    }
-
-/* ===== لوحة جانبية/سفلية ===== */
-.side-panel {
-    background: var(--ds-surface);
-    border: var(--ds-hair);
-    border-radius: var(--ds-radius);
-    box-shadow: var(--ds-shadow-card);
-    padding: 12px;
-}
-
-    .side-panel .side-panel-title {
-        font-size: 12.5px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-/* ===== الترقيم ===== */
-.pager {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 8px;
-    font-size: 11px;
-    color: var(--ds-text-light);
-}
-
-    .pager .pager-pages {
-        display: flex;
-        gap: 4px;
-    }
-
-    .pager .pager-page {
-        width: 21px;
-        height: 19px;
-        border: var(--ds-hair);
-        border-radius: 3px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10.5px;
-        cursor: pointer;
-    }
-
-        .pager .pager-page.active {
-            border-color: var(--ds-gold);
-            color: var(--ds-gold-text);
-        }
-
-/* ===== 1a تسجيل الدخول (تصميم الحزمة) ===== */
-.athar-auth-wrapper.ds-auth-wrap {
-    background: var(--ds-bg);
-}
-
-.ds-auth-card {
-    background: var(--ds-surface);
-    border: var(--ds-hair);
-    border-radius: var(--ds-radius);
-    box-shadow: var(--ds-shadow-card);
-    width: 100%;
-    max-width: 500px;
-    padding: 34px 44px;
-    font-family: var(--ds-font-ar);
-    text-align: center;
-    box-sizing: border-box;
-}
-
-    .ds-auth-card .ds-auth-logo {
-        width: 52px;
-        height: 52px;
-        margin: 0 auto 10px;
-        display: block;
-    }
-
-    .ds-auth-card .ds-auth-brand {
-        font-family: var(--ds-font-num);
-        font-size: 24px;
-        color: var(--ds-text);
-        display: block;
-    }
-
-    .ds-auth-card .ds-auth-kicker {
-        font-family: var(--ds-font-kicker);
-        font-size: 9.5px;
-        text-transform: uppercase;
-        letter-spacing: .09em;
-        color: var(--ds-text-light);
-        display: block;
-        margin-bottom: 22px;
-    }
-
-    .ds-auth-card .ds-field {
-        text-align: right;
-        margin-bottom: 12px;
-    }
-
-        .ds-auth-card .ds-field label {
-            display: block;
-            font-size: 10.5px;
-            color: var(--ds-text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .ds-auth-card .ds-field input {
-            width: 100%;
-            height: 34px;
-            border: var(--ds-hair);
-            border-radius: var(--ds-radius);
-            padding: 0 10px;
-            font-size: 12px;
-            box-sizing: border-box;
-        }
-
-    .ds-auth-card .ds-auth-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 10.5px;
-        margin-bottom: 16px;
-    }
-
-        .ds-auth-card .ds-auth-row a {
-            color: var(--ds-gold-text);
-            text-decoration: none;
-        }
-
-    .ds-auth-card .ds-btn-gold-block {
-        display: block;
-        width: 100%;
-        height: 36px;
-        border: 1px solid var(--ds-gold);
-        border-radius: var(--ds-radius);
-        background: var(--ds-gold);
-        color: #fff;
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-        .ds-auth-card .ds-btn-gold-block:hover {
-            background: var(--ds-gold-text);
-            border-color: var(--ds-gold-text);
-        }
-
-    .ds-auth-card .ds-alert-gold {
-        margin-top: 14px;
-        border: 1px solid var(--ds-gold);
-        border-radius: var(--ds-radius);
-        background: rgba(182,130,53,.05);
-        padding: 8px 10px;
-        text-align: right;
-        font-size: 11px;
-        color: var(--ds-text);
-    }
-
-        .ds-auth-card .ds-alert-gold span {
-            display: block;
-        }
-
-        .ds-auth-card .ds-alert-gold .ds-alert-sub {
-            margin-top: 3px;
-            font-size: 9.5px;
-            color: var(--ds-text-light);
-        }
-
-    .ds-auth-card .ds-auth-footer {
-        margin-top: 18px;
-        padding-top: 12px;
-        border-top: var(--ds-row-line);
-        font-size: 10px;
-        color: var(--ds-text-light);
-        text-align: center;
-    }
-
-/* ===== تبويبات (1c وما بعدها) ===== */
+/* ===== تبويبات ===== */
 .tabs {
     display: flex;
     gap: 16px;
-    border-bottom: var(--ds-section-line);
+    border-bottom: 1px solid var(--sys-border);
     margin-bottom: 10px;
 }
 
     .tabs .tab-item {
         font-size: 11.5px;
         padding: 6px 2px;
-        color: var(--ds-text-secondary);
+        color: var(--sys-text-secondary);
         text-decoration: none;
         border-bottom: 2px solid transparent;
     }
 
         .tabs .tab-item.active {
             font-weight: 600;
-            color: var(--ds-text);
-            border-bottom-color: var(--ds-gold);
+            color: var(--sys-text);
+            border-bottom-color: var(--sys-primary);
         }
 
-/* ===== قوائم منسدلة داخل شريط التصفية (نفس مقاس filter-chip) ===== */
 .filter-bar select.filter-chip {
     cursor: pointer;
 }
 
-/* ===== 1d ملف المستخدم ===== */
+/* ===== ملف المستخدم ===== */
 .profile-head {
     display: flex;
     align-items: center;
@@ -1113,25 +544,20 @@ body {
         height: 58px;
         border-radius: 50%;
         object-fit: cover;
-        border: var(--ds-hair);
+        border: 1px solid var(--sys-border);
     }
 
     .profile-head h1 {
         font-size: 18px;
         font-weight: 600;
         margin: 2px 0 0;
+        color: var(--sys-text);
     }
 
-.stat-strip.stat-strip-text .stat-value {
-    font-family: var(--ds-font-ar);
-    font-size: 12.5px;
-    font-weight: 600;
-}
-
 .tab-content {
-    background: var(--ds-surface);
-    border: var(--ds-hair);
-    border-radius: var(--ds-radius);
+    background: var(--sys-surface);
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-card);
     padding: 12px;
     margin-bottom: 12px;
 }
@@ -1139,14 +565,14 @@ body {
 .ds-photo-slot {
     width: 100%;
     aspect-ratio: 4/3;
-    border: 1px dashed rgba(32,31,29,.3);
-    border-radius: var(--ds-radius);
-    background: repeating-linear-gradient(45deg, rgba(32,31,29,.04), rgba(32,31,29,.04) 4px, transparent 4px, transparent 8px);
+    border: 1px dashed var(--sys-text-faint);
+    border-radius: var(--sys-radius-card);
+    background: repeating-linear-gradient(45deg, rgba(36,31,51,.04), rgba(36,31,51,.04) 4px, transparent 4px, transparent 8px);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 9.5px;
-    color: var(--ds-text-light);
+    color: var(--sys-text-light);
     text-align: center;
     overflow: hidden;
 }
@@ -1161,17 +587,18 @@ body {
     width: 110px;
     height: 74px;
     flex-shrink: 0;
-    border: 1px dashed rgba(32,31,29,.3);
-    border-radius: var(--ds-radius);
-    background: repeating-linear-gradient(45deg, rgba(32,31,29,.04), rgba(32,31,29,.04) 4px, transparent 4px, transparent 8px);
+    border: 1px dashed var(--sys-text-faint);
+    border-radius: var(--sys-radius-card);
+    background: repeating-linear-gradient(45deg, rgba(36,31,51,.04), rgba(36,31,51,.04) 4px, transparent 4px, transparent 8px);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 9px;
-    color: var(--ds-text-light);
+    color: var(--sys-text-light);
     text-align: center;
 }
-/* ===== 1e الأدوار والصلاحيات ===== */
+
+/* ===== الأدوار والصلاحيات ===== */
 .role-list {
     display: flex;
     flex-direction: column;
@@ -1181,10 +608,10 @@ body {
 .role-card {
     display: block;
     padding: 8px 10px;
-    border: var(--ds-hair);
-    border-radius: var(--ds-radius);
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-card);
     text-decoration: none;
-    color: var(--ds-text);
+    color: var(--sys-text);
     border-right: 2px solid transparent;
 }
 
@@ -1198,39 +625,44 @@ body {
 
     .role-card .role-card-sub {
         font-size: 10px;
-        color: var(--ds-text-light);
+        color: var(--sys-text-light);
         margin-top: 2px;
     }
 
     .role-card.selected {
-        background: rgba(182,130,53,.07);
-        border-right-color: var(--ds-gold);
+        background: var(--sys-row-selected);
+        border-right-color: var(--sys-primary);
     }
 
 input[type="checkbox"].chk-gold {
-    width: 11px;
-    height: 11px;
-    accent-color: var(--ds-gold);
+    width: 12px;
+    height: 12px;
+    accent-color: var(--sys-primary);
 }
 
-/* ===== 1f الأقسام ===== */
+/* ===== الأقسام ===== */
 .dept-tree .dept-node {
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-size: 11.5px;
-    padding: 5px 0;
+    padding: 5px 8px;
+    border-radius: 6px;
 }
 
+    .dept-tree .dept-node.selected {
+        background: var(--sys-row-selected);
+    }
+
 .dept-tree .dept-children {
-    border-right: var(--ds-row-line);
+    border-right: 1px solid var(--sys-row-line);
     padding-right: 12px;
     margin-right: 6px;
 }
 
 .dept-tree .dept-toggle {
     cursor: pointer;
-    color: var(--ds-text-light);
+    color: var(--sys-text-light);
     font-size: 9px;
     margin-left: 4px;
     background: none;
@@ -1410,11 +842,48 @@ button:focus-visible {
         line-height: 1;
     }
 
+.app-topbar .ds-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.app-topbar .ds-user-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.25;
+}
+
+.app-topbar .ds-user-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+}
+
 .app-topbar .ds-avatar {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
+}
+
+.app-topbar .ds-avatar-placeholder {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.13);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10.5px;
+    font-weight: 600;
+    flex-shrink: 0;
 }
 
 .app-topbar .ds-role {
@@ -1908,9 +1377,17 @@ button:focus-visible {
     }
 
 .btn-line-accent {
+    background: var(--sys-primary);
     border-color: var(--sys-primary);
-    color: var(--sys-primary-text);
+    color: #fff;
+    font-weight: 600;
 }
+
+    .btn-line-accent:hover {
+        background: var(--sys-primary-hover);
+        border-color: var(--sys-primary-hover);
+        color: #fff;
+    }
 
 .btn-primary {
     height: 30px;

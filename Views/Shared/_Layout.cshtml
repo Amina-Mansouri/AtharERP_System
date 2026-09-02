@@ -37,8 +37,9 @@
     }
     else
     {
-        var currentRole = SignInManager.IsSignedIn(User)
-            ? (await UserManager.GetRolesAsync((await UserManager.GetUserAsync(User))!)).FirstOrDefault()
+        var currentUser = SignInManager.IsSignedIn(User) ? await UserManager.GetUserAsync(User) : null;
+        var currentRole = currentUser != null
+            ? (await UserManager.GetRolesAsync(currentUser)).FirstOrDefault()
             : null;
 
         bool canUsers = User.IsInRole("مدير النظام");
@@ -75,10 +76,22 @@
                 </svg>
                 @await Component.InvokeAsync("NavCounters")
             </a>
-            @if (SignInManager.IsSignedIn(User))
+            @if (currentUser != null)
             {
-                <img src="~/images/logo-badge.png" alt="" class="ds-avatar" />
-                <span class="ds-role">@(currentRole ?? User.Identity!.Name)</span>
+                <div class="ds-user-chip">
+                    <div class="ds-user-text">
+                        <span class="ds-user-name">@currentUser.FullName</span>
+                        <span class="ds-role">@(currentRole ?? currentUser.Email)</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(currentUser.ProfilePhotoPath))
+                    {
+                        <img src="@currentUser.ProfilePhotoPath" alt="@currentUser.FullName" class="ds-avatar" />
+                    }
+                    else
+                    {
+                        <div class="ds-avatar-placeholder">@(currentUser.FirstName.Length > 0 ? currentUser.FirstName.Substring(0, 1) : "")@(currentUser.LastName.Length > 0 ? currentUser.LastName.Substring(0, 1) : "")</div>
+                    }
+                </div>
             }
             else
             {

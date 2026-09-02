@@ -88,9 +88,18 @@ function initAtharLocationPicker(options) {
             map.setView([lat, lng], 15);
             placeMarker(lat, lng);
             updateFields(lat, lng);
-        }, function () {
-            // تعذّر الوصول للموقع أو رفض المستخدم الإذن — يبقى التحديد اليدوي بالخريطة أو البحث متاحاً
+        }, function (err) {
+            if (coordsDisplayId) {
+                const el = document.getElementById(coordsDisplayId);
+                if (el) {
+                    const reason = (err && err.message) ? err.message : 'رفض الإذن أو الاتصال غير آمن (يتطلب https أو localhost)';
+                    el.textContent = 'تعذّر تحديد الموقع تلقائياً — حددي الموقع يدوياً بالنقر على الخريطة أو بالبحث عن عنوان (' + reason + ')';
+                }
+            }
         });
+    } else if (coordsDisplayId) {
+        const el = document.getElementById(coordsDisplayId);
+        if (el) el.textContent = 'المتصفح لا يدعم تحديد الموقع تلقائياً — حددي الموقع يدوياً بالنقر على الخريطة أو بالبحث عن عنوان';
     }
 
     setTimeout(function () {
