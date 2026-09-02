@@ -93,68 +93,47 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        [HttpGet]
-        [Authorize(Roles = "مدير النظام")]
-        public async Task<IActionResult> Register()
-        {
-            await LoadRegisterDropdownsAsync();
-            return View();
-        }
-
         [HttpPost]
         [Authorize(Roles = "مدير النظام")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(
-            string firstName,
-            string lastName,
-            string email,
-            string password,
-            string confirmPassword,
-            string? jobNumber,
-            string? nextOfKinPhone,
-            IFormFile? profilePhoto,
-            IFormFile? contractImage,
-            int? departmentId,
-            JobRank rank,
-            CareerTrack careerTrack,
-            decimal contractSalary,
-            DateTime? contractStartDate,
-            DateTime? contractEndDate,
-            string? phoneNumber,
-            string? expectedLocationName,
-            double? expectedLatitude,
-            double? expectedLongitude,
-            int? allowedRadiusMeters,
-            string role)
+    string firstName,
+    string lastName,
+    string email,
+    string password,
+    string confirmPassword,
+    string? jobNumber,
+    string? nextOfKinPhone,
+    IFormFile? profilePhoto,
+    IFormFile? contractImage,
+    int? departmentId,
+    JobRank rank,
+    CareerTrack careerTrack,
+    decimal contractSalary,
+    DateTime? contractStartDate,
+    DateTime? contractEndDate,
+    string? phoneNumber,
+    string? expectedLocationName,
+    double? expectedLatitude,
+    double? expectedLongitude,
+    int? allowedRadiusMeters,
+    string role)
         {
-            await LoadRegisterDropdownsAsync();
-
+            // الشاشة الوحيدة التي تستدعي هذا الإجراء (Users.cshtml) ترسله عبر AJAX وتقرأ استجابة JSON فقط
             if (password != confirmPassword)
-            {
-                ModelState.AddModelError(string.Empty, "كلمتا المرور غير متطابقتين");
-                return View();
-            }
+                return Json(new { success = false, message = "كلمتا المرور غير متطابقتين" });
 
             if (await _userManager.FindByEmailAsync(email) != null)
-            {
-                ModelState.AddModelError(string.Empty, "البريد الإلكتروني مستخدم بالفعل");
-                return View();
-            }
+                return Json(new { success = false, message = "البريد الإلكتروني مستخدم بالفعل" });
 
             if (departmentId == null)
-            {
-                ModelState.AddModelError(string.Empty, "القسم مطلوب");
-                return View();
-            }
+                return Json(new { success = false, message = "القسم مطلوب" });
 
             // تطبيع الحقول الفارغة إلى null لتفادي تعارض القيم الفارغة مع قيد التفرّد
             jobNumber = string.IsNullOrWhiteSpace(jobNumber) ? null : jobNumber.Trim();
 
             if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber))
-            {
-                ModelState.AddModelError(string.Empty, "الرقم الوظيفي مستخدم بالفعل لموظف آخر");
-                return View();
-            }
+                return Json(new { success = false, message = "الرقم الوظيفي مستخدم بالفعل لموظف آخر" });
 
             var user = new ApplicationUser
             {
@@ -182,48 +161,43 @@ namespace AtharERP_System.Controllers
 
             var result = await _userManager.CreateAsync(user, password);
 
-            if (result.Succeeded)
+            if (!result.Succeeded)
+                return Json(new { success = false, message = string.Join(" · ", result.Errors.Select(e => e.Description)) });
+
+            if (!string.IsNullOrEmpty(role))
+                await _userManager.AddToRoleAsync(user, role);
+
+            _context.EmployeePositions.Add(new EmployeePosition
             {
-                if (!string.IsNullOrEmpty(role))
-                    await _userManager.AddToRoleAsync(user, role);
+                UserId = user.Id,
+                DepartmentId = departmentId.Value,
+                Rank = rank,
+                Track = careerTrack,
+                StartDate = contractStartDate ?? DateTime.UtcNow,
+                IsPrimary = true
+            });
+            await _context.SaveChangesAsync();
 
-                _context.EmployeePositions.Add(new EmployeePosition
+            if (profilePhoto != null && profilePhoto.Length > 0)
+            {
+                var photoResult = await _fileUpload.SaveFileAsync(profilePhoto, $"users/{user.Id}");
+                if (photoResult.Success)
                 {
-                    UserId = user.Id,
-                    DepartmentId = departmentId.Value,
-                    Rank = rank,
-                    Track = careerTrack,
-                    StartDate = contractStartDate ?? DateTime.UtcNow,
-                    IsPrimary = true
-                });
-                await _context.SaveChangesAsync();
-
-                if (profilePhoto != null && profilePhoto.Length > 0)
-                {
-                    var photoResult = await _fileUpload.SaveFileAsync(profilePhoto, $"users/{user.Id}");
-                    if (photoResult.Success)
-                    {
-                        user.ProfilePhotoPath = photoResult.FilePath;
-                        await _userManager.UpdateAsync(user);
-                    }
+                    user.ProfilePhotoPath = photoResult.FilePath;
+                    await _userManager.UpdateAsync(user);
                 }
-                if (contractImage != null && contractImage.Length > 0)
+            }
+            if (contractImage != null && contractImage.Length > 0)
+            {
+                var contractResult = await _fileUpload.SaveFileAsync(contractImage, $"contracts/{user.Id}");
+                if (contractResult.Success)
                 {
-                    var contractResult = await _fileUpload.SaveFileAsync(contractImage, $"contracts/{user.Id}");
-                    if (contractResult.Success)
-                    {
-                        user.ContractImagePath = contractResult.FilePath;
-                        await _userManager.UpdateAsync(user);
-                    }
+                    user.ContractImagePath = contractResult.FilePath;
+                    await _userManager.UpdateAsync(user);
                 }
-                TempData["Success"] = $"تم إنشاء المستخدم {firstName} {lastName} بنجاح";
-                return RedirectToAction("Users", "Admin");
             }
 
-            foreach (var error in result.Errors)
-                ModelState.AddModelError(string.Empty, error.Description);
-
-            return View();
+            return Json(new { success = true, message = $"تم إنشاء الموظف {firstName} {lastName} بنجاح" });
         }
 
         [HttpGet]

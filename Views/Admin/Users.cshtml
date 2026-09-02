@@ -29,7 +29,7 @@
     int totalContractsSoon = ViewBag.TotalContractsSoon as int? ?? 0;
     int totalContractsExpired = ViewBag.TotalContractsExpired as int? ?? 0;
 
-    string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status = s, page = 1 })!;
+      string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status = s, page = 1 })! + "#employee-list";
 
     string DeptLabel(ApplicationUser u) => u.Department == null ? "-" : (u.Department.ParentDepartmentId == null ? u.Department.Name : (u.Department.ParentDepartment?.Name ?? "-"));
     string SectionLabel(ApplicationUser u) => u.Department == null || u.Department.ParentDepartmentId == null ? "-" : u.Department.Name;
@@ -49,17 +49,9 @@
             <div style="font-size:13.5px; font-weight:600;">نموذج إضافة موظف</div>
         </div>
 
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div style="margin:12px 16px 0; padding:9px 12px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.06); border-radius:8px; font-size:11.5px; color:#c94a42;">
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <div>@error.ErrorMessage</div>
-                }
-            </div>
-        }
+               <div id="create-employee-error" style="display:none; margin:12px 16px 0; padding:9px 12px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.06); border-radius:8px; font-size:11.5px; color:#c94a42;"></div>
 
-        <form method="post" asp-controller="Account" asp-action="Register" enctype="multipart/form-data" style="padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
+        <form id="create-employee-form" method="post" asp-controller="Account" asp-action="Register" enctype="multipart/form-data" style="padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
             @Html.AntiForgeryToken()
             <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم <span style="color:#e35d54;">*</span></div>
@@ -209,7 +201,7 @@
     </div>
 </div>
 
-<div class="tabs">
+<div class="tabs" id="employee-list">
     <a class="tab-item @(status == "all" ? "active" : "")" href="@TabUrl("all")">الكل @countAll</a>
     <a class="tab-item @(status == "active" ? "active" : "")" href="@TabUrl("active")">نشط @countActive</a>
     <a class="tab-item @(status == "inactive" ? "active" : "")" href="@TabUrl("inactive")">غير نشط @countInactive</a>
@@ -225,8 +217,8 @@
         <button type="submit" id="btn-toggle-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; color:#c94a42; opacity:.4;" disabled>تعطيل</button>
     </form>
 </div>
-<form method="get" class="filter-bar">    <input type="hidden" name="status" value="@status" />
-    <input type="text" name="q" class="filter-search" placeholder="الاسم أو اللقب أو الرقم الوظيفي…" value="@q" />
+<form method="get" class="filter-bar" action="@Url.Action("Users")#employee-list">    
+    <input type="hidden" name="status" value="@status" />    <input type="text" name="q" class="filter-search" placeholder="الاسم أو اللقب أو الرقم الوظيفي…" value="@q" />
 
     <select name="departmentId" class="filter-chip" onchange="this.form.submit()">
         <option value="">القسم ▾</option>
@@ -332,7 +324,7 @@
     <div class="pager-pages">
         @for (int p = 1; p <= totalPages; p++)
         {
-            <a href="@Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status, page = p })" class="pager-page @(p == page ? "active" : "")">@p</a>
+            <a href="@Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status, page = p })#employee-list" class="pager-page @(p == page ? "active" : "")">@p</a>
         }
     </div>
 </div>
@@ -346,7 +338,39 @@
             crossorigin=""></script>
         <script src="~/js/location-picker.js" asp-append-version="true"></script>
     <script>
-               document.addEventListener('DOMContentLoaded', function () {
+                       document.addEventListener('DOMContentLoaded', function () {
+            var createForm = document.getElementById('create-employee-form');
+            createForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var form = this;
+                var errorBox = document.getElementById('create-employee-error');
+                var submitBtn = form.querySelector('button[type="submit"]');
+                errorBox.style.display = 'none';
+                errorBox.textContent = '';
+                submitBtn.disabled = true;
+                var originalText = submitBtn.textContent;
+                submitBtn.textContent = 'جارٍ الحفظ...';
+
+                fetch(form.action, { method: 'POST', body: new FormData(form) })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            errorBox.textContent = data.message || 'حدث خطأ غير متوقع';
+                            errorBox.style.display = 'block';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                        }
+                    })
+                    .catch(function () {
+                        errorBox.textContent = 'تعذّر الاتصال بالخادم — حاولي مرة أخرى';
+                        errorBox.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    });
+            });
+
             document.querySelectorAll('.row-select').forEach(function (cb) {
                 cb.addEventListener('change', function () {
                     document.querySelectorAll('.row-select').forEach(function (other) {

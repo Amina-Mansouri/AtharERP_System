@@ -18,7 +18,7 @@
                 <a asp-controller="Home" asp-action="Dashboard" class="btn athar-btn-accent btn-lg me-2">الذهاب إلى لوحة التحكم</a>
                 @if (User.IsInRole("مدير النظام"))
                 {
-                    <a asp-controller="Account" asp-action="Register" class="btn athar-btn-outline btn-lg">إضافة مستخدم جديد</a>
+                    <a asp-controller="Admin" asp-action="Users" class="btn athar-btn-outline btn-lg">إضافة موظف جديد</a>
                 }
             </div>
         }
