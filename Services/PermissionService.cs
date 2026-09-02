@@ -17,7 +17,7 @@ namespace AtharERP_System.Services
             _userManager = userManager;
         }
 
-        // الصلاحية الفعلية = صلاحيات الدور UNION الصلاحيات الممنوحة يدوياً للموظف (قاعدة العمل رقم 5)
+        // الصلاحية الفعلية = صلاحيات دور/أدوار المستخدم فقط (لا يوجد منح يدوي فردي بعد إلغاء UserPermission)
         public async Task<bool> HasPermissionAsync(ClaimsPrincipal principal, string permissionCode)
         {
             if (principal.Identity == null || !principal.Identity.IsAuthenticated)
@@ -35,14 +35,6 @@ namespace AtharERP_System.Services
             if (permissionId == null)
                 return false;
 
-            // 1) صلاحية إضافية ممنوحة يدوياً لهذا الموظف بعينه (اتحاد إضافي فقط)
-            var hasOverride = await _context.UserPermissions
-                .AnyAsync(up => up.UserId == user.Id && up.PermissionId == permissionId.Value);
-
-            if (hasOverride)
-                return true;
-
-            // 2) صلاحية عبر دور/أدوار المستخدم
             var roleNames = (await _userManager.GetRolesAsync(user)).ToList();
             if (roleNames.Count == 0)
                 return false;
@@ -57,19 +49,17 @@ namespace AtharERP_System.Services
 
             return await _context.RolePermissions
                 .AnyAsync(rp => roleIds.Contains(rp.RoleId) && rp.PermissionId == permissionId.Value && rp.IsGranted);
-       
-        
         }
+
         public class EffectivePermission
         {
             public string Code { get; set; } = string.Empty;
             public string Name { get; set; } = string.Empty;
             public string Module { get; set; } = string.Empty;
-            public string Source { get; set; } = string.Empty; // "دور" أو "يدوي"
+            public string Source { get; set; } = string.Empty; // دائماً "دور" بعد إلغاء المنح اليدوي
         }
 
-        // البند 8 في BACKEND.md: صلاحيات الدور ∪ الاستثناءات اليدوية، مع تعليم مصدر كل صلاحية.
-        // لا يوجد آلية "حجب" في المخطط الحالي (UserPermission منح إضافي فقط)، فمصدر "محجوب" غير ممثَّل.
+        // البند 8 في BACKEND.md: صلاحيات دور المستخدم (بعد إلغاء الاستثناءات اليدوية، الإضافة تتم عبر إنشاء دور جديد له)
         public async Task<List<EffectivePermission>> GetEffectivePermissionsAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -90,15 +80,8 @@ namespace AtharERP_System.Services
                     .Distinct()
                     .ToListAsync();
 
-            var manualPermissionIds = await _context.UserPermissions
-                .Where(up => up.UserId == userId)
-                .Select(up => up.PermissionId)
-                .ToListAsync();
-
-            var allIds = rolePermissionIds.Union(manualPermissionIds).ToList();
-
             var permissions = await _context.Permissions
-                .Where(p => allIds.Contains(p.Id) && p.IsActive)
+                .Where(p => rolePermissionIds.Contains(p.Id) && p.IsActive)
                 .OrderBy(p => p.Module).ThenBy(p => p.Code)
                 .ToListAsync();
 
@@ -107,9 +90,8 @@ namespace AtharERP_System.Services
                 Code = p.Code,
                 Name = p.Name,
                 Module = p.Module,
-                Source = !rolePermissionIds.Contains(p.Id) && manualPermissionIds.Contains(p.Id) ? "يدوي" : "دور"
+                Source = "دور"
             }).ToList();
         }
     }
-
 }

@@ -31,6 +31,6 @@ namespace AtharERP_System.Models.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public virtual ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
-        public virtual ICollection<EmployeePosition> EmployeePositions { get; set; } = new List<EmployeePosition>();
+       
     }
 }

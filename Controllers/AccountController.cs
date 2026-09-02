@@ -165,18 +165,7 @@ namespace AtharERP_System.Controllers
                 return Json(new { success = false, message = string.Join(" · ", result.Errors.Select(e => e.Description)) });
 
             if (!string.IsNullOrEmpty(role))
-                await _userManager.AddToRoleAsync(user, role);
-
-            _context.EmployeePositions.Add(new EmployeePosition
-            {
-                UserId = user.Id,
-                DepartmentId = departmentId.Value,
-                Rank = rank,
-                Track = careerTrack,
-                StartDate = contractStartDate ?? DateTime.UtcNow,
-                IsPrimary = true
-            });
-            await _context.SaveChangesAsync();
+                await _userManager.AddToRoleAsync(user, role);         
 
             if (profilePhoto != null && profilePhoto.Length > 0)
             {

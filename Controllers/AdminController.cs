@@ -45,7 +45,7 @@ namespace AtharERP_System.Controllers
 
             var query = _userManager.Users
     .Include(u => u.Department).ThenInclude(d => d!.ParentDepartment)
-    .Include(u => u.EmployeePositions)
+    
     .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
@@ -304,12 +304,7 @@ namespace AtharERP_System.Controllers
             if (user == null)
                 return NotFound();
 
-            ViewBag.Positions = await _context.EmployeePositions
-                .Include(p => p.Department)
-                .Where(p => p.UserId == id)
-                .OrderByDescending(p => p.IsPrimary).ThenByDescending(p => p.StartDate)
-                .ToListAsync();
-
+           
             ViewBag.EffectivePermissions = await _permissionService.GetEffectivePermissionsAsync(id);
 
             ViewBag.Documents = await _context.EmployeeDocuments
@@ -332,107 +327,6 @@ namespace AtharERP_System.Controllers
             return View(user);
         }
 
-
-        // ============================================
-        // المناصب المتعددة (EmployeePosition)
-        // ============================================
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddPosition(
-            string userId,
-            [Bind("DepartmentId,Rank,Track,StartDate,IsPrimary")] EmployeePosition model)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-                return NotFound();
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "بيانات المنصب غير صحيحة";
-                return RedirectToAction("EditUser", new { id = userId });
-            }
-
-            model.UserId = userId;
-
-            if (model.IsPrimary)
-            {
-                var existingPrimary = await _context.EmployeePositions
-                    .Where(ep => ep.UserId == userId && ep.IsPrimary && ep.EndDate == null)
-                    .ToListAsync();
-                foreach (var p in existingPrimary)
-                    p.IsPrimary = false;
-
-                user.DepartmentId = model.DepartmentId;
-                user.Rank = model.Rank;
-                user.CareerTrack = model.Track;
-                await _userManager.UpdateAsync(user);
-            }
-
-            _context.EmployeePositions.Add(model);
-            await _context.SaveChangesAsync();
-
-            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة منصب", "EmployeePosition", model.Id.ToString(), $"منصب جديد للموظف {user.FullName}");
-            TempData["Success"] = "تمت إضافة المنصب بنجاح";
-            return RedirectToAction("EditUser", new { id = userId });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EndPosition(int id, string userId)
-        {
-            var position = await _context.EmployeePositions.FindAsync(id);
-            if (position != null)
-            {
-                position.EndDate = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
-                await _auditService.LogAsync(_userManager.GetUserId(User)!, "إنهاء منصب", "EmployeePosition", id.ToString(), $"إنهاء منصب للموظف رقم {userId}");
-            }
-
-            TempData["Success"] = "تم إنهاء المنصب بنجاح";
-            return RedirectToAction("EditUser", new { id = userId });
-        }
-
-        // ============================================
-        // الصلاحيات الإضافية الممنوحة يدوياً (UserPermission)
-        // ============================================
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddUserPermission(string userId, int permissionId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-                return NotFound();
-
-            var exists = await _context.UserPermissions.AnyAsync(up => up.UserId == userId && up.PermissionId == permissionId);
-            if (!exists)
-            {
-                _context.UserPermissions.Add(new UserPermission { UserId = userId, PermissionId = permissionId, GrantedAt = DateTime.UtcNow });
-                await _context.SaveChangesAsync();
-                await _auditService.LogAsync(_userManager.GetUserId(User)!, "منح صلاحية إضافية", "UserPermission", userId, $"منح صلاحية رقم {permissionId} للموظف {user.FullName}");
-                TempData["Success"] = "تم منح الصلاحية الإضافية بنجاح";
-            }
-
-            return RedirectToAction("EditUser", new { id = userId });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveUserPermission(int id, string userId)
-        {
-            var link = await _context.UserPermissions.FindAsync(id);
-            if (link != null)
-            {
-                var permissionId = link.PermissionId;
-                _context.UserPermissions.Remove(link);
-                await _context.SaveChangesAsync();
-                await _auditService.LogAsync(_userManager.GetUserId(User)!, "إزالة صلاحية إضافية", "UserPermission", userId, $"إزالة صلاحية رقم {permissionId}");
-            }
-
-            TempData["Success"] = "تمت إزالة الصلاحية الإضافية";
-            return RedirectToAction("EditUser", new { id = userId });
-        }
 
         // ============================================
         // إدارة الأدوار
@@ -818,21 +712,14 @@ namespace AtharERP_System.Controllers
             ViewBag.JobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();
             ViewBag.CareerTracks = EnumDisplayHelper.GetDisplayList<CareerTrack>();
 
-            ViewBag.Positions = await _context.EmployeePositions
-                .Include(ep => ep.Department)
-                .Where(ep => ep.UserId == userId)
-                .OrderByDescending(ep => ep.StartDate)
-                .ToListAsync();
+           
 
             ViewBag.AllPermissions = await _context.Permissions
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.Module).ThenBy(p => p.Code)
                 .ToListAsync();
 
-            ViewBag.UserOverridePermissions = await _context.UserPermissions
-                .Include(up => up.Permission)
-                .Where(up => up.UserId == userId)
-                .ToListAsync();
+            
         }
     }
 }

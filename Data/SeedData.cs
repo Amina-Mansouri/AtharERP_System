@@ -242,19 +242,7 @@ namespace AtharERP_System.Data
                 await userManager.CreateAsync(admin, "Athar@Admin2026");
                 await userManager.AddToRoleAsync(admin, "مدير النظام");
 
-                if (topManagement != null)
-                {
-                    context.EmployeePositions.Add(new EmployeePosition
-                    {
-                        UserId = admin.Id,
-                        DepartmentId = topManagement.Id,
-                        Rank = JobRank.M5_CEO,
-                        Track = CareerTrack.Administrative,
-                        StartDate = DateTime.UtcNow,
-                        IsPrimary = true
-                    });
-                    await context.SaveChangesAsync();
-                }
+               
             }
 
             // ========== عملاء ومشروع تجريبي ==========

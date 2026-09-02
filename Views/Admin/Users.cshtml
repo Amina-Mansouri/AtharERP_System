@@ -305,12 +305,8 @@
             var trackLabel = trackOptions.FirstOrDefault(x => x.Value == user.CareerTrack.ToString()).Label;
             <div class="data-table-row @(user.IsActive ? "" : "row-faded")">
             <div class="cell"><input type="checkbox" class="row-select" data-id="@user.Id" data-active="@user.IsActive.ToString().ToLower()" /></div>
-                <div class="cell">
+                               <div class="cell">
                     @user.FullName
-                    @if (user.EmployeePositions.Count > 1)
-                    {
-                        <span class="tag tag-accent">وظيفتان</span>
-                    }
                 </div>
                 <div class="cell cell-num">@(user.JobNumber ?? "-")</div>
                 <div class="cell cell-num">@(user.NextOfKinPhone ?? "-")</div>

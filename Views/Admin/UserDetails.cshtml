@@ -3,7 +3,6 @@
 @model ApplicationUser
 @{
     ViewData["Title"] = "ملف المستخدم";
-    var positions = ViewBag.Positions as List<EmployeePosition> ?? new List<EmployeePosition>();
     var effectivePermissions = ViewBag.EffectivePermissions as List<PermissionService.EffectivePermission> ?? new List<PermissionService.EffectivePermission>();
     var documents = ViewBag.Documents as List<EmployeeDocument> ?? new List<EmployeeDocument>();
     var auditLogs = ViewBag.AuditLogs as List<AuditLog> ?? new List<AuditLog>();
@@ -48,7 +47,6 @@
 
 <div class="tabs">
     <a class="tab-item active" data-bs-toggle="tab" href="#pane-data">البيانات</a>
-    <a class="tab-item" data-bs-toggle="tab" href="#pane-positions">المناصب @positions.Count</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-permissions">الصلاحيات الفعلية</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">المستندات @documents.Count</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-location">موقع الحضور</a>
@@ -64,47 +62,23 @@
         <p><strong>آخر دخول:</strong> @(Model.LastLogin?.ToString("yyyy-MM-dd HH:mm") ?? "لم يسجل بعد")</p>
     </div>
 
-    <div class="tab-pane fade" id="pane-positions">
-        <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:12px;">
-            <div class="data-table" style="--cols: 1fr 96px 84px 96px 62px">
-                <div class="data-table-head">
-                    <div class="cell">القسم</div>
-                    <div class="cell">الرتبة</div>
-                    <div class="cell">المسار</div>
-                    <div class="cell">من</div>
-                    <div class="cell">أساسي</div>
+    <div class="tab-pane fade" id="pane-permissions">
+        <p class="stat-sub" style="margin-bottom:8px;">صلاحيات دور المستخدم</p>
+        @if (!effectivePermissions.Any())
+        {
+            <p>لا توجد صلاحيات فعلية</p>
+        }
+        else
+        {
+            @foreach (var p in effectivePermissions)
+            {
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom: var(--ds-row-line);">
+                    <span>@p.Code — @p.Name</span>
+                    <span class="tag">دور</span>
                 </div>
-                @if (!positions.Any())
-                {
-                    <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مناصب مسجّلة</div></div>
-                }
-                else
-                {
-                    @foreach (var p in positions)
-                    {
-                        <div class="data-table-row">
-                            <div class="cell">@p.Department.Name</div>
-                            <div class="cell">@p.Rank.ToString().Split('_')[0]</div>
-                            <div class="cell">@trackOptions.FirstOrDefault(x => x.Value == p.Track.ToString()).Label</div>
-                            <div class="cell cell-num">@p.StartDate.ToString("yyyy-MM-dd")</div>
-                            <div class="cell">@(p.IsPrimary ? "✓" : "")</div>
-                        </div>
-                    }
-                }
-            </div>
-            <div class="side-panel">
-                <div class="side-panel-title">موقع الحضور المعتمد</div>
-                <div style="display:flex; gap:10px; align-items:flex-start;">
-                    <div class="ds-map-slot">لا خريطة متاحة</div>
-                    <div style="font-size:11px; line-height:1.7;">
-                        <div>@(Model.ExpectedLocationName ?? "غير محدد")</div>
-                        <div class="cell-num">@(Model.ExpectedLatitude?.ToString("F5") ?? "-")، @(Model.ExpectedLongitude?.ToString("F5") ?? "-")</div>
-                        <div>نطاق مسموح @(Model.AllowedRadiusMeters) م</div>
-                        <div class="stat-sub">يعدّله مدير النظام فقط</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            }
+            <p class="stat-sub" style="margin-top:8px;">عرض الـ@(effectivePermissions.Count) · التغيير يُطبَّق فوراً بلا إعادة دخول</p>
+        }
     </div>
 
     <div class="tab-pane fade" id="pane-permissions">

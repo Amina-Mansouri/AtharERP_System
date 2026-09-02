@@ -16,8 +16,7 @@ namespace AtharERP_System.Data
 
         // Module 01: الهيكل التنظيمي والصلاحيات الموسّعة
         public DbSet<Department> Departments { get; set; } = null!;
-        public DbSet<EmployeePosition> EmployeePositions { get; set; } = null!;
-        public DbSet<UserPermission> UserPermissions { get; set; } = null!;
+     
 
         // Module 02: إدارة المشاريع
         public DbSet<Client> Clients { get; set; } = null!;
@@ -104,36 +103,6 @@ namespace AtharERP_System.Data
             builder.Entity<ApplicationUser>()
     .HasIndex(u => u.JobNumber)
     .IsUnique();
-
-           
-
-            builder.Entity<EmployeePosition>()
-                .HasOne(ep => ep.User)
-                .WithMany(u => u.EmployeePositions)
-                .HasForeignKey(ep => ep.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<EmployeePosition>()
-                .HasOne(ep => ep.Department)
-                .WithMany(d => d.EmployeePositions)
-                .HasForeignKey(ep => ep.DepartmentId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<UserPermission>()
-                .HasOne(up => up.User)
-                .WithMany(u => u.UserPermissions)
-                .HasForeignKey(up => up.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<UserPermission>()
-                .HasOne(up => up.Permission)
-                .WithMany()
-                .HasForeignKey(up => up.PermissionId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<UserPermission>()
-                .HasIndex(up => new { up.UserId, up.PermissionId })
-                .IsUnique();
 
             // ========== المشروع (Project) ==========
             builder.Entity<Project>()

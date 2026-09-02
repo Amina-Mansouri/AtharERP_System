@@ -110,10 +110,5 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نصف القطر المسموح (متر)")]
         public int AllowedRadiusMeters { get; set; } = 100;
 
-        // ========== المناصب المتعددة ==========
-        public virtual ICollection<EmployeePosition> EmployeePositions { get; set; } = new List<EmployeePosition>();
-
-        // ========== الصلاحيات الإضافية الممنوحة يدوياً ==========
-        public virtual ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
-    }
+         }
 }
