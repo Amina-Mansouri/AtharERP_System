@@ -1,54 +1,113 @@
 ﻿@using AtharERP_System.Models.Entities
 @model List<Department>
 @{
-    ViewData["Title"] = "الأقسام";
+    ViewData["Title"] = "الإدارات والأقسام";
     var roots = Model.Where(d => d.ParentDepartmentId == null).OrderBy(d => d.Name).ToList();
+    var selected = ViewBag.SelectedDepartment as Department;
+    var selectedChildCount = ViewBag.SelectedChildCount as int? ?? 0;
+    var selectedEmployees = ViewBag.SelectedEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
 }
 
 <div class="page-head">
     <div>
         <span class="kicker">الصلاحيات والمصادقة</span>
-        <h1>الأقسام</h1>
+        <h1>الإدارات والأقسام</h1>
     </div>
     <div class="page-head-actions">
         <button type="button" class="btn-line" onclick="document.querySelectorAll('.dept-children').forEach(function(c){ new bootstrap.Collapse(c, {toggle:false}).show(); })">توسيع الكل</button>
-        <a asp-action="CreateDepartment" class="btn-line btn-line-accent">+ قسم</a>
+        <a asp-action="CreateDepartment" class="btn-line">+ قسم تابع</a>
+        <a asp-action="CreateDepartment" class="btn-line btn-line-accent">+ إدارة</a>
     </div>
 </div>
 
-<div class="side-panel" style="max-width:600px;">
-    <div class="side-panel-title">الإدارة العليا</div>
-    <div class="dept-tree">
-        @{
-            async Task RenderNode(Department d)
-            {
-                var children = Model.Where(x => x.ParentDepartmentId == d.Id).OrderBy(x => x.Name).ToList();
-                var activeUsers = d.Users.Count(u => u.IsActive);
-                var nodeId = "dept-children-" + d.Id;
-                <div class="dept-node">
-                    <span>
-                        @if (children.Any())
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="side-panel">
+            <div class="side-panel-title">الشجرة — إدارة ثم قسم تابع لها</div>
+            <p class="stat-sub mb-2">المستوى الأول «إدارة»، والمستوى الثاني «قسم» تابع لها.</p>
+            <div class="dept-tree">
+                @{
+                    async Task RenderNode(Department d)
+                    {
+                        var children = Model.Where(x => x.ParentDepartmentId == d.Id).OrderBy(x => x.Name).ToList();
+                        var activeUsers = d.Users.Count(u => u.IsActive);
+                        var nodeId = "dept-children-" + d.Id;
+                        var isSelected = selected != null && selected.Id == d.Id;
+                        <div class="dept-node @(isSelected ? "selected" : "")">
+                            <span>
+                                @if (children.Any())
+                                {
+                                    <button type="button" class="dept-toggle" data-bs-toggle="collapse" data-bs-target="#@nodeId">▾</button>
+                                }
+                                <a asp-action="Departments" asp-route-selectedId="@d.Id" style="color:inherit; text-decoration:none; font-weight:@(d.ParentDepartmentId == null ? "600" : "400")">@d.Name</a>
+                                <span class="tag">@(d.ParentDepartmentId == null ? "إدارة" : "قسم")</span>
+                            </span>
+                            <span class="cell-num stat-sub">@activeUsers</span>
+                        </div>
+                        if (children.Any())
                         {
-                            <button type="button" class="dept-toggle" data-bs-toggle="collapse" data-bs-target="#@nodeId">▾</button>
+                            <div class="collapse show dept-children" id="@nodeId">
+                                @foreach (var c in children)
+                                {
+                                    await RenderNode(c);
+                                }
+                            </div>
                         }
-                        <a asp-action="EditDepartment" asp-route-id="@d.Id" style="color:inherit; text-decoration:none; font-weight:@(d.ParentDepartmentId == null ? "600" : "400")">@d.Name</a>
-                    </span>
-                    <span class="cell-num stat-sub">@activeUsers</span>
-                </div>
-                if (children.Any())
-                {
-                    <div class="collapse show dept-children" id="@nodeId">
-                        @foreach (var c in children)
-                        {
-                            await RenderNode(c);
-                        }
-                    </div>
+                    }
                 }
+                @foreach (var root in roots)
+                {
+                    await RenderNode(root);
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5 d-grid gap-3 align-content-start">
+        <div class="side-panel">
+            @if (selected == null)
+            {
+                <p class="mb-0">اختاري إدارة أو قسماً من الشجرة</p>
             }
-        }
-        @foreach (var root in roots)
-        {
-            await RenderNode(root);
-        }
+            else
+            {
+                <div class="stat-sub">الإدارة المحددة</div>
+                <div class="side-panel-title" style="font-size:14.5px;">@selected.Name</div>
+                <div class="row g-2 mt-1" style="font-size:11.5px;">
+                    <div class="col-6"><span class="stat-sub">الأقسام التابعة:</span> <strong>@selectedChildCount</strong></div>
+                    <div class="col-6"><span class="stat-sub">إجمالي الموظفين:</span> <strong>@selectedEmployees.Count</strong></div>
+                    <div class="col-6"><span class="stat-sub">الحالة:</span> <strong>@(selected.IsActive ? "مفعّلة" : "معطّلة")</strong></div>
+                </div>
+
+                <div class="mt-3" style="font-size:12px; font-weight:600;">موظفو أقسام هذه الإدارة</div>
+                <div class="d-grid gap-2 mt-2">
+                    @if (!selectedEmployees.Any())
+                    {
+                        <p class="stat-sub mb-0">لا يوجد موظفون مرتبطون حالياً</p>
+                    }
+                    else
+                    {
+                        @foreach (var e in selectedEmployees.Take(8))
+                        {
+                            <div style="display:flex; align-items:center; gap:9px; padding:7px 10px; border:1px solid #f1f0f6; border-radius:8px;">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:11.5px; font-weight:500;">@e.FullName</div>
+                                    <div class="stat-sub">@(e.Department?.Name ?? "-")</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div style="display:flex; gap:8px; margin-top:13px; padding-top:12px; border-top:1px solid #f1f0f6;">
+                    <a asp-action="CreateDepartment" class="btn-line" style="flex:1; text-align:center;">+ قسم تابع</a>
+                    <a asp-action="EditDepartment" asp-route-id="@selected.Id" class="btn-line" style="flex:1; text-align:center;">تعديل</a>
+                </div>
+            }
+        </div>
+        <div class="side-panel">
+            <div class="side-panel-title">التسمية المعتمدة</div>
+            <p class="stat-sub mb-0">الإدارات والأقسام خيارات مُدارة — الإضافة من هذه الشاشة مباشرة. عند اختيار إدارة تُعرض أقسامها وموظفوها، وعند اختيار قسم يُعرض موظفوه هو فقط.</p>
+        </div>
     </div>
 </div>

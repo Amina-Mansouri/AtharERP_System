@@ -656,7 +656,7 @@ string role)
         // ============================================
 
         [HttpGet]
-        public async Task<IActionResult> Departments()
+        public async Task<IActionResult> Departments(int? selectedId)
         {
             var departments = await _context.Departments
                 .Include(d => d.ParentDepartment)
@@ -664,6 +664,23 @@ string role)
                 .OrderBy(d => d.ParentDepartmentId == null ? 0 : 1)
                 .ThenBy(d => d.Name)
                 .ToListAsync();
+
+            var selected = selectedId.HasValue
+                ? departments.FirstOrDefault(d => d.Id == selectedId.Value)
+                : departments.FirstOrDefault(d => d.ParentDepartmentId == null);
+
+            if (selected != null)
+            {
+                var childIds = departments.Where(d => d.ParentDepartmentId == selected.Id).Select(d => d.Id).ToList();
+                var scopeIds = new List<int> { selected.Id }.Concat(childIds).ToList();
+
+                ViewBag.SelectedDepartment = selected;
+                ViewBag.SelectedChildCount = childIds.Count;
+                ViewBag.SelectedEmployees = await _userManager.Users
+                    .Where(u => u.DepartmentId != null && scopeIds.Contains(u.DepartmentId.Value) && u.IsActive)
+                    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+                    .ToListAsync();
+            }
 
             return View(departments);
         }
