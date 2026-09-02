@@ -163,6 +163,11 @@ string role)
             user.ContractSalary = model.ContractSalary;
             user.ContractStartDate = model.ContractStartDate;
             user.ContractEndDate = model.ContractEndDate;
+            if (user.IsSuspended && user.ContractEndDate.HasValue && user.ContractEndDate.Value.Date > DateTime.UtcNow.Date)
+            {
+                user.IsSuspended = false;
+                user.SuspendedReason = null;
+            }
             user.MonthlyEvaluationDate = model.MonthlyEvaluationDate;
             user.YearlyEvaluationDate = model.YearlyEvaluationDate;
             user.ContractTerminationDate = model.ContractTerminationDate;
@@ -347,6 +352,7 @@ string role)
             _context.EmployeePositions.Add(model);
             await _context.SaveChangesAsync();
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة منصب", "EmployeePosition", model.Id.ToString(), $"منصب جديد للموظف {user.FullName}");
             TempData["Success"] = "تمت إضافة المنصب بنجاح";
             return RedirectToAction("EditUser", new { id = userId });
         }
@@ -360,6 +366,7 @@ string role)
             {
                 position.EndDate = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+                await _auditService.LogAsync(_userManager.GetUserId(User)!, "إنهاء منصب", "EmployeePosition", id.ToString(), $"إنهاء منصب للموظف رقم {userId}");
             }
 
             TempData["Success"] = "تم إنهاء المنصب بنجاح";
@@ -383,6 +390,7 @@ string role)
             {
                 _context.UserPermissions.Add(new UserPermission { UserId = userId, PermissionId = permissionId, GrantedAt = DateTime.UtcNow });
                 await _context.SaveChangesAsync();
+                await _auditService.LogAsync(_userManager.GetUserId(User)!, "منح صلاحية إضافية", "UserPermission", userId, $"منح صلاحية رقم {permissionId} للموظف {user.FullName}");
                 TempData["Success"] = "تم منح الصلاحية الإضافية بنجاح";
             }
 
@@ -396,8 +404,10 @@ string role)
             var link = await _context.UserPermissions.FindAsync(id);
             if (link != null)
             {
+                var permissionId = link.PermissionId;
                 _context.UserPermissions.Remove(link);
                 await _context.SaveChangesAsync();
+                await _auditService.LogAsync(_userManager.GetUserId(User)!, "إزالة صلاحية إضافية", "UserPermission", userId, $"إزالة صلاحية رقم {permissionId}");
             }
 
             TempData["Success"] = "تمت إزالة الصلاحية الإضافية";
@@ -517,6 +527,7 @@ string role)
                 await _context.SaveChangesAsync();
             }
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة دور", "ApplicationRole", model.Id, $"إنشاء دور {model.Name}");
             TempData["Success"] = $"تم إنشاء الدور {model.Name} بنجاح";
             return RedirectToAction("Roles");
         }
@@ -605,6 +616,7 @@ string role)
                 await _context.SaveChangesAsync();
             }
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل دور", "ApplicationRole", id, $"تعديل دور {role.Name}");
             TempData["Success"] = $"تم تحديث الدور {role.Name} بنجاح";
             return RedirectToAction("Roles");
         }
@@ -631,9 +643,11 @@ string role)
                 return RedirectToAction("Roles");
             }
 
+            var deletedRoleName = role.Name;
             await _roleManager.DeleteAsync(role);
 
-            TempData["Success"] = $"تم حذف الدور {role.Name} بنجاح";
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف دور", "ApplicationRole", id, $"حذف دور {deletedRoleName}");
+            TempData["Success"] = $"تم حذف الدور {deletedRoleName} بنجاح";
             return RedirectToAction("Roles");
         }
 
@@ -677,6 +691,7 @@ string role)
             _context.Departments.Add(model);
             await _context.SaveChangesAsync();
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة قسم", "Department", model.Id.ToString(), $"إنشاء قسم {model.Name}");
             TempData["Success"] = $"تم إنشاء القسم {model.Name} بنجاح";
             return RedirectToAction("Departments");
         }
@@ -725,6 +740,7 @@ string role)
 
             await _context.SaveChangesAsync();
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل قسم", "Department", id.ToString(), $"تعديل قسم {department.Name}");
             TempData["Success"] = $"تم تحديث القسم {department.Name} بنجاح";
             return RedirectToAction("Departments");
         }
@@ -753,9 +769,11 @@ string role)
                 return RedirectToAction("Departments");
             }
 
+            var deletedDeptName = department.Name;
             _context.Departments.Remove(department);
             await _context.SaveChangesAsync();
 
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف قسم", "Department", id.ToString(), $"حذف قسم {deletedDeptName}");
             TempData["Success"] = "تم حذف القسم بنجاح";
             return RedirectToAction("Departments");
         }

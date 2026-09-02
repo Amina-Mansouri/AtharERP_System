@@ -40,6 +40,7 @@ builder.Services.AddScoped<ProjectCalculationService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<FileUploadService>();
+builder.Services.AddHostedService<ContractLifecycleHostedService>();
 
 // خدمة إرسال البريد الإلكتروني (تفعيل حساب منسي / إعادة تعيين كلمة المرور)
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();

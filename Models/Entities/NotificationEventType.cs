@@ -38,6 +38,24 @@ namespace AtharERP_System.Models.Entities
         SitePhaseDelayed = 10,
 
         [Display(Name = "تغيير صلاحية")]
-        PermissionChanged = 11
+        PermissionChanged = 11,
+
+        [Display(Name = "اقتراب انتهاء عقد")]
+        ContractExpiring = 12,
+
+        [Display(Name = "انتهاء عقد")]
+        ContractExpired = 13,
+
+        [Display(Name = "طلب فني جديد")]
+        TechnicalRequestRaised = 14,
+
+        [Display(Name = "طلب صيانة جديد")]
+        MaintenanceRequested = 15,
+
+        [Display(Name = "مقترح تصميمي مُسلَّم")]
+        ProposalSubmitted = 16,
+
+        [Display(Name = "مطالبة مالية معتمدة")]
+        ClaimApproved = 17
     }
 }
