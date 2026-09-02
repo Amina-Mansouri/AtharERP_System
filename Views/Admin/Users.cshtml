@@ -96,21 +96,41 @@
                     }
                 </select>
             </div>
-            <div>
+                       <div>
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span style="font-size:11px; color:#5a5370;">القسم</span>
+                    <span style="font-size:11px; color:#5a5370;">الإدارة</span>
                     <a asp-action="CreateDepartment" style="font-size:10px;">+ إدارة الخيارات</a>
                 </div>
-                <select name="departmentId" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="">-- اختر القسم --</option>
-                    @foreach (var d in departments)
+                <select id="create-dept-parent" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختر الإدارة --</option>
+                    @foreach (var top in departments.Where(x => x.ParentDepartmentId == null))
                     {
-                        <option value="@d.Id">@d.Name</option>
+                        <option value="@top.Id">@top.Name</option>
                     }
                 </select>
             </div>
             <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الدور</div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">القسم</span>
+                    <a asp-action="Departments" style="font-size:10px;">+ إدارة الخيارات</a>
+                </div>
+                <select name="departmentId" id="create-dept-child" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختاري الإدارة أولاً --</option>
+                    @foreach (var top in departments.Where(x => x.ParentDepartmentId == null))
+                    {
+                        <option value="@top.Id" data-group="@top.Id" style="display:none;">(الإدارة مباشرة) @top.Name</option>
+                        @foreach (var child in departments.Where(x => x.ParentDepartmentId == top.Id))
+                        {
+                            <option value="@child.Id" data-group="@top.Id" style="display:none;">@child.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">الدور</span>
+                    <a asp-action="Roles" style="font-size:10px;">+ إدارة الخيارات</a>
+                </div>
                 <select name="role" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
                     <option value="">-- اختر --</option>
                     @foreach (var r in roleOptions)
@@ -338,7 +358,18 @@
             crossorigin=""></script>
         <script src="~/js/location-picker.js" asp-append-version="true"></script>
     <script>
-                       document.addEventListener('DOMContentLoaded', function () {
+                           document.addEventListener('DOMContentLoaded', function () {
+            var deptParentSelect = document.getElementById('create-dept-parent');
+            var deptChildSelect = document.getElementById('create-dept-child');
+            deptParentSelect.addEventListener('change', function () {
+                var groupId = this.value;
+                Array.from(deptChildSelect.options).forEach(function (opt) {
+                    if (!opt.value) { opt.style.display = ''; return; }
+                    opt.style.display = (opt.getAttribute('data-group') === groupId) ? '' : 'none';
+                });
+                deptChildSelect.value = groupId || '';
+            });
+
             var createForm = document.getElementById('create-employee-form');
             createForm.addEventListener('submit', function (e) {
                 e.preventDefault();

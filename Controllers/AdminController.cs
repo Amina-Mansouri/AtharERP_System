@@ -786,7 +786,7 @@ string role)
         private async Task ReloadEditUserViewBagsAsync(string userId, string? selectedRole)
         {
             ViewBag.Roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
-            ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
+            ViewBag.RoleOptions = await _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
 
             var soonCutoff = DateTime.UtcNow.AddDays(30);
             ViewBag.TotalEmployees = await _userManager.Users.CountAsync();
