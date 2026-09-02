@@ -85,7 +85,7 @@ namespace AtharERP_System.Controllers
             if (maintenance == null)
                 return NotFound();
 
-            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             return View(maintenance);
         }
 
@@ -102,7 +102,7 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
+                ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
                 return View(model);
             }
 
