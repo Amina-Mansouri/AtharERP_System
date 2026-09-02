@@ -15,7 +15,10 @@
     </div>
     <div class="page-head-actions">
         <button type="button" class="btn-line" onclick="document.querySelectorAll('.dept-children').forEach(function(c){ new bootstrap.Collapse(c, {toggle:false}).show(); })">توسيع الكل</button>
-        <a asp-action="CreateDepartment" class="btn-line">+ قسم تابع</a>
+        @if (selected != null)
+        {
+            <a asp-action="CreateDepartment" asp-route-parentId="@selected.Id" class="btn-line">+ قسم تابع لـ«@selected.Name»</a>
+        }
         <a asp-action="CreateDepartment" class="btn-line btn-line-accent">+ إدارة</a>
     </div>
 </div>
@@ -24,7 +27,7 @@
     <div class="col-lg-7">
         <div class="side-panel">
             <div class="side-panel-title">الشجرة — إدارة ثم قسم تابع لها</div>
-            <p class="stat-sub mb-2">المستوى الأول «إدارة»، والمستوى الثاني «قسم» تابع لها.</p>
+        
             <div class="dept-tree">
                 @{
                     async Task RenderNode(Department d)
@@ -100,14 +103,11 @@
                 </div>
 
                 <div style="display:flex; gap:8px; margin-top:13px; padding-top:12px; border-top:1px solid #f1f0f6;">
-                    <a asp-action="CreateDepartment" class="btn-line" style="flex:1; text-align:center;">+ قسم تابع</a>
                     <a asp-action="EditDepartment" asp-route-id="@selected.Id" class="btn-line" style="flex:1; text-align:center;">تعديل</a>
                 </div>
             }
         </div>
-        <div class="side-panel">
-            <div class="side-panel-title">التسمية المعتمدة</div>
-            <p class="stat-sub mb-0">الإدارات والأقسام خيارات مُدارة — الإضافة من هذه الشاشة مباشرة. عند اختيار إدارة تُعرض أقسامها وموظفوها، وعند اختيار قسم يُعرض موظفوه هو فقط.</p>
-        </div>
+    </div>
+</div>
     </div>
 </div>

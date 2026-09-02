@@ -1,11 +1,12 @@
 ﻿@using AtharERP_System.Models.Entities
 @model Department
 @{
-    ViewData["Title"] = "قسم جديد";
+    var presetParentId = ViewBag.PresetParentId as int?;
+    ViewData["Title"] = presetParentId.HasValue ? "قسم تابع جديد" : "إدارة جديدة";
     var parentDepartments = ViewBag.ParentDepartments as List<Department> ?? new List<Department>();
 }
 
-<h1 class="athar-page-title">إنشاء قسم جديد</h1>
+<h1 class="athar-page-title">@(presetParentId.HasValue ? "إنشاء قسم تابع جديد" : "إنشاء إدارة جديدة")</h1>
 
 <div class="athar-card mt-3">
     @if (!ViewData.ModelState.IsValid)
@@ -34,7 +35,7 @@
                     <option value="">-- لا يوجد (قسم رئيسي) --</option>
                     @foreach (var d in parentDepartments)
                     {
-                        <option value="@d.Id" selected="@(Model != null && Model.ParentDepartmentId == d.Id)">@d.Name</option>
+                        <option value="@d.Id" selected="@((Model != null && Model.ParentDepartmentId == d.Id) || (Model == null && presetParentId == d.Id))">@d.Name</option>
                     }
                 </select>
             </div>

@@ -670,9 +670,10 @@ string role)
         }
 
         [HttpGet]
-        public async Task<IActionResult> CreateDepartment()
+        public async Task<IActionResult> CreateDepartment(int? parentId)
         {
             ViewBag.ParentDepartments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.PresetParentId = parentId;
             return View();
         }
 
