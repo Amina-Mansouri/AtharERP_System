@@ -145,11 +145,15 @@
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">بداية العقد</div>
                 <input type="date" name="contractStartDate" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
             </div>
+                      <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نهاية العقد</div>
+                <input type="date" name="contractEndDate" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
             <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الصورة الشخصية</div>
                 <input type="file" name="profilePhoto" accept="image/*" style="width:100%; font-size:11.5px;" />
             </div>
-            <div>
+            <div style="grid-column:span 2;">
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">صورة العقد</div>
                 <input type="file" name="contractImage" accept="image/*,application/pdf" style="width:100%; font-size:11.5px;" />
             </div>
@@ -161,7 +165,7 @@
                 <input type="hidden" id="expectedLocationName" name="expectedLocationName" />
                 <input type="hidden" id="expectedLatitude" name="expectedLatitude" />
                 <input type="hidden" id="expectedLongitude" name="expectedLongitude" />
-                <input type="hidden" id="register-coords-display" />
+                               <div id="register-coords-display" style="font-size:10.5px; color:#8a83a0; margin-top:6px;">لم يتم تحديد موقع بعد</div>
                 <div style="margin-top:8px; max-width:220px;">
                     <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نصف القطر المسموح (متر)</div>
                     <input type="number" min="1" name="allowedRadiusMeters" id="allowedRadiusMeters" value="100" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
@@ -213,8 +217,17 @@
     <a class="tab-item @(status == "inactive" ? "active" : "")" href="@TabUrl("inactive")">غير نشط @countInactive</a>
 </div>
 
-<form method="get" class="filter-bar">
-    <input type="hidden" name="status" value="@status" />
+<div style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid #f1f0f6; background:#fcfbfe; margin-bottom:0;">
+    <a href="#add-employee-form" class="btn-line" style="height:26px; padding:0 10px; font-size:11px;">+ إضافة</a>
+    <a id="btn-view-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; pointer-events:none; opacity:.4;">عرض</a>
+    <a id="btn-edit-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; pointer-events:none; opacity:.4;">تعديل</a>
+    <form method="post" asp-action="ToggleUserStatus" id="toggle-status-form" style="display:inline;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="toggle-status-id" value="" />
+        <button type="submit" id="btn-toggle-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; color:#c94a42; opacity:.4;" disabled>تعطيل</button>
+    </form>
+</div>
+<form method="get" class="filter-bar">    <input type="hidden" name="status" value="@status" />
     <input type="text" name="q" class="filter-search" placeholder="الاسم أو اللقب أو الرقم الوظيفي…" value="@q" />
 
     <select name="departmentId" class="filter-chip" onchange="this.form.submit()">
@@ -281,7 +294,7 @@
             var rankCode = user.Rank.ToString().Split('_')[0];
             var trackLabel = trackOptions.FirstOrDefault(x => x.Value == user.CareerTrack.ToString()).Label;
             <div class="data-table-row @(user.IsActive ? "" : "row-faded")">
-                <div class="cell"><input type="checkbox" /></div>
+            <div class="cell"><input type="checkbox" class="row-select" data-id="@user.Id" data-active="@user.IsActive.ToString().ToLower()" /></div>
                 <div class="cell">
                     @user.FullName
                     @if (user.EmployeePositions.Count > 1)
@@ -335,7 +348,35 @@
             crossorigin=""></script>
     <script src="~/js/location-picker.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+               document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.row-select').forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    document.querySelectorAll('.row-select').forEach(function (other) {
+                        if (other !== cb) other.checked = false;
+                    });
+                    var viewBtn = document.getElementById('btn-view-user');
+                    var editBtn = document.getElementById('btn-edit-user');
+                    var toggleBtn = document.getElementById('btn-toggle-user');
+                    var toggleId = document.getElementById('toggle-status-id');
+                    if (cb.checked) {
+                        var id = cb.getAttribute('data-id');
+                        var isActive = cb.getAttribute('data-active') === 'true';
+                        viewBtn.href = '@Url.Action("UserDetails", new { id = "__ID__" })'.replace('__ID__', id);
+                        editBtn.href = '@Url.Action("EditUser", new { id = "__ID__" })'.replace('__ID__', id);
+                        viewBtn.style.pointerEvents = 'auto'; viewBtn.style.opacity = '1';
+                        editBtn.style.pointerEvents = 'auto'; editBtn.style.opacity = '1';
+                        toggleBtn.disabled = false; toggleBtn.style.opacity = '1';
+                        toggleBtn.textContent = isActive ? 'تعطيل' : 'تفعيل';
+                        toggleId.value = id;
+                    } else {
+                        viewBtn.removeAttribute('href'); viewBtn.style.pointerEvents = 'none'; viewBtn.style.opacity = '.4';
+                        editBtn.removeAttribute('href'); editBtn.style.pointerEvents = 'none'; editBtn.style.opacity = '.4';
+                        toggleBtn.disabled = true; toggleBtn.style.opacity = '.4'; toggleBtn.textContent = 'تعطيل';
+                        toggleId.value = '';
+                    }
+                });
+            });
+
             initAtharLocationPicker({
                 mapId: 'register-map',
                 latInputId: 'expectedLatitude',
