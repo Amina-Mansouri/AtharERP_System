@@ -311,10 +311,13 @@
     {
         @foreach (var user in Model)
         {
-            var rankLabel = rankOptions.FirstOrDefault(x => x.Value == user.Rank.ToString()).Label;
+                      var rankLabel = rankOptions.FirstOrDefault(x => x.Value == user.Rank.ToString()).Label;
             var rankCode = user.Rank.ToString().Split('_')[0];
             var trackLabel = trackOptions.FirstOrDefault(x => x.Value == user.CareerTrack.ToString()).Label;
-            <div class="data-table-row @(user.IsActive ? "" : "row-faded")">
+            var contractSoon = !user.IsSuspended && user.ContractEndDate.HasValue
+                && user.ContractEndDate.Value.Date >= DateTime.UtcNow.Date
+                && user.ContractEndDate.Value.Date <= DateTime.UtcNow.Date.AddDays(30);
+            <div class="data-table-row @(user.IsActive ? "" : "row-faded") @(contractSoon ? "row-contract-soon" : "")">
             <div class="cell"><input type="checkbox" class="row-select" data-id="@user.Id" data-active="@user.IsActive.ToString().ToLower()" /></div>
                                <div class="cell">
                     @user.FullName
@@ -326,7 +329,13 @@
                 <div class="cell">@rankCode <span class="stat-sub">@rankLabel</span></div>
                 <div class="cell">@trackLabel</div>
                 <div class="cell">@string.Join("، ", userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : new List<string>())</div>
-                <div class="cell cell-num">@(user.ContractEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                            <div class="cell cell-num">
+                    @(user.ContractEndDate?.ToString("yyyy-MM-dd") ?? "-")
+                    @if (contractSoon)
+                    {
+                        <span class="tag tag-warning">قريب الانتهاء</span>
+                    }
+                </div>
                 <div class="cell">
                     @if (user.IsSuspended)
                     {

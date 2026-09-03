@@ -199,13 +199,15 @@
                 <input type="file" name="profilePhoto" accept="image/*" style="width:100%; font-size:11.5px;" />
             </div>
             <div style="grid-column:span 2;">
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">صورة العقد</div>
+                                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">صورة العقد</div>
                 @if (!string.IsNullOrEmpty(Model.ContractImagePath))
                 {
-                    <div style="font-size:10.5px; color:#8a83a0; margin-bottom:5px;">صورة عقد محفوظة حالياً — اختاري ملفاً لاستبدالها</div>
+                    <div style="font-size:10.5px; margin-bottom:5px;">
+                        <a href="@Model.ContractImagePath" target="_blank">عرض العقد الحالي</a>
+                        <span style="color:#8a83a0;"> — اختاري ملفاً أدناه لاستبدالها</span>
+                    </div>
                 }
-                <input type="file" name="contractImage" accept="image/*,application/pdf" style="width:100%; font-size:11.5px;" />
-            </div>
+                <input type="file" name="contractImage" accept="image/*,application/pdf" style="width:100%; font-size:11.5px;" />       </div>
 
             <div style="grid-column:span 2;">
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">موقع الحضور المتوقع</div>
