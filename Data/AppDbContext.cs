@@ -37,6 +37,7 @@ namespace AtharERP_System.Data
         public DbSet<NotificationSetting> NotificationSettings { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<EmployeeDocument> EmployeeDocuments { get; set; } = null!;
+        public DbSet<ContractHistory> ContractHistories { get; set; } = null!;
         // Module 03: إدارة المواقع
         public DbSet<Site> Sites { get; set; } = null!;
         public DbSet<SiteOperation> SiteOperations { get; set; } = null!;
@@ -470,10 +471,22 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<EmployeeDocument>()
-                .HasOne(d => d.UploadedBy)
+               .HasOne(d => d.UploadedBy)
+               .WithMany()
+               .HasForeignKey(d => d.UploadedById)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== سجل العقود السابقة (ContractHistory) ==========
+            builder.Entity<ContractHistory>()
+                .HasOne(ch => ch.User)
                 .WithMany()
-                .HasForeignKey(d => d.UploadedById)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(ch => ch.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ContractHistory>()
+                .HasIndex(ch => ch.UserId);
+
+          
 
             // ========== قوالب مهام المرحلة (StageTaskTemplate) ==========
             builder.Entity<StageTaskTemplate>()

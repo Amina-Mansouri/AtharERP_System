@@ -49,7 +49,7 @@ namespace AtharERP_System.Controllers
     .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
-                query = query.Where(u => (u.FirstName + " " + u.LastName).Contains(q) || (u.JobNumber != null && u.JobNumber.Contains(q)));
+                query = query.Where(u => u.JobNumber != null && u.JobNumber.Contains(q));
 
             if (departmentId.HasValue)
                 query = query.Where(u => u.DepartmentId == departmentId);
@@ -138,11 +138,11 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
-            string id,
-            [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
-            IFormFile? profilePhoto,
-            IFormFile? contractImage,
-            string role)
+    string id,
+    [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+    IFormFile? profilePhoto,
+    IFormFile? contractImage,
+    string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -173,14 +173,6 @@ namespace AtharERP_System.Controllers
             user.DepartmentId = model.DepartmentId;
             user.Rank = model.Rank;
             user.CareerTrack = model.CareerTrack;
-            user.ContractSalary = model.ContractSalary;
-            user.ContractStartDate = model.ContractStartDate;
-            user.ContractEndDate = model.ContractEndDate;
-            if (user.IsSuspended && user.ContractEndDate.HasValue && user.ContractEndDate.Value.Date > DateTime.UtcNow.Date)
-            {
-                user.IsSuspended = false;
-                user.SuspendedReason = null;
-            }
             user.PhoneNumber = model.PhoneNumber;
             user.ExpectedLocationName = model.ExpectedLocationName;
             user.ExpectedLatitude = model.ExpectedLatitude;
@@ -199,11 +191,36 @@ namespace AtharERP_System.Controllers
                     ModelState.AddModelError(string.Empty, photoResult.ErrorMessage ?? "فشل رفع الصورة");
             }
 
+            // أرشفة العقد السابق قبل استبداله بدل حذفه نهائياً (سجل العقود)
+            bool contractDatesChanged = user.ContractStartDate != model.ContractStartDate || user.ContractEndDate != model.ContractEndDate;
+            bool contractImageReplacing = contractImage != null && contractImage.Length > 0 && !string.IsNullOrEmpty(user.ContractImagePath);
+            bool hadPreviousContract = user.ContractStartDate.HasValue || user.ContractEndDate.HasValue || !string.IsNullOrEmpty(user.ContractImagePath);
+
+            if (hadPreviousContract && (contractDatesChanged || contractImageReplacing))
+            {
+                _context.ContractHistories.Add(new ContractHistory
+                {
+                    UserId = user.Id,
+                    ContractStartDate = user.ContractStartDate,
+                    ContractEndDate = user.ContractEndDate,
+                    ContractSalary = user.ContractSalary,
+                    ContractImagePath = user.ContractImagePath,
+                    ArchivedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            user.ContractSalary = model.ContractSalary;
+            user.ContractStartDate = model.ContractStartDate;
+            user.ContractEndDate = model.ContractEndDate;
+            if (user.IsSuspended && user.ContractEndDate.HasValue && user.ContractEndDate.Value.Date > DateTime.UtcNow.Date)
+            {
+                user.IsSuspended = false;
+                user.SuspendedReason = null;
+            }
+
             if (contractImage != null && contractImage.Length > 0)
             {
-                if (!string.IsNullOrEmpty(user.ContractImagePath))
-                    _fileUpload.DeleteFile(user.ContractImagePath);
-
                 var contractResult = await _fileUpload.SaveFileAsync(contractImage, $"contracts/{user.Id}");
                 if (contractResult.Success)
                     user.ContractImagePath = contractResult.FilePath;
@@ -304,12 +321,17 @@ namespace AtharERP_System.Controllers
             if (user == null)
                 return NotFound();
 
-           
+
             ViewBag.EffectivePermissions = await _permissionService.GetEffectivePermissionsAsync(id);
 
             ViewBag.Documents = await _context.EmployeeDocuments
                 .Where(d => d.UserId == id)
                 .OrderByDescending(d => d.UploadedAt)
+                .ToListAsync();
+
+            ViewBag.ContractHistory = await _context.ContractHistories
+                .Where(c => c.UserId == id)
+                .OrderByDescending(c => c.ArchivedAt)
                 .ToListAsync();
 
             var auditLogs = await _context.AuditLogs
@@ -369,15 +391,7 @@ namespace AtharERP_System.Controllers
             return View(roles);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetRolePermissionIds(string roleId)
-        {
-            var ids = await _context.RolePermissions
-                .Where(rp => rp.RoleId == roleId && rp.IsGranted)
-                .Select(rp => rp.PermissionId)
-                .ToListAsync();
-            return Json(ids);
-        }
+        
 
         [HttpGet]
         public async Task<IActionResult> CreateRole()

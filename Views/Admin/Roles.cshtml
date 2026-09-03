@@ -15,7 +15,7 @@
         <h1>الأدوار والصلاحيات</h1>
     </div>
     <div class="page-head-actions">
-        <button type="button" class="btn-line" onclick="document.getElementById('copyRoleBox').hidden=false">نسخ صلاحيات دور</button>
+      
         <a asp-action="CreateRole" class="btn-line btn-line-accent">+ دور مخصص</a>
     </div>
 </div>
@@ -56,16 +56,7 @@
                 <span class="stat-sub"><span class="cell-num">@selectedCount</span> من <span class="cell-num">@totalCount</span></span>
             </div>
 
-            <div id="copyRoleBox" hidden style="margin-bottom:10px; display:flex; gap:6px;">
-                <select id="copySourceRole" class="filter-chip">
-                    <option value="">اختر دوراً لنسخ صلاحياته…</option>
-                    @foreach (var r in Model.Where(r => r.Id != selectedRole.Id))
-                    {
-                        <option value="@r.Id">@r.Name</option>
-                    }
-                </select>
-                <button type="button" class="btn-line" onclick="copyRolePermissions()">نسخ</button>
-            </div>
+          
 
             <form method="post" asp-action="EditRole" asp-route-id="@selectedRole.Id">
                 @Html.AntiForgeryToken()
@@ -102,18 +93,3 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        function copyRolePermissions() {
-            var roleId = document.getElementById('copySourceRole').value;
-            if (!roleId) return;
-            fetch('@Url.Action("GetRolePermissionIds", "Admin")?roleId=' + encodeURIComponent(roleId))
-                .then(function(r) { return r.json(); })
-                .then(function(ids) {
-                    document.querySelectorAll('input[name="selectedPermissions"]').forEach(function(cb) {
-                        cb.checked = ids.indexOf(parseInt(cb.value, 10)) !== -1;
-                    });
-                });
-        }
-    </script>
-}

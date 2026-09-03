@@ -1279,6 +1279,36 @@ button:focus-visible {
         opacity: .55;
     }
 
+.pwd-wrap {
+    position: relative;
+}
+
+.pwd-toggle {
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--sys-text-light);
+    display: grid;
+    place-items: center;
+}
+
+    .pwd-toggle svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .data-table-row.row-contract-soon {
+        background: rgba(255,145,48,.07);
+        box-shadow: inset 3px 0 0 var(--sys-warning);
+    }
+
     .data-table-row.row-expanded {
         background: var(--sys-bg);
         grid-column: 1 / -1;

@@ -5,6 +5,7 @@
     ViewData["Title"] = "ملف المستخدم";
     var effectivePermissions = ViewBag.EffectivePermissions as List<PermissionService.EffectivePermission> ?? new List<PermissionService.EffectivePermission>();
     var documents = ViewBag.Documents as List<EmployeeDocument> ?? new List<EmployeeDocument>();
+    var contractHistory = ViewBag.ContractHistory as List<ContractHistory> ?? new List<ContractHistory>();
     var auditLogs = ViewBag.AuditLogs as List<AuditLog> ?? new List<AuditLog>();
     var auditActors = ViewBag.AuditActors as Dictionary<string, string> ?? new Dictionary<string, string>();
     var rankLabel = EnumDisplayHelper.GetDisplayList<JobRank>().FirstOrDefault(x => x.Value == Model.Rank.ToString()).Label;
@@ -32,7 +33,6 @@
             @Html.AntiForgeryToken()
             <button type="submit" class="btn-line">@(Model.IsActive ? "تعطيل الحساب" : "تفعيل الحساب")</button>
         </form>
-        <a class="btn-line" href="@Url.Action("EditUser", new { id = Model.Id })#permissions">صلاحيات يدوية</a>
         <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل</a>
     </div>
 </div>
@@ -49,6 +49,7 @@
     <a class="tab-item active" data-bs-toggle="tab" href="#pane-data">البيانات</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-permissions">الصلاحيات الفعلية</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">المستندات @documents.Count</a>
+    <a class="tab-item" data-bs-toggle="tab" href="#pane-contracts">سجل العقود @contractHistory.Count</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-location">موقع الحضور</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-audit">سجل التغييرات</a>
 </div>
@@ -81,32 +82,6 @@
         }
     </div>
 
-    <div class="tab-pane fade" id="pane-permissions">
-        <p class="stat-sub" style="margin-bottom:8px;">صلاحيات الدور ∪ الاستثناءات اليدوية</p>
-        @if (!effectivePermissions.Any())
-        {
-            <p>لا توجد صلاحيات فعلية</p>
-        }
-        else
-        {
-            @foreach (var p in effectivePermissions)
-            {
-                <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom: var(--ds-row-line);">
-                    <span>@p.Code — @p.Name</span>
-                    @if (p.Source == "يدوي")
-                    {
-                        <span class="tag tag-accent">يدوي</span>
-                    }
-                    else
-                    {
-                        <span class="tag">دور</span>
-                    }
-                </div>
-            }
-            <p class="stat-sub" style="margin-top:8px;">عرض الـ@(effectivePermissions.Count) · التغيير يُطبَّق فوراً بلا إعادة دخول</p>
-        }
-    </div>
-
     <div class="tab-pane fade" id="pane-documents">
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
             @if (!documents.Any())
@@ -129,6 +104,44 @@
                             }
                         </div>
                         <div class="stat-sub" style="margin-top:2px; text-align:center;">@d.FileName</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="pane-contracts">
+        <div class="data-table" style="--cols: 110px 110px 130px 1fr 130px">
+            <div class="data-table-head">
+                <div class="cell">بداية العقد</div>
+                <div class="cell">نهاية العقد</div>
+                <div class="cell">الراتب التعاقدي</div>
+                <div class="cell">صورة العقد</div>
+                <div class="cell">تاريخ الأرشفة</div>
+            </div>
+            @if (!contractHistory.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد عقود سابقة مؤرشفة — هذا هو العقد الأول للموظف</div></div>
+            }
+            else
+            {
+                @foreach (var c in contractHistory)
+                {
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@(c.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                        <div class="cell cell-num">@(c.ContractEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                        <div class="cell cell-num">@c.ContractSalary.ToString("N0")</div>
+                        <div class="cell">
+                            @if (!string.IsNullOrEmpty(c.ContractImagePath))
+                            {
+                                <a href="@c.ContractImagePath" target="_blank">عرض الملف</a>
+                            }
+                            else
+                            {
+                                <span class="stat-sub">-</span>
+                            }
+                        </div>
+                        <div class="cell cell-num">@c.ArchivedAt.ToString("yyyy-MM-dd")</div>
                     </div>
                 }
             }
