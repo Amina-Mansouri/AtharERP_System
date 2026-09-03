@@ -3,7 +3,7 @@
 @model ApplicationUser
 @{
     ViewData["Title"] = "تعديل الموظف";
-    var roles = ViewBag.Roles as List<string> ?? new List<string>();
+       var roles = ViewBag.RoleOptions as List<string> ?? new List<string>();
     var currentRole = ViewBag.CurrentRole as string;
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var jobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();

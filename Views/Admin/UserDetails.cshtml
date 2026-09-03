@@ -12,6 +12,7 @@
     var trackLabel = EnumDisplayHelper.GetDisplayList<CareerTrack>().FirstOrDefault(x => x.Value == Model.CareerTrack.ToString()).Label;
     var trackOptions = EnumDisplayHelper.GetDisplayList<CareerTrack>();
     var contractRange = (Model.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-") + " → " + (Model.ContractEndDate?.ToString("yyyy-MM-dd") ?? "مفتوح");
+    int? daysToExpiry = Model.ContractEndDate.HasValue ? (int?)(Model.ContractEndDate.Value.Date - DateTime.UtcNow.Date).Days : null;
 }
 
 <div class="profile-head">
@@ -36,6 +37,21 @@
         <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل</a>
     </div>
 </div>
+
+</div>
+
+@if (Model.IsSuspended && Model.SuspendedReason == "انتهاء العقد بلا تجديد")
+{
+    <div style="margin-bottom:12px; padding:10px 14px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.07); border-radius:8px; font-size:12px; color:#c94a42;">
+        تم تعطيل حساب هذا الموظف تلقائياً لانتهاء عقده دون تجديد (تاريخ الانتهاء @(Model.ContractEndDate?.ToString("yyyy-MM-dd"))).
+    </div>
+}
+else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value <= 30)
+{
+    <div style="margin-bottom:12px; padding:10px 14px; border:1px solid rgba(255,145,48,.4); background:rgba(255,145,48,.08); border-radius:8px; font-size:12px; color:#c9700f;">
+        عقد هذا الموظف ينتهي خلال @(daysToExpiry.Value) يوماً (@(Model.ContractEndDate?.ToString("yyyy-MM-dd"))) — سيتم تعطيل حسابه تلقائياً عند الانتهاء إن لم يُجدَّد.
+    </div>
+}
 
 <div class="stat-strip stat-strip-text">
     <div class="stat-item"><span class="kicker">القسم الأساسي</span><span class="stat-value">@(Model.Department?.Name ?? "-")</span></div>

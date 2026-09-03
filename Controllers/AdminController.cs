@@ -138,11 +138,11 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
-    string id,
-    [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
-    IFormFile? profilePhoto,
-    IFormFile? contractImage,
-    string role)
+      string id,
+      [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+      IFormFile? profilePhoto,
+      IFormFile? contractImage,
+      string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -158,6 +158,25 @@ namespace AtharERP_System.Controllers
             if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber && u.Id != id))
             {
                 ModelState.AddModelError(string.Empty, "الرقم الوظيفي مستخدم بالفعل لموظف آخر");
+            }
+
+            bool contractDatesChanging = user.ContractStartDate != model.ContractStartDate || user.ContractEndDate != model.ContractEndDate;
+
+            if (model.ContractStartDate.HasValue && model.ContractEndDate.HasValue && model.ContractEndDate.Value.Date <= model.ContractStartDate.Value.Date)
+            {
+                ModelState.AddModelError(string.Empty, "تاريخ نهاية العقد يجب أن يكون بعد تاريخ بدايته");
+            }
+
+            if (contractDatesChanging)
+            {
+                if (model.ContractStartDate.HasValue && model.ContractStartDate.Value.Date < DateTime.UtcNow.Date)
+                {
+                    ModelState.AddModelError(string.Empty, "تاريخ بداية العقد الجديد لا يمكن أن يكون تاريخاً ماضياً");
+                }
+                if (model.ContractEndDate.HasValue && model.ContractEndDate.Value.Date < DateTime.UtcNow.Date)
+                {
+                    ModelState.AddModelError(string.Empty, "تاريخ نهاية العقد الجديد لا يمكن أن يكون تاريخاً منتهياً بالفعل");
+                }
             }
 
             if (!ModelState.IsValid)
@@ -192,11 +211,10 @@ namespace AtharERP_System.Controllers
             }
 
             // أرشفة العقد السابق قبل استبداله بدل حذفه نهائياً (سجل العقود)
-            bool contractDatesChanged = user.ContractStartDate != model.ContractStartDate || user.ContractEndDate != model.ContractEndDate;
             bool contractImageReplacing = contractImage != null && contractImage.Length > 0 && !string.IsNullOrEmpty(user.ContractImagePath);
             bool hadPreviousContract = user.ContractStartDate.HasValue || user.ContractEndDate.HasValue || !string.IsNullOrEmpty(user.ContractImagePath);
 
-            if (hadPreviousContract && (contractDatesChanged || contractImageReplacing))
+            if (hadPreviousContract && (contractDatesChanging || contractImageReplacing))
             {
                 _context.ContractHistories.Add(new ContractHistory
                 {
@@ -251,7 +269,6 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
             return RedirectToAction("Users");
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
