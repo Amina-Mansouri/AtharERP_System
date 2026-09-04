@@ -90,8 +90,8 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الأولوية")]
         public Priority Priority { get; set; } = Priority.Normal;
 
-        [Display(Name = "عاجل")]
-        public bool IsUrgent { get; set; }
+        [Display(Name = "ترحيل تلقائي إلى إدارة المواقع عند بدء التنفيذ")]
+        public bool AutoTransferToSite { get; set; } = true;
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

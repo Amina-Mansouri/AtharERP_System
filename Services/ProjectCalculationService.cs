@@ -57,6 +57,12 @@ namespace AtharERP_System.Services
                 ? Math.Round(weightedSum / totalWeight, 2)
                 : 0;
 
+            // إكمال تلقائي (بند حالة المشروع): تصل نسبة الإنجاز الكلية 100% وليس ملغى أو متوقفاً مؤقتاً
+            if (project.CompletionPercentage >= 100 && project.Status != ProjectStatus.Cancelled && project.Status != ProjectStatus.OnHold)
+            {
+                project.Status = ProjectStatus.Completed;
+            }
+
             await _context.SaveChangesAsync();
         }
 

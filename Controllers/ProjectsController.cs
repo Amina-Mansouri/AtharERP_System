@@ -72,7 +72,10 @@ namespace AtharERP_System.Controllers
             ViewBag.Scope = scope;
             ViewBag.CanViewClient = await CanViewClientAsync();
 
-            var projects = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
+            var projects = await query
+    .OrderByDescending(p => p.Priority)
+    .ThenByDescending(p => p.CreatedAt)
+    .ToListAsync();
             return View(projects);
         }
         // ============================================
@@ -143,7 +146,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-                   [Bind("Name,Description,ClientId,ParentProjectId,Scope,Status,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Budget,Priority,IsUrgent")] Project model)
+              [Bind("Name,Description,ClientId,ParentProjectId,Scope,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
         {
             if (!ModelState.IsValid)
             {
@@ -196,7 +199,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-                       [Bind("Name,Description,ClientId,ParentProjectId,Scope,Status,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Budget,Priority,IsUrgent")] Project model)
+             [Bind("Name,Description,ClientId,ParentProjectId,Scope,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
         {
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
@@ -218,14 +221,12 @@ namespace AtharERP_System.Controllers
             project.ClientId = model.ClientId;
             project.ParentProjectId = model.ParentProjectId;
             project.Type = model.Type;
-            project.Status = model.Status;
             project.PlannedStartDate = model.PlannedStartDate;
             project.PlannedEndDate = model.PlannedEndDate;
-            project.ActualStartDate = model.ActualStartDate;
-            project.ActualEndDate = model.ActualEndDate;
+            project.ActualDeliveryDate = model.ActualDeliveryDate;
             project.Budget = model.Budget;
             project.Priority = model.Priority;
-            project.IsUrgent = model.IsUrgent;
+            project.AutoTransferToSite = model.AutoTransferToSite;
 
             await _context.SaveChangesAsync();
 
@@ -234,7 +235,56 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = $"تم تحديث المشروع {project.Name} بنجاح";
             return RedirectToAction("Details", new { id });
         }
+        [RequirePermission("Projects.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Hold(int id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+                return NotFound();
 
+            project.Status = ProjectStatus.OnHold;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Hold", nameof(Project), project.Id.ToString(), $"إيقاف مؤقت للمشروع: {project.Name}");
+            TempData["Success"] = "تم إيقاف المشروع مؤقتاً";
+            return RedirectToAction("Details", new { id });
+        }
+
+        [RequirePermission("Projects.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+                return NotFound();
+
+            project.Status = ProjectStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Cancel", nameof(Project), project.Id.ToString(), $"إلغاء المشروع: {project.Name}");
+            TempData["Success"] = "تم إلغاء المشروع";
+            return RedirectToAction("Details", new { id });
+        }
+
+        [RequirePermission("Projects.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+                return NotFound();
+
+            project.Status = project.CompletionPercentage > 0 ? ProjectStatus.InProgress : ProjectStatus.New;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Reactivate", nameof(Project), project.Id.ToString(), $"إعادة تفعيل المشروع: {project.Name}");
+            TempData["Success"] = "تم إعادة تفعيل المشروع";
+            return RedirectToAction("Details", new { id });
+        }
         // ============================================
         // حذف مشروع
         // ============================================

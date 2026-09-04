@@ -78,6 +78,27 @@ namespace AtharERP_System.Controllers
             _context.ProjectAssignments.Add(model);
             await _context.SaveChangesAsync();
 
+            // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)
+            if (project.Status == ProjectStatus.New)
+            {
+                project.Status = ProjectStatus.InProgress;
+
+                if (project.AutoTransferToSite && !await _context.Sites.AnyAsync(s => s.ProjectId == project.Id))
+                {
+                    _context.Sites.Add(new Site
+                    {
+                        Name = project.Name,
+                        ProjectId = project.Id,
+                        Status = SiteStatus.Active,
+                        StartDate = DateTime.UtcNow,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
             await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.CostType} - {model.FinalAmount:N2}");
 
             TempData["Success"] = "تمت إضافة التكليف بنجاح";
