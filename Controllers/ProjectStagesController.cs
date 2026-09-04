@@ -66,11 +66,18 @@ namespace AtharERP_System.Controllers
 
             await _calc.RecalculateProjectAsync(model.ProjectId);
 
+            TempData["Success"] = $"تمت إضافة المرحلة {model.Name} بنجاح";
+            return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
+        }
 
-            // ============================================
-            // تفعيل قالب مرحلة جاهز (بند P1) مع اختيار مهامه الافتراضية + مهام إضافية
-            // ============================================
-            [RequirePermission("Projects.Stages.Manage")]
+        // ============================================
+        // تفعيل قالب مرحلة جاهز (بند P1) مع اختيار مهامه الافتراضية + مهام إضافية
+
+
+        // ============================================
+        // تفعيل قالب مرحلة جاهز (بند P1) مع اختيار مهامه الافتراضية + مهام إضافية
+        // ============================================
+        [RequirePermission("Projects.Stages.Manage")]
             [HttpPost]
             [ValidateAntiForgeryToken]
             public async Task<IActionResult> ActivateTemplate(
