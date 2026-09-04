@@ -73,6 +73,7 @@ namespace AtharERP_System.Controllers
             if (project == null)
                 return NotFound();
 
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات المرحلة غير صحيحة";
@@ -216,7 +217,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-                     [Bind("Name,Sequence,Status,AssignedEngineerId,DepartmentId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation")] ProjectStage model)
+           [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.FindAsync(id);
             if (stage == null)
@@ -232,14 +233,14 @@ namespace AtharERP_System.Controllers
 
             stage.Name = model.Name;
             stage.Sequence = model.Sequence;
-            stage.Status = model.Status;
-          
             stage.AssignedEngineerId = model.AssignedEngineerId;
-            stage.DepartmentId = model.DepartmentId;
             stage.PlannedStartDate = model.PlannedStartDate;
             stage.PlannedEndDate = model.PlannedEndDate;
             stage.ActualDeliveryDate = model.ActualDeliveryDate;
             stage.WorkDocumentation = model.WorkDocumentation;
+
+            var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
+            _calc.ApplyAutomaticStageStatus(stage, allStages);
 
             await _context.SaveChangesAsync();
             await _calc.RecalculateProjectAsync(stage.ProjectId);

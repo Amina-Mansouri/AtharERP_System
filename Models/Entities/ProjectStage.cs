@@ -57,12 +57,6 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("AssignedEngineerId")]
         public virtual ApplicationUser? AssignedEngineer { get; set; }
 
-        [Display(Name = "القسم")]
-        public int? DepartmentId { get; set; }
-
-        [ForeignKey("DepartmentId")]
-        public virtual Department? Department { get; set; }
-
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ البدء المخطط")]
         public DateTime? PlannedStartDate { get; set; }

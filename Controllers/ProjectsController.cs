@@ -92,7 +92,7 @@ namespace AtharERP_System.Controllers
                 .Include(p => p.TeamMembers).ThenInclude(tm => tm.User)
                 .Include(p => p.Timelines)
                 .Include(p => p.Stages).ThenInclude(s => s.AssignedEngineer)
-                .Include(p => p.Stages).ThenInclude(s => s.Department)
+
                 .Include(p => p.Stages).ThenInclude(s => s.Steps)
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Engineers).ThenInclude(e => e.User)
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Subtasks)

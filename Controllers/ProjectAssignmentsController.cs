@@ -96,7 +96,15 @@ namespace AtharERP_System.Controllers
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
                 return NotFound();
-
+            if (model.StageId.HasValue)
+            {
+                var targetStage = await _context.ProjectStages.FindAsync(model.StageId.Value);
+                if (targetStage != null && targetStage.Status == StageStatus.New)
+                {
+                    TempData["Error"] = "لا يمكن إضافة تكليف على هذه المرحلة قبل بدء دورها (تحتاج تاريخ بدء، واكتمال كل المراحل السابقة لها بالترتيب)";
+                    return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
+                }
+            }
             model.FinalAmount = 0;
             model.Status = AssignmentStatus.Pending;
             model.CreatedAt = DateTime.UtcNow;
@@ -218,6 +226,7 @@ namespace AtharERP_System.Controllers
         }
 
 
+
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -245,6 +254,7 @@ namespace AtharERP_System.Controllers
             }
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
+
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]

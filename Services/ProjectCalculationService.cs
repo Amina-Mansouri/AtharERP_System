@@ -34,13 +34,49 @@ namespace AtharERP_System.Services
                 ? Math.Round((completedValue / totalValue) * 100, 2)
                 : 0;
 
-            // تجميع التكلفة الفعلية للمرحلة من مجموع القيم النهائية لتكليفاتها
             stage.ActualCost = stage.Assignments.Sum(a => a.FinalAmount);
+
+            var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
+            ApplyAutomaticStageStatus(stage, allStages);
 
             await _context.SaveChangesAsync();
             await RecalculateProjectAsync(stage.ProjectId);
         }
 
+        // الحالة التلقائية الكاملة للمرحلة — لا تدخّل يدوي إطلاقاً
+        public void ApplyAutomaticStageStatus(ProjectStage stage, IEnumerable<ProjectStage> allProjectStages)
+        {
+            if (stage.CompletionPercentage >= 100)
+            {
+                stage.Status = StageStatus.Completed;
+                return;
+            }
+
+            if (stage.PlannedEndDate.HasValue && DateTime.UtcNow.Date > stage.PlannedEndDate.Value.Date)
+            {
+                stage.Status = StageStatus.Delayed;
+                return;
+            }
+
+            var priorStagesCompleted = allProjectStages
+                .Where(s => s.Id != stage.Id && s.Sequence < stage.Sequence)
+                .All(s => s.Status == StageStatus.Completed);
+
+            stage.Status = (stage.PlannedStartDate.HasValue && priorStagesCompleted)
+                ? StageStatus.InProgress
+                : StageStatus.New;
+        }
+
+        // إكمال تلقائي: أول بند to-do يُضاف لأي مهمة تابعة للتكليف ينقله من "معلّق" إلى "قيد التنفيذ"
+        public async Task MarkAssignmentInProgressAsync(int assignmentId)
+        {
+            var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
+            if (assignment != null && assignment.Status == AssignmentStatus.Pending)
+            {
+                assignment.Status = AssignmentStatus.InProgress;
+                await _context.SaveChangesAsync();
+            }
+        }
         // نسبة إنجاز المشروع = مجموع (وزن المرحلة × نسبة إنجازها) ÷ مجموع الأوزان (القسم 5.3)
         public async Task RecalculateProjectAsync(int projectId)
         {
@@ -114,16 +150,6 @@ namespace AtharERP_System.Services
             }
         }
 
-        // إكمال تلقائي: أول بند to-do يُضاف لأي مهمة تابعة للتكليف ينقله من "معلّق" إلى "قيد التنفيذ"
-        public async Task MarkAssignmentInProgressAsync(int assignmentId)
-        {
-            var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
-            if (assignment != null && assignment.Status == AssignmentStatus.Pending)
-            {
-                assignment.Status = AssignmentStatus.InProgress;
-                await _context.SaveChangesAsync();
-            }
-        }
         // حساب أيام التأخير/التبكير عند التسليم الفعلي (القسم 5.4/5.5)
         public void UpdateDeliveryMetrics(ProjectTask task)
         {
