@@ -28,50 +28,6 @@ namespace AtharERP_System.Controllers
             _userManager = userManager;
         }
 
-
-        // ============================================
-        // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
-        // ============================================
-        [RequirePermission("Projects.Assignments.View")]
-        public async Task<IActionResult> Overview(int? projectId, int? stageId)
-        {
-            ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
-            ViewBag.ProjectId = projectId;
-            ViewBag.StageId = stageId;
-
-            if (!projectId.HasValue)
-            {
-                ViewBag.Stages = new List<ProjectStage>();
-                return View(new List<ProjectAssignment>());
-            }
-
-            ViewBag.Stages = await _context.ProjectStages
-                .Where(s => s.ProjectId == projectId.Value)
-                .OrderBy(s => s.Sequence)
-                .ToListAsync();
-
-            var query = _context.ProjectAssignments
-                .Include(a => a.Stage)
-                .Include(a => a.Engineers).ThenInclude(e => e.User)
-                .Where(a => a.ProjectId == projectId.Value);
-
-            if (stageId.HasValue)
-                query = query.Where(a => a.StageId == stageId.Value);
-
-            var assignments = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
-
-            ViewBag.TotalAssignments = assignments.Count;
-            ViewBag.PendingAssignments = assignments.Count(a => a.Status == AssignmentStatus.Pending);
-            ViewBag.InProgressAssignments = assignments.Count(a => a.Status == AssignmentStatus.InProgress);
-            ViewBag.CompletedAssignments = assignments.Count(a => a.Status == AssignmentStatus.Completed);
-
-            var today = DateTime.UtcNow.Date;
-            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.AgreedDate.HasValue && a.AgreedDate.Value.Date < today);
-            ViewBag.TotalValue = assignments.Sum(a => a.FinalAmount);
-
-            return View(assignments);
-        }
-
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         // ============================================
