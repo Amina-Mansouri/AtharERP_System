@@ -128,7 +128,9 @@ namespace AtharERP_System.Controllers
     .Select(tm => tm.User)
     .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
     .ToListAsync();
-
+                ViewBag.Assignments = await _context.ProjectAssignments
+    .Where(a => a.StageId == task.StageId)
+    .ToListAsync();
                 var existingDependencyIds = task.Dependencies.Select(d => d.DependsOnTaskId).ToList();
                 ViewBag.AvailableTasksForDependency = await _context.ProjectTasks
                     .Where(t => t.ProjectId == task.ProjectId && t.Id != task.Id && !existingDependencyIds.Contains(t.Id))
