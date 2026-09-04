@@ -142,5 +142,22 @@ namespace AtharERP_System.Services
                 task.EarlyDeliveryDays = 0;
             }
         }
+
+
+        // إعادة حساب قيمة التكليف = مجموع القيم التقديرية لكل مهامه المرتبطة به
+        public async Task RecalculateAssignmentValueAsync(int assignmentId)
+        {
+            var assignment = await _context.ProjectAssignments
+                .Include(a => a.Tasks)
+                .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+            if (assignment == null) return;
+
+            assignment.FinalAmount = assignment.Tasks.Sum(t => t.EstimatedValue);
+            await _context.SaveChangesAsync();
+
+            if (assignment.StageId.HasValue)
+                await RecalculateStageAsync(assignment.StageId.Value);
+        }
     }
 }

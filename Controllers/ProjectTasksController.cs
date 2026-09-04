@@ -63,15 +63,22 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("StageId,Title,Description,DueDate,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,BonusAmount,PenaltyAmount")] ProjectTask model)
+     [Bind("StageId,ProjectAssignmentId,Title,Description,DueDate,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
-            var stage = await _context.ProjectStages.FindAsync(model.StageId);
+            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == model.StageId);
             if (stage == null)
                 return NotFound();
 
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات المهمة غير صحيحة";
+                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            }
+
+            var otherTasksTotal = stage.Tasks.Sum(t => t.EstimatedValue);
+            if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
+            {
+                TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
                 return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
             }
 
@@ -86,10 +93,12 @@ namespace AtharERP_System.Controllers
             _context.ProjectTasks.Add(model);
             await _context.SaveChangesAsync();
 
+            if (model.ProjectAssignmentId.HasValue)
+                await _calc.RecalculateAssignmentValueAsync(model.ProjectAssignmentId.Value);
+
             TempData["Success"] = $"تمت إضافة المهمة {model.Title} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
         }
-
         // ============================================
         // عرض/تعديل مهمة - العرض متاح للمكلَّف بالمهمة أيضاً، والحفظ (تعديل البيانات) للإدارة فقط
         // ============================================
@@ -133,8 +142,8 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int id,
-            [Bind("Title,Description,DueDate,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,BonusAmount,PenaltyAmount")] ProjectTask model)
+     int id,
+     [Bind("ProjectAssignmentId,Title,Description,DueDate,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
@@ -143,6 +152,17 @@ namespace AtharERP_System.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
+            var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
+            if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
+            {
+                TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
+                return RedirectToAction("Edit", new { id });
+            }
+
+            var oldAssignmentId = task.ProjectAssignmentId;
+
+            task.ProjectAssignmentId = model.ProjectAssignmentId;
             task.Title = model.Title;
             task.Description = model.Description;
             task.DueDate = model.DueDate;
@@ -151,12 +171,18 @@ namespace AtharERP_System.Controllers
             task.ActualDeliveryDate = model.ActualDeliveryDate;
             task.Priority = model.Priority;
             task.IsUrgent = model.IsUrgent;
+            task.EstimatedValue = model.EstimatedValue;
             task.BonusAmount = model.BonusAmount;
             task.PenaltyAmount = model.PenaltyAmount;
 
             _calc.UpdateDeliveryMetrics(task);
 
             await _context.SaveChangesAsync();
+
+            if (oldAssignmentId.HasValue)
+                await _calc.RecalculateAssignmentValueAsync(oldAssignmentId.Value);
+            if (task.ProjectAssignmentId.HasValue && task.ProjectAssignmentId != oldAssignmentId)
+                await _calc.RecalculateAssignmentValueAsync(task.ProjectAssignmentId.Value);
 
             if (task.DelayDays > 0)
             {
