@@ -1,0 +1,81 @@
+﻿@using AtharERP_System.Services
+@using AtharERP_System.Models.Entities
+@model List<ProjectStage>
+@{
+    ViewData["Title"] = "تتبّع مراحل المشاريع";
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var selectedProjectId = ViewBag.ProjectId as int?;
+    var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
+
+    string StageTagClass(StageStatus s) => s switch
+    {
+        StageStatus.Completed => "tag-success",
+        StageStatus.Delayed => "tag-danger",
+        StageStatus.InProgress => "tag-accent",
+        _ => ""
+    };
+}
+
+<div style="margin-bottom:14px;">
+    <div style="font-size:11px; color:#8a83a0; font-weight:500;">المشاريع</div>
+    <div style="font-size:19px; font-weight:600; margin-top:2px;">تتبّع مراحل المشاريع</div>
+</div>
+
+<form method="get" class="filter-bar">
+    <select name="projectId" class="filter-chip" onchange="this.form.submit()">
+        <option value="">-- اختر مشروعاً --</option>
+        @foreach (var p in projects)
+        {
+            <option value="@p.Id" selected="@(selectedProjectId == p.Id)">@p.Code - @p.Name</option>
+        }
+    </select>
+</form>
+
+@if (!selectedProjectId.HasValue)
+{
+    <div class="stat-sub">اختاري مشروعاً لعرض إحصائيات مراحله</div>
+}
+else
+{
+    <div class="stat-strip stat-strip-text">
+        <div class="stat-item"><span class="kicker">عدد المراحل</span><span class="stat-value">@ViewBag.TotalStages</span></div>
+        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedStages</span></div>
+        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressStages</span></div>
+        <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.DelayedStages</span></div>
+        <div class="stat-item"><span class="kicker">مجموع الأوزان</span><span class="stat-value">@(((decimal)ViewBag.WeightSum).ToString("N0"))%</span></div>
+        <div class="stat-item"><span class="kicker">متوسط الإنجاز</span><span class="stat-value">@(((decimal)ViewBag.AvgCompletion).ToString("N1"))%</span></div>
+    </div>
+
+    <div class="data-table" style="--cols: 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 84px">
+        <div class="data-table-head">
+            <div class="cell">ت</div>
+            <div class="cell">المرحلة</div>
+            <div class="cell">الوزن</div>
+            <div class="cell">المهندس المسؤول</div>
+            <div class="cell">التكليفات</div>
+            <div class="cell">نسبة الإنجاز</div>
+            <div class="cell">الحالة</div>
+            <div class="cell"></div>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
+        }
+        else
+        {
+            @foreach (var stage in Model)
+            {
+                <div class="data-table-row">
+                    <div class="cell cell-num">@stage.Sequence</div>
+                    <div class="cell">@stage.Name</div>
+                    <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
+                    <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
+                    <div class="cell cell-num">@stage.Assignments.Count</div>
+                    <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
+                    <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
+                    <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@stage.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+                </div>
+            }
+        }
+    </div>
+}

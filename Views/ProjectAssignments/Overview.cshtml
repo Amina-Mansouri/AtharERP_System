@@ -1,0 +1,99 @@
+﻿@using AtharERP_System.Services
+@using AtharERP_System.Models.Entities
+@model List<ProjectAssignment>
+@{
+    ViewData["Title"] = "تتبّع تكليفات المشاريع";
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var stages = ViewBag.Stages as List<ProjectStage> ?? new List<ProjectStage>();
+    var selectedProjectId = ViewBag.ProjectId as int?;
+    var selectedStageId = ViewBag.StageId as int?;
+    var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
+}
+
+<div style="margin-bottom:14px;">
+    <div style="font-size:11px; color:#8a83a0; font-weight:500;">المشاريع</div>
+    <div style="font-size:19px; font-weight:600; margin-top:2px;">تتبّع تكليفات المشاريع</div>
+</div>
+
+<form method="get" class="filter-bar">
+    <select name="projectId" class="filter-chip" onchange="this.form.submit()">
+        <option value="">-- اختر مشروعاً --</option>
+        @foreach (var p in projects)
+        {
+            <option value="@p.Id" selected="@(selectedProjectId == p.Id)">@p.Code - @p.Name</option>
+        }
+    </select>
+    @if (selectedProjectId.HasValue)
+    {
+        <select name="stageId" class="filter-chip" onchange="this.form.submit()">
+            <option value="">كل المراحل</option>
+            @foreach (var s in stages)
+            {
+                <option value="@s.Id" selected="@(selectedStageId == s.Id)">@s.Name</option>
+            }
+        </select>
+    }
+</form>
+
+@if (!selectedProjectId.HasValue)
+{
+    <div class="stat-sub">اختاري مشروعاً لعرض إحصائيات تكليفاته</div>
+}
+else
+{
+    <div class="stat-strip stat-strip-text">
+        <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@ViewBag.TotalAssignments</span></div>
+        <div class="stat-item"><span class="kicker">معلقة</span><span class="stat-value">@ViewBag.PendingAssignments</span></div>
+        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressAssignments</span></div>
+        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedAssignments</span></div>
+        <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
+        <div class="stat-item"><span class="kicker">إجمالي القيمة</span><span class="stat-value">@(((decimal)ViewBag.TotalValue).ToString("N0"))</span></div>
+    </div>
+
+    <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 88px 96px 96px">
+        <div class="data-table-head">
+            <div class="cell">التكليف</div>
+            <div class="cell">المرحلة</div>
+            <div class="cell">المهندسات</div>
+            <div class="cell">القيمة</div>
+            <div class="cell">الحالة</div>
+            <div class="cell"></div>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مطابقة</div></div>
+        }
+        else
+        {
+            @foreach (var a in Model)
+            {
+                <div class="data-table-row">
+                    <div class="cell">
+                        @a.CostType
+                        @if (a.IsUrgent)
+                        {
+                            <span class="tag tag-danger">مستعجل</span>
+                        }
+                    </div>
+                    <div class="cell">@(a.Stage?.Name ?? "-")</div>
+                    <div class="cell">
+                        @if (!a.Engineers.Any())
+                        {
+                            <span>-</span>
+                        }
+                        else
+                        {
+                            @foreach (var eng in a.Engineers)
+                            {
+                                <div style="font-size:11px;">• @eng.User.FullName</div>
+                            }
+                        }
+                    </div>
+                    <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
+                    <div class="cell"><span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
+                    <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+                </div>
+            }
+        }
+    </div>
+}

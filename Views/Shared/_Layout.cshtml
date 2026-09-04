@@ -163,8 +163,10 @@
                             <div class="nav-subgroup-title">المشاريع والتكليفات</div>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
                                asp-controller="Projects" asp-action="Index">المشاريع</a>
-                            <span class="nav-item disabled">مراحل المشروع <span class="tag tag-muted">قادمة</span></span>
-                            <span class="nav-item disabled">تكليفات المشروع <span class="tag tag-muted">قادمة</span></span>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
+                                   asp-controller="ProjectStages" asp-action="Overview">مراحل المشروع</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
+                                   asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشروع</a>
                             <span class="nav-item disabled">مهام المشروع <span class="tag tag-muted">قادمة</span></span>
                             <span class="nav-item disabled">لوحة المهندسة <span class="tag tag-muted">قادمة</span></span>
                             <span class="nav-item disabled">تكليفاتي <span class="tag tag-muted">قادمة</span></span>

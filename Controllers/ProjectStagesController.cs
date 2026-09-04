@@ -28,7 +28,80 @@ namespace AtharERP_System.Controllers
             _userManager = userManager;
         }
 
+        // ============================================
+        // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
+        // ============================================
+        [RequirePermission("Projects.Assignments.View")]
+        public async Task<IActionResult> Overview(int? projectId, int? stageId)
+        {
+            ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
+            ViewBag.ProjectId = projectId;
+            ViewBag.StageId = stageId;
+
+            if (!projectId.HasValue)
+            {
+                ViewBag.Stages = new List<ProjectStage>();
+                return View(new List<ProjectAssignment>());
+            }
+
+            ViewBag.Stages = await _context.ProjectStages
+                .Where(s => s.ProjectId == projectId.Value)
+                .OrderBy(s => s.Sequence)
+                .ToListAsync();
+
+            var query = _context.ProjectAssignments
+                .Include(a => a.Stage)
+                .Include(a => a.Engineers).ThenInclude(e => e.User)
+                .Where(a => a.ProjectId == projectId.Value);
+
+            if (stageId.HasValue)
+                query = query.Where(a => a.StageId == stageId.Value);
+
+            var assignments = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
+
+            ViewBag.TotalAssignments = assignments.Count;
+            ViewBag.PendingAssignments = assignments.Count(a => a.Status == AssignmentStatus.Pending);
+            ViewBag.InProgressAssignments = assignments.Count(a => a.Status == AssignmentStatus.InProgress);
+            ViewBag.CompletedAssignments = assignments.Count(a => a.Status == AssignmentStatus.Completed);
+
+            var today = DateTime.UtcNow.Date;
+            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.AgreedDate.HasValue && a.AgreedDate.Value.Date < today);
+            ViewBag.TotalValue = assignments.Sum(a => a.FinalAmount);
+
+            return View(assignments);
+        }
+
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        // ============================================
+        // تتبّع مراحل مشروع (اختيار مشروع → إحصائيات مراحله)
+        // ============================================
+        [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
+        public async Task<IActionResult> Overview(int? projectId)
+        {
+            ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
+            ViewBag.ProjectId = projectId;
+
+            if (!projectId.HasValue)
+                return View(new List<ProjectStage>());
+
+            var stages = await _context.ProjectStages
+                .Include(s => s.AssignedEngineer)
+                .Include(s => s.Assignments)
+                .Where(s => s.ProjectId == projectId.Value)
+                .OrderBy(s => s.Sequence)
+                .ToListAsync();
+
+            ViewBag.TotalStages = stages.Count;
+            ViewBag.CompletedStages = stages.Count(s => s.Status == StageStatus.Completed);
+            ViewBag.InProgressStages = stages.Count(s => s.Status == StageStatus.InProgress);
+            ViewBag.DelayedStages = stages.Count(s => s.Status == StageStatus.Delayed);
+            ViewBag.WeightSum = stages.Sum(s => s.Weight);
+            ViewBag.AvgCompletion = stages.Any() ? Math.Round(stages.Average(s => s.CompletionPercentage), 1) : 0;
+
+            return View(stages);
+        }
+
 
         // ============================================
         // إنشاء مرحلة جديدة (نموذج مضمّن داخل صفحة تفاصيل المشروع)
