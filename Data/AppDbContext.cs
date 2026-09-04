@@ -183,7 +183,7 @@ namespace AtharERP_System.Data
                 .HasOne(t => t.ProjectAssignment)
                 .WithMany(a => a.Tasks)
                 .HasForeignKey(t => t.ProjectAssignmentId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<ProjectTask>()
                 .HasOne(t => t.CreatedBy)

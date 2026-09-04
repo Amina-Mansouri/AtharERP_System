@@ -169,12 +169,16 @@ namespace AtharERP_System.Controllers
 
             var projectId = assignment.ProjectId;
             var costType = assignment.CostType;
+            var linkedTasksCount = await _context.ProjectTasks.CountAsync(t => t.ProjectAssignmentId == id);
+
             _context.ProjectAssignments.Remove(assignment);
             await _context.SaveChangesAsync();
 
             await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectAssignment), id.ToString(), $"حذف تكليف: {costType}");
 
-            TempData["Success"] = "تم حذف التكليف بنجاح";
+            TempData["Success"] = linkedTasksCount > 0
+                ? $"تم حذف التكليف، وتم حذف {linkedTasksCount} مهمة مرتبطة به تلقائيًا"
+                : "تم حذف التكليف بنجاح";
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
