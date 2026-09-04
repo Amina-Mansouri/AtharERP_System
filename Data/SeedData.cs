@@ -318,6 +318,42 @@ namespace AtharERP_System.Data
                     await context.SaveChangesAsync();
                 }
             }
+
+            // ========== كتالوج قوالب أنواع المراحل الستة (بند P1) ==========
+            if (!await context.StageTemplates.AnyAsync())
+            {
+                var stageTemplates = new (string Name, string[] Tasks)[]
+                {
+                    ("التصميم المعماري", new[] { "رفع الموقع", "المساقط الأفقية", "الواجهات", "المقاطع", "التشطيبات الخارجية" }),
+                    ("التصميم الداخلي", new[] { "توزيع الفرش", "مواد التشطيب", "الإنارة الداخلية", "التفاصيل النجارية" }),
+                    ("التصميم الإنشائي", new[] { "الأساسات", "حسابات الأحمال", "الأعمدة والجسور", "جدول الكميات الحديدية", "المخططات التنفيذية", "التقرير الإنشائي" }),
+                    ("التصميم الميكانيكي", new[] { "أحمال التكييف", "مسارات التهوية", "شبكة السباكة" }),
+                    ("التصميم الكهربائي", new[] { "نقاط الإنارة", "لوحات التوزيع", "شبكة التيار الخفيف" }),
+                    ("التصميم الجرافيكي", new[] { "الهوية البصرية للمشروع", "اللوحات التعريفية", "العرض التقديمي" })
+                };
+
+                var order = 1;
+                foreach (var (name, tasks) in stageTemplates)
+                {
+                    var template = new StageTemplate { Name = name, IsActive = true, Order = order };
+                    context.StageTemplates.Add(template);
+                    await context.SaveChangesAsync();
+
+                    var taskOrder = 1;
+                    foreach (var taskName in tasks)
+                    {
+                        context.StageTemplateTasks.Add(new StageTemplateTask
+                        {
+                            StageTemplateId = template.Id,
+                            TaskName = taskName,
+                            Order = taskOrder
+                        });
+                        taskOrder++;
+                    }
+                    await context.SaveChangesAsync();
+                    order++;
+                }
+            }
         }
 
         private static async Task LinkPermissionsToRole(AppDbContext context, RoleManager<ApplicationRole> roleManager, string roleName, string[] permCodes)

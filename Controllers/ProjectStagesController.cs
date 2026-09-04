@@ -66,14 +66,102 @@ namespace AtharERP_System.Controllers
 
             await _calc.RecalculateProjectAsync(model.ProjectId);
 
-            TempData["Success"] = $"تمت إضافة المرحلة {model.Name} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
-        }
 
-        // ============================================
-        // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)
-        // ============================================
-        [RequirePermission("Projects.Stages.Manage")]
+            // ============================================
+            // تفعيل قالب مرحلة جاهز (بند P1) مع اختيار مهامه الافتراضية + مهام إضافية
+            // ============================================
+            [RequirePermission("Projects.Stages.Manage")]
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> ActivateTemplate(
+                int projectId, int stageTemplateId, decimal weight,
+                List<int>? selectedTaskIds, string? extraTasks)
+            {
+                var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
+                if (project == null)
+                    return NotFound();
+
+                var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == stageTemplateId);
+                if (template == null)
+                    return NotFound();
+
+                if (project.Stages.Any(s => s.Name == template.Name))
+                {
+                    TempData["Error"] = $"مرحلة {template.Name} مفعّلة بالفعل لهذا المشروع";
+                    return RedirectToAction("Details", "Projects", new { id = projectId });
+                }
+
+                var currentTotal = project.Stages.Sum(s => s.Weight);
+                if (currentTotal + weight > 100)
+                {
+                    TempData["Error"] = $"مجموع أوزان المراحل سيتجاوز 100% (المجموع الحالي: {currentTotal}%)";
+                    return RedirectToAction("Details", "Projects", new { id = projectId });
+                }
+
+                var stage = new ProjectStage
+                {
+                    ProjectId = projectId,
+                    Name = template.Name,
+                    Weight = weight,
+                    Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
+                    Status = StageStatus.New,
+                    CompletionPercentage = 0,
+                    ActualCost = 0
+                };
+                _context.ProjectStages.Add(stage);
+                await _context.SaveChangesAsync();
+
+                if (selectedTaskIds != null)
+                {
+                    foreach (var taskId in selectedTaskIds)
+                    {
+                        var defaultTask = template.DefaultTasks.FirstOrDefault(t => t.Id == taskId);
+                        if (defaultTask == null) continue;
+
+                        _context.ProjectTasks.Add(new ProjectTask
+                        {
+                            ProjectId = projectId,
+                            StageId = stage.Id,
+                            Title = defaultTask.TaskName,
+                            Status = ProjectTaskStatus.NotStarted,
+                            Priority = TaskPriority.Medium,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedById = CurrentUserId
+                        });
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(extraTasks))
+                {
+                    foreach (var line in extraTasks.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var title = line.Trim();
+                        if (string.IsNullOrEmpty(title)) continue;
+
+                        _context.ProjectTasks.Add(new ProjectTask
+                        {
+                            ProjectId = projectId,
+                            StageId = stage.Id,
+                            Title = title,
+                            Status = ProjectTaskStatus.NotStarted,
+                            Priority = TaskPriority.Medium,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedById = CurrentUserId
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await _calc.RecalculateProjectAsync(projectId);
+
+                TempData["Success"] = $"تم تفعيل مرحلة {template.Name} بنجاح";
+                return RedirectToAction("Details", "Projects", new { id = projectId });
+            }
+
+            // ============================================
+            // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)
+            // ============================================
+            [RequirePermission("Projects.Stages.Manage")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {

@@ -50,6 +50,8 @@ namespace AtharERP_System.Data
         public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
         public DbSet<StageTaskTemplate> StageTaskTemplates { get; set; } = null!;
+        public DbSet<StageTemplate> StageTemplates { get; set; } = null!;
+        public DbSet<StageTemplateTask> StageTemplateTasks { get; set; } = null!;
         public DbSet<DesignProposal> DesignProposals { get; set; } = null!;
         public DbSet<FinancialClaim> FinancialClaims { get; set; } = null!;
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
@@ -492,13 +494,21 @@ namespace AtharERP_System.Data
             builder.Entity<ContractHistory>()
                 .HasIndex(ch => ch.UserId);
 
-          
 
+
+          
             // ========== قوالب مهام المرحلة (StageTaskTemplate) ==========
             builder.Entity<StageTaskTemplate>()
                 .HasOne(t => t.ProjectStage)
                 .WithMany()
                 .HasForeignKey(t => t.ProjectStageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ========== كتالوج قوالب أنواع المراحل (StageTemplate) ==========
+            builder.Entity<StageTemplateTask>()
+                .HasOne(t => t.StageTemplate)
+                .WithMany(s => s.DefaultTasks)
+                .HasForeignKey(t => t.StageTemplateId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ========== المقترحات التصميمية (DesignProposal) ==========
