@@ -129,7 +129,11 @@ namespace AtharERP_System.Controllers
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
-            await LoadDropdownsAsync(id);
+            if (!ModelState.IsValid)
+            {
+                await LoadDropdownsAsync(id);
+                return View(project);
+            }
             return View(project);
         }
 
@@ -143,10 +147,8 @@ namespace AtharERP_System.Controllers
             await LoadDropdownsAsync();
             ViewBag.CanEdit = true;
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Costs.View");
-            ViewBag.AllEmployees = new List<ApplicationUser>();
             ViewBag.Engineers = new List<ApplicationUser>();
-            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
-            ViewBag.StageTemplates = new List<StageTemplate>();
+            ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = new List<ProjectDocument>();
             return View("Details", new Project());
         }
@@ -160,7 +162,11 @@ namespace AtharERP_System.Controllers
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync();
-                return View(model);
+                ViewBag.CanEdit = true;
+                ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
+                ViewBag.Engineers = new List<ApplicationUser>();
+                ViewBag.Documents = new List<ProjectDocument>();
+                return View("Details", model);
             }
 
             model.Code = await GenerateProjectCodeAsync();
@@ -218,11 +224,16 @@ namespace AtharERP_System.Controllers
             {
                 ModelState.AddModelError(string.Empty, "لا يمكن أن يكون المشروع أباً لنفسه");
             }
-
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync(id);
-                return View(project);
+                model.Id = id;
+                model.Code = project.Code;
+                ViewBag.CanEdit = true;
+                ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
+                ViewBag.Engineers = new List<ApplicationUser>();
+                ViewBag.Documents = new List<ProjectDocument>();
+                return View("Details", model);
             }
 
             project.Name = model.Name;

@@ -43,13 +43,9 @@
     <div>
         <div style="font-size:11px; color:#8a83a0; font-weight:500;">المشاريع</div>
         <div style="font-size:19px; font-weight:600; margin-top:2px;">
-            @if (isNew)
+            @(isNew ? "مشروع جديد" : Model.Name)
+            @if (!isNew)
             {
-                @:مشروع جديد
-            }
-            else
-            {
-                @Model.Name
                 <span class="stat-sub">(@Model.Code)</span>
             }
         </div>
@@ -59,18 +55,18 @@
         {
             @if (Model.Status == ProjectStatus.OnHold || Model.Status == ProjectStatus.Cancelled)
             {
-                <form method="post" asp-action="Reactivate" asp-route-id="@Model.Id" class="d-inline">
+                <form method="post" asp-action="Reactivate" asp-route-id="@Model.Id" style="display:inline;">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn-line">إعادة تفعيل</button>
+                    <button type="submit" class="btn-line btn-line-accent">إعادة تفعيل</button>
                 </form>
             }
             else
             {
-                <form method="post" asp-action="Hold" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('إيقاف المشروع مؤقتاً؟');">
+                <form method="post" asp-action="Hold" asp-route-id="@Model.Id" style="display:inline;" onsubmit="return confirm('إيقاف المشروع مؤقتاً؟');">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn-line">إيقاف مؤقت</button>
                 </form>
-                <form method="post" asp-action="Cancel" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('إلغاء المشروع نهائياً؟ لا يمكن التراجع.');">
+                <form method="post" asp-action="Cancel" asp-route-id="@Model.Id" style="display:inline;" onsubmit="return confirm('إلغاء المشروع؟');">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn-line" style="color:#c94a42;">إلغاء المشروع</button>
                 </form>
@@ -89,7 +85,7 @@
         {
             <div class="stat-item"><span class="kicker">العميل</span><span class="stat-value">@(Model.Client?.Name ?? "-")</span></div>
         }
-        <div class="stat-item"><span class="kicker">البدء</span><span class="stat-value">@(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
+        <div class="stat-item"><span class="kicker">البدء المخطط</span><span class="stat-value">@(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
         <div class="stat-item"><span class="kicker">التسليم المتفق عليه</span><span class="stat-value">@(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
         @if (canViewCosts)
         {
@@ -98,48 +94,74 @@
     </div>
 }
 
-<div style="display:grid; grid-template-columns: @(isNew ? "1fr" : "1.4fr 1fr"); gap:12px; margin-bottom:12px;">
-    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
-        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">بيانات المشروع</div>
+<div style="display:grid; grid-template-columns:@(isNew ? "1fr" : "1.4fr 1fr"); gap:12px; margin-bottom:12px;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">بيانات المشروع</div>
 
         @if (!ViewData.ModelState.IsValid)
         {
-            <div style="margin:12px 16px 0; padding:9px 12px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.06); border-radius:8px; font-size:11.5px; color:#c94a42;">
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <div>@error.ErrorMessage</div>
-                }
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
             </div>
         }
 
-        @if (canEdit)
-        {
-            <form method="post" asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@Model.Id" style="padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
-                @Html.AntiForgeryToken()
-                <div style="grid-column:span 2;">
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم المشروع <span style="color:#e35d54;">*</span></div>
-                    <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+        <form method="post" asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@Model.Id">
+            @Html.AntiForgeryToken()
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
+                    <input type="text" name="Name" value="@Model.Name" required disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
                 <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">العميل <span style="color:#e35d54;">*</span></div>
-                    <select name="ClientId" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                        <option value="">-- اختاري --</option>
-                        @foreach (var c in clients)
+                    <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
+                    <select name="Scope" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                        <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
+                        <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">مشروع فرعي</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                    <select name="Type" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                        <option value="">--</option>
+                        @foreach (var t in typeLabels)
                         {
-                            <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name</option>
+                            <option value="@t.Value" selected="@(Model.Type.HasValue && Model.Type.Value.ToString() == t.Value)">@t.Label</option>
                         }
                     </select>
                 </div>
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <label style="font-size:11px; color:#8a83a0;">الوصف</label>
+                <textarea name="Description" rows="2" disabled="@(!canEdit)" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+                @if (canViewClient)
+                {
+                    <div>
+                        <label style="font-size:11px; color:#8a83a0;">العميل</label>
+                        <select name="ClientId" required disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <option value="">-- اختر العميل --</option>
+                            @foreach (var c in clients)
+                            {
+                                <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name@(string.IsNullOrEmpty(c.CompanyName) ? "" : $" - {c.CompanyName}")</option>
+                            }
+                        </select>
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" name="ClientId" value="@Model.ClientId" />
+                }
                 <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نطاق المشروع</div>
-                    <select name="Scope" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                        <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">رئيسي</option>
-                        <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">فرعي</option>
-                    </select>
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المشروع الرئيسي (إن كان فرعياً)</div>
-                    <select name="ParentProjectId" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <label style="font-size:11px; color:#8a83a0;">المشروع الرئيسي (فرعي فقط)</label>
+                    <select name="ParentProjectId" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="">-- لا يوجد --</option>
                         @foreach (var p in parentProjects)
                         {
@@ -148,68 +170,106 @@
                     </select>
                 </div>
                 <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نوع المشروع</div>
-                    <select name="Type" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                        <option value="">-- غير محدد --</option>
-                        @foreach (var t in typeLabels)
+                    <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
+                    <select name="Priority" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                        @foreach (var pr in priorityLabels)
                         {
-                            <option value="@t.Value" selected="@(Model.Type?.ToString() == t.Value)">@t.Label</option>
+                            <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
                         }
                     </select>
                 </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الأولوية</div>
-                    <select name="Priority" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                        @foreach (var p in priorityLabels)
-                        {
-                            <option value="@p.Value" selected="@(Model.Priority.ToString() == p.Value)">@p.Label</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">تاريخ البدء</div>
-                    <input type="date" name="PlannedStartDate" value="@Model.PlannedStartDate?.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">التسليم المتفق عليه</div>
-                    <input type="date" name="PlannedEndDate" value="@Model.PlannedEndDate?.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">التسليم الفعلي</div>
-                    <input type="date" name="ActualDeliveryDate" value="@Model.ActualDeliveryDate?.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الميزانية</div>
-                    <input type="number" step="0.01" min="0" name="Budget" value="@Model.Budget" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div style="grid-column:span 2; display:flex; align-items:center; gap:8px; margin-top:6px;">
-                    <input type="checkbox" name="AutoTransferToSite" value="true" id="autoTransfer" checked="@Model.AutoTransferToSite" style="width:16px; height:16px;" />
-                    <input type="hidden" name="AutoTransferToSite" value="false" />
-                    <label for="autoTransfer" style="font-size:11.5px;">ترحيل تلقائي إلى إدارة المواقع عند بدء التنفيذ</label>
-                </div>
-                <div style="grid-column:span 2;">
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوصف</div>
-                    <textarea name="Description" rows="3" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:8px 11px; font-size:12.5px;">@Model.Description</textarea>
-                </div>
-                <div style="grid-column:span 2;">
-                    <button type="submit" style="height:36px; padding:0 20px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">@(isNew ? "+ إنشاء المشروع" : "حفظ التعديلات")</button>
-                </div>
-            </form>
-        }
-        else
-        {
-            <div style="padding:14px 16px; font-size:12.5px; display:grid; gap:8px;">
-                @if (!string.IsNullOrEmpty(Model.Description))
-                {
-                    <div><strong>الوصف:</strong> @Model.Description</div>
-                }
-                <div><strong>المشروع الرئيسي:</strong> @(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-")</div>
             </div>
-        }
 
-        @if (!isNew && Model.ChildProjects.Any())
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ البدء</label>
+                    <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ التسليم المتفق عليه</label>
+                    <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ التسليم الفعلي</label>
+                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px; align-items:center; margin-bottom:8px;">
+                @if (canViewCosts)
+                {
+                    <div>
+                        <label style="font-size:11px; color:#8a83a0;">الميزانية</label>
+                        <input type="number" step="0.01" min="0" name="Budget" value="@Model.Budget" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" name="Budget" value="@Model.Budget" />
+                }
+                <div style="display:flex; align-items:center; gap:6px; margin-top:16px;">
+                    <input type="checkbox" class="chk-gold" name="AutoTransferToSite" value="true" disabled="@(!canEdit)" checked="@Model.AutoTransferToSite" />
+                    <input type="hidden" name="AutoTransferToSite" value="false" />
+                    <label style="font-size:11.5px;">ترحيل تلقائي إلى إدارة المواقع عند بدء التنفيذ</label>
+                </div>
+            </div>
+
+            @if (canEdit)
+            {
+                <button type="submit" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">@(isNew ? "إنشاء المشروع" : "حفظ التعديلات")</button>
+            }
+        </form>
+    </div>
+
+    @if (!isNew)
+    {
+        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+            <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مستندات المشروع</div>
+            @if (!documents.Any())
+            {
+                <div class="stat-sub" style="margin-bottom:10px;">لا توجد مستندات مرفوعة بعد</div>
+            }
+            else
+            {
+                <div style="display:grid; gap:8px; margin-bottom:10px;">
+                    @foreach (var doc in documents)
+                    {
+                        <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px;">
+                            <div>
+                                <a href="@doc.FilePath" target="_blank" style="font-size:11.5px;">@doc.FileName</a>
+                                <div class="stat-sub">@(doc.UploadedBy?.FullName ?? "-") · @doc.UploadedAt.ToString("yyyy-MM-dd")</div>
+                            </div>
+                            @if (canEdit)
+                            {
+                                <form method="post" asp-controller="ProjectDocuments" asp-action="Delete" asp-route-id="@doc.Id" onsubmit="return confirm('حذف هذا المستند؟');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10px; color:#c94a42;">حذف</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @if (canEdit)
+            {
+                <form method="post" asp-controller="ProjectDocuments" asp-action="Upload" enctype="multipart/form-data" style="display:grid; gap:6px;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projectId" value="@Model.Id" />
+                    <input type="file" name="file" required style="font-size:11px;" />
+                    <input type="text" name="description" placeholder="وصف مختصر (اختياري)" style="height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                    <button type="submit" style="height:30px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ رفع مستند</button>
+                </form>
+            }
+        </div>
+    }
+</div>
+
+@if (!isNew && (Model.ParentProject != null || Model.ChildProjects.Any() || (aggregatedTasks != null && aggregatedTasks.Any())))
+{
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
+        @if (Model.ChildProjects.Any())
         {
-            <div style="padding:0 16px 14px;">
+            <div style="margin-bottom:10px;">
                 <div style="font-size:12px; font-weight:600; margin-bottom:6px;">المشاريع الفرعية</div>
                 @foreach (var child in Model.ChildProjects)
                 {
@@ -217,10 +277,9 @@
                 }
             </div>
         }
-
         @if (aggregatedTasks != null && aggregatedTasks.Any())
         {
-            <div style="padding:0 16px 14px;">
+            <div>
                 <div style="font-size:12px; font-weight:600; margin-bottom:6px;">مهام المشاريع الفرعية (تجميع حي)</div>
                 @foreach (var t in aggregatedTasks)
                 {
@@ -229,52 +288,12 @@
             </div>
         }
     </div>
-
-    @if (!isNew)
-    {
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
-            <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">وثائق المشروع</div>
-            <div style="padding:12px 16px; max-height:320px; overflow-y:auto;">
-                @if (!documents.Any())
-                {
-                    <p class="stat-sub" style="margin:0;">لا توجد وثائق مرفوعة بعد</p>
-                }
-                else
-                {
-                    @foreach (var doc in documents)
-                    {
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f6f5fa; font-size:11.5px;">
-                            <a href="@doc.FilePath" target="_blank">@doc.FileName</a>
-                            @if (canEdit)
-                            {
-                                <form method="post" asp-controller="ProjectDocuments" asp-action="Delete" asp-route-id="@doc.Id" onsubmit="return confirm('حذف هذا المستند؟');">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="projectId" value="@Model.Id" />
-                                    <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
-                                </form>
-                            }
-                        </div>
-                    }
-                }
-            </div>
-            @if (canEdit)
-            {
-                <form method="post" asp-controller="ProjectDocuments" asp-action="Upload" enctype="multipart/form-data" style="padding:12px 16px; border-top:1px solid #f1f0f6;">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="projectId" value="@Model.Id" />
-                    <input type="file" name="file" required style="width:100%; font-size:11px; margin-bottom:6px;" />
-                    <input type="text" name="description" placeholder="وصف (اختياري)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px; margin-bottom:6px;" />
-                    <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ رفع ملف</button>
-                </form>
-            }
-        </div>
-    }
-</div>
+}
 
 @if (!isNew)
 {
     <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; flex-wrap:wrap; gap:8px;">
             <div style="font-size:13.5px; font-weight:600;">التكليفات</div>
             <select id="stageFilter" onchange="filterAssignmentsByStage()" style="height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;">
                 <option value="">كل المراحل</option>
@@ -432,7 +451,7 @@
                             @if (canManageStages)
                             {
                                 <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px;">تعديل</a>
-                                <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها ومهامها أيضاً. متابعة؟');">
+                                <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها أيضاً. متابعة؟');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
                                 </form>
@@ -497,10 +516,10 @@
 @section Scripts {
     <script>
         function filterAssignmentsByStage() {
-                var val = document.getElementById('stageFilter').value;
-                    document.querySelectorAll('[data-stage]').forEach(function (row) {
-                        row.hidden = val !== '' && row.getAttribute('data-stage') !== val;
-                    });
+                    var val = document.getElementById('stageFilter').value;
+                            document.querySelectorAll('[data-stage]').forEach(function (row) {
+                                row.hidden = val !== '' && row.getAttribute('data-stage') !== val;
+                            });
                 }
     </script>
 }
