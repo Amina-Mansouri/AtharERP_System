@@ -155,7 +155,6 @@
             @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
             {
                 <div class="data-table-row" style="cursor:pointer;" onclick="toggleStageRow(@stage.Id)">
-                                              <div class="data-table-row" style="cursor:pointer;" onclick="toggleStageRow(@stage.Id)">
                     <div class="cell"><span id="arrow-@stage.Id" style="display:inline-block; transition:transform .15s;">▸</span></div>
                     <div class="cell cell-num">@stage.Sequence</div>
                     <div class="cell">@stage.Name</div>
@@ -172,6 +171,7 @@
                     </div>
                 </div>
                 <div id="row-@stage.Id" class="data-table-row" hidden style="background:#faf9fd;">
+                    <div class="cell" style="grid-column:1/-1; padding:10px 16px;">
                         @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
                         {
                             <div class="tag tag-danger" style="margin-bottom:8px;">تجاوزت التكلفة الفعلية (@stage.ActualCost.ToString("N0")) الميزانية المخصصة (@stage.Cost.Value.ToString("N0"))</div>
