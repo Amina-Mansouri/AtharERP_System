@@ -83,6 +83,35 @@ namespace AtharERP_System.Services
                 : 0;
 
             await _context.SaveChangesAsync();
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                await RecalculateAssignmentCompletionAsync(task.ProjectAssignmentId.Value);
+            }
+        }
+
+        // إكمال تلقائي للتكليف عندما تكتمل كل مهامه (بنود to-do) 100% — ثم تصعيد الحساب للمرحلة
+        private async Task RecalculateAssignmentCompletionAsync(int assignmentId)
+        {
+            var assignment = await _context.ProjectAssignments
+                .Include(a => a.Tasks)
+                .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+            if (assignment == null || !assignment.Tasks.Any())
+                return;
+
+            var allTasksDone = assignment.Tasks.All(t => t.CompletionPercentage >= 100);
+
+            if (allTasksDone && assignment.Status != AssignmentStatus.Completed)
+            {
+                assignment.Status = AssignmentStatus.Completed;
+                await _context.SaveChangesAsync();
+
+                if (assignment.StageId.HasValue)
+                {
+                    await RecalculateStageAsync(assignment.StageId.Value);
+                }
+            }
         }
 
         // حساب أيام التأخير/التبكير عند التسليم الفعلي (القسم 5.4/5.5)
