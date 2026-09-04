@@ -119,20 +119,21 @@
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
-                    <select name="Scope" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                    <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields() disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
                         <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">مشروع فرعي</option>
                     </select>
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
-                    <select name="Type" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                    <select name="Type" id="typeSelect" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="">--</option>
                         @foreach (var t in typeLabels)
                         {
                             <option value="@t.Value" selected="@(Model.Type.HasValue && Model.Type.Value.ToString() == t.Value)">@t.Label</option>
                         }
                     </select>
+                    <input type="hidden" id="typeHidden" name="Type" disabled />
                 </div>
             </div>
 
@@ -146,13 +147,14 @@
                 {
                     <div>
                         <label style="font-size:11px; color:#8a83a0;">العميل</label>
-                        <select name="ClientId" required disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                        <select name="ClientId" id="clientSelect" required disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                             <option value="">-- اختر العميل --</option>
                             @foreach (var c in clients)
                             {
                                 <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name@(string.IsNullOrEmpty(c.CompanyName) ? "" : $" - {c.CompanyName}")</option>
                             }
                         </select>
+                        <input type="hidden" id="clientHidden" name="ClientId" disabled />
                     </div>
                 }
                 else
@@ -161,11 +163,11 @@
                 }
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">المشروع الرئيسي (فرعي فقط)</label>
-                    <select name="ParentProjectId" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                    <select name="ParentProjectId" id="parentProjectSelect" onchange="toggleParentDependentFields()" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="">-- لا يوجد --</option>
                         @foreach (var p in parentProjects)
                         {
-                            <option value="@p.Id" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                            <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
                         }
                     </select>
                 </div>
@@ -536,6 +538,41 @@
 }
 @section Scripts {
     <script>
+                function toggleParentDependentFields() {
+            var scopeSelect = document.getElementById('scopeSelect');
+            var parentSelect = document.getElementById('parentProjectSelect');
+            var typeSelect = document.getElementById('typeSelect');
+            var typeHidden = document.getElementById('typeHidden');
+            var clientSelect = document.getElementById('clientSelect');
+            var clientHidden = document.getElementById('clientHidden');
+
+            if (scopeSelect.value === 'Main') {
+                parentSelect.value = '';
+                parentSelect.disabled = true;
+            } else if (!parentSelect.disabled === false) {
+                parentSelect.disabled = scopeSelect.disabled;
+            }
+
+            var opt = parentSelect.options[parentSelect.selectedIndex];
+            var hasParent = parentSelect.value !== '';
+
+            typeSelect.disabled = hasParent || scopeSelect.disabled;
+            typeHidden.disabled = !hasParent;
+            if (hasParent) {
+                typeSelect.value = opt.getAttribute('data-type') || '';
+                typeHidden.value = opt.getAttribute('data-type') || '';
+            }
+
+            if (clientSelect) {
+                clientSelect.disabled = hasParent || scopeSelect.disabled;
+                clientHidden.disabled = !hasParent;
+                if (hasParent) {
+                    clientSelect.value = opt.getAttribute('data-client') || '';
+                    clientHidden.value = opt.getAttribute('data-client') || '';
+                }
+            }
+        }
+        toggleParentDependentFields();
         function filterAssignmentsByStage() {
                     var val = document.getElementById('stageFilter').value;
                             document.querySelectorAll('[data-stage]').forEach(function (row) {

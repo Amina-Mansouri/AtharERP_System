@@ -156,7 +156,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-              [Bind("Name,Description,ClientId,ParentProjectId,Scope,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
+       [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
         {
             if (!ModelState.IsValid)
             {
@@ -167,6 +167,22 @@ namespace AtharERP_System.Controllers
                 ViewBag.Documents = new List<ProjectDocument>();
                 return View("Details", model);
             }
+
+            if (model.Scope == ProjectScope.Main)
+            {
+                model.ParentProjectId = null;
+            }
+            else if (model.ParentProjectId.HasValue)
+            {
+                var parentForCreate = await _context.Projects.FindAsync(model.ParentProjectId.Value);
+                if (parentForCreate != null)
+                {
+                    model.ClientId = parentForCreate.ClientId;
+                    model.Type = parentForCreate.Type;
+                }
+            }
+
+            model.ActualDeliveryDate = null;
 
             model.Code = await GenerateProjectCodeAsync();
             model.CreatedAt = DateTime.UtcNow;
@@ -193,13 +209,12 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", new { id = model.Id });
         }
 
-       
         [RequirePermission("Projects.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-             [Bind("Name,Description,ClientId,ParentProjectId,Scope,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
+             [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
         {
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
@@ -221,10 +236,30 @@ namespace AtharERP_System.Controllers
                 return View("Details", model);
             }
 
+            if (model.Scope == ProjectScope.Main)
+            {
+                model.ParentProjectId = null;
+            }
+            else if (model.ParentProjectId.HasValue)
+            {
+                var parent = await _context.Projects.FindAsync(model.ParentProjectId.Value);
+                if (parent != null)
+                {
+                    model.ClientId = parent.ClientId;
+                    model.Type = parent.Type;
+                }
+            }
+
+            if (project.Status != ProjectStatus.Completed)
+            {
+                model.ActualDeliveryDate = null;
+            }
+
             project.Name = model.Name;
             project.Description = model.Description;
             project.ClientId = model.ClientId;
             project.ParentProjectId = model.ParentProjectId;
+            project.Scope = model.Scope;
             project.Type = model.Type;
             project.PlannedStartDate = model.PlannedStartDate;
             project.PlannedEndDate = model.PlannedEndDate;
@@ -240,6 +275,8 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = $"تم تحديث المشروع {project.Name} بنجاح";
             return RedirectToAction("Details", new { id });
         }
+
+
         [RequirePermission("Projects.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
