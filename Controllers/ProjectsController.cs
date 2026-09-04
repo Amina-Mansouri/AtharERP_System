@@ -122,7 +122,7 @@ namespace AtharERP_System.Controllers
             }
 
             ViewBag.CanViewClient = await CanViewClientAsync();
-            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Costs.View");
+            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
             ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
             ViewBag.AllEmployees = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.Engineers = project.TeamMembers.Select(tm => tm.User).OrderBy(u => u.FullName).ToList();
@@ -146,7 +146,7 @@ namespace AtharERP_System.Controllers
         {
             await LoadDropdownsAsync();
             ViewBag.CanEdit = true;
-            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Costs.View");
+            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
             ViewBag.Engineers = new List<ApplicationUser>();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = new List<ProjectDocument>();
