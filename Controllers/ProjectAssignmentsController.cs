@@ -42,7 +42,8 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("ProjectId,StageId,CostType,Description,Area,PricePerMeter,Amount,DiscountOrAdditionPercent,IsUrgent,LeadEngineerId,AssistantEngineerId,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model)
+            [Bind("ProjectId,StageId,CostType,Description,Area,PricePerMeter,Amount,DiscountOrAdditionPercent,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model,
+            List<string>? engineerIds)
         {
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
@@ -57,6 +58,15 @@ namespace AtharERP_System.Controllers
 
             _context.ProjectAssignments.Add(model);
             await _context.SaveChangesAsync();
+
+            if (engineerIds != null)
+            {
+                foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
+                {
+                    _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = model.Id, UserId = uid });
+                }
+                await _context.SaveChangesAsync();
+            }
 
             // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)
             if (project.Status == ProjectStatus.New)
@@ -90,7 +100,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("StageId,CostType,Description,Area,PricePerMeter,Amount,DiscountOrAdditionPercent,Status,IsUrgent,LeadEngineerId,AssistantEngineerId,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model)
+            [Bind("StageId,CostType,Description,Area,PricePerMeter,Amount,DiscountOrAdditionPercent,Status,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model)
         {
             var assignment = await _context.ProjectAssignments.FindAsync(id);
             if (assignment == null)
@@ -112,8 +122,6 @@ namespace AtharERP_System.Controllers
             assignment.FinalAmount = assignment.Amount * (1 + assignment.DiscountOrAdditionPercent / 100);
             assignment.Status = model.Status;
             assignment.IsUrgent = model.IsUrgent;
-            assignment.LeadEngineerId = model.LeadEngineerId;
-            assignment.AssistantEngineerId = model.AssistantEngineerId;
             assignment.ReceivedDate = model.ReceivedDate;
             assignment.AgreedDate = model.AgreedDate;
             assignment.ActualDate = model.ActualDate;
@@ -130,6 +138,34 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = "تم تحديث التكليف بنجاح";
             return RedirectToAction("Details", "Projects", new { id = assignment.ProjectId });
+        }
+
+        [RequirePermission("Projects.Assignments.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddEngineer(int assignmentId, string userId, int projectId)
+        {
+            var exists = await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == assignmentId && e.UserId == userId);
+            if (!exists)
+            {
+                _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = assignmentId, UserId = userId });
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("Details", "Projects", new { id = projectId });
+        }
+
+        [RequirePermission("Projects.Assignments.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveEngineer(int id, int projectId)
+        {
+            var link = await _context.AssignmentEngineers.FindAsync(id);
+            if (link != null)
+            {
+                _context.AssignmentEngineers.Remove(link);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]

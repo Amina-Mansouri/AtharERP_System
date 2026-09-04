@@ -58,18 +58,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "عاجل")]
         public bool IsUrgent { get; set; }
 
-        [Display(Name = "المهندسة الرئيسية")]
-        public string? LeadEngineerId { get; set; }
-
-        [ForeignKey("LeadEngineerId")]
-        public virtual ApplicationUser? LeadEngineer { get; set; }
-
-        [Display(Name = "المهندسة المساعدة")]
-        public string? AssistantEngineerId { get; set; }
-
-        [ForeignKey("AssistantEngineerId")]
-        public virtual ApplicationUser? AssistantEngineer { get; set; }
-
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ الاستلام")]
         public DateTime? ReceivedDate { get; set; }
@@ -93,5 +81,7 @@ namespace AtharERP_System.Models.Entities
 
         public virtual ICollection<ProjectAssignmentSubtask> Subtasks { get; set; } = new List<ProjectAssignmentSubtask>();
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+
+        public virtual ICollection<AssignmentEngineer> Engineers { get; set; } = new List<AssignmentEngineer>();
     }
 }

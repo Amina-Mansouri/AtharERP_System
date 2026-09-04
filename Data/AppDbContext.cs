@@ -29,6 +29,7 @@ namespace AtharERP_System.Data
         public DbSet<TaskDependency> TaskDependencies { get; set; } = null!;
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; } = null!;
         public DbSet<ProjectAssignmentSubtask> ProjectAssignmentSubtasks { get; set; } = null!;
+        public DbSet<AssignmentEngineer> AssignmentEngineers { get; set; } = null!;
         public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; } = null!;
         public DbSet<ProjectDocument> ProjectDocuments { get; set; } = null!;
         public DbSet<ProjectTimeline> ProjectTimelines { get; set; } = null!;
@@ -249,16 +250,16 @@ namespace AtharERP_System.Data
                 .HasForeignKey(a => a.StageId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            builder.Entity<ProjectAssignment>()
-                .HasOne(a => a.LeadEngineer)
-                .WithMany()
-                .HasForeignKey(a => a.LeadEngineerId)
-                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<AssignmentEngineer>()
+     .HasOne(ae => ae.ProjectAssignment)
+     .WithMany(a => a.Engineers)
+     .HasForeignKey(ae => ae.ProjectAssignmentId)
+     .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<ProjectAssignment>()
-                .HasOne(a => a.AssistantEngineer)
+            builder.Entity<AssignmentEngineer>()
+                .HasOne(ae => ae.User)
                 .WithMany()
-                .HasForeignKey(a => a.AssistantEngineerId)
+                .HasForeignKey(ae => ae.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ProjectAssignmentSubtask>()
