@@ -14,6 +14,7 @@
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var allEmployees = ViewBag.AllEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var stageTemplates = ViewBag.StageTemplates as List<StageTemplate> ?? new List<StageTemplate>();
     var aggregatedTasks = ViewBag.AggregatedSubProjectTasks as List<ProjectTask>;
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
 
@@ -320,46 +321,49 @@
     @if (canManageStages)
     {
         <div style="padding:14px 16px; border-top:1px solid #f1f0f6;">
-            <div style="font-size:12px; font-weight:600; margin-bottom:8px;">+ إضافة مرحلة جديدة</div>
-            <form method="post" asp-controller="ProjectStages" asp-action="Create" style="display:grid; grid-template-columns:repeat(5,1fr) 110px; gap:10px; align-items:end;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="ProjectId" value="@Model.Id" />
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم المرحلة</div>
-                    <input type="text" name="Name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الترتيب</div>
-                    <input type="number" name="Sequence" value="@(Model.Stages.Any() ? Model.Stages.Max(s => s.Sequence) + 1 : 1)" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوزن %</div>
-                    <input type="number" step="0.01" min="0" max="100" name="Weight" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">القسم</div>
-                    <select name="DepartmentId" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                        <option value="">-- لا يوجد --</option>
-                        @foreach (var dept in departments)
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <div style="font-size:12px; font-weight:600;">قوالب المراحل — فعّلي ما يحتاجه هذا المشروع</div>
+                <a asp-controller="StageTemplates" asp-action="Index" style="font-size:11px;">+ إدارة القوالب</a>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
+                {
+                    var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
+                    <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff");">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
+                            @if (isUsed)
+                            {
+                                <span class="tag tag-accent">مفعّلة</span>
+                            }
+                        </div>
+                        <div style="font-size:10px; color:#8a83a0; margin-top:4px;">@tpl.DefaultTasks.Count مهام افتراضية</div>
+
+                        @if (!isUsed)
                         {
-                            <option value="@dept.Id">@dept.Name</option>
+                            <form method="post" asp-controller="ProjectStages" asp-action="ActivateTemplate" style="margin-top:8px;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectId" value="@Model.Id" />
+                                <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
+                                <div style="margin-bottom:6px;">
+                                    <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                </div>
+                                <div style="display:grid; gap:3px; margin-bottom:6px;">
+                                    @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                    {
+                                        <label style="display:flex; align-items:center; gap:5px; font-size:10.5px; color:#5a5370;">
+                                            <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
+                                            @t.TaskName
+                                        </label>
+                                    }
+                                </div>
+                                <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;"></textarea>
+                                <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
+                            </form>
                         }
-                    </select>
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المهندس المسؤول</div>
-                    <select name="AssignedEngineerId" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                        <option value="">-- لا يوجد --</option>
-                        @foreach (var eng in engineers)
-                        {
-                            <option value="@eng.Id">@eng.FullName</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <button type="submit" style="height:34px; padding:0 16px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600; width:100%;">+ إضافة</button>
-                </div>
-            </form>
+                    </div>
+                }
+            </div>
         </div>
     }
 </div>

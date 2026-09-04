@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "قالب مرحلة جديد";
+}
+
+<h1 class="athar-page-title">إنشاء قالب مرحلة جديد</h1>
+
+<div class="athar-card mt-3">
+    <form method="post" asp-action="Create">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم القالب</label>
+                <input type="text" name="name" class="form-control" required />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">المهام الافتراضية (سطر لكل مهمة)</label>
+                <textarea name="tasks" class="form-control" rows="6"></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn athar-btn">حفظ</button>
+        <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>

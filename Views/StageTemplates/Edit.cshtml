@@ -1,0 +1,35 @@
+﻿@using AtharERP_System.Models.Entities
+@model StageTemplate
+@{
+    ViewData["Title"] = "تعديل قالب مرحلة";
+}
+
+<h1 class="athar-page-title">تعديل قالب: @Model.Name</h1>
+
+<div class="athar-card mt-3">
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">اسم القالب</label>
+                <input type="text" name="name" class="form-control" value="@Model.Name" required />
+            </div>
+            <div class="col-md-6 mb-3 form-check form-switch" style="margin-top:32px;">
+                <input type="checkbox" name="isActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
+                <input type="hidden" name="isActive" value="false" />
+                <label class="form-check-label" for="isActive">نشط</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label class="form-label">المهام الافتراضية (سطر لكل مهمة — استبدال كامل القائمة الحالية)</label>
+                <textarea name="tasks" class="form-control" rows="8">@string.Join("\n", Model.DefaultTasks.OrderBy(t => t.Order).Select(t => t.TaskName))</textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn athar-btn">حفظ</button>
+        <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>
