@@ -92,5 +92,6 @@ namespace AtharERP_System.Models.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public virtual ICollection<ProjectAssignmentSubtask> Subtasks { get; set; } = new List<ProjectAssignmentSubtask>();
+        public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
     }
 }

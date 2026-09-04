@@ -21,6 +21,12 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("StageId")]
         public virtual ProjectStage? Stage { get; set; }
 
+        [Display(Name = "التكليف")]
+        public int? ProjectAssignmentId { get; set; }
+
+        [ForeignKey("ProjectAssignmentId")]
+        public virtual ProjectAssignment? ProjectAssignment { get; set; }
+
         [Required(ErrorMessage = "عنوان المهمة مطلوب")]
         [StringLength(255)]
         [Display(Name = "العنوان")]

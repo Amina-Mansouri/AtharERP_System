@@ -172,9 +172,15 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<ProjectTask>()
-                .HasOne(t => t.Stage)
-                .WithMany(s => s.Tasks)
-                .HasForeignKey(t => t.StageId)
+     .HasOne(t => t.Stage)
+     .WithMany(s => s.Tasks)
+     .HasForeignKey(t => t.StageId)
+     .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ProjectTask>()
+                .HasOne(t => t.ProjectAssignment)
+                .WithMany(a => a.Tasks)
+                .HasForeignKey(t => t.ProjectAssignmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ProjectTask>()
