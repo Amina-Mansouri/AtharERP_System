@@ -349,6 +349,10 @@ namespace AtharERP_System.Controllers
                 _context.TaskTodos.Add(new TaskTodo { TaskId = taskId, Item = item });
                 await _context.SaveChangesAsync();
                 await _calc.RecalculateTaskCompletionAsync(taskId);
+                if (task.ProjectAssignmentId.HasValue)
+                {
+                    await _calc.MarkAssignmentInProgressAsync(task.ProjectAssignmentId.Value);
+                }
             }
 
             return RedirectToAction("Edit", new { id = taskId });

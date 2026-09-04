@@ -217,6 +217,35 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
+
+        [RequirePermission("Projects.Assignments.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Hold(int id, int projectId)
+        {
+            var assignment = await _context.ProjectAssignments.FindAsync(id);
+            if (assignment != null && assignment.Status != AssignmentStatus.Completed)
+            {
+                assignment.Status = AssignmentStatus.Pending;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("Details", "Projects", new { id = projectId });
+        }
+
+        [RequirePermission("Projects.Assignments.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id, int projectId)
+        {
+            var assignment = await _context.ProjectAssignments.FindAsync(id);
+            if (assignment != null)
+            {
+                assignment.Status = AssignmentStatus.Cancelled;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("Details", "Projects", new { id = projectId });
+        }
+
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]

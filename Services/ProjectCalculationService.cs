@@ -114,6 +114,16 @@ namespace AtharERP_System.Services
             }
         }
 
+        // إكمال تلقائي: أول بند to-do يُضاف لأي مهمة تابعة للتكليف ينقله من "معلّق" إلى "قيد التنفيذ"
+        public async Task MarkAssignmentInProgressAsync(int assignmentId)
+        {
+            var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
+            if (assignment != null && assignment.Status == AssignmentStatus.Pending)
+            {
+                assignment.Status = AssignmentStatus.InProgress;
+                await _context.SaveChangesAsync();
+            }
+        }
         // حساب أيام التأخير/التبكير عند التسليم الفعلي (القسم 5.4/5.5)
         public void UpdateDeliveryMetrics(ProjectTask task)
         {

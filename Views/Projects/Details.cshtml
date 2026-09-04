@@ -495,27 +495,27 @@
                         </div>
                         <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
                         <div class="cell">
-                            @if (canManageAssignments && !a.IsTransferredToFinance)
+                            <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
+                            @if (canManageAssignments && !a.IsTransferredToFinance && a.Status != AssignmentStatus.Completed)
                             {
-                                <form method="post" asp-controller="ProjectAssignments" asp-action="Edit" asp-route-id="@a.Id">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="CostType" value="@a.CostType" />
-                                    <input type="hidden" name="Description" value="@a.Description" />
-                                    <input type="hidden" name="IsUrgent" value="@a.IsUrgent" />
-                                    <input type="hidden" name="ReceivedDate" value="@a.ReceivedDate?.ToString("yyyy-MM-dd")" />
-                                    <input type="hidden" name="AgreedDate" value="@a.AgreedDate?.ToString("yyyy-MM-dd")" />
-                                    <input type="hidden" name="ActualDate" value="@a.ActualDate?.ToString("yyyy-MM-dd")" />
-                                    <select name="Status" onchange="this.form.submit()" style="height:26px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;">
-                                        @foreach (var st in assignmentStatusLabels)
-                                        {
-                                            <option value="@st.Value" selected="@(a.Status.ToString() == st.Value)">@st.Label</option>
-                                        }
-                                    </select>
-                                </form>
-                            }
-                            else
-                            {
-                                <span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
+                                @if (a.Status != AssignmentStatus.Pending)
+                                {
+                                    <form method="post" asp-controller="ProjectAssignments" asp-action="Hold" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <input type="hidden" name="projectId" value="@Model.Id" />
+                                        <button type="submit" style="border:none; background:none; color:#7b6bd6; font-size:10px; cursor:pointer; text-decoration:underline;">تعليق</button>
+                                    </form>
+                                }
+                                @if (a.Status != AssignmentStatus.Cancelled)
+                                {
+                                    <form method="post" asp-controller="ProjectAssignments" asp-action="Cancel" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <input type="hidden" name="projectId" value="@Model.Id" />
+                                        <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer; text-decoration:underline;">إلغاء</button>
+                                    </form>
+                                }
                             }
                         </div>
                         <div class="cell">
