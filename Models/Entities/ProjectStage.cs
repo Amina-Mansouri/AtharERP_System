@@ -31,10 +31,6 @@ namespace AtharERP_System.Models.Entities
         public StageStatus Status { get; set; } = StageStatus.New;
 
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "التكلفة المخصصة")]
-        public decimal? Cost { get; set; }
-
-        [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "التكلفة الفعلية")]
         public decimal ActualCost { get; set; }
 

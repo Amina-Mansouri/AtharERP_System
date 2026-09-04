@@ -51,10 +51,7 @@
                     <option value="Delayed" selected="@(Model.Status == StageStatus.Delayed)">متأخرة</option>
                 </select>
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">التكلفة المخصصة</label>
-                <input type="number" step="0.01" min="0" name="Cost" class="form-control" value="@Model.Cost" />
-            </div>
+           
             <div class="col-md-4 mb-3">
                 <label class="form-label">القسم</label>
                 <select name="DepartmentId" class="form-select">

@@ -258,7 +258,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,Sequence,Status,Cost,AssignedEngineerId,DepartmentId,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,WorkDocumentation")] ProjectStage model)
+          [Bind("Name,Sequence,Status,AssignedEngineerId,DepartmentId,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,WorkDocumentation")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.FindAsync(id);
             if (stage == null)
@@ -275,7 +275,7 @@ namespace AtharERP_System.Controllers
             stage.Name = model.Name;
             stage.Sequence = model.Sequence;
             stage.Status = model.Status;
-            stage.Cost = model.Cost;
+          
             stage.AssignedEngineerId = model.AssignedEngineerId;
             stage.DepartmentId = model.DepartmentId;
             stage.PlannedStartDate = model.PlannedStartDate;

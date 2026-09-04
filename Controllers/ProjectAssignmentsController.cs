@@ -36,23 +36,20 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        
+
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("ProjectId,StageId,CostType,Description,Area,PricePerMeter,Amount,DiscountOrAdditionPercent,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model,
-            List<string>? engineerIds)
+    [Bind("ProjectId,StageId,CostType,Description,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model,
+    List<string>? engineerIds)
         {
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
                 return NotFound();
 
-            if (model.Area.HasValue && model.PricePerMeter.HasValue)
-                model.Amount = model.Area.Value * model.PricePerMeter.Value;
-
-            model.FinalAmount = model.Amount * (1 + model.DiscountOrAdditionPercent / 100);
+            model.FinalAmount = 0;
             model.Status = AssignmentStatus.Pending;
             model.CreatedAt = DateTime.UtcNow;
 
@@ -89,9 +86,9 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.CostType} - {model.FinalAmount:N2}");
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.CostType}");
 
-            TempData["Success"] = "تمت إضافة التكليف بنجاح";
+            TempData["Success"] = "تمت إضافة التكليف بنجاح — سعّري مهامه من شاشة المهام";
             return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
         }
 
@@ -99,8 +96,8 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int id,
-            [Bind("StageId,CostType,Description,Area,PricePerMeter,Amount,DiscountOrAdditionPercent,Status,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model)
+     int id,
+     [Bind("StageId,CostType,Description,Status,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model)
         {
             var assignment = await _context.ProjectAssignments.FindAsync(id);
             if (assignment == null)
@@ -111,15 +108,6 @@ namespace AtharERP_System.Controllers
             assignment.StageId = model.StageId;
             assignment.CostType = model.CostType;
             assignment.Description = model.Description;
-            assignment.Area = model.Area;
-            assignment.PricePerMeter = model.PricePerMeter;
-
-            assignment.Amount = model.Area.HasValue && model.PricePerMeter.HasValue
-                ? model.Area.Value * model.PricePerMeter.Value
-                : model.Amount;
-
-            assignment.DiscountOrAdditionPercent = model.DiscountOrAdditionPercent;
-            assignment.FinalAmount = assignment.Amount * (1 + assignment.DiscountOrAdditionPercent / 100);
             assignment.Status = model.Status;
             assignment.IsUrgent = model.IsUrgent;
             assignment.ReceivedDate = model.ReceivedDate;
@@ -134,7 +122,7 @@ namespace AtharERP_System.Controllers
                 await TransferToFinanceAsync(assignment);
             }
 
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectAssignment), assignment.Id.ToString(), $"تعديل تكليف: {assignment.CostType} - {assignment.FinalAmount:N2}");
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectAssignment), assignment.Id.ToString(), $"تعديل تكليف: {assignment.CostType}");
 
             TempData["Success"] = "تم تحديث التكليف بنجاح";
             return RedirectToAction("Details", "Projects", new { id = assignment.ProjectId });
@@ -263,7 +251,7 @@ namespace AtharERP_System.Controllers
                 ProjectId = assignment.ProjectId,
                 ProjectAssignmentId = assignment.Id,
                 CostType = assignment.CostType,
-                Area = assignment.Area,
+               
                 Value = assignment.FinalAmount,
                 IsCleared = false,
                 CreatedAt = DateTime.UtcNow

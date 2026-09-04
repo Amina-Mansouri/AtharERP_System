@@ -32,24 +32,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
+        // محسوبة تلقائياً = مجموع القيم التقديرية لكل مهام هذا التكليف — لا تُدخل يدوياً أبداً
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "المساحة (م²)")]
-        public decimal? Area { get; set; }
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "السعر لكل متر")]
-        public decimal? PricePerMeter { get; set; }
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "المبلغ")]
-        public decimal Amount { get; set; }
-
-        [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "نسبة الخصم/الإضافة")]
-        public decimal DiscountOrAdditionPercent { get; set; }
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "المبلغ النهائي")]
+        [Display(Name = "القيمة الإجمالية")]
         public decimal FinalAmount { get; set; }
 
         [Display(Name = "الحالة")]

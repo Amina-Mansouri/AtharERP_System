@@ -79,6 +79,12 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نسبة الإنجاز")]
         public decimal CompletionPercentage { get; set; }
 
+
+        // القيمة التقديرية لهذه المهمة — تُجمع مع باقي مهام المرحلة ولا يجوز أن تتجاوز سقف المرحلة (المساحة × سعر المتر)
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "القيمة التقديرية")]
+        public decimal EstimatedValue { get; set; }
+
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "مبلغ المكافأة")]
         public decimal BonusAmount { get; set; }

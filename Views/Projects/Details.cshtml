@@ -372,10 +372,7 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="CostType" value="@a.CostType" />
                                     <input type="hidden" name="Description" value="@a.Description" />
-                                    <input type="hidden" name="Area" value="@a.Area" />
-                                    <input type="hidden" name="PricePerMeter" value="@a.PricePerMeter" />
-                                    <input type="hidden" name="Amount" value="@a.Amount" />
-                                    <input type="hidden" name="DiscountOrAdditionPercent" value="@a.DiscountOrAdditionPercent" />
+                                  
                                     <input type="hidden" name="IsUrgent" value="@a.IsUrgent" />
                                       <input type="hidden" name="ReceivedDate" value="@a.ReceivedDate?.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="AgreedDate" value="@a.AgreedDate?.ToString("yyyy-MM-dd")" />
@@ -464,9 +461,9 @@
                         <div class="cell cell-num">@stage.Sequence</div>
                         <div class="cell">
                             @stage.Name
-                            @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
+                            @if (stage.ActualCost > stage.StageValue)
                             {
-                                <span class="tag tag-danger">تجاوز التكلفة</span>
+                                <span class="tag tag-danger">تجاوز السقف</span>
                             }
                         </div>
                         <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
