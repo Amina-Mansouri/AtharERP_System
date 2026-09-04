@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "لوحة المهندسة";
+    var myAssignments = ViewBag.MyAssignments as List<AtharERP_System.Models.Entities.ProjectAssignment> ?? new List<AtharERP_System.Models.Entities.ProjectAssignment>();
+    var myTasks = ViewBag.MyTasks as List<AtharERP_System.Models.Entities.ProjectTask> ?? new List<AtharERP_System.Models.Entities.ProjectTask>();
+    int todayTasks = ViewBag.TodayTasks as int? ?? 0;
+    int overdueTasks = ViewBag.OverdueTasks as int? ?? 0;
+    int myProjectsCount = ViewBag.MyProjectsCount as int? ?? 0;
+}
+
+<div style="font-size:11px; color:#8a83a0; font-weight:500;">الرئيسية</div>
+<div style="font-size:19px; font-weight:600; margin-top:2px; margin-bottom:14px;">لوحة المهندسة</div>
+
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">تكليفاتي النشطة</span><span class="stat-value">@myAssignments.Count</span></div>
+    <div class="stat-item"><span class="kicker">مهام اليوم</span><span class="stat-value">@todayTasks</span></div>
+    <div class="stat-item"><span class="kicker">المتأخر</span><span class="stat-value" style="color:#c94a42;">@overdueTasks</span></div>
+    <div class="stat-item"><span class="kicker">مشاريعي</span><span class="stat-value">@myProjectsCount</span></div>
+</div>
+
+<p class="stat-sub" style="margin-top:14px;">هذه نسخة أولية مبسّطة — سيتم استكمال تفاصيل اللوحة (المهام قيد التنفيذ، التسليم القادم، قائمة التحقق النشطة) عند الوصول لبند "لوحة المهندسة" ضمن خطة العمل.</p>

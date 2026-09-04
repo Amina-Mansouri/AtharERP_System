@@ -32,11 +32,42 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             if (!(User.Identity?.IsAuthenticated ?? false))
                 return RedirectToAction("Login", "Account");
-            return RedirectToAction("Dashboard");
+
+            if (await _userManager.IsInRoleAsync((await _userManager.GetUserAsync(User))!, "مدير النظام"))
+                return RedirectToAction("Dashboard");
+
+            return RedirectToAction("EngineerDashboard");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> EngineerDashboard()
+        {
+            var myAssignments = await _context.ProjectAssignments
+                .Include(a => a.Stage).ThenInclude(s => s.Project)
+                .Where(a => a.LeadEngineerId == CurrentUserId || a.AssistantEngineerId == CurrentUserId)
+                .Where(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
+                .OrderBy(a => a.AgreedDate)
+                .ToListAsync();
+
+            var myTasks = await _context.ProjectTasks
+                .Include(t => t.Project)
+                .Include(t => t.Stage)
+                .Where(t => t.Assignees.Any(x => x.UserId == CurrentUserId))
+                .Where(t => t.Status != ProjectTaskStatus.Completed)
+                .OrderBy(t => t.DueDate)
+                .ToListAsync();
+
+            ViewBag.MyAssignments = myAssignments;
+            ViewBag.MyTasks = myTasks;
+            ViewBag.TodayTasks = myTasks.Count(t => t.DueDate.HasValue && t.DueDate.Value.Date == DateTime.UtcNow.Date);
+            ViewBag.OverdueTasks = myTasks.Count(t => t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.UtcNow.Date);
+            ViewBag.MyProjectsCount = myAssignments.Select(a => a.Stage.ProjectId).Distinct().Count();
+
+            return View();
         }
 
         [Authorize]
