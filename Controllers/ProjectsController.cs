@@ -144,6 +144,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Create()
         {
             await LoadDropdownsAsync();
+            ViewBag.LastProjectCode = await _context.Projects.OrderByDescending(p => p.Id).Select(p => p.Code).FirstOrDefaultAsync();
             ViewBag.CanEdit = true;
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
             ViewBag.Engineers = new List<ApplicationUser>();
@@ -156,7 +157,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-       [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
+                     [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
         {
             if (!ModelState.IsValid)
             {
@@ -184,7 +185,21 @@ namespace AtharERP_System.Controllers
 
             model.ActualDeliveryDate = null;
 
-            model.Code = await GenerateProjectCodeAsync();
+            if (string.IsNullOrWhiteSpace(model.Code))
+            {
+                model.Code = await GenerateProjectCodeAsync();
+            }
+            else if (await _context.Projects.AnyAsync(p => p.Code == model.Code))
+            {
+                ModelState.AddModelError(string.Empty, "رمز المشروع مستخدم بالفعل، اختاري رمزاً آخر أو اتركيه فارغاً للتوليد التلقائي");
+                await LoadDropdownsAsync();
+                ViewBag.CanEdit = true;
+                ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
+                ViewBag.Engineers = new List<ApplicationUser>();
+                ViewBag.Documents = new List<ProjectDocument>();
+                return View("Details", model);
+            }
+
             model.CreatedAt = DateTime.UtcNow;
             model.CreatedById = CurrentUserId;
             model.ActualCost = 0;

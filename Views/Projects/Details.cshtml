@@ -137,6 +137,20 @@
                 </div>
             </div>
 
+            @if (isNew)
+            {
+                <div style="margin-bottom:8px;">
+                    <label style="font-size:11px; color:#8a83a0;">رمز المشروع (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
+                    <input type="text" name="Code" placeholder="اتركيه فارغاً للتوليد التلقائي" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    @{
+                        var lastCode = ViewBag.LastProjectCode as string;
+                    }
+                    @if (!string.IsNullOrEmpty(lastCode))
+                    {
+                        <div class="stat-sub" style="margin-top:3px;">آخر رمز مسجَّل: @lastCode</div>
+                    }
+                </div>
+            }
             <div style="margin-bottom:8px;">
                 <label style="font-size:11px; color:#8a83a0;">الوصف</label>
                 <textarea name="Description" rows="2" disabled="@(!canEdit)" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
@@ -193,7 +207,7 @@
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">تاريخ التسليم الفعلي</label>
-                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEdit || Model.Status != ProjectStatus.Completed)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
             </div>
 
