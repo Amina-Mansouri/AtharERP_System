@@ -48,7 +48,7 @@ namespace AtharERP_System.Controllers
         {
             var myAssignments = await _context.ProjectAssignments
                 .Include(a => a.Stage).ThenInclude(s => s.Project)
-                .Where(a => a.LeadEngineerId == CurrentUserId || a.AssistantEngineerId == CurrentUserId)
+                                .Where(a => a.Engineers.Any(e => e.UserId == CurrentUserId))
                 .Where(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
                 .OrderBy(a => a.AgreedDate)
                 .ToListAsync();

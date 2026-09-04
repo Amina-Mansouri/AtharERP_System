@@ -304,12 +304,11 @@
             </select>
         </div>
 
-        <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 118px 118px 88px 96px 96px">
+        <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 88px 96px 96px">
             <div class="data-table-head">
                 <div class="cell">التكليف</div>
                 <div class="cell">المرحلة</div>
-                <div class="cell">المكلَّفة الرئيسية</div>
-                <div class="cell">المكلَّفة المساعدة</div>
+                <div class="cell">المهندسات</div>
                 <div class="cell">القيمة</div>
                 <div class="cell">الحالة</div>
                 <div class="cell"></div>
@@ -332,8 +331,39 @@
                             }
                         </div>
                         <div class="cell">@item.Stage.Name</div>
-                        <div class="cell">@(a.LeadEngineer?.FullName ?? "-")</div>
-                        <div class="cell">@(a.AssistantEngineer?.FullName ?? "-")</div>
+                        <div class="cell">
+                            @foreach (var eng in a.Engineers)
+                            {
+                                <div style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                                    <span>• @eng.User.FullName</span>
+                                    @if (canManageAssignments && !a.IsTransferredToFinance)
+                                    {
+                                        <form method="post" asp-controller="ProjectAssignments" asp-action="RemoveEngineer" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@eng.Id" />
+                                            <input type="hidden" name="projectId" value="@Model.Id" />
+                                            <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer;">×</button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            @if (canManageAssignments && !a.IsTransferredToFinance)
+                            {
+                                <form method="post" asp-controller="ProjectAssignments" asp-action="AddEngineer" style="display:flex; gap:3px; margin-top:3px;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="assignmentId" value="@a.Id" />
+                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                    <select name="userId" required style="height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px;">
+                                        <option value="">+ إضافة</option>
+                                        @foreach (var eng in engineers.Where(e => !a.Engineers.Any(x => x.UserId == e.Id)))
+                                        {
+                                            <option value="@eng.Id">@eng.FullName</option>
+                                        }
+                                    </select>
+                                    <button type="submit" style="height:22px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px; padding:0 5px;">+</button>
+                                </form>
+                            }
+                        </div>
                         <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
                         <div class="cell">
                             @if (canManageAssignments && !a.IsTransferredToFinance)
@@ -347,9 +377,7 @@
                                     <input type="hidden" name="Amount" value="@a.Amount" />
                                     <input type="hidden" name="DiscountOrAdditionPercent" value="@a.DiscountOrAdditionPercent" />
                                     <input type="hidden" name="IsUrgent" value="@a.IsUrgent" />
-                                    <input type="hidden" name="LeadEngineerId" value="@a.LeadEngineerId" />
-                                    <input type="hidden" name="AssistantEngineerId" value="@a.AssistantEngineerId" />
-                                    <input type="hidden" name="ReceivedDate" value="@a.ReceivedDate?.ToString("yyyy-MM-dd")" />
+                                      <input type="hidden" name="ReceivedDate" value="@a.ReceivedDate?.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="AgreedDate" value="@a.AgreedDate?.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="ActualDate" value="@a.ActualDate?.ToString("yyyy-MM-dd")" />
                                     <select name="Status" onchange="this.form.submit()" style="height:26px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;">
@@ -394,8 +422,7 @@
                         }
                     </select>
                     <input type="text" name="CostType" placeholder="نوع التكليف" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
-                    <select name="LeadEngineerId" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:11.5px;">
-                        <option value="">-- مهندسة رئيسية --</option>
+                    <select name="engineerIds" multiple style="height:60px; border:1px solid #e4e2ec; border-radius:8px; font-size:11px;">
                         @foreach (var eng in engineers)
                         {
                             <option value="@eng.Id">@eng.FullName</option>

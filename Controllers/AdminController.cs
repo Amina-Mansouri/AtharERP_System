@@ -129,7 +129,7 @@ namespace AtharERP_System.Controllers
 
             ViewBag.ProjectCount = await _context.ProjectTeamMembers.CountAsync(tm => tm.UserId == id);
             ViewBag.ActiveAssignmentCount = await _context.ProjectAssignments.CountAsync(a =>
-                (a.LeadEngineerId == id || a.AssistantEngineerId == id)
+                        a.Engineers.Any(e => e.UserId == id)
                 && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled);
 
             return View(user);
