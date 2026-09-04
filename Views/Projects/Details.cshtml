@@ -9,197 +9,231 @@
     var canViewCosts = ViewBag.CanViewCosts as bool? ?? false;
     var canManageStages = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Stages.Manage");
     var canManageTasks = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
-    var canManageTeam = canEdit || canManageStages || canManageTasks;
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var allEmployees = ViewBag.AllEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var aggregatedTasks = ViewBag.AggregatedSubProjectTasks as List<ProjectTask>;
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
 
-    string StatusLabel(ProjectStatus s) => s switch
+    var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
+    var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
+    var weightSum = Model.Stages.Sum(s => s.Weight);
+
+    string StageTagClass(StageStatus s) => s switch
     {
-        ProjectStatus.New => "جديد",
-        ProjectStatus.InProgress => "قيد التنفيذ",
-        ProjectStatus.OnHold => "متوقف مؤقتاً",
-        ProjectStatus.Completed => "مكتمل",
-        ProjectStatus.Cancelled => "ملغى",
-        _ => s.ToString()
+        StageStatus.Completed => "tag-success",
+        StageStatus.Delayed => "tag-danger",
+        StageStatus.InProgress => "tag-accent",
+        _ => ""
     };
 }
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1 class="athar-page-title">@Model.Name <small class="text-muted">(@Model.Code)</small></h1>
-    @if (canEdit)
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
+    <div>
+        <div style="font-size:11px; color:#8a83a0; font-weight:500;">المشاريع</div>
+        <div style="font-size:19px; font-weight:600; margin-top:2px;">@Model.Name <span class="stat-sub">(@Model.Code)</span></div>
+    </div>
+    <div class="page-head-actions">
+        @if (canEdit)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل المشروع</a>
+        }
+        <a asp-action="Index" class="btn-line">رجوع للقائمة</a>
+    </div>
+</div>
+
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">الحالة</span><span class="stat-value">@projectStatusLabels.FirstOrDefault(x => x.Value == Model.Status.ToString()).Label</span></div>
+    <div class="stat-item"><span class="kicker">نسبة الإنجاز</span><span class="stat-value">@Model.CompletionPercentage.ToString("N1")%</span></div>
+    @if (canViewClient)
     {
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn athar-btn">تعديل المشروع</a>
+        <div class="stat-item"><span class="kicker">العميل</span><span class="stat-value">@(Model.Client?.Name ?? "-")</span></div>
+    }
+    <div class="stat-item"><span class="kicker">البدء المخطط</span><span class="stat-value">@(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
+    <div class="stat-item"><span class="kicker">الانتهاء المخطط</span><span class="stat-value">@(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
+    @if (canViewCosts)
+    {
+        <div class="stat-item"><span class="kicker">التكلفة الفعلية</span><span class="stat-value">@((aggregatedActualCost ?? Model.ActualCost).ToString("N0")) د.ل</span></div>
     }
 </div>
 
-<div class="athar-card mt-3">
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <strong>الحالة:</strong>
-            <span class="badge athar-status-badge athar-status-@Model.Status">@StatusLabel(Model.Status)</span>
-        </div>
-        <div class="col-md-6 mb-3">
-            <strong>نسبة الإنجاز الكلية:</strong>
-            <div class="progress mt-1" style="height: 10px; max-width: 300px;">
-                <div class="progress-bar athar-progress-bar" style="width: @Model.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
-            </div>
-            <small>@Model.CompletionPercentage.ToString("N1")%</small>
-
-        </div>
-
-        @if (canViewClient)
-        {
-            <div class="col-md-6 mb-3">
-                <strong>العميل:</strong>
-                @if (Model.Client != null)
-                {
-                    @(Model.Client.Name)
-                    @(string.IsNullOrEmpty(Model.Client.CompanyName) ? "" : $" - {Model.Client.CompanyName}")
-                }
-                else
-                {
-                    @:-
-                }
-            </div>
-        }
-        <div class="col-md-6 mb-3">
-            <strong>تاريخ البدء المخطط:</strong> @(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")
-        </div>
-        <div class="col-md-6 mb-3">
-            <strong>تاريخ الانتهاء المخطط:</strong> @(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")
-        </div>
-        @if (canViewClient)
-        {
-            <div class="col-md-6 mb-3">
-                <strong>الميزانية:</strong> @(Model.Budget?.ToString("N2") ?? "-")
-            </div>
-        }
-        @if (canViewCosts)
-        {
-            <div class="col-md-6 mb-3">
-                <strong>التكلفة الفعلية:</strong> @((aggregatedActualCost ?? Model.ActualCost).ToString("N2")) د.ل
-            </div>
-        }
-        <div class="col-md-6 mb-3">
-            <strong>المشروع الرئيسي:</strong> @(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-")
-        </div>
-        @if (!string.IsNullOrEmpty(Model.Description))
-        {
-            <div class="col-12 mb-3">
-                <strong>الوصف:</strong>
-                <p class="mb-0">@Model.Description</p>
-            </div>
-        }
-    </div>
+<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <div style="font-size:12.5px; margin-bottom:10px;"><strong>الوصف:</strong> @Model.Description</div>
+    }
+    <div style="font-size:12.5px;"><strong>المشروع الرئيسي:</strong> @(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-")</div>
 
     @if (Model.ChildProjects.Any())
     {
-        <hr />
-        <h5>المشاريع الفرعية</h5>
-        <ul>
+        <div style="margin-top:10px;">
+            <div style="font-size:12px; font-weight:600; margin-bottom:6px;">المشاريع الفرعية</div>
             @foreach (var child in Model.ChildProjects)
             {
-                <li><a asp-action="Details" asp-route-id="@child.Id">@child.Code - @child.Name</a></li>
+                <div><a asp-action="Details" asp-route-id="@child.Id">@child.Code - @child.Name</a></div>
             }
-        </ul>
-    }
-
-    <hr />
-    <div class="d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">فريق المشروع</h5>
-    </div>
-    <ul class="list-group my-2">
-        @foreach (var tm in Model.TeamMembers)
-        {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                @tm.User.FullName <span class="badge athar-badge-active">@tm.Role</span>
-                @if (canEdit)
-                {
-                    <form method="post" asp-action="RemoveTeamMember" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@tm.Id" />
-                        <input type="hidden" name="projectId" value="@Model.Id" />
-                        <button type="submit" class="btn btn-sm btn-outline-danger">إزالة</button>
-                    </form>
-                }
-            </li>
-        }
-    </ul>
-    @if (canEdit)
-    {
-        <form method="post" asp-action="AddTeamMember" class="row g-2 align-items-end">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="projectId" value="@Model.Id" />
-            <div class="col-md-6">
-                <select name="userId" class="form-select form-select-sm">
-                    @foreach (var eng in allEmployees)
-                    {
-                        <option value="@eng.Id">@eng.FullName</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-4">
-                <select name="role" class="form-select form-select-sm">
-                    <option value="ProjectManager">مدير المشروع</option>
-                    <option value="LeadEngineer">مهندس رئيسي</option>
-                    <option value="Engineer">مهندس</option>
-                    <option value="Member" selected>عضو</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة</button>
-            </div>
-        </form>
+        </div>
     }
 
     @if (aggregatedTasks != null && aggregatedTasks.Any())
     {
-        <hr />
-        <h5>مهام المشاريع الفرعية (تجميع حي)</h5>
-        <ul>
+        <div style="margin-top:10px;">
+            <div style="font-size:12px; font-weight:600; margin-bottom:6px;">مهام المشاريع الفرعية (تجميع حي)</div>
             @foreach (var t in aggregatedTasks)
             {
-                <li>@t.Title - @t.Status</li>
+                <div class="stat-sub">@t.Title - @t.Status</div>
             }
-        </ul>
+        </div>
     }
 </div>
 
-<div class="athar-card mt-3">
-    <h5>مراحل المشروع</h5>
-    @if (!Model.Stages.Any())
+<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
+    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">فريق المشروع</div>
+    @foreach (var tm in Model.TeamMembers)
     {
-        <p class="text-muted">لا توجد مراحل مضافة بعد</p>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f1f0f6; font-size:12.5px;">
+            <span>@tm.User.FullName <span class="tag tag-accent">@tm.Role</span></span>
+            @if (canEdit)
+            {
+                <form method="post" asp-action="RemoveTeamMember" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@tm.Id" />
+                    <input type="hidden" name="projectId" value="@Model.Id" />
+                    <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10.5px; color:#c94a42;">إزالة</button>
+                </form>
+            }
+        </div>
     }
-    else
+    @if (canEdit)
     {
-        @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
-        {
-            <div class="mb-3">
-                <div class="d-flex justify-content-between">
-                    <span>@stage.Sequence. @stage.Name (@stage.Weight.ToString("N0")%)</span>
-                    <span>@stage.CompletionPercentage.ToString("N1")%</span>
-                </div>
-                <div class="progress" style="height: 10px;">
-                    <div class="progress-bar athar-progress-bar" style="width: @stage.CompletionPercentage.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
-                </div>
-                @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
+        <form method="post" asp-action="AddTeamMember" style="display:grid; grid-template-columns:1fr 160px 100px; gap:8px; margin-top:10px;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="projectId" value="@Model.Id" />
+            <select name="userId" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;">
+                @foreach (var eng in allEmployees)
                 {
-                    <div class="alert alert-warning py-1 px-2 mt-1 mb-0 small">
-                        ⚠ تجاوزت التكلفة الفعلية الميزانية المخصصة لهذه المرحلة
-                    </div>
+                    <option value="@eng.Id">@eng.FullName</option>
                 }
-            </div>
-        }
+            </select>
+            <select name="role" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;">
+                <option value="ProjectManager">مدير المشروع</option>
+                <option value="LeadEngineer">مهندس رئيسي</option>
+                <option value="Engineer">مهندس</option>
+                <option value="Member" selected>عضو</option>
+            </select>
+            <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12px; font-weight:600;">+ إضافة</button>
+        </form>
     }
 </div>
 
-@if (canManageStages)
-{
-    <partial name="_StagesPartial" model="Model" />
-}
+<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
+        <div style="font-size:13.5px; font-weight:600;">مراحل المشروع</div>
+        <span class="tag @(weightSum == 100 ? "tag-success" : "tag-warning")">مجموع الأوزان @weightSum.ToString("N0")%@(weightSum == 100 ? " ✓" : "")</span>
+    </div>
+
+    <div class="data-table" style="--cols: 26px 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 70px">
+        <div class="data-table-head">
+            <div class="cell"></div>
+            <div class="cell">ت</div>
+            <div class="cell">المرحلة</div>
+            <div class="cell">الوزن</div>
+            <div class="cell">المهندس المسؤول</div>
+            <div class="cell">التكليفات</div>
+            <div class="cell">نسبة الإنجاز</div>
+            <div class="cell">الحالة</div>
+            <div class="cell"></div>
+        </div>
+        @if (!Model.Stages.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
+        }
+        else
+        {
+            @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
+            {
+                <div class="data-table-row" style="cursor:pointer;" onclick="toggleStageRow(@stage.Id)">
+                    <div class="cell"><span id="arrow-@stage.Id" style="display:inline-block; transition:transform .15s;">▸</span></div>
+                    <div class="cell cell-num">@stage.Sequence</div>
+                    <div class="cell">@stage.Name</div>
+                    <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
+                    <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
+                    <div class="cell cell-num">@stage.Assignments.Count</div>
+                    <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
+                    <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
+                    <div class="cell" onclick="event.stopPropagation()">
+                        @if (canManageStages)
+                        {
+                            <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px;">تعديل</a>
+                        }
+                    </div>
+                </div>
+                <div id="row-@stage.Id" class="data-table-row" hidden style="background:#faf9fd;">
+                    <div class="cell" style="grid-column:1/-1; padding:10px 16px;">
+                        <div class="stat-sub">لا توجد تكليفات لهذه المرحلة بعد — ستُضاف إدارة التكليفات هنا في الخطوة القادمة.</div>
+                        @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
+                        {
+                            <div class="tag tag-danger" style="margin-top:6px;">تجاوزت التكلفة الفعلية (@stage.ActualCost.ToString("N0")) الميزانية المخصصة (@stage.Cost.Value.ToString("N0"))</div>
+                        }
+                        @if (canManageStages)
+                        {
+                            <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" style="display:inline-block; margin-top:8px;" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها ومهامها أيضاً. متابعة؟');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; color:#c94a42;">حذف المرحلة</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    @if (canManageStages)
+    {
+        <div style="padding:14px 16px; border-top:1px solid #f1f0f6;">
+            <div style="font-size:12px; font-weight:600; margin-bottom:8px;">+ إضافة مرحلة جديدة</div>
+            <form method="post" asp-controller="ProjectStages" asp-action="Create" style="display:grid; grid-template-columns:repeat(5,1fr) 110px; gap:10px; align-items:end;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ProjectId" value="@Model.Id" />
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم المرحلة</div>
+                    <input type="text" name="Name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الترتيب</div>
+                    <input type="number" name="Sequence" value="@(Model.Stages.Any() ? Model.Stages.Max(s => s.Sequence) + 1 : 1)" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوزن %</div>
+                    <input type="number" step="0.01" min="0" max="100" name="Weight" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">القسم</div>
+                    <select name="DepartmentId" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        <option value="">-- لا يوجد --</option>
+                        @foreach (var dept in departments)
+                        {
+                            <option value="@dept.Id">@dept.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المهندس المسؤول</div>
+                    <select name="AssignedEngineerId" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        <option value="">-- لا يوجد --</option>
+                        @foreach (var eng in engineers)
+                        {
+                            <option value="@eng.Id">@eng.FullName</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" style="height:34px; padding:0 16px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600; width:100%;">+ إضافة</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
 
 @if (canManageTasks)
 {
@@ -209,12 +243,15 @@
     }
 }
 
-<div class="mt-3">
-    <a asp-action="Index" class="btn athar-btn-outline">العودة إلى القائمة</a>
-</div>
-
-                        
 @section Scripts {
+    <script>
+        function toggleStageRow(id) {
+            var row = document.getElementById('row-' + id);
+            var arrow = document.getElementById('arrow-' + id);
+            row.hidden = !row.hidden;
+            arrow.style.transform = row.hidden ? 'rotate(0deg)' : 'rotate(90deg)';
+        }
+    </script>
     <form id="atharKanbanForm" method="post" asp-controller="ProjectTasks" asp-action="UpdateStatus" style="display:none;">
         @Html.AntiForgeryToken()
         <input type="hidden" name="id" id="atharKanbanTaskId" />

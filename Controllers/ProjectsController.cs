@@ -79,6 +79,7 @@ namespace AtharERP_System.Controllers
                 .Include(p => p.Stages).ThenInclude(s => s.AssignedEngineer)
                 .Include(p => p.Stages).ThenInclude(s => s.Department)
                 .Include(p => p.Stages).ThenInclude(s => s.Steps)
+                .Include(p => p.Stages).ThenInclude(s => s.Assignments)
                 .Include(p => p.Tasks).ThenInclude(t => t.Assignees).ThenInclude(a => a.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
