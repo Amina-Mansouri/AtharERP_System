@@ -86,14 +86,10 @@
                 <label class="form-label">تاريخ الانتهاء المخطط</label>
                 <input type="date" name="PlannedEndDate" class="form-control" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" />
             </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ البدء الفعلي</label>
-                <input type="date" name="ActualStartDate" class="form-control" value="@(Model.ActualStartDate?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ الانتهاء الفعلي</label>
-                <input type="date" name="ActualEndDate" class="form-control" value="@(Model.ActualEndDate?.ToString("yyyy-MM-dd"))" />
-            </div>
+            <label class="form-label">تاريخ التسليم الفعلي</label>
+            <input type="date" name="ActualDeliveryDate" class="form-control" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(Model.Status != StageStatus.Completed)" />
+        </div>
+        <div class="col-md-3 mb-3">
         </div>
 
         <div class="row">
