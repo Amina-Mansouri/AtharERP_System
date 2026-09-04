@@ -81,7 +81,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.CostType} - {model.FinalAmount:N2}");
 
             TempData["Success"] = "تمت إضافة التكليف بنجاح";
-            return RedirectToAction("Index", new { projectId = model.ProjectId });
+            return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -128,7 +128,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectAssignment), assignment.Id.ToString(), $"تعديل تكليف: {assignment.CostType} - {assignment.FinalAmount:N2}");
 
             TempData["Success"] = "تم تحديث التكليف بنجاح";
-            return RedirectToAction("Index", new { projectId = assignment.ProjectId });
+            return RedirectToAction("Details", "Projects", new { id = assignment.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -143,7 +143,7 @@ namespace AtharERP_System.Controllers
             if (assignment.IsTransferredToFinance)
             {
                 TempData["Error"] = "لا يمكن حذف تكليف تم ترحيله للمالية بالفعل";
-                return RedirectToAction("Index", new { projectId = assignment.ProjectId });
+                return RedirectToAction("Details", "Projects", new { id = assignment.ProjectId });
             }
 
             var projectId = assignment.ProjectId;
@@ -154,7 +154,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectAssignment), id.ToString(), $"حذف تكليف: {costType}");
 
             TempData["Success"] = "تم حذف التكليف بنجاح";
-            return RedirectToAction("Index", new { projectId });
+            return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
         // ============================================
@@ -175,7 +175,7 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Index", new { projectId = assignment.ProjectId });
+            return RedirectToAction("Details", "Projects", new { id = assignment.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -191,7 +191,7 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Index", new { projectId });
+            return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -206,7 +206,7 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Index", new { projectId });
+            return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
         // ============================================
