@@ -19,19 +19,22 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly AuditService _audit;
         private readonly NotificationService _notify;
+        private readonly ProjectCalculationService _calc;
 
         public ProjectAssignmentsController(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             PermissionService permissionService,
             AuditService audit,
-            NotificationService notify)
+            NotificationService notify,
+            ProjectCalculationService calc)
         {
             _context = context;
             _userManager = userManager;
             _permissionService = permissionService;
             _audit = audit;
             _notify = notify;
+            _calc = calc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -43,7 +46,8 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
     [Bind("ProjectId,StageId,CostType,Description,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model,
-    List<string>? engineerIds)
+    List<string>? engineerIds,
+    List<int>? taskIds)
         {
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
@@ -63,6 +67,19 @@ namespace AtharERP_System.Controllers
                     _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = model.Id, UserId = uid });
                 }
                 await _context.SaveChangesAsync();
+            }
+
+            if (taskIds != null && taskIds.Any())
+            {
+                var tasksToLink = await _context.ProjectTasks
+                    .Where(t => taskIds.Contains(t.Id) && t.StageId == model.StageId && t.ProjectAssignmentId == null)
+                    .ToListAsync();
+                foreach (var t in tasksToLink)
+                {
+                    t.ProjectAssignmentId = model.Id;
+                }
+                await _context.SaveChangesAsync();
+                await _calc.RecalculateAssignmentValueAsync(model.Id);
             }
 
             // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)

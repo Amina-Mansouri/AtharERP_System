@@ -153,10 +153,10 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
             [HttpPost]
             [ValidateAntiForgeryToken]
-            public async Task<IActionResult> ActivateTemplate(
-                int projectId, int stageTemplateId, decimal weight,
+        public async Task<IActionResult> ActivateTemplate(
+                int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
                 List<int>? selectedTaskIds, string? extraTasks)
-            {
+        {
                 var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
                 if (project == null)
                     return NotFound();
@@ -178,17 +178,18 @@ namespace AtharERP_System.Controllers
                     return RedirectToAction("Details", "Projects", new { id = projectId });
                 }
 
-                var stage = new ProjectStage
-                {
-                    ProjectId = projectId,
-                    Name = template.Name,
-                    Weight = weight,
-                    Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
-                    Status = StageStatus.New,
-                    CompletionPercentage = 0,
-                    ActualCost = 0
-                };
-                _context.ProjectStages.Add(stage);
+            var stage = new ProjectStage
+            {
+                ProjectId = projectId,
+                Name = template.Name,
+                Weight = weight,
+                AssignedEngineerId = string.IsNullOrEmpty(assignedEngineerId) ? null : assignedEngineerId,
+                Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
+                Status = StageStatus.New,
+                CompletionPercentage = 0,
+                ActualCost = 0
+            };
+            _context.ProjectStages.Add(stage);
                 await _context.SaveChangesAsync();
 
                 if (selectedTaskIds != null)
@@ -442,11 +443,10 @@ namespace AtharERP_System.Controllers
 
         private async Task LoadDropdownsAsync(int projectId)
         {
-            ViewBag.Engineers = await _context.ProjectTeamMembers
-    .Where(tm => tm.ProjectId == projectId)
-    .Select(tm => tm.User)
-    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
-    .ToListAsync();
+            ViewBag.Engineers = await _userManager.Users
+.Where(u => u.IsActive)
+.OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+.ToListAsync();
             ViewBag.Departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
         }
     }

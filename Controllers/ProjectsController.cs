@@ -124,7 +124,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
             ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
             ViewBag.AllEmployees = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
-            ViewBag.Engineers = project.TeamMembers.Select(tm => tm.User).OrderBy(u => u.FullName).ToList();
+            ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
@@ -159,6 +159,11 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Create(
                      [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
         {
+            if (model.PlannedEndDate.HasValue && model.PlannedStartDate.HasValue && model.PlannedEndDate < model.PlannedStartDate)
+            {
+                ModelState.AddModelError(string.Empty, "تاريخ التسليم المتفق عليه يجب أن يكون بعد تاريخ البدء");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync();
@@ -238,6 +243,11 @@ namespace AtharERP_System.Controllers
             if (model.ParentProjectId == id)
             {
                 ModelState.AddModelError(string.Empty, "لا يمكن أن يكون المشروع أباً لنفسه");
+            }
+
+            if (model.PlannedEndDate.HasValue && model.PlannedStartDate.HasValue && model.PlannedEndDate < model.PlannedStartDate)
+            {
+                ModelState.AddModelError(string.Empty, "تاريخ التسليم المتفق عليه يجب أن يكون بعد تاريخ البدء");
             }
             if (!ModelState.IsValid)
             {
