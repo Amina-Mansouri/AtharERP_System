@@ -61,7 +61,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
     <div class="stat-item"><span class="kicker">الحالة</span><span class="stat-value">@(Model.IsActive ? "نشط" : "معطل")</span></div>
 </div>
 
-<div class="tabs">
+<div class="tabs" role="tablist">
     <a class="tab-item active" data-bs-toggle="tab" href="#pane-data">البيانات</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-permissions">الصلاحيات الفعلية</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">المستندات @documents.Count</a>
