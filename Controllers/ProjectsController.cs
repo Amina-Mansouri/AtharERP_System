@@ -36,12 +36,25 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
         public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectScope? scope)
         {
-            var query = _context.Projects
+            var baseQuery = _context.Projects
                 .Include(p => p.Client)
                 .Include(p => p.ParentProject)
+                .Include(p => p.ChildProjects)
                 .AsQueryable();
 
-            query = await ApplyVisibilityFilterAsync(query);
+            baseQuery = await ApplyVisibilityFilterAsync(baseQuery);
+
+            var today = DateTime.UtcNow.Date;
+            var soonCutoff = today.AddDays(30);
+
+            ViewBag.TotalProjects = await baseQuery.CountAsync();
+            ViewBag.InProgressProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.InProgress);
+            ViewBag.CompletedProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.Completed);
+            ViewBag.OnHoldProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.OnHold);
+            ViewBag.SoonDeliveryProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.InProgress && p.PlannedEndDate != null && p.PlannedEndDate >= today && p.PlannedEndDate <= soonCutoff);
+            ViewBag.DelayedProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.InProgress && p.PlannedEndDate != null && p.PlannedEndDate < today);
+
+            var query = baseQuery;
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -62,7 +75,6 @@ namespace AtharERP_System.Controllers
             var projects = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
             return View(projects);
         }
-
         // ============================================
         // تفاصيل مشروع (يشمل تجميعاً حياً للمشاريع الفرعية إن كان رئيسياً)
         // ============================================

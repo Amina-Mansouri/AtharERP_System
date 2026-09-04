@@ -8,125 +8,122 @@
     var status = ViewBag.Status as ProjectStatus?;
     var scope = ViewBag.Scope as ProjectScope?;
     var canCreate = await PermissionService.HasPermissionAsync(User, "Projects.Create");
-    var canEdit = await PermissionService.HasPermissionAsync(User, "Projects.Edit");
-    var canDelete = await PermissionService.HasPermissionAsync(User, "Projects.Delete");
     var canViewClient = ViewBag.CanViewClient as bool? ?? false;
 
-    string StatusLabel(ProjectStatus s) => s switch
-    {
-        ProjectStatus.New => "جديد",
-        ProjectStatus.InProgress => "قيد التنفيذ",
-        ProjectStatus.OnHold => "متوقف مؤقتاً",
-        ProjectStatus.Completed => "مكتمل",
-        ProjectStatus.Cancelled => "ملغى",
-        _ => s.ToString()
-    };
+    var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
+    var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
+
+    int totalProjects = ViewBag.TotalProjects as int? ?? 0;
+    int inProgressProjects = ViewBag.InProgressProjects as int? ?? 0;
+    int completedProjects = ViewBag.CompletedProjects as int? ?? 0;
+    int onHoldProjects = ViewBag.OnHoldProjects as int? ?? 0;
+    int soonDeliveryProjects = ViewBag.SoonDeliveryProjects as int? ?? 0;
+    int delayedProjects = ViewBag.DelayedProjects as int? ?? 0;
+
+    var today = DateTime.UtcNow.Date;
 }
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1 class="athar-page-title">المشاريع</h1>
-    @if (canCreate)
-    {
-        <a asp-action="Create" class="btn athar-btn">+ مشروع جديد</a>
-    }
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
+    <div>
+        <div style="font-size:11px; color:#8a83a0; font-weight:500;">الإدارة</div>
+        <div style="font-size:19px; font-weight:600; margin-top:2px;">المشاريع</div>
+    </div>
+    <div class="page-head-actions">
+        @if (canCreate)
+        {
+            <a asp-action="Create" class="btn-line btn-line-accent">+ مشروع جديد</a>
+        }
+    </div>
 </div>
 
-<div class="athar-card mt-3">
-    <form method="get" asp-action="Index" class="row g-2 mb-3">
-        <div class="col-md-5">
-            <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث بالاسم أو الرمز..." />
-        </div>
-        <div class="col-md-3">
-            <select name="status" class="form-select">
-                <option value="">-- كل الحالات --</option>
-                <option value="New" selected="@(status == ProjectStatus.New)">جديد</option>
-                <option value="InProgress" selected="@(status == ProjectStatus.InProgress)">قيد التنفيذ</option>
-                <option value="OnHold" selected="@(status == ProjectStatus.OnHold)">متوقف مؤقتاً</option>
-                <option value="Completed" selected="@(status == ProjectStatus.Completed)">مكتمل</option>
-                <option value="Cancelled" selected="@(status == ProjectStatus.Cancelled)">ملغى</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select name="scope" class="form-select">
-                <option value="">-- كل الأنواع --</option>
-                <option value="Main" selected="@(scope == ProjectScope.Main)">رئيسي</option>
-                <option value="Sub" selected="@(scope == ProjectScope.Sub)">فرعي</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn athar-btn w-100">بحث</button>
-        </div>
-    </form>
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">الإجمالي</span><span class="stat-value">@totalProjects</span></div>
+    <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@inProgressProjects</span></div>
+    <div class="stat-item"><span class="kicker">المنجزة</span><span class="stat-value">@completedProjects</span></div>
+    <div class="stat-item"><span class="kicker">متوقفة أو مؤجلة</span><span class="stat-value">@onHoldProjects</span></div>
+    <div class="stat-item"><span class="kicker">اقترب تسليمها</span><span class="stat-value" style="color:#c9700f;">@soonDeliveryProjects</span></div>
+    <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@delayedProjects</span></div>
+</div>
 
-    <div class="table-responsive">
-        <table class="table athar-table align-middle">
-            <thead>
-                <tr>
-                    <th>الرمز</th>
-                    <th>اسم المشروع</th>
-                    @if (canViewClient)
-                    {
-                        <th>العميل</th>
-                    }
-                    <th>تاريخ البدء المخطط</th>
-                    <th>الحالة</th>
-                    <th>نسبة الإنجاز</th>
-                    @if (canViewClient)
-                    {
-                        <th>الميزانية</th>
-                    }
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">لا توجد مشاريع مطابقة</td>
-                    </tr>
-                }
-                @foreach (var project in Model)
-                {
-                    <tr>
-                        <td>@project.Code</td>
-                        <td>
-                            @project.Name
-                            @if (project.ParentProject != null)
-                            {
-                                <br /><small class="text-muted">فرعي من: @project.ParentProject.Name</small>
-                            }
-                        </td>
-                        @if (canViewClient)
-                        {
-                            <td>@(project.Client?.Name ?? "-")</td>
-                        }
-                        <td>@(project.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                        <td>
-                            <span class="badge athar-status-badge athar-status-@project.Status">@StatusLabel(project.Status)</span>
-                        </td>
-                        <td>@project.CompletionPercentage.ToString("N1")%</td>
-                        @if (canViewClient)
-                        {
-                            <td>@(project.Budget?.ToString("N2") ?? "-")</td>
-                        }
-                        <td>
-                            <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm athar-btn-outline">عرض</a>
-                            @if (canEdit)
-                            {
-                                <a asp-action="Edit" asp-route-id="@project.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
-                            }
-                            @if (canDelete)
-                            {
-                                <form method="post" asp-action="Delete" asp-route-id="@project.Id" class="d-inline"
-                                      onsubmit="return confirm('هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف كل بياناته نهائياً: المراحل، الخطوات، المهام، الفريق، التكاليف، المستندات، والجدول الزمني. لا يمكن التراجع عن هذا الإجراء.');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<form method="get" class="filter-bar">
+    <input type="text" name="search" class="filter-search" placeholder="الكود أو الاسم…" value="@search" />
+
+    <select name="status" class="filter-chip" onchange="this.form.submit()">
+        <option value="">الحالة ▾</option>
+        @foreach (var s in statusLabels)
+        {
+            <option value="@s.Value" selected="@(status?.ToString() == s.Value)">@s.Label</option>
+        }
+    </select>
+
+    <select name="scope" class="filter-chip" onchange="this.form.submit()">
+        <option value="">النوع ▾</option>
+        <option value="Main" selected="@(scope == ProjectScope.Main)">رئيسي</option>
+        <option value="Sub" selected="@(scope == ProjectScope.Sub)">فرعي</option>
+    </select>
+
+    @if (!string.IsNullOrEmpty(search) || status.HasValue || scope.HasValue)
+    {
+        <a asp-action="Index" class="filter-clear">مسح التصفية</a>
+    }
+</form>
+
+<div class="data-table" style="--cols: 92px minmax(0,1.6fr) 122px 62px 108px 112px 88px 62px 96px">
+    <div class="data-table-head">
+        <div class="cell">الرمز</div>
+        <div class="cell">المشروع</div>
+        @if (canViewClient)
+        {
+            <div class="cell">العميل</div>
+        }
+        <div class="cell">النوع</div>
+        @if (canViewClient)
+        {
+            <div class="cell">القيمة</div>
+        }
+        <div class="cell">نسبة الإنجاز</div>
+        <div class="cell">التسليم</div>
+        <div class="cell">تأخير</div>
+        <div class="cell">الحالة</div>
     </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مشاريع مطابقة</div></div>
+    }
+    else
+    {
+        @foreach (var project in Model)
+        {
+            var delayDays = project.Status == ProjectStatus.InProgress && project.PlannedEndDate.HasValue && project.PlannedEndDate.Value.Date < today
+                ? (today - project.PlannedEndDate.Value.Date).Days
+                : 0;
+            <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" style="text-decoration:none; color:inherit;">
+                <div class="cell cell-num">@project.Code</div>
+                <div class="cell">
+                    @project.Name
+                    @if (project.ChildProjects.Any())
+                    {
+                        <span class="tag tag-accent">@project.ChildProjects.Count مشاريع فرعية</span>
+                    }
+                    @if (project.ParentProject != null)
+                    {
+                        <div class="stat-sub">فرعي من: @project.ParentProject.Name</div>
+                    }
+                </div>
+                @if (canViewClient)
+                {
+                    <div class="cell">@(project.Client?.Name ?? "-")</div>
+                }
+                <div class="cell">@(project.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == project.Type.Value.ToString()).Label : "-")</div>
+                @if (canViewClient)
+                {
+                    <div class="cell cell-num">@(project.Budget?.ToString("N0") ?? "-")</div>
+                }
+                <div class="cell cell-num">@project.CompletionPercentage.ToString("N0")%</div>
+                <div class="cell cell-num">@(project.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                <div class="cell cell-num">@(delayDays > 0 ? delayDays + " يوم" : "-")</div>
+                <div class="cell"><span class="tag @(project.Status == ProjectStatus.Completed ? "tag-success" : delayDays > 0 ? "tag-danger" : "")">@statusLabels.FirstOrDefault(x => x.Value == project.Status.ToString()).Label</span></div>
+            </a>
+        }
+    }
 </div>
