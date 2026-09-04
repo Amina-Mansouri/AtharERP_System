@@ -141,7 +141,7 @@
             {
                 <div style="margin-bottom:8px;">
                     <label style="font-size:11px; color:#8a83a0;">رمز المشروع (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
-                    <input type="text" name="Code" placeholder="اتركيه فارغاً للتوليد التلقائي" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    <input type="text" name="Code" value="@Model.Code" placeholder="رمز المشروع" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                     @{
                         var lastCode = ViewBag.LastProjectCode as string;
                     }
