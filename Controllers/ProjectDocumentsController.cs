@@ -29,38 +29,7 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        public async Task<IActionResult> Index(int projectId)
-        {
-            var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
-            var canViewOwn = await _permissionService.HasPermissionAsync(User, "Projects.ViewOwn");
-            if (!canViewAll && !canViewOwn)
-                return Forbid();
-
-            var project = await _context.Projects
-                .Include(p => p.TeamMembers)
-                .FirstOrDefaultAsync(p => p.Id == projectId);
-
-            if (project == null)
-                return NotFound();
-
-            var hasAccess = canViewAll
-                || project.CreatedById == CurrentUserId
-                || project.TeamMembers.Any(tm => tm.UserId == CurrentUserId);
-
-            if (!hasAccess)
-                return Forbid();
-
-            var documents = await _context.ProjectDocuments
-                .Include(d => d.UploadedBy)
-                .Where(d => d.ProjectId == projectId)
-                .OrderByDescending(d => d.UploadedAt)
-                .ToListAsync();
-
-            ViewBag.Project = project;
-            ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
-
-            return View(documents);
-        }
+        
 
         [RequirePermission("Projects.Edit")]
         [HttpPost]

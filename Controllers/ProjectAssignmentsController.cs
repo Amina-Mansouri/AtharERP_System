@@ -36,27 +36,7 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        [RequirePermission("Projects.Assignments.View")]
-        public async Task<IActionResult> Index(int projectId)
-        {
-            var project = await _context.Projects.FindAsync(projectId);
-            if (project == null)
-                return NotFound();
-
-            var assignments = await _context.ProjectAssignments
-                .Include(a => a.Subtasks)
-                .Include(a => a.Stage)
-                .Include(a => a.LeadEngineer)
-                .Include(a => a.AssistantEngineer)
-                .Where(a => a.ProjectId == projectId)
-                .OrderByDescending(a => a.CreatedAt)
-                .ToListAsync();
-
-            ViewBag.Project = project;
-            ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.Edit");
-
-            return View(assignments);
-        }
+        
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]

@@ -194,21 +194,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", new { id = model.Id });
         }
 
-        // ============================================
-        // تعديل مشروع
-        // ============================================
-        [RequirePermission("Projects.Edit")]
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var project = await _context.Projects.FindAsync(id);
-            if (project == null)
-                return NotFound();
-
-            await LoadDropdownsAsync(id);
-            return View(project);
-        }
-
+       
         [RequirePermission("Projects.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -356,64 +342,6 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = $"تم حذف المشروع {projectName} بنجاح";
             return RedirectToAction("Index");
-        }
-
-        // ============================================
-        // فريق المشروع (ProjectTeamMember)
-        // ============================================
-        [RequirePermission("Projects.Edit", "Projects.Stages.Manage", "Projects.Tasks.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddTeamMember(int projectId, string userId, TeamRole role)
-        {
-            var project = await _context.Projects.FindAsync(projectId);
-            if (project == null)
-                return NotFound();
-
-            var exists = await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId);
-            if (!exists)
-            {
-                _context.ProjectTeamMembers.Add(new ProjectTeamMember
-                {
-                    ProjectId = projectId,
-                    UserId = userId,
-                    Role = role,
-                    JoinedAt = DateTime.UtcNow
-                });
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "تمت إضافة العضو إلى الفريق بنجاح";
-            }
-            else
-            {
-                TempData["Error"] = "هذا العضو موجود بالفعل في الفريق";
-            }
-
-            return RedirectToAction("Details", new { id = projectId });
-        }
-
-        [RequirePermission("Projects.Edit", "Projects.Stages.Manage", "Projects.Tasks.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveTeamMember(int id, int projectId)
-        {
-            var member = await _context.ProjectTeamMembers.FindAsync(id);
-            if (member == null)
-                return RedirectToAction("Details", new { id = projectId });
-
-            var isAssignedToAnyTask = await _context.TaskAssignees
-                .AnyAsync(a => a.UserId == member.UserId && a.Task.ProjectId == projectId);
-
-            if (isAssignedToAnyTask)
-            {
-                TempData["Error"] = "لا يمكن إزالة هذا العضو من الفريق لأنه لا يزال مكلَّفاً بمهمة واحدة أو أكثر داخل هذا المشروع. أزيليه من المهام أولاً";
-                return RedirectToAction("Details", new { id = projectId });
-            }
-
-            _context.ProjectTeamMembers.Remove(member);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تمت إزالة العضو من الفريق";
-            return RedirectToAction("Details", new { id = projectId });
         }
 
         // ============================================

@@ -58,13 +58,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الانتهاء المخطط")]
         public DateTime? PlannedEndDate { get; set; }
 
-        [DataType(DataType.Date)]
-        [Display(Name = "تاريخ البدء الفعلي")]
-        public DateTime? ActualStartDate { get; set; }
-
-        [DataType(DataType.Date)]
-        [Display(Name = "تاريخ الانتهاء الفعلي")]
-        public DateTime? ActualEndDate { get; set; }
 
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ التسليم الفعلي")]
