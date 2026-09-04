@@ -119,7 +119,7 @@
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
-                    <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields() disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                    <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" disabled="@(!canEdit)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
                         <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">مشروع فرعي</option>
                     </select>
