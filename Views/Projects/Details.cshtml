@@ -3,7 +3,8 @@
 @model Project
 @inject PermissionService PermissionService
 @{
-    ViewData["Title"] = $"تفاصيل المشروع - {Model.Name}";
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "مشروع جديد" : $"تفاصيل المشروع - {Model.Name}";
     var canEdit = ViewBag.CanEdit as bool? ?? false;
     var canViewClient = ViewBag.CanViewClient as bool? ?? false;
     var canViewCosts = ViewBag.CanViewCosts as bool? ?? false;
@@ -14,9 +15,14 @@
     var stageTemplates = ViewBag.StageTemplates as List<StageTemplate> ?? new List<StageTemplate>();
     var aggregatedTasks = ViewBag.AggregatedSubProjectTasks as List<ProjectTask>;
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
+    var clients = ViewBag.Clients as List<Client> ?? new List<Client>();
+    var parentProjects = ViewBag.ParentProjects as List<Project> ?? new List<Project>();
+    var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
 
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
+    var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
+    var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
     var weightSum = Model.Stages.Sum(s => s.Weight);
 
     string StageTagClass(StageStatus s) => s switch
@@ -36,281 +42,457 @@
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
     <div>
         <div style="font-size:11px; color:#8a83a0; font-weight:500;">المشاريع</div>
-        <div style="font-size:19px; font-weight:600; margin-top:2px;">@Model.Name <span class="stat-sub">(@Model.Code)</span></div>
+        <div style="font-size:19px; font-weight:600; margin-top:2px;">
+            @if (isNew)
+            {
+                @:مشروع جديد
+            }
+            else
+            {
+                @Model.Name
+                <span class="stat-sub">(@Model.Code)</span>
+            }
+        </div>
     </div>
     <div class="page-head-actions">
-        @if (canEdit)
+        @if (!isNew && canEdit)
         {
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل المشروع</a>
+            @if (Model.Status == ProjectStatus.OnHold || Model.Status == ProjectStatus.Cancelled)
+            {
+                <form method="post" asp-action="Reactivate" asp-route-id="@Model.Id" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-line">إعادة تفعيل</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" asp-action="Hold" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('إيقاف المشروع مؤقتاً؟');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-line">إيقاف مؤقت</button>
+                </form>
+                <form method="post" asp-action="Cancel" asp-route-id="@Model.Id" class="d-inline" onsubmit="return confirm('إلغاء المشروع نهائياً؟ لا يمكن التراجع.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-line" style="color:#c94a42;">إلغاء المشروع</button>
+                </form>
+            }
         }
         <a asp-action="Index" class="btn-line">رجوع للقائمة</a>
     </div>
 </div>
 
-<div class="stat-strip stat-strip-text">
-    <div class="stat-item"><span class="kicker">الحالة</span><span class="stat-value">@projectStatusLabels.FirstOrDefault(x => x.Value == Model.Status.ToString()).Label</span></div>
-    <div class="stat-item"><span class="kicker">نسبة الإنجاز</span><span class="stat-value">@Model.CompletionPercentage.ToString("N1")%</span></div>
-    @if (canViewClient)
-    {
-        <div class="stat-item"><span class="kicker">العميل</span><span class="stat-value">@(Model.Client?.Name ?? "-")</span></div>
-    }
-    <div class="stat-item"><span class="kicker">البدء المخطط</span><span class="stat-value">@(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
-    <div class="stat-item"><span class="kicker">الانتهاء المخطط</span><span class="stat-value">@(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
-    @if (canViewCosts)
-    {
-        <div class="stat-item"><span class="kicker">التكلفة الفعلية</span><span class="stat-value">@((aggregatedActualCost ?? Model.ActualCost).ToString("N0")) د.ل</span></div>
-    }
-</div>
-
-<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
-    @if (!string.IsNullOrEmpty(Model.Description))
-    {
-        <div style="font-size:12.5px; margin-bottom:10px;"><strong>الوصف:</strong> @Model.Description</div>
-    }
-    <div style="font-size:12.5px;"><strong>المشروع الرئيسي:</strong> @(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-")</div>
-
-    @if (Model.ChildProjects.Any())
-    {
-        <div style="margin-top:10px;">
-            <div style="font-size:12px; font-weight:600; margin-bottom:6px;">المشاريع الفرعية</div>
-            @foreach (var child in Model.ChildProjects)
-            {
-                <div><a asp-action="Details" asp-route-id="@child.Id">@child.Code - @child.Name</a></div>
-            }
-        </div>
-    }
-
-    @if (aggregatedTasks != null && aggregatedTasks.Any())
-    {
-        <div style="margin-top:10px;">
-            <div style="font-size:12px; font-weight:600; margin-bottom:6px;">مهام المشاريع الفرعية (تجميع حي)</div>
-            @foreach (var t in aggregatedTasks)
-            {
-                <div class="stat-sub">@t.Title - @t.Status</div>
-            }
-        </div>
-    }
-</div>
-
-<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; flex-wrap:wrap; gap:8px;">
-        <div style="font-size:13.5px; font-weight:600;">التكليفات</div>
-        <select id="stageFilter" onchange="filterAssignmentsByStage()" style="height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;">
-            <option value="">كل المراحل</option>
-            @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
-            {
-                <option value="@stage.Id">@stage.Name</option>
-            }
-        </select>
-    </div>
-
-    <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 118px 118px 88px 96px 96px">
-        <div class="data-table-head">
-            <div class="cell">التكليف</div>
-            <div class="cell">المرحلة</div>
-            <div class="cell">المكلَّفة الرئيسية</div>
-            <div class="cell">المكلَّفة المساعدة</div>
-            <div class="cell">القيمة</div>
-            <div class="cell">الحالة</div>
-            <div class="cell"></div>
-        </div>
-        @if (!allAssignments.Any())
+@if (!isNew)
+{
+    <div class="stat-strip stat-strip-text">
+        <div class="stat-item"><span class="kicker">الحالة</span><span class="stat-value">@projectStatusLabels.FirstOrDefault(x => x.Value == Model.Status.ToString()).Label</span></div>
+        <div class="stat-item"><span class="kicker">نسبة الإنجاز</span><span class="stat-value">@Model.CompletionPercentage.ToString("N1")%</span></div>
+        @if (canViewClient)
         {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مضافة بعد</div></div>
+            <div class="stat-item"><span class="kicker">العميل</span><span class="stat-value">@(Model.Client?.Name ?? "-")</span></div>
         }
-        else
+        <div class="stat-item"><span class="kicker">البدء</span><span class="stat-value">@(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
+        <div class="stat-item"><span class="kicker">التسليم المتفق عليه</span><span class="stat-value">@(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</span></div>
+        @if (canViewCosts)
         {
-            @foreach (var item in allAssignments)
-            {
-                var a = item.Assignment;
-                <div class="data-table-row" data-stage="@item.Stage.Id">
-                    <div class="cell">
-                        @a.CostType
-                        @if (a.IsUrgent)
-                        {
-                            <span class="tag tag-danger">مستعجل</span>
-                        }
-                    </div>
-                    <div class="cell">@item.Stage.Name</div>
-                    <div class="cell">@(a.LeadEngineer?.FullName ?? "-")</div>
-                    <div class="cell">@(a.AssistantEngineer?.FullName ?? "-")</div>
-                    <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
-                    <div class="cell">
-                        @if (canManageAssignments && !a.IsTransferredToFinance)
-                        {
-                            <form method="post" asp-controller="ProjectAssignments" asp-action="Edit" asp-route-id="@a.Id">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="CostType" value="@a.CostType" />
-                                <input type="hidden" name="Description" value="@a.Description" />
-                                <input type="hidden" name="Area" value="@a.Area" />
-                                <input type="hidden" name="PricePerMeter" value="@a.PricePerMeter" />
-                                <input type="hidden" name="Amount" value="@a.Amount" />
-                                <input type="hidden" name="DiscountOrAdditionPercent" value="@a.DiscountOrAdditionPercent" />
-                                <input type="hidden" name="IsUrgent" value="@a.IsUrgent" />
-                                <input type="hidden" name="LeadEngineerId" value="@a.LeadEngineerId" />
-                                <input type="hidden" name="AssistantEngineerId" value="@a.AssistantEngineerId" />
-                                <input type="hidden" name="ReceivedDate" value="@a.ReceivedDate?.ToString("yyyy-MM-dd")" />
-                                <input type="hidden" name="AgreedDate" value="@a.AgreedDate?.ToString("yyyy-MM-dd")" />
-                                <input type="hidden" name="ActualDate" value="@a.ActualDate?.ToString("yyyy-MM-dd")" />
-                                <select name="Status" onchange="this.form.submit()" style="height:26px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;">
-                                    @foreach (var st in assignmentStatusLabels)
-                                    {
-                                        <option value="@st.Value" selected="@(a.Status.ToString() == st.Value)">@st.Label</option>
-                                    }
-                                </select>
-                            </form>
-                        }
-                        else
-                        {
-                            <span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
-                        }
-                    </div>
-                    <div class="cell">
-                        @if (canManageAssignments && !a.IsTransferredToFinance)
-                        {
-                            <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10.5px; color:#c94a42;">حذف</button>
-                            </form>
-                        }
-                    </div>
-                </div>
-            }
+            <div class="stat-item"><span class="kicker">التكلفة الفعلية</span><span class="stat-value">@((aggregatedActualCost ?? Model.ActualCost).ToString("N0")) د.ل</span></div>
         }
     </div>
+}
 
-    @if (canManageAssignments)
-    {
-        <div style="padding:12px 16px; border-top:1px solid #f1f0f6;">
-            <div style="font-size:12px; font-weight:600; margin-bottom:8px;">+ إضافة تكليف جديد</div>
-            <form method="post" asp-controller="ProjectAssignments" asp-action="Create" style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="ProjectId" value="@Model.Id" />
-                <select name="StageId" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:11.5px;">
-                    <option value="">-- المرحلة --</option>
-                    @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
-                    {
-                        <option value="@stage.Id">@stage.Name</option>
-                    }
-                </select>
-                <input type="text" name="CostType" placeholder="نوع التكليف" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
-                <select name="LeadEngineerId" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:11.5px;">
-                    <option value="">-- مهندسة رئيسية --</option>
-                    @foreach (var eng in engineers)
-                    {
-                        <option value="@eng.Id">@eng.FullName</option>
-                    }
-                </select>
-                <input type="number" step="0.01" min="0" name="Amount" value="0" placeholder="المبلغ" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
-                <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; font-weight:600;">+ إضافة</button>
-            </form>
-        </div>
-    }
-</div>
+<div style="display:grid; grid-template-columns: @(isNew ? "1fr" : "1.4fr 1fr"); gap:12px; margin-bottom:12px;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">بيانات المشروع</div>
 
-<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
-        <div style="font-size:13.5px; font-weight:600;">مراحل المشروع</div>
-        <span class="tag @(weightSum == 100 ? "tag-success" : "tag-warning")">مجموع الأوزان @weightSum.ToString("N0")%@(weightSum == 100 ? " ✓" : "")</span>
-    </div>
-
-    <div class="data-table" style="--cols: 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 84px">
-        <div class="data-table-head">
-            <div class="cell">ت</div>
-            <div class="cell">المرحلة</div>
-            <div class="cell">الوزن</div>
-            <div class="cell">المهندس المسؤول</div>
-            <div class="cell">التكليفات</div>
-            <div class="cell">نسبة الإنجاز</div>
-            <div class="cell">الحالة</div>
-            <div class="cell"></div>
-        </div>
-        @if (!Model.Stages.Any())
+        @if (!ViewData.ModelState.IsValid)
         {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
-        }
-        else
-        {
-            @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
-            {
-                <div class="data-table-row">
-                    <div class="cell cell-num">@stage.Sequence</div>
-                    <div class="cell">
-                        @stage.Name
-                        @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
-                        {
-                            <span class="tag tag-danger">تجاوز التكلفة</span>
-                        }
-                    </div>
-                    <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
-                    <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
-                    <div class="cell cell-num">@stage.Assignments.Count</div>
-                    <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
-                    <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
-                    <div class="cell" style="display:flex; gap:6px;">
-                        @if (canManageStages)
-                        {
-                            <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px;">تعديل</a>
-                            <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها أيضاً. متابعة؟');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
-                            </form>
-                        }
-                    </div>
-                </div>
-            }
-        }
-    </div>
-
-    @if (canManageStages)
-    {
-        <div style="padding:14px 16px; border-top:1px solid #f1f0f6;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div style="font-size:12px; font-weight:600;">قوالب المراحل — فعّلي ما يحتاجه هذا المشروع</div>
-                <a asp-controller="StageTemplates" asp-action="Index" style="font-size:11px;">+ إدارة القوالب</a>
-            </div>
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-                @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
+            <div style="margin:12px 16px 0; padding:9px 12px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.06); border-radius:8px; font-size:11.5px; color:#c94a42;">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
                 {
-                    var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
-                    <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff");">
-                        <div style="display:flex; align-items:center; justify-content:space-between;">
-                            <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
-                            @if (isUsed)
-                            {
-                                <span class="tag tag-accent">مفعّلة</span>
-                            }
-                        </div>
-                        <div style="font-size:10px; color:#8a83a0; margin-top:4px;">@tpl.DefaultTasks.Count مهام افتراضية</div>
-
-                        @if (!isUsed)
-                        {
-                            <form method="post" asp-controller="ProjectStages" asp-action="ActivateTemplate" style="margin-top:8px;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="projectId" value="@Model.Id" />
-                                <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
-                                <div style="margin-bottom:6px;">
-                                    <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                </div>
-                                <div style="display:grid; gap:3px; margin-bottom:6px;">
-                                    @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
-                                    {
-                                        <label style="display:flex; align-items:center; gap:5px; font-size:10.5px; color:#5a5370;">
-                                            <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
-                                            @t.TaskName
-                                        </label>
-                                    }
-                                </div>
-                                <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;"></textarea>
-                                <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
-                            </form>
-                        }
-                    </div>
+                    <div>@error.ErrorMessage</div>
                 }
             </div>
+        }
+
+        @if (canEdit)
+        {
+            <form method="post" asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@Model.Id" style="padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
+                @Html.AntiForgeryToken()
+                <div style="grid-column:span 2;">
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم المشروع <span style="color:#e35d54;">*</span></div>
+                    <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">العميل <span style="color:#e35d54;">*</span></div>
+                    <select name="ClientId" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        <option value="">-- اختاري --</option>
+                        @foreach (var c in clients)
+                        {
+                            <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نطاق المشروع</div>
+                    <select name="Scope" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">رئيسي</option>
+                        <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">فرعي</option>
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المشروع الرئيسي (إن كان فرعياً)</div>
+                    <select name="ParentProjectId" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        <option value="">-- لا يوجد --</option>
+                        @foreach (var p in parentProjects)
+                        {
+                            <option value="@p.Id" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نوع المشروع</div>
+                    <select name="Type" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        <option value="">-- غير محدد --</option>
+                        @foreach (var t in typeLabels)
+                        {
+                            <option value="@t.Value" selected="@(Model.Type?.ToString() == t.Value)">@t.Label</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الأولوية</div>
+                    <select name="Priority" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                        @foreach (var p in priorityLabels)
+                        {
+                            <option value="@p.Value" selected="@(Model.Priority.ToString() == p.Value)">@p.Label</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">تاريخ البدء</div>
+                    <input type="date" name="PlannedStartDate" value="@Model.PlannedStartDate?.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">التسليم المتفق عليه</div>
+                    <input type="date" name="PlannedEndDate" value="@Model.PlannedEndDate?.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">التسليم الفعلي</div>
+                    <input type="date" name="ActualDeliveryDate" value="@Model.ActualDeliveryDate?.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الميزانية</div>
+                    <input type="number" step="0.01" min="0" name="Budget" value="@Model.Budget" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+                </div>
+                <div style="grid-column:span 2; display:flex; align-items:center; gap:8px; margin-top:6px;">
+                    <input type="checkbox" name="AutoTransferToSite" value="true" id="autoTransfer" checked="@Model.AutoTransferToSite" style="width:16px; height:16px;" />
+                    <input type="hidden" name="AutoTransferToSite" value="false" />
+                    <label for="autoTransfer" style="font-size:11.5px;">ترحيل تلقائي إلى إدارة المواقع عند بدء التنفيذ</label>
+                </div>
+                <div style="grid-column:span 2;">
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوصف</div>
+                    <textarea name="Description" rows="3" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:8px 11px; font-size:12.5px;">@Model.Description</textarea>
+                </div>
+                <div style="grid-column:span 2;">
+                    <button type="submit" style="height:36px; padding:0 20px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">@(isNew ? "+ إنشاء المشروع" : "حفظ التعديلات")</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div style="padding:14px 16px; font-size:12.5px; display:grid; gap:8px;">
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div><strong>الوصف:</strong> @Model.Description</div>
+                }
+                <div><strong>المشروع الرئيسي:</strong> @(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-")</div>
+            </div>
+        }
+
+        @if (!isNew && Model.ChildProjects.Any())
+        {
+            <div style="padding:0 16px 14px;">
+                <div style="font-size:12px; font-weight:600; margin-bottom:6px;">المشاريع الفرعية</div>
+                @foreach (var child in Model.ChildProjects)
+                {
+                    <div><a asp-action="Details" asp-route-id="@child.Id">@child.Code - @child.Name</a></div>
+                }
+            </div>
+        }
+
+        @if (aggregatedTasks != null && aggregatedTasks.Any())
+        {
+            <div style="padding:0 16px 14px;">
+                <div style="font-size:12px; font-weight:600; margin-bottom:6px;">مهام المشاريع الفرعية (تجميع حي)</div>
+                @foreach (var t in aggregatedTasks)
+                {
+                    <div class="stat-sub">@t.Title - @t.Status</div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!isNew)
+    {
+        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+            <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">وثائق المشروع</div>
+            <div style="padding:12px 16px; max-height:320px; overflow-y:auto;">
+                @if (!documents.Any())
+                {
+                    <p class="stat-sub" style="margin:0;">لا توجد وثائق مرفوعة بعد</p>
+                }
+                else
+                {
+                    @foreach (var doc in documents)
+                    {
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f6f5fa; font-size:11.5px;">
+                            <a href="@doc.FilePath" target="_blank">@doc.FileName</a>
+                            @if (canEdit)
+                            {
+                                <form method="post" asp-controller="ProjectDocuments" asp-action="Delete" asp-route-id="@doc.Id" onsubmit="return confirm('حذف هذا المستند؟');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                    <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            @if (canEdit)
+            {
+                <form method="post" asp-controller="ProjectDocuments" asp-action="Upload" enctype="multipart/form-data" style="padding:12px 16px; border-top:1px solid #f1f0f6;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projectId" value="@Model.Id" />
+                    <input type="file" name="file" required style="width:100%; font-size:11px; margin-bottom:6px;" />
+                    <input type="text" name="description" placeholder="وصف (اختياري)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px; margin-bottom:6px;" />
+                    <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ رفع ملف</button>
+                </form>
+            }
         </div>
     }
 </div>
+
+@if (!isNew)
+{
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
+            <div style="font-size:13.5px; font-weight:600;">التكليفات</div>
+            <select id="stageFilter" onchange="filterAssignmentsByStage()" style="height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;">
+                <option value="">كل المراحل</option>
+                @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
+                {
+                    <option value="@stage.Id">@stage.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 118px 118px 88px 96px 96px">
+            <div class="data-table-head">
+                <div class="cell">التكليف</div>
+                <div class="cell">المرحلة</div>
+                <div class="cell">المكلَّفة الرئيسية</div>
+                <div class="cell">المكلَّفة المساعدة</div>
+                <div class="cell">القيمة</div>
+                <div class="cell">الحالة</div>
+                <div class="cell"></div>
+            </div>
+            @if (!allAssignments.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مضافة بعد</div></div>
+            }
+            else
+            {
+                @foreach (var item in allAssignments)
+                {
+                    var a = item.Assignment;
+                    <div class="data-table-row" data-stage="@item.Stage.Id">
+                        <div class="cell">
+                            @a.CostType
+                            @if (a.IsUrgent)
+                            {
+                                <span class="tag tag-danger">مستعجل</span>
+                            }
+                        </div>
+                        <div class="cell">@item.Stage.Name</div>
+                        <div class="cell">@(a.LeadEngineer?.FullName ?? "-")</div>
+                        <div class="cell">@(a.AssistantEngineer?.FullName ?? "-")</div>
+                        <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
+                        <div class="cell">
+                            @if (canManageAssignments && !a.IsTransferredToFinance)
+                            {
+                                <form method="post" asp-controller="ProjectAssignments" asp-action="Edit" asp-route-id="@a.Id">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="CostType" value="@a.CostType" />
+                                    <input type="hidden" name="Description" value="@a.Description" />
+                                    <input type="hidden" name="Area" value="@a.Area" />
+                                    <input type="hidden" name="PricePerMeter" value="@a.PricePerMeter" />
+                                    <input type="hidden" name="Amount" value="@a.Amount" />
+                                    <input type="hidden" name="DiscountOrAdditionPercent" value="@a.DiscountOrAdditionPercent" />
+                                    <input type="hidden" name="IsUrgent" value="@a.IsUrgent" />
+                                    <input type="hidden" name="LeadEngineerId" value="@a.LeadEngineerId" />
+                                    <input type="hidden" name="AssistantEngineerId" value="@a.AssistantEngineerId" />
+                                    <input type="hidden" name="ReceivedDate" value="@a.ReceivedDate?.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="AgreedDate" value="@a.AgreedDate?.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="ActualDate" value="@a.ActualDate?.ToString("yyyy-MM-dd")" />
+                                    <select name="Status" onchange="this.form.submit()" style="height:26px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;">
+                                        @foreach (var st in assignmentStatusLabels)
+                                        {
+                                            <option value="@st.Value" selected="@(a.Status.ToString() == st.Value)">@st.Label</option>
+                                        }
+                                    </select>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
+                            }
+                        </div>
+                        <div class="cell">
+                            @if (canManageAssignments && !a.IsTransferredToFinance)
+                            {
+                                <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10.5px; color:#c94a42;">حذف</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        @if (canManageAssignments)
+        {
+            <div style="padding:12px 16px; border-top:1px solid #f1f0f6;">
+                <div style="font-size:12px; font-weight:600; margin-bottom:8px;">+ إضافة تكليف جديد</div>
+                <form method="post" asp-controller="ProjectAssignments" asp-action="Create" style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ProjectId" value="@Model.Id" />
+                    <select name="StageId" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:11.5px;">
+                        <option value="">-- المرحلة --</option>
+                        @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
+                        {
+                            <option value="@stage.Id">@stage.Name</option>
+                        }
+                    </select>
+                    <input type="text" name="CostType" placeholder="نوع التكليف" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                    <select name="LeadEngineerId" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:11.5px;">
+                        <option value="">-- مهندسة رئيسية --</option>
+                        @foreach (var eng in engineers)
+                        {
+                            <option value="@eng.Id">@eng.FullName</option>
+                        }
+                    </select>
+                    <input type="number" step="0.01" min="0" name="Amount" value="0" placeholder="المبلغ" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                    <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; font-weight:600;">+ إضافة</button>
+                </form>
+            </div>
+        }
+    </div>
+
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
+            <div style="font-size:13.5px; font-weight:600;">مراحل المشروع</div>
+            <span class="tag @(weightSum == 100 ? "tag-success" : "tag-warning")">مجموع الأوزان @weightSum.ToString("N0")%@(weightSum == 100 ? " ✓" : "")</span>
+        </div>
+
+        <div class="data-table" style="--cols: 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 84px">
+            <div class="data-table-head">
+                <div class="cell">ت</div>
+                <div class="cell">المرحلة</div>
+                <div class="cell">الوزن</div>
+                <div class="cell">المهندس المسؤول</div>
+                <div class="cell">التكليفات</div>
+                <div class="cell">نسبة الإنجاز</div>
+                <div class="cell">الحالة</div>
+                <div class="cell"></div>
+            </div>
+            @if (!Model.Stages.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
+            }
+            else
+            {
+                @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
+                {
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@stage.Sequence</div>
+                        <div class="cell">
+                            @stage.Name
+                            @if (stage.Cost.HasValue && stage.ActualCost > stage.Cost.Value)
+                            {
+                                <span class="tag tag-danger">تجاوز التكلفة</span>
+                            }
+                        </div>
+                        <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
+                        <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
+                        <div class="cell cell-num">@stage.Assignments.Count</div>
+                        <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
+                        <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
+                        <div class="cell" style="display:flex; gap:6px;">
+                            @if (canManageStages)
+                            {
+                                <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px;">تعديل</a>
+                                <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها ومهامها أيضاً. متابعة؟');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        @if (canManageStages)
+        {
+            <div style="padding:14px 16px; border-top:1px solid #f1f0f6;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <div style="font-size:12px; font-weight:600;">قوالب المراحل — فعّلي ما يحتاجه هذا المشروع</div>
+                    <a asp-controller="StageTemplates" asp-action="Index" style="font-size:11px;">+ إدارة القوالب</a>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                    @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
+                    {
+                        var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
+                        <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff");">
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
+                                @if (isUsed)
+                                {
+                                    <span class="tag tag-accent">مفعّلة</span>
+                                }
+                            </div>
+                            <div style="font-size:10px; color:#8a83a0; margin-top:4px;">@tpl.DefaultTasks.Count مهام افتراضية</div>
+
+                            @if (!isUsed)
+                            {
+                                <form method="post" asp-controller="ProjectStages" asp-action="ActivateTemplate" style="margin-top:8px;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                    <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
+                                    <div style="margin-bottom:6px;">
+                                        <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                    </div>
+                                    <div style="display:grid; gap:3px; margin-bottom:6px;">
+                                        @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                        {
+                                            <label style="display:flex; align-items:center; gap:5px; font-size:10.5px; color:#5a5370;">
+                                                <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
+                                                @t.TaskName
+                                            </label>
+                                        }
+                                    </div>
+                                    <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;"></textarea>
+                                    <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
 
 @section Scripts {
     <script>
@@ -319,6 +501,6 @@
                     document.querySelectorAll('[data-stage]').forEach(function (row) {
                         row.hidden = val !== '' && row.getAttribute('data-stage') !== val;
                     });
-        }
+                }
     </script>
 }

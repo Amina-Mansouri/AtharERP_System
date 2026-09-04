@@ -128,6 +128,8 @@ namespace AtharERP_System.Controllers
             ViewBag.Engineers = project.TeamMembers.Select(tm => tm.User).OrderBy(u => u.FullName).ToList();
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
+            ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
+            await LoadDropdownsAsync(id);
             return View(project);
         }
 
@@ -139,7 +141,14 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Create()
         {
             await LoadDropdownsAsync();
-            return View();
+            ViewBag.CanEdit = true;
+            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Costs.View");
+            ViewBag.AllEmployees = new List<ApplicationUser>();
+            ViewBag.Engineers = new List<ApplicationUser>();
+            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.StageTemplates = new List<StageTemplate>();
+            ViewBag.Documents = new List<ProjectDocument>();
+            return View("Details", new Project());
         }
 
         [RequirePermission("Projects.Create")]
