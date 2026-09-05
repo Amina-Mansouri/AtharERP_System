@@ -16,18 +16,12 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual Site Site { get; set; } = null!;
 
-        [Required(ErrorMessage = "اسم المقاول مطلوب")]
-        [StringLength(255)]
-        [Display(Name = "الاسم")]
-        public string Name { get; set; } = string.Empty;
+        [Required]
+        public int ContractorId { get; set; }
 
-        [StringLength(255)]
-        [Display(Name = "اسم الشركة")]
-        public string? CompanyName { get; set; }
-
-        [StringLength(50)]
-        [Display(Name = "الهاتف")]
-        public string? Phone { get; set; }
+        [ForeignKey("ContractorId")]
+        [ValidateNever]
+        public virtual Contractor Contractor { get; set; } = null!;
 
         [StringLength(255)]
         [Display(Name = "التخصص")]

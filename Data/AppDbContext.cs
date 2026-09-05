@@ -47,6 +47,7 @@ namespace AtharERP_System.Data
         public DbSet<SiteQualityCheck> SiteQualityChecks { get; set; } = null!;
         public DbSet<SiteSafetyCheck> SiteSafetyChecks { get; set; } = null!;
         public DbSet<SiteContractor> SiteContractors { get; set; } = null!;
+        public DbSet<Contractor> Contractors { get; set; } = null!;
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
         public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
@@ -428,12 +429,22 @@ namespace AtharERP_System.Data
                 .HasForeignKey(sc => sc.CheckedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== المقاولون (SiteContractor) ==========
+            // ========== المقاولون (SiteContractor / Contractor) ==========
             builder.Entity<SiteContractor>()
                 .HasOne(c => c.Site)
                 .WithMany(s => s.Contractors)
                 .HasForeignKey(c => c.SiteId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteContractor>()
+                .HasOne(c => c.Contractor)
+                .WithMany(c => c.SiteAssignments)
+                .HasForeignKey(c => c.ContractorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Contractor>()
+                .HasIndex(c => c.Email)
+                .IsUnique();
 
             // ========== الصيانة (SiteMaintenance) ==========
             builder.Entity<SiteMaintenance>()

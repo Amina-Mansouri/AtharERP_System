@@ -4,6 +4,7 @@
 @inject PermissionService PermissionService
 @{
     var site = ViewBag.Site as Site;
+    var allContractors = ViewBag.AllContractors as List<Contractor> ?? new List<Contractor>();
     var canManage = await PermissionService.HasPermissionAsync(User, "Sites.Manage");
     var isGlobalView = site == null;
 
@@ -92,24 +93,24 @@
         @foreach (var c in Model)
         {
             <div class="data-table-row">
-                <div class="cell">@c.Name</div>
+                <div class="cell">@c.Contractor.Name</div>
                 @if (isGlobalView)
                 {
                     <div class="cell">
                         <a asp-controller="Sites" asp-action="Details" asp-route-id="@c.SiteId">@c.Site.Code - @c.Site.Name</a>
                     </div>
                 }
-                <div class="cell">@(c.CompanyName ?? "-")</div>
-                <div class="cell cell-num">@(c.Phone ?? "-")</div>
+                <div class="cell">@(c.Contractor.CompanyName ?? "-")</div>
+                <div class="cell cell-num">@(c.Contractor.Phone ?? "-")</div>
                 <div class="cell">@(c.Specialty ?? "-")</div>
                 <div class="cell"><span class="tag @StatusTagClass(c.Status)">@StatusLabel(c.Status)</span></div>
                 @if (canManage)
                 {
                     <div class="cell" style="display:flex; gap:6px;">
                         <a asp-action="Edit" asp-route-id="@c.Id" class="btn-line">تعديل</a>
-                        <form method="post" asp-action="Delete" asp-route-id="@c.Id" onsubmit="return confirm('حذف هذا المقاول؟');">
+                        <form method="post" asp-action="Delete" asp-route-id="@c.Id" onsubmit="return confirm('إلغاء ربط هذا المقاول بالموقع؟');">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn-line" style="color:#c94a42;">حذف</button>
+                            <button type="submit" class="btn-line" style="color:#c94a42;">إلغاء الربط</button>
                         </form>
                     </div>
                 }
@@ -121,31 +122,60 @@
 @if (canManage && site != null)
 {
     <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-top:12px;">
-        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إضافة مقاول جديد</div>
-        <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">ربط مقاول موجود بهذا الموقع</div>
+        <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-bottom:14px;">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="SiteId" value="@site.Id" />
-            <div>
-                <label class="form-label" style="font-size:11px;">الاسم</label>
-                <input type="text" name="Name" class="form-control form-control-sm" required />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">الشركة</label>
-                <input type="text" name="CompanyName" class="form-control form-control-sm" />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">الهاتف</label>
-                <input type="text" name="Phone" class="form-control form-control-sm" />
+            <input type="hidden" name="siteId" value="@site.Id" />
+            <div style="flex:1; min-width:200px;">
+                <label class="form-label" style="font-size:11px;">المقاول</label>
+                <select name="contractorId" class="form-select form-select-sm" required>
+                    <option value="">-- اختاري --</option>
+                    @foreach (var ct in allContractors)
+                    {
+                        <option value="@ct.Id">@ct.Name (@ct.Email)</option>
+                    }
+                </select>
             </div>
             <div>
                 <label class="form-label" style="font-size:11px;">التخصص</label>
-                <input type="text" name="Specialty" class="form-control form-control-sm" />
+                <input type="text" name="specialty" class="form-control form-control-sm" />
             </div>
-            <button type="submit" class="btn-line btn-line-accent">+ إضافة</button>
+            <button type="submit" class="btn-line btn-line-accent">+ ربط</button>
+        </form>
+
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px; padding-top:10px; border-top:1px solid var(--sys-border);">أو إنشاء حساب مقاول جديد وربطه</div>
+        <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="siteId" value="@site.Id" />
+            <div>
+                <label class="form-label" style="font-size:11px;">الاسم</label>
+                <input type="text" name="newName" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الشركة</label>
+                <input type="text" name="newCompanyName" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الهاتف</label>
+                <input type="text" name="newPhone" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">البريد الإلكتروني</label>
+                <input type="email" name="newEmail" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">كلمة المرور</label>
+                <input type="password" name="newPassword" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">التخصص</label>
+                <input type="text" name="specialty" class="form-control form-control-sm" />
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">+ إنشاء وربط</button>
         </form>
     </div>
 }
 @if (canManage && site == null)
 {
-    <div style="margin-top:10px; font-size:11px; color:var(--sys-text-light);">لإضافة مقاول جديد، ادخلي على الموقع المطلوب من «إدارة المواقع» ثم «المقاولون» الخاصة به.</div>
+    <div style="margin-top:10px; font-size:11px; color:var(--sys-text-light);">لربط مقاول بموقع، ادخلي على الموقع المطلوب من «إدارة المواقع» ثم «المقاولون» الخاصة به.</div>
 }

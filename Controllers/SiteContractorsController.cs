@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -24,13 +25,16 @@ namespace AtharERP_System.Controllers
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         // ============================================
-        // قائمة مقاولي موقع معيّن
+        // قائمة مقاولي موقع معيّن (أو كل المقاولين)
         // ============================================
         [RequirePermission("Sites.View")]
         public async Task<IActionResult> Index(int? siteId)
         {
             Site? site = null;
-            var query = _context.SiteContractors.Include(c => c.Site).ThenInclude(s => s.Project).AsQueryable();
+            var query = _context.SiteContractors
+                .Include(c => c.Contractor)
+                .Include(c => c.Site).ThenInclude(s => s.Project)
+                .AsQueryable();
 
             if (siteId.HasValue)
             {
@@ -55,51 +59,110 @@ namespace AtharERP_System.Controllers
 
             var contractors = await query
                 .OrderByDescending(c => c.Status == ContractorStatus.Active)
-                .ThenBy(c => c.Name)
+                .ThenBy(c => c.Contractor.Name)
                 .ToListAsync();
+
+            if (site != null)
+            {
+                ViewBag.AllContractors = await _context.Contractors
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+            }
 
             ViewBag.Site = site;
             return View(contractors);
         }
 
         // ============================================
-        // إنشاء مقاول
+        // ربط مقاول بموقع (مقاول موجود، أو إنشاء مقاول جديد وربطه)
         // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("SiteId,Name,CompanyName,Phone,Specialty,StartDate,EndDate,Notes")] SiteContractor model)
+            int siteId, int? contractorId, string? newName, string? newCompanyName, string? newPhone,
+            string? newEmail, string? newPassword, string? specialty, DateTime? startDate, DateTime? endDate)
         {
-            var site = await _context.Sites.FindAsync(model.SiteId);
+            var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
                 return Forbid();
 
-            if (!ModelState.IsValid)
+            Contractor? contractor;
+
+            if (contractorId.HasValue)
             {
-                TempData["Error"] = "بيانات المقاول غير صحيحة";
-                return RedirectToAction("Index", new { siteId = model.SiteId });
+                contractor = await _context.Contractors.FindAsync(contractorId.Value);
+                if (contractor == null)
+                {
+                    TempData["Error"] = "المقاول المحدد غير موجود";
+                    return RedirectToAction("Index", new { siteId });
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(newName) || string.IsNullOrWhiteSpace(newEmail) || string.IsNullOrWhiteSpace(newPassword))
+                {
+                    TempData["Error"] = "لإنشاء مقاول جديد: الاسم والبريد الإلكتروني وكلمة المرور مطلوبة";
+                    return RedirectToAction("Index", new { siteId });
+                }
+
+                if (await _context.Contractors.AnyAsync(c => c.Email == newEmail))
+                {
+                    TempData["Error"] = "البريد الإلكتروني مستخدم بالفعل لمقاول آخر";
+                    return RedirectToAction("Index", new { siteId });
+                }
+
+                contractor = new Contractor
+                {
+                    Name = newName,
+                    CompanyName = newCompanyName,
+                    Phone = newPhone,
+                    Email = newEmail,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                contractor.PasswordHash = new PasswordHasher<Contractor>().HashPassword(contractor, newPassword);
+
+                _context.Contractors.Add(contractor);
+                await _context.SaveChangesAsync();
+
+                await _audit.LogAsync(CurrentUserId, "Create", nameof(Contractor), contractor.Id.ToString(), $"إنشاء حساب مقاول: {contractor.Name} ({contractor.Email})");
             }
 
-            model.Status = ContractorStatus.Active;
-            _context.SiteContractors.Add(model);
+            var alreadyLinked = await _context.SiteContractors.AnyAsync(sc => sc.SiteId == siteId && sc.ContractorId == contractor.Id);
+            if (alreadyLinked)
+            {
+                TempData["Error"] = "هذا المقاول مرتبط بهذا الموقع بالفعل";
+                return RedirectToAction("Index", new { siteId });
+            }
+
+            _context.SiteContractors.Add(new SiteContractor
+            {
+                SiteId = siteId,
+                ContractorId = contractor.Id,
+                Specialty = specialty,
+                StartDate = startDate,
+                EndDate = endDate,
+                Status = ContractorStatus.Active
+            });
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"تمت إضافة المقاول {model.Name} بنجاح";
-            return RedirectToAction("Index", new { siteId = model.SiteId });
+            TempData["Success"] = $"تم ربط المقاول {contractor.Name} بالموقع بنجاح";
+            return RedirectToAction("Index", new { siteId });
         }
 
         // ============================================
-        // تعديل مقاول
+        // تعديل بيانات ارتباط المقاول بالموقع (التخصص/التواريخ/الحالة)
         // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var contractor = await _context.SiteContractors.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
+            var contractor = await _context.SiteContractors.Include(c => c.Site).Include(c => c.Contractor).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
                 return NotFound();
 
@@ -114,9 +177,9 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,CompanyName,Phone,Specialty,StartDate,EndDate,Status,Notes")] SiteContractor model)
+            [Bind("Specialty,StartDate,EndDate,Status,Notes")] SiteContractor model)
         {
-            var contractor = await _context.SiteContractors.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
+            var contractor = await _context.SiteContractors.Include(c => c.Site).Include(c => c.Contractor).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
                 return NotFound();
 
@@ -124,11 +187,8 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             if (!ModelState.IsValid)
-                return View(model);
+                return View(contractor);
 
-            contractor.Name = model.Name;
-            contractor.CompanyName = model.CompanyName;
-            contractor.Phone = model.Phone;
             contractor.Specialty = model.Specialty;
             contractor.StartDate = model.StartDate;
             contractor.EndDate = model.EndDate;
@@ -137,19 +197,19 @@ namespace AtharERP_System.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"تم تحديث بيانات المقاول {contractor.Name} بنجاح";
+            TempData["Success"] = $"تم تحديث بيانات ارتباط المقاول {contractor.Contractor.Name} بنجاح";
             return RedirectToAction("Index", new { siteId = contractor.SiteId });
         }
 
         // ============================================
-        // حذف مقاول
+        // إلغاء ربط مقاول بموقع (لا يحذف حساب المقاول نفسه)
         // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var contractor = await _context.SiteContractors.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
+            var contractor = await _context.SiteContractors.Include(c => c.Site).Include(c => c.Contractor).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
                 return NotFound();
 
@@ -157,14 +217,14 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var siteId = contractor.SiteId;
-            var name = contractor.Name;
+            var name = contractor.Contractor.Name;
 
             _context.SiteContractors.Remove(contractor);
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Delete", nameof(SiteContractor), id.ToString(), $"حذف مقاول: {name}");
+            await _audit.LogAsync(CurrentUserId, "Delete", nameof(SiteContractor), id.ToString(), $"إلغاء ربط مقاول: {name}");
 
-            TempData["Success"] = "تم حذف المقاول بنجاح";
+            TempData["Success"] = "تم إلغاء ربط المقاول بالموقع بنجاح";
             return RedirectToAction("Index", new { siteId });
         }
     }
