@@ -11,27 +11,27 @@ namespace AtharERP_System.Controllers
     public class SiteMaintenanceController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly NotificationService _notify;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SiteMaintenanceController(AppDbContext context, NotificationService notify, AuditService audit)
+        public SiteMaintenanceController(AppDbContext context, AuditService audit, PermissionService permissionService)
         {
             _context = context;
-            _notify = notify;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        // ============================================
-        // قائمة طلبات الصيانة لموقع معيّن
-        // ============================================
         [RequirePermission("Sites.View")]
         public async Task<IActionResult> Index(int siteId)
         {
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var requests = await _context.SiteMaintenances
                 .Include(m => m.Responsible)
@@ -45,9 +45,6 @@ namespace AtharERP_System.Controllers
             return View(requests);
         }
 
-        // ============================================
-        // إنشاء طلب صيانة
-        // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -57,6 +54,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(model.SiteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -74,16 +74,16 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Index", new { siteId = model.SiteId });
         }
 
-        // ============================================
-        // تعديل / تحديث حالة طلب صيانة
-        // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var maintenance = await _context.SiteMaintenances.FindAsync(id);
+            var maintenance = await _context.SiteMaintenances.Include(m => m.Site).FirstOrDefaultAsync(m => m.Id == id);
             if (maintenance == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, maintenance.Site.ProjectId))
+                return Forbid();
 
             ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             return View(maintenance);
@@ -99,6 +99,9 @@ namespace AtharERP_System.Controllers
             var maintenance = await _context.SiteMaintenances.Include(m => m.Site).FirstOrDefaultAsync(m => m.Id == id);
             if (maintenance == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, maintenance.Site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -128,17 +131,17 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Index", new { siteId = maintenance.SiteId });
         }
 
-        // ============================================
-        // حذف طلب صيانة
-        // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var maintenance = await _context.SiteMaintenances.FindAsync(id);
+            var maintenance = await _context.SiteMaintenances.Include(m => m.Site).FirstOrDefaultAsync(m => m.Id == id);
             if (maintenance == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, maintenance.Site.ProjectId))
+                return Forbid();
 
             var siteId = maintenance.SiteId;
 

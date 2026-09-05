@@ -2,7 +2,6 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -12,33 +11,27 @@ namespace AtharERP_System.Controllers
     public class SiteSupplyRequestsController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly NotificationService _notify;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SiteSupplyRequestsController(
-            AppDbContext context,
-            NotificationService notify,
-            UserManager<ApplicationUser> userManager,
-            AuditService audit)
+        public SiteSupplyRequestsController(AppDbContext context, AuditService audit, PermissionService permissionService)
         {
             _context = context;
-            _notify = notify;
-            _userManager = userManager;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        // ============================================
-        // قائمة طلبات توريد موقع معيّن
-        // ============================================
         [RequirePermission("Supply.View")]
         public async Task<IActionResult> Index(int siteId)
         {
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var requests = await _context.SiteSupplyRequests
                 .Include(r => r.RequestedBy)
@@ -50,9 +43,6 @@ namespace AtharERP_System.Controllers
             return View(requests);
         }
 
-        // ============================================
-        // إنشاء طلب توريد (يرتبط تلقائياً بمشروع الموقع)
-        // ============================================
         [RequirePermission("Supply.Create")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -62,6 +52,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(model.SiteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -78,49 +71,42 @@ namespace AtharERP_System.Controllers
             _context.SiteSupplyRequests.Add(model);
             await _context.SaveChangesAsync();
 
-            // ملاحظة: لا يوجد حالياً دور/قسم "توريدات" مخصَّص في النظام (نفس فجوة قسم المالية المؤجَّلة)،
-            // فيصل الإشعار مؤقتاً لمدير النظام فقط إلى حين استحداث دور مختص لاحقاً
-            var adminIds = (await _userManager.GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
-          
-
             TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
             return RedirectToAction("Index", new { siteId = model.SiteId });
         }
 
-        // ============================================
-        // تحديث حالة طلب التوريد
-        // ============================================
         [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, SiteSupplyStatus status)
         {
-            var request = await _context.SiteSupplyRequests.FindAsync(id);
+            var request = await _context.SiteSupplyRequests.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == id);
             if (request == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, request.Site.ProjectId))
+                return Forbid();
 
             request.Status = status;
             await _context.SaveChangesAsync();
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(SiteSupplyRequest), id.ToString(), $"تحديث حالة طلب توريد إلى: {status}");
 
-           
-
             TempData["Success"] = "تم تحديث حالة طلب التوريد";
             return RedirectToAction("Index", new { siteId = request.SiteId });
         }
 
-        // ============================================
-        // حذف طلب توريد (تصحيح طلب خاطئ)
-        // ============================================
         [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var request = await _context.SiteSupplyRequests.FindAsync(id);
+            var request = await _context.SiteSupplyRequests.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == id);
             if (request == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, request.Site.ProjectId))
+                return Forbid();
 
             var siteId = request.SiteId;
             _context.SiteSupplyRequests.Remove(request);

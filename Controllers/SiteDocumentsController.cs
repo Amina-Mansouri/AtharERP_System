@@ -13,25 +13,27 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly FileUploadService _fileUpload;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SiteDocumentsController(AppDbContext context, FileUploadService fileUpload, AuditService audit)
+        public SiteDocumentsController(AppDbContext context, FileUploadService fileUpload, AuditService audit, PermissionService permissionService)
         {
             _context = context;
             _fileUpload = fileUpload;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        // ============================================
-        // قائمة مستندات موقع معيّن (مصنَّفة حسب النوع)
-        // ============================================
         [RequirePermission("Sites.View")]
         public async Task<IActionResult> Index(int siteId)
         {
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var documents = await _context.SiteDocuments
                 .Where(d => d.SiteId == siteId)
@@ -42,9 +44,6 @@ namespace AtharERP_System.Controllers
             return View(documents);
         }
 
-        // ============================================
-        // رفع مستند
-        // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -53,6 +52,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var result = await _fileUpload.SaveFileAsync(file, $"sites/{siteId}/documents");
             if (!result.Success)
@@ -80,17 +82,17 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Index", new { siteId });
         }
 
-        // ============================================
-        // حذف مستند
-        // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var document = await _context.SiteDocuments.FindAsync(id);
+            var document = await _context.SiteDocuments.Include(d => d.Site).FirstOrDefaultAsync(d => d.Id == id);
             if (document == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, document.Site.ProjectId))
+                return Forbid();
 
             var siteId = document.SiteId;
             var fileName = document.FileName;
