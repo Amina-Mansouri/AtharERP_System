@@ -182,22 +182,24 @@
                     </div>
                 }
 
-                @if (canSites)
-                {
-                    <div class="nav-group">
-                        <button type="button" class="nav-group-header @(activeSystem == "sys03" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys03">
-                            <span>المواقع <span class="tag tag-success">كاملة</span></span>
-                            <span class="nav-group-caret">▾</span>
-                        </button>
-                        <div class="collapse @(activeSystem == "sys03" ? "show" : "")" id="sys03">
-                            <div class="nav-subgroup-title">المواقع والعمليات</div>
+                    @if (canSites)
+                    {
+                        <div class="nav-group">
+                            <button type="button" class="nav-group-header @(activeSystem == "sys03" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys03">
+                                <span>المواقع <span class="tag tag-success">كاملة</span></span>
+                                <span class="nav-group-caret">▾</span>
+                            </button>
+                            <div class="collapse @(activeSystem == "sys03" ? "show" : "")" id="sys03">
+                                <div class="nav-subgroup-title">المواقع والعمليات</div>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
                                    asp-controller="Sites" asp-action="Index">إدارة المواقع</a>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteContractors" ? "active" : "")"
                                    asp-controller="SiteContractors" asp-action="Index">المقاولون</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contractors" ? "active" : "")"
+                                   asp-controller="Contractors" asp-action="Index">حسابات دخول المقاولين</a>
                             </div>
-                    </div>
-                }
+                        </div>
+                    }
 
                 <div class="nav-group">
                     <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">

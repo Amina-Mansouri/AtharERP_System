@@ -81,74 +81,8 @@ namespace AtharERP_System.Controllers
             return View(report);
         }
 
-        // ============================================
-        // إنشاء تقرير يومي (مع رفع صور اختيارية مباشرة)
-        // ============================================
-        [RequirePermission("Sites.Manage")]
-        [HttpGet]
-        public async Task<IActionResult> Create(int siteId)
-        {
-            var site = await _context.Sites.FindAsync(siteId);
-            if (site == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
-
-            ViewBag.Site = site;
-            return View();
-        }
-
-        [RequirePermission("Sites.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            [Bind("SiteId,ReportDate,Weather,WorkersCount,WorkCompleted,Issues,MaterialsUsed,EquipmentUsed,Visits,Notes")] SiteDailyReport model,
-            List<IFormFile>? photos)
-        {
-            var site = await _context.Sites.FindAsync(model.SiteId);
-            if (site == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
-
-            if (!ModelState.IsValid)
-            {
-                ViewBag.Site = site;
-                return View(model);
-            }
-
-            model.CreatedById = CurrentUserId;
-            model.CreatedAt = DateTime.UtcNow;
-
-            _context.SiteDailyReports.Add(model);
-            await _context.SaveChangesAsync();
-
-            if (photos != null)
-            {
-                foreach (var photo in photos.Where(p => p.Length > 0))
-                {
-                    var result = await _fileUpload.SaveFileAsync(photo, $"sites/{model.SiteId}/daily-reports/{model.Id}");
-                    if (result.Success)
-                    {
-                        _context.SiteDailyReportPhotos.Add(new SiteDailyReportPhoto
-                        {
-                            DailyReportId = model.Id,
-                            FilePath = result.FilePath!,
-                            UploadedAt = DateTime.UtcNow
-                        });
-                    }
-                }
-                await _context.SaveChangesAsync();
-            }
-
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteDailyReport), model.Id.ToString(), $"تقرير يومي لموقع: {site.Name} بتاريخ {model.ReportDate:yyyy-MM-dd}");
-
-            TempData["Success"] = "تمت إضافة التقرير اليومي بنجاح";
-            return RedirectToAction("Index", new { siteId = model.SiteId });
-        }
-
+       
+      
         // ============================================
         // إضافة صورة لتقرير موجود
         // ============================================
