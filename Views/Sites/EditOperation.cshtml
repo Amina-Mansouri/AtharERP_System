@@ -7,7 +7,7 @@
 
 <h1 class="athar-page-title">تعديل مرحلة العمل: @Model.Name</h1>
 
-<div class="athar-card mt-3">
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger">
@@ -89,7 +89,7 @@
             <textarea name="Notes" class="form-control" rows="2">@Model.Notes</textarea>
         </div>
 
-        <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
-        <a asp-action="Details" asp-route-id="@Model.SiteId" class="btn athar-btn-outline">إلغاء</a>
+        <button type="submit" class="btn-line btn-line-accent">حفظ التعديلات</button>
+        <a asp-action="Details" asp-route-id="@Model.SiteId" class="btn-line">إلغاء</a>
     </form>
 </div>
