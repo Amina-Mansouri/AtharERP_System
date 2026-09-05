@@ -44,38 +44,6 @@ namespace AtharERP_System.Controllers
             return View(requests);
         }
 
-        [RequirePermission("Supply.Create")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            [Bind("SiteId,MaterialName,Dimensions,Quantity,Unit,Notes")] SiteSupplyRequest model)
-        {
-            var site = await _context.Sites.FindAsync(model.SiteId);
-            if (site == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
-
-            if (!ModelState.IsValid)
-            {
-                var errors = string.Join("، ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                TempData["Error"] = $"بيانات طلب التوريد غير صحيحة: {errors}";
-                return RedirectToAction("Index", new { siteId = model.SiteId });
-            }
-
-            model.ProjectId = site.ProjectId;
-            model.Status = SiteSupplyStatus.Pending;
-            model.RequestDate = DateTime.UtcNow;
-            model.RequestedById = CurrentUserId;
-
-            _context.SiteSupplyRequests.Add(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
-            return RedirectToAction("Index", new { siteId = model.SiteId });
-        }
-
         [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]

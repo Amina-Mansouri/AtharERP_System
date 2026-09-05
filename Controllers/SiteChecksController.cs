@@ -56,41 +56,8 @@ namespace AtharERP_System.Controllers
 
             return View(qualityChecks);
         }
-
-        // ============================================
-        // فحوصات الجودة (SiteQualityCheck)
-        // ============================================
-        [RequirePermission("Quality.View")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateQualityCheck(
-            [Bind("SiteId,QualityType,CheckType,Description,Notes")] SiteQualityCheck model)
-        {
-            var site = await _context.Sites.FindAsync(model.SiteId);
-            if (site == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "بيانات فحص الجودة غير صحيحة";
-                return RedirectToAction("Index", new { siteId = model.SiteId });
-            }
-
-            model.Result = QualityCheckResult.Pending;
-            model.CheckDate = DateTime.UtcNow;
-            model.CheckedById = CurrentUserId;
-            model.IsApproved = false;
-
-            _context.SiteQualityChecks.Add(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تمت إضافة فحص الجودة بنجاح";
-            return RedirectToAction("Index", new { siteId = model.SiteId });
-        }
-
+       
+       
         [RequirePermission("Quality.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -117,40 +84,8 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Index", new { siteId = check.SiteId });
         }
 
-        // ============================================
-        // فحوصات السلامة (SiteSafetyCheck)
-        // ============================================
-        [RequirePermission("Quality.View")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateSafetyCheck(
-            [Bind("SiteId,CheckType,Description,Notes")] SiteSafetyCheck model)
-        {
-            var site = await _context.Sites.FindAsync(model.SiteId);
-            if (site == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "بيانات فحص السلامة غير صحيحة";
-                return RedirectToAction("Index", new { siteId = model.SiteId });
-            }
-
-            model.Result = SafetyResult.Safe;
-            model.CheckDate = DateTime.UtcNow;
-            model.CheckedById = CurrentUserId;
-            model.IsApproved = false;
-
-            _context.SiteSafetyChecks.Add(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تمت إضافة فحص السلامة بنجاح";
-            return RedirectToAction("Index", new { siteId = model.SiteId });
-        }
-
+       
+       
         [RequirePermission("Quality.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]

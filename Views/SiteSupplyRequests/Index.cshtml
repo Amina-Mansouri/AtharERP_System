@@ -5,7 +5,7 @@
 @{
     var site = ViewBag.Site as Site;
     ViewData["Title"] = $"طلبات التوريد - {site?.Name}";
-    var canCreate = await PermissionService.HasPermissionAsync(User, "Supply.Create");
+   
     var canApprove = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
 
     string StatusLabel(SiteSupplyStatus s) => s switch
@@ -34,36 +34,6 @@
     <a asp-controller="Sites" asp-action="Details" asp-route-id="@site?.Id" class="btn-line">العودة للموقع</a>
 </div>
 
-@if (canCreate)
-{
-    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-bottom:12px;">
-        <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="SiteId" value="@site?.Id" />
-            <div>
-                <label class="form-label" style="font-size:11px;">اسم المادة</label>
-                <input type="text" name="MaterialName" class="form-control form-control-sm" required />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">الأبعاد</label>
-                <input type="text" name="Dimensions" class="form-control form-control-sm" />
-            </div>
-            <div style="width:90px;">
-                <label class="form-label" style="font-size:11px;">الكمية</label>
-                <input type="number" step="0.01" min="0" name="Quantity" class="form-control form-control-sm" required />
-            </div>
-            <div style="width:110px;">
-                <label class="form-label" style="font-size:11px;">الوحدة</label>
-                <input type="text" name="Unit" class="form-control form-control-sm" placeholder="متر / قطعة..." required />
-            </div>
-            <div style="flex:1; min-width:160px;">
-                <label class="form-label" style="font-size:11px;">ملاحظات</label>
-                <input type="text" name="Notes" class="form-control form-control-sm" />
-            </div>
-            <button type="submit" class="btn-line btn-line-accent">+ إرسال طلب</button>
-        </form>
-    </div>
-}
 
 <div class="data-table" style="--cols: 1.2fr 100px 90px 90px 1fr 130px @(canApprove ? "230px" : "");">
     <div class="data-table-head">
