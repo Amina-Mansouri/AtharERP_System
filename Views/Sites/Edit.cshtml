@@ -2,8 +2,6 @@
 @model Site
 @{
     ViewData["Title"] = "تعديل الموقع";
-    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
-    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var initialLat = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
     var initialLng = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
 }
@@ -36,26 +34,8 @@
                 <input type="text" name="Name" class="form-control" value="@Model.Name" required />
             </div>
             <div class="col-md-5 mb-3">
-                <label class="form-label">المشروع</label>
-                <select name="ProjectId" class="form-select" required>
-                    @foreach (var p in projects)
-                    {
-                        <option value="@p.Id" selected="@(Model.ProjectId == p.Id)">@p.Code - @p.Name</option>
-                    }
-                </select>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">مسؤول الموقع</label>
-                <select name="ResponsibleId" class="form-select">
-                    <option value="">-- لا يوجد --</option>
-                    @foreach (var eng in engineers)
-                    {
-                        <option value="@eng.Id" selected="@(Model.ResponsibleId == eng.Id)">@eng.FullName</option>
-                    }
-                </select>
+                <label class="form-label" style="font-size:11px; color:var(--sys-text-light);">المشروع (لا يمكن تغييره بعد الإنشاء)</label>
+                <input type="text" class="form-control" value="@Model.Project.Code - @Model.Project.Name" disabled />
             </div>
         </div>
 
@@ -94,25 +74,17 @@
         </div>
 
         <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">الحالة</label>
-                <select name="Status" class="form-select">
-                    <option value="Active" selected="@(Model.Status == SiteStatus.Active)">نشط</option>
-                    <option value="OnHold" selected="@(Model.Status == SiteStatus.OnHold)">متوقف</option>
-                    <option value="Completed" selected="@(Model.Status == SiteStatus.Completed)">مكتمل</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">تاريخ البدء</label>
                 <input type="date" name="StartDate" class="form-control" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">تاريخ الانتهاء المتوقع</label>
                 <input type="date" name="ExpectedEndDate" class="form-control" value="@(Model.ExpectedEndDate?.ToString("yyyy-MM-dd"))" />
             </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">تاريخ الانتهاء الفعلي</label>
-                <input type="date" name="ActualEndDate" class="form-control" value="@(Model.ActualEndDate?.ToString("yyyy-MM-dd"))" />
+            <div class="col-md-4 mb-3">
+                <label class="form-label" style="font-size:11px; color:var(--sys-text-light);">تاريخ الانتهاء الفعلي (تلقائي عند اكتمال كل المراحل)</label>
+                <input type="text" class="form-control" value="@(Model.ActualEndDate?.ToString("yyyy-MM-dd") ?? "-")" disabled />
             </div>
         </div>
 

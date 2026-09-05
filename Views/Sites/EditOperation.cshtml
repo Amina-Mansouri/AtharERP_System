@@ -3,6 +3,16 @@
 @{
     ViewData["Title"] = "تعديل مرحلة العمل";
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
+
+    string OpStatusLabel(OperationStatus s) => s switch
+    {
+        OperationStatus.NotStarted => "لم تبدأ",
+        OperationStatus.InProgress => "قيد التنفيذ",
+        OperationStatus.Completed => "مكتملة",
+        OperationStatus.Delayed => "متأخرة",
+        OperationStatus.OnHold => "متوقفة",
+        _ => s.ToString()
+    };
 }
 
 <h1 class="athar-page-title">تعديل مرحلة العمل: @Model.Name</h1>
@@ -20,26 +30,21 @@
         </div>
     }
 
+    <div style="font-size:11px; color:var(--sys-text-light); margin-bottom:12px;">
+        الحالة الحالية: <strong>@OpStatusLabel(Model.Status)</strong> — تُحسب تلقائياً من التواريخ أدناه (تحديد تاريخ البدء الفعلي = قيد التنفيذ، تحديد تاريخ الانتهاء الفعلي = مكتملة). للإيقاف اليدوي استخدمي زر "إيقاف" في شاشة تفاصيل الموقع.
+    </div>
+
     <form method="post" asp-action="EditOperation" asp-route-id="@Model.Id">
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-8 mb-3">
                 <label class="form-label">اسم المرحلة</label>
                 <input type="text" name="Name" class="form-control" value="@Model.Name" required />
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">الترتيب</label>
                 <input type="number" name="Sequence" class="form-control" value="@Model.Sequence" />
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">الحالة</label>
-                <select name="Status" class="form-select">
-                    <option value="NotStarted" selected="@(Model.Status == OperationStatus.NotStarted)">لم تبدأ</option>
-                    <option value="InProgress" selected="@(Model.Status == OperationStatus.InProgress)">قيد التنفيذ</option>
-                    <option value="Completed" selected="@(Model.Status == OperationStatus.Completed)">مكتملة</option>
-                    <option value="Delayed" selected="@(Model.Status == OperationStatus.Delayed)">متأخرة</option>
-                </select>
             </div>
         </div>
 
@@ -69,8 +74,8 @@
 
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">نسبة الإنجاز %</label>
-                <input type="number" step="0.01" min="0" max="100" name="CompletionPercentage" class="form-control" value="@Model.CompletionPercentage" />
+                <label class="form-label" style="font-size:11px; color:var(--sys-text-light);">نسبة الإنجاز % (تلقائية)</label>
+                <input type="text" class="form-control" value="@Model.CompletionPercentage.ToString("N0")%" disabled />
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label">المسؤول</label>

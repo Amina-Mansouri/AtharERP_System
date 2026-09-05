@@ -39,7 +39,7 @@
 
 <div class="stat-strip stat-strip-text">
     <div class="stat-item"><span class="kicker">مواقع نشطة</span><span class="stat-value">@ViewBag.ActiveCount</span></div>
-    <div class="stat-item"><span class="kicker">بانتظار تعيين مسؤول</span><span class="stat-value">@ViewBag.AwaitingResponsibleCount</span></div>
+    <div class="stat-item"><span class="kicker">بانتظار ربط مقاول</span><span class="stat-value">@ViewBag.AwaitingResponsibleCount</span></div>
     <div class="stat-item"><span class="kicker">تقارير اليوم الناقصة</span><span class="stat-value" style="color:#c9700f;">@ViewBag.MissingTodayReportCount</span></div>
     <div class="stat-item"><span class="kicker">احتياجات معلّقة</span><span class="stat-value">@ViewBag.PendingNeedsCount</span></div>
     <div class="stat-item"><span class="kicker">متوقفة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OnHoldCount</span></div>
@@ -62,7 +62,7 @@
         <div class="cell">الموقع</div>
         <div class="cell">المشروع</div>
         <div class="cell">العنوان</div>
-        <div class="cell">مسؤول الموقع</div>
+        <div class="cell">المقاول</div>
         <div class="cell">البدء</div>
         <div class="cell">نسبة الإنجاز</div>
         <div class="cell">تقرير اليوم</div>
@@ -81,6 +81,7 @@
             var completion = completionBySite.TryGetValue(site.Id, out var c) ? c : 0;
             var hasTodayReport = sitesWithTodayReport.Contains(site.Id);
             var pendingNeeds = pendingNeedsBySite.TryGetValue(site.Id, out var n) ? n : 0;
+            var activeContractor = site.Contractors.FirstOrDefault(sc => sc.Status == ContractorStatus.Active);
 
             <a asp-action="Details" asp-route-id="@site.Id" class="data-table-row" style="text-decoration:none; color:inherit;">
                 <div class="cell cell-num">@site.Code</div>
@@ -88,13 +89,13 @@
                 <div class="cell cell-num">@site.Project.Code</div>
                 <div class="cell">@(site.Address ?? "-")</div>
                 <div class="cell">
-                    @if (site.Responsible != null)
+                    @if (activeContractor != null)
                     {
-                        @site.Responsible.FullName
+                        @activeContractor.Contractor.Name
                     }
                     else
                     {
-                        <span class="tag tag-muted">غير معيّن</span>
+                        <span class="tag tag-muted">غير مرتبط</span>
                     }
                 </div>
                 <div class="cell cell-num">@(site.StartDate?.ToString("yyyy-MM-dd") ?? "-")</div>

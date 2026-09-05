@@ -7,6 +7,7 @@
     var completion = ViewBag.CompletionPercentage as decimal? ?? 0;
     var hasTodayReport = ViewBag.HasTodayReport as bool? ?? false;
     var pendingNeeds = ViewBag.PendingNeedsCount as int? ?? 0;
+    var activeContractor = Model.Contractors.FirstOrDefault(sc => sc.Status == ContractorStatus.Active);
 
     string StatusLabel(SiteStatus s) => s switch
     {
@@ -30,6 +31,7 @@
         OperationStatus.InProgress => "قيد التنفيذ",
         OperationStatus.Completed => "مكتملة",
         OperationStatus.Delayed => "متأخرة",
+        OperationStatus.OnHold => "متوقفة",
         _ => s.ToString()
     };
 
@@ -38,6 +40,7 @@
         OperationStatus.Completed => "tag-success",
         OperationStatus.Delayed => "tag-danger",
         OperationStatus.InProgress => "tag-accent",
+        OperationStatus.OnHold => "tag-warning",
         _ => "tag-muted"
     };
 }
@@ -52,6 +55,10 @@
         @if (canManage)
         {
             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل الموقع</a>
+            <form method="post" asp-action="ToggleHold" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-line">@(Model.Status == SiteStatus.OnHold ? "استئناف" : "إيقاف")</button>
+            </form>
         }
     </div>
 </div>
@@ -60,7 +67,7 @@
     <div class="stat-item"><span class="kicker">نسبة الإنجاز</span><span class="stat-value">@completion.ToString("N0")%</span></div>
     <div class="stat-item"><span class="kicker">تقرير اليوم</span><span class="stat-value" style="@(hasTodayReport ? "color:#2f8a57;" : "color:#c9700f;")">@(hasTodayReport ? "تم الرفع" : "لم يُرفع")</span></div>
     <div class="stat-item"><span class="kicker">احتياجات معلّقة</span><span class="stat-value" style="@(pendingNeeds > 0 ? "color:#c94a42;" : "")">@pendingNeeds</span></div>
-    <div class="stat-item"><span class="kicker">مسؤول الموقع</span><span class="stat-value">@(Model.Responsible?.FullName ?? "غير معيّن")</span></div>
+    <div class="stat-item"><span class="kicker">المقاول المسؤول</span><span class="stat-value">@(activeContractor?.Contractor.Name ?? "غير مرتبط")</span></div>
 </div>
 
 <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:14px 16px; margin-bottom:12px;">
@@ -110,6 +117,10 @@
                 {
                     <div style="display:flex; gap:6px;">
                         <a asp-action="EditOperation" asp-route-id="@op.Id" class="btn-line">تعديل</a>
+                        <form method="post" asp-action="ToggleOperationHold" asp-route-id="@op.Id">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-line">@(op.Status == OperationStatus.OnHold ? "استئناف" : "إيقاف")</button>
+                        </form>
                         <form method="post" asp-action="DeleteOperation" asp-route-id="@op.Id" onsubmit="return confirm('حذف هذه المرحلة؟');">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn-line" style="color:#c94a42;">حذف</button>
