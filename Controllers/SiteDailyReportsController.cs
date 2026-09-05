@@ -129,13 +129,7 @@ namespace AtharERP_System.Controllers
 
             await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteDailyReport), model.Id.ToString(), $"تقرير يومي لموقع: {site.Name} بتاريخ {model.ReportDate:yyyy-MM-dd}");
 
-            var pmIds = await _context.ProjectTeamMembers
-                .Where(tm => tm.ProjectId == site.ProjectId && tm.Role == TeamRole.ProjectManager)
-                .Select(tm => tm.UserId)
-                .ToListAsync();
-            var notify = HttpContext.RequestServices.GetRequiredService<NotificationService>();
-            await notify.NotifyManyAsync(pmIds, $"تقرير يومي جديد للموقع: {site.Name}", $"/SiteDailyReports/Details/{model.Id}");
-
+           
             TempData["Success"] = "تمت إضافة التقرير اليومي بنجاح";
             return RedirectToAction("Index", new { siteId = model.SiteId });
         }
