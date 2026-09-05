@@ -37,12 +37,7 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "خط الطول")]
         public double? Longitude { get; set; }
 
-        [Display(Name = "مسؤول الموقع")]
-        public string? ResponsibleId { get; set; }
-
-        [ForeignKey("ResponsibleId")]
-        [ValidateNever]
-        public virtual ApplicationUser? Responsible { get; set; }
+       
 
         [Display(Name = "متطلبات الموقع")]
         public string? Requirements { get; set; }
