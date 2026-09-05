@@ -196,8 +196,6 @@ namespace AtharERP_System.Services
                 assignment.Status = AssignmentStatus.Completed;
                 await _context.SaveChangesAsync();
 
-                await TransferToFinanceAsync(assignment);
-
                 if (assignment.StageId.HasValue)
                 {
                     await RecalculateStageAsync(assignment.StageId.Value);
