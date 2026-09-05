@@ -12,11 +12,13 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SiteContractorsController(AppDbContext context, AuditService audit)
+        public SiteContractorsController(AppDbContext context, AuditService audit, PermissionService permissionService)
         {
             _context = context;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -30,6 +32,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var contractors = await _context.SiteContractors
                 .Where(c => c.SiteId == siteId)
@@ -54,6 +59,9 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات المقاول غير صحيحة";
@@ -75,9 +83,12 @@ namespace AtharERP_System.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var contractor = await _context.SiteContractors.FindAsync(id);
+            var contractor = await _context.SiteContractors.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, contractor.Site.ProjectId))
+                return Forbid();
 
             return View(contractor);
         }
@@ -89,9 +100,12 @@ namespace AtharERP_System.Controllers
             int id,
             [Bind("Name,CompanyName,Phone,Specialty,StartDate,EndDate,Status,Notes")] SiteContractor model)
         {
-            var contractor = await _context.SiteContractors.FindAsync(id);
+            var contractor = await _context.SiteContractors.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, contractor.Site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -119,9 +133,12 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var contractor = await _context.SiteContractors.FindAsync(id);
+            var contractor = await _context.SiteContractors.Include(c => c.Site).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, contractor.Site.ProjectId))
+                return Forbid();
 
             var siteId = contractor.SiteId;
             var name = contractor.Name;

@@ -13,12 +13,14 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly FileUploadService _fileUpload;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SiteDailyReportsController(AppDbContext context, FileUploadService fileUpload, AuditService audit)
+        public SiteDailyReportsController(AppDbContext context, FileUploadService fileUpload, AuditService audit, PermissionService permissionService)
         {
             _context = context;
             _fileUpload = fileUpload;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -32,6 +34,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var query = _context.SiteDailyReports
                 .Include(r => r.CreatedBy)
@@ -68,6 +73,9 @@ namespace AtharERP_System.Controllers
             if (report == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, report.Site.ProjectId))
+                return Forbid();
+
             return View(report);
         }
 
@@ -81,6 +89,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             ViewBag.Site = site;
             return View();
@@ -96,6 +107,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(model.SiteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -129,7 +143,6 @@ namespace AtharERP_System.Controllers
 
             await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteDailyReport), model.Id.ToString(), $"تقرير يومي لموقع: {site.Name} بتاريخ {model.ReportDate:yyyy-MM-dd}");
 
-           
             TempData["Success"] = "تمت إضافة التقرير اليومي بنجاح";
             return RedirectToAction("Index", new { siteId = model.SiteId });
         }
@@ -142,9 +155,12 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadPhoto(int reportId, IFormFile file, string? description)
         {
-            var report = await _context.SiteDailyReports.FindAsync(reportId);
+            var report = await _context.SiteDailyReports.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == reportId);
             if (report == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, report.Site.ProjectId))
+                return Forbid();
 
             var result = await _fileUpload.SaveFileAsync(file, $"sites/{report.SiteId}/daily-reports/{report.Id}");
             if (!result.Success)
@@ -171,6 +187,13 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeletePhoto(int id, int reportId)
         {
+            var report = await _context.SiteDailyReports.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == reportId);
+            if (report == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, report.Site.ProjectId))
+                return Forbid();
+
             var photo = await _context.SiteDailyReportPhotos.FindAsync(id);
             if (photo != null)
             {
@@ -190,9 +213,12 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var report = await _context.SiteDailyReports.Include(r => r.Photos).FirstOrDefaultAsync(r => r.Id == id);
+            var report = await _context.SiteDailyReports.Include(r => r.Site).Include(r => r.Photos).FirstOrDefaultAsync(r => r.Id == id);
             if (report == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, report.Site.ProjectId))
+                return Forbid();
 
             var siteId = report.SiteId;
 

@@ -11,14 +11,14 @@ namespace AtharERP_System.Controllers
     public class SiteChecksController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly NotificationService _notify;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SiteChecksController(AppDbContext context, NotificationService notify, AuditService audit)
+        public SiteChecksController(AppDbContext context, AuditService audit, PermissionService permissionService)
         {
             _context = context;
-            _notify = notify;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -32,6 +32,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             var qualityChecks = await _context.SiteQualityChecks
                 .Include(q => q.CheckedBy)
@@ -65,6 +68,9 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات فحص الجودة غير صحيحة";
@@ -92,6 +98,9 @@ namespace AtharERP_System.Controllers
             if (check == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, check.Site.ProjectId))
+                return Forbid();
+
             check.Result = result;
             check.Notes = notes;
             check.IsApproved = true;
@@ -99,8 +108,6 @@ namespace AtharERP_System.Controllers
             check.ApprovedById = CurrentUserId;
 
             await _context.SaveChangesAsync();
-
-        
 
             await _audit.LogAsync(CurrentUserId, "Approve", nameof(SiteQualityCheck), id.ToString(), $"اعتماد فحص جودة بنتيجة: {result}");
 
@@ -120,6 +127,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(model.SiteId);
             if (site == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -148,13 +158,15 @@ namespace AtharERP_System.Controllers
             if (check == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, check.Site.ProjectId))
+                return Forbid();
+
             check.Result = result;
             check.Notes = notes;
             check.IsApproved = true;
 
             await _context.SaveChangesAsync();
 
-           
             TempData["Success"] = "تم اعتماد فحص السلامة بنجاح";
             return RedirectToAction("Index", new { siteId = check.SiteId });
         }
