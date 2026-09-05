@@ -12,11 +12,13 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
+        private readonly PermissionService _permissionService;
 
-        public SitesController(AppDbContext context, AuditService audit)
+        public SitesController(AppDbContext context, AuditService audit, PermissionService permissionService)
         {
             _context = context;
             _audit = audit;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -29,6 +31,16 @@ namespace AtharERP_System.Controllers
         {
             var query = _context.Sites.Include(s => s.Project).AsQueryable();
 
+            if (!await _permissionService.HasPermissionAsync(User, "Projects.ViewAll"))
+            {
+                var myProjectIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.UserId == CurrentUserId)
+                    .Select(tm => tm.ProjectId)
+                    .ToListAsync();
+
+                query = query.Where(s => s.Project.CreatedById == CurrentUserId || myProjectIds.Contains(s.ProjectId));
+            }
+
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(s => s.Name.Contains(search) || s.Project.Name.Contains(search));
 
@@ -37,7 +49,7 @@ namespace AtharERP_System.Controllers
 
             ViewBag.Search = search;
             ViewBag.Status = status;
-            ViewBag.CanManage = await _context.RolePermissions.AnyAsync() && await HasManagePermissionAsync();
+            ViewBag.CanManage = await _permissionService.HasPermissionAsync(User, "Sites.Manage");
 
             var sites = await query.OrderByDescending(s => s.CreatedAt).ToListAsync();
             return View(sites);
@@ -57,7 +69,10 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
-            ViewBag.CanManage = await HasManagePermissionAsync();
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
+            ViewBag.CanManage = await _permissionService.HasPermissionAsync(User, "Sites.Manage");
             ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
 
             return View(site);
@@ -109,6 +124,9 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
             await LoadProjectsAsync();
             return View(site);
         }
@@ -124,6 +142,9 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
             if (!ModelState.IsValid)
             {
                 await LoadProjectsAsync();
@@ -136,7 +157,6 @@ namespace AtharERP_System.Controllers
             site.Address = model.Address;
             site.Latitude = model.Latitude;
             site.Longitude = model.Longitude;
-         
             site.Status = model.Status;
             site.StartDate = model.StartDate;
             site.ExpectedEndDate = model.ExpectedEndDate;
@@ -173,6 +193,9 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
             var hasData = site.Operations.Any() || site.DailyReports.Any() || site.QualityChecks.Any()
                 || site.SafetyChecks.Any() || site.Contractors.Any() || site.MaintenanceRequests.Any()
                 || site.Documents.Any() || site.SupplyRequests.Any();
@@ -206,6 +229,9 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات المرحلة غير صحيحة";
@@ -230,6 +256,9 @@ namespace AtharERP_System.Controllers
             if (op == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, op.Site.ProjectId))
+                return Forbid();
+
             ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             return View(op);
         }
@@ -244,6 +273,9 @@ namespace AtharERP_System.Controllers
             var op = await _context.SiteOperations.Include(o => o.Site).FirstOrDefaultAsync(o => o.Id == id);
             if (op == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, op.Site.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -274,9 +306,12 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteOperation(int id)
         {
-            var op = await _context.SiteOperations.FindAsync(id);
+            var op = await _context.SiteOperations.Include(o => o.Site).FirstOrDefaultAsync(o => o.Id == id);
             if (op == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, op.Site.ProjectId))
+                return Forbid();
 
             var siteId = op.SiteId;
             _context.SiteOperations.Remove(op);
@@ -289,12 +324,6 @@ namespace AtharERP_System.Controllers
         private async Task LoadProjectsAsync()
         {
             ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
-        }
-
-        private async Task<bool> HasManagePermissionAsync()
-        {
-            var permissionService = HttpContext.RequestServices.GetRequiredService<PermissionService>();
-            return await permissionService.HasPermissionAsync(User, "Sites.Manage");
         }
     }
 }

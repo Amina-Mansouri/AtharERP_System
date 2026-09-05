@@ -93,5 +93,25 @@ namespace AtharERP_System.Services
                 Source = "دور"
             }).ToList();
         }
+        // وصول المستخدم لمشروع معيّن: منشئه، أو عضو في فريقه، أو لديه Projects.ViewAll
+        // (يُستخدم من كنترولرات المواقع لعزل الرؤية حسب فريق المشروع)
+        public async Task<bool> CanAccessProjectAsync(ClaimsPrincipal principal, int projectId)
+        {
+            if (await HasPermissionAsync(principal, "Projects.ViewAll"))
+                return true;
+
+            var user = await _userManager.GetUserAsync(principal);
+            if (user == null)
+                return false;
+
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null)
+                return false;
+
+            if (project.CreatedById == user.Id)
+                return true;
+
+            return await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == user.Id);
+        }
     }
 }
