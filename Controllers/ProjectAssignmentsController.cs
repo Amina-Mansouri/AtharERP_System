@@ -402,7 +402,7 @@ namespace AtharERP_System.Controllers
 
             var financeUserIds = await GetUsersWithPermissionAsync("Finance.View");
             if (financeUserIds.Count > 0)
-                await _notify.NotifyManyAsync(financeUserIds, $"تم ترحيل تكليف {assignment.CostType} إلى المالية بقيمة {assignment.FinalAmount:N2}");
+                await _notify.NotifyManyAsync(financeUserIds, $"تم ترحيل تكليف {assignment.CostType} إلى المالية بقيمة {assignment.FinalAmount:N2}", NotificationEventType.CostCompleted, $"/ProjectAssignments/Overview?projectId={assignment.ProjectId}", entityType: "ProjectAssignment", entityId: assignment.Id);
         }
 
         private async Task<List<string>> GetUsersWithPermissionAsync(string permissionCode)

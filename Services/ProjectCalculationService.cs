@@ -7,10 +7,12 @@ namespace AtharERP_System.Services
     public class ProjectCalculationService
     {
         private readonly AppDbContext _context;
+        private readonly NotificationService _notify;
 
-        public ProjectCalculationService(AppDbContext context)
+        public ProjectCalculationService(AppDbContext context, NotificationService notify)
         {
             _context = context;
+            _notify = notify;
         }
 
         // نسبة إنجاز المرحلة = مجموع قيمة التكليفات المكتملة ÷ مجموع قيمة كل التكليفات × 100
@@ -118,6 +120,8 @@ namespace AtharERP_System.Services
                 ? Math.Round((decimal)completedTodos / totalTodos * 100, 2)
                 : 0;
 
+            var oldStatus = task.Status;
+
             if (task.Status != ProjectTaskStatus.Blocked)
             {
                 task.Status = task.CompletionPercentage >= 100
@@ -128,6 +132,27 @@ namespace AtharERP_System.Services
             }
 
             await _context.SaveChangesAsync();
+
+            if (task.Status != oldStatus)
+            {
+                var pmIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == task.ProjectId && tm.Role == TeamRole.ProjectManager)
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+
+                if (pmIds.Count > 0)
+                {
+                    var statusLabel = task.Status switch
+                    {
+                        ProjectTaskStatus.NotStarted => "لم تبدأ",
+                        ProjectTaskStatus.InProgress => "قيد التنفيذ",
+                        ProjectTaskStatus.Completed => "مكتملة",
+                        ProjectTaskStatus.Blocked => "محظورة",
+                        _ => task.Status.ToString()
+                    };
+                    await _notify.NotifyManyAsync(pmIds, $"تغيّرت حالة المهمة \"{task.Title}\" إلى: {statusLabel}", NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
+                }
+            }
 
             if (task.ProjectAssignmentId.HasValue)
             {

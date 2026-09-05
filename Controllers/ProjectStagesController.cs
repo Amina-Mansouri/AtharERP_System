@@ -258,7 +258,7 @@ namespace AtharERP_System.Controllers
                 var adminIds = (await _userManager.GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
                 var recipients = teamIds.Union(adminIds).Distinct();
 
-                await _notify.NotifyManyAsync(recipients, $"اكتملت المرحلة: {stage.Name}", $"/Projects/Details/{stage.ProjectId}");
+                await _notify.NotifyManyAsync(recipients, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }
 
             TempData["Success"] = $"تم تحديث المرحلة {stage.Name} بنجاح";

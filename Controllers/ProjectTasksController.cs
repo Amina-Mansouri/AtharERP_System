@@ -226,7 +226,7 @@ namespace AtharERP_System.Controllers
                     .Where(tm => tm.ProjectId == task.ProjectId && tm.Role == TeamRole.ProjectManager)
                     .Select(tm => tm.UserId)
                     .ToListAsync();
-                await _notify.NotifyManyAsync(pmIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم", $"/ProjectTasks/Edit/{task.Id}");
+                await _notify.NotifyManyAsync(pmIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم", NotificationEventType.TaskDelayed, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
             }
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";
@@ -308,7 +308,8 @@ namespace AtharERP_System.Controllers
                 });
                 await _context.SaveChangesAsync();
 
-                await _notify.NotifyAsync(userId, $"تم تكليفك بمهمة: {task.Title}", $"/ProjectTasks/Edit/{task.Id}");
+               
+                await _notify.NotifyAsync(userId, $"تم تكليفك بمهمة: {task.Title}", NotificationEventType.TaskAssigned, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
                 TempData["Success"] = "تمت إضافة المكلَّف بنجاح";
             }
             else

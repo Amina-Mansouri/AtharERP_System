@@ -100,14 +100,7 @@ namespace AtharERP_System.Controllers
 
             await _context.SaveChangesAsync();
 
-            if (result == QualityCheckResult.Fail)
-            {
-                var recipientIds = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == check.Site.ProjectId)
-                    .Select(tm => tm.UserId)
-                    .ToListAsync();
-                await _notify.NotifyManyAsync(recipientIds, $"فشل فحص جودة في موقع: {check.Site.Name} ({check.CheckType})", $"/SiteChecks/Index?siteId={check.SiteId}");
-            }
+        
 
             await _audit.LogAsync(CurrentUserId, "Approve", nameof(SiteQualityCheck), id.ToString(), $"اعتماد فحص جودة بنتيجة: {result}");
 
@@ -161,20 +154,7 @@ namespace AtharERP_System.Controllers
 
             await _context.SaveChangesAsync();
 
-            if (result == SafetyResult.Danger)
-            {
-                var recipientIds = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == check.Site.ProjectId)
-                    .Select(tm => tm.UserId)
-                    .ToListAsync();
-                var adminIds = (await HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>()
-                    .GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
-
-                await _notify.NotifyManyAsync(recipientIds.Union(adminIds).Distinct(), $"خطر سلامة في موقع: {check.Site.Name} ({check.CheckType})", $"/SiteChecks/Index?siteId={check.SiteId}");
-            }
-
-            await _audit.LogAsync(CurrentUserId, "Approve", nameof(SiteSafetyCheck), id.ToString(), $"اعتماد فحص سلامة بنتيجة: {result}");
-
+           
             TempData["Success"] = "تم اعتماد فحص السلامة بنجاح";
             return RedirectToAction("Index", new { siteId = check.SiteId });
         }

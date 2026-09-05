@@ -81,7 +81,7 @@ namespace AtharERP_System.Controllers
             // ملاحظة: لا يوجد حالياً دور/قسم "توريدات" مخصَّص في النظام (نفس فجوة قسم المالية المؤجَّلة)،
             // فيصل الإشعار مؤقتاً لمدير النظام فقط إلى حين استحداث دور مختص لاحقاً
             var adminIds = (await _userManager.GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
-            await _notify.NotifyManyAsync(adminIds, $"طلب توريد جديد من موقع: {site.Name} ({model.MaterialName})", $"/SiteSupplyRequests/Index?siteId={model.SiteId}");
+          
 
             TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
             return RedirectToAction("Index", new { siteId = model.SiteId });
@@ -104,7 +104,7 @@ namespace AtharERP_System.Controllers
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(SiteSupplyRequest), id.ToString(), $"تحديث حالة طلب توريد إلى: {status}");
 
-            await _notify.NotifyAsync(request.RequestedById, $"تم تحديث حالة طلب التوريد ({request.MaterialName}) إلى: {status}", $"/SiteSupplyRequests/Index?siteId={request.SiteId}");
+           
 
             TempData["Success"] = "تم تحديث حالة طلب التوريد";
             return RedirectToAction("Index", new { siteId = request.SiteId });
