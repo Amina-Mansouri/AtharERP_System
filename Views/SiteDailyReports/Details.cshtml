@@ -6,77 +6,68 @@
 
 <h1 class="athar-page-title">تقرير يومي - @Model.Site.Name - @Model.ReportDate.ToString("yyyy-MM-dd")</h1>
 
-<div class="athar-card mt-3">
-    <div class="row">
-        <div class="col-md-4 mb-3"><strong>الطقس:</strong> @(Model.Weather ?? "-")</div>
-        <div class="col-md-4 mb-3"><strong>عدد العمال:</strong> @Model.WorkersCount</div>
-        <div class="col-md-4 mb-3"><strong>أُنشئ بواسطة:</strong> @Model.CreatedBy.FullName</div>
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; font-size:12px;">
+        <div><strong>الطقس:</strong> @(Model.Weather ?? "-")</div>
+        <div><strong>عدد العمال:</strong> @Model.WorkersCount</div>
+        <div><strong>أُنشئ بواسطة:</strong> @Model.CreatedBy.FullName</div>
         @if (!string.IsNullOrEmpty(Model.WorkCompleted))
         {
-            <div class="col-12 mb-3"><strong>الأعمال المنجزة:</strong><p>@Model.WorkCompleted</p></div>
+            <div style="grid-column:1/-1;"><strong>الأعمال المنجزة:</strong> @Model.WorkCompleted</div>
         }
         @if (!string.IsNullOrEmpty(Model.Issues))
         {
-            <div class="col-12 mb-3"><strong>المشاكل والعوائق:</strong><p>@Model.Issues</p></div>
+            <div style="grid-column:1/-1;"><strong>المشاكل والعوائق:</strong> @Model.Issues</div>
         }
         @if (!string.IsNullOrEmpty(Model.MaterialsUsed))
         {
-            <div class="col-md-6 mb-3"><strong>المواد المستخدمة:</strong><p>@Model.MaterialsUsed</p></div>
+            <div style="grid-column:span 1/1;"><strong>المواد المستخدمة:</strong> @Model.MaterialsUsed</div>
         }
         @if (!string.IsNullOrEmpty(Model.EquipmentUsed))
         {
-            <div class="col-md-6 mb-3"><strong>المعدات المستخدمة:</strong><p>@Model.EquipmentUsed</p></div>
+            <div><strong>المعدات المستخدمة:</strong> @Model.EquipmentUsed</div>
         }
         @if (!string.IsNullOrEmpty(Model.Visits))
         {
-            <div class="col-12 mb-3"><strong>الزيارات:</strong><p>@Model.Visits</p></div>
+            <div style="grid-column:1/-1;"><strong>الزيارات:</strong> @Model.Visits</div>
         }
         @if (!string.IsNullOrEmpty(Model.Notes))
         {
-            <div class="col-12 mb-3"><strong>ملاحظات:</strong><p>@Model.Notes</p></div>
+            <div style="grid-column:1/-1;"><strong>ملاحظات:</strong> @Model.Notes</div>
         }
     </div>
 </div>
 
-<div class="athar-card mt-3">
-    <h5>الصور (@Model.Photos.Count)</h5>
-    <div class="row mt-2">
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
+    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">الصور (@Model.Photos.Count)</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;">
         @foreach (var photo in Model.Photos)
         {
-            <div class="col-md-3 mb-3">
-                <div class="athar-permission-group p-2">
-                    <img src="@photo.FilePath" class="img-fluid rounded mb-1" alt="صورة تقرير" />
-                    @if (!string.IsNullOrEmpty(photo.Description))
-                    {
-                        <small class="d-block text-muted">@photo.Description</small>
-                    }
-                    <form method="post" asp-action="DeletePhoto" class="mt-1" onsubmit="return confirm('حذف هذه الصورة؟');">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@photo.Id" />
-                        <input type="hidden" name="reportId" value="@Model.Id" />
-                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">حذف</button>
-                    </form>
-                </div>
+            <div style="border:1px solid var(--sys-border); border-radius:8px; padding:8px;">
+                <img src="@photo.FilePath" style="width:100%; border-radius:6px; margin-bottom:6px;" alt="صورة تقرير" />
+                @if (!string.IsNullOrEmpty(photo.Description))
+                {
+                    <div style="font-size:10.5px; color:var(--sys-text-light);">@photo.Description</div>
+                }
+                <form method="post" asp-action="DeletePhoto" style="margin-top:6px;" onsubmit="return confirm('حذف هذه الصورة؟');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@photo.Id" />
+                    <input type="hidden" name="reportId" value="@Model.Id" />
+                    <button type="submit" class="btn-line" style="width:100%; color:#c94a42;">حذف</button>
+                </form>
             </div>
         }
     </div>
 
-    <hr />
-    <form method="post" asp-action="UploadPhoto" enctype="multipart/form-data" class="row g-2 align-items-end">
+    <form method="post" asp-action="UploadPhoto" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:14px; padding-top:14px; border-top:1px solid var(--sys-border);">
         @Html.AntiForgeryToken()
         <input type="hidden" name="reportId" value="@Model.Id" />
-        <div class="col-md-6">
-            <input type="file" name="file" class="form-control" accept="image/*" required />
-        </div>
-        <div class="col-md-4">
-            <input type="text" name="description" class="form-control" placeholder="وصف الصورة (اختياري)" />
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-sm athar-btn w-100">+ إضافة صورة</button>
-        </div>
+        <input type="file" name="file" class="form-control" style="max-width:260px;" accept="image/*" required />
+        <input type="text" name="description" class="form-control" style="max-width:220px;" placeholder="وصف الصورة (اختياري)" />
+        <button type="submit" class="btn-line btn-line-accent">+ إضافة صورة</button>
     </form>
 </div>
 
 <div class="mt-3">
-    <a asp-action="Index" asp-route-siteId="@Model.SiteId" class="btn athar-btn-outline">العودة للتقارير</a>
+    <a asp-action="Index" asp-route-siteId="@Model.SiteId" class="btn-line">العودة للتقارير</a>
 </div>

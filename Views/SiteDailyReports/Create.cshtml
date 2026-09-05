@@ -7,7 +7,7 @@
 
 <h1 class="athar-page-title">تقرير يومي جديد - @site?.Name</h1>
 
-<div class="athar-card mt-3">
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger">
@@ -75,7 +75,7 @@
             <input type="file" name="photos" class="form-control" multiple accept="image/*" />
         </div>
 
-        <button type="submit" class="btn athar-btn">حفظ التقرير</button>
-        <a asp-action="Index" asp-route-siteId="@site?.Id" class="btn athar-btn-outline">إلغاء</a>
+        <button type="submit" class="btn-line btn-line-accent">حفظ التقرير</button>
+        <a asp-action="Index" asp-route-siteId="@site?.Id" class="btn-line">إلغاء</a>
     </form>
 </div>
