@@ -34,7 +34,13 @@ namespace AtharERP_System.Controllers
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
                 return true;
-            return task.Assignees.Any(a => a.UserId == CurrentUserId);
+            if (task.Assignees.Any(a => a.UserId == CurrentUserId))
+                return true;
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                return await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId);
+            }
+            return false;
         }
 
         // ============================================
@@ -107,10 +113,11 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var task = await _context.ProjectTasks
-                .Include(t => t.Assignees).ThenInclude(a => a.User)
-                .Include(t => t.Todos)
-                .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
-                .FirstOrDefaultAsync(t => t.Id == id);
+     .Include(t => t.Assignees).ThenInclude(a => a.User)
+     .Include(t => t.Todos)
+     .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
+     .Include(t => t.Stage).ThenInclude(s => s.Project)
+     .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
                 return NotFound();
@@ -140,6 +147,38 @@ namespace AtharERP_System.Controllers
             return View(task);
         }
 
+        // تحديد القيمة التقديرية للمهمة — يقدر المكلَّف نفسه يفعلها، وليس فقط الإدارة
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateEstimatedValue(int id, decimal estimatedValue)
+        {
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            if (task == null)
+                return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
+
+            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
+            var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
+            if (otherTasksTotal + estimatedValue > stage.StageValue)
+            {
+                TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
+                return RedirectToAction("Edit", new { id });
+            }
+
+            task.EstimatedValue = estimatedValue;
+            await _context.SaveChangesAsync();
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                await _calc.RecalculateAssignmentValueAsync(task.ProjectAssignmentId.Value);
+            }
+
+            TempData["Success"] = "تم تحديث القيمة التقديرية بنجاح";
+            return RedirectToAction("Edit", new { id });
+        }
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]

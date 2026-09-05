@@ -1,0 +1,59 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<ProjectAssignment>
+@{
+    ViewData["Title"] = "تكليفاتي";
+    var statusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
+
+    string StatusTagClass(AssignmentStatus s) => s switch
+    {
+        AssignmentStatus.Completed => "tag-success",
+        AssignmentStatus.Cancelled => "tag-danger",
+        AssignmentStatus.InProgress => "tag-accent",
+        _ => ""
+    };
+}
+
+<div style="font-size:11px; color:#8a83a0; font-weight:500;">الرئيسية</div>
+<div style="font-size:19px; font-weight:600; margin-top:2px; margin-bottom:14px;">تكليفاتي</div>
+
+@if (!Model.Any())
+{
+    <div class="stat-sub">لا توجد تكليفات مسندة إليك حالياً</div>
+}
+else
+{
+    @foreach (var a in Model)
+    {
+        var totalTasks = a.Tasks.Count;
+        var doneTasks = a.Tasks.Count(t => t.CompletionPercentage >= 100);
+        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <div>
+                    <div style="font-size:13.5px; font-weight:600;">@a.CostType</div>
+                    <div class="stat-sub">@a.Stage?.Project?.Name — @a.Stage?.Name</div>
+                </div>
+                <span class="tag @StatusTagClass(a.Status)">@statusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
+            </div>
+
+            <div class="stat-sub" style="margin-bottom:8px;">المهام: @doneTasks / @totalTasks مكتملة</div>
+
+            @if (a.Tasks.Any())
+            {
+                <div style="display:grid; gap:6px;">
+                    @foreach (var t in a.Tasks)
+                    {
+                        <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px; text-decoration:none; color:inherit; font-size:11.5px;">
+                            <span>@t.Title</span>
+                            <span class="tag @(t.CompletionPercentage >= 100 ? "tag-success" : "")">@t.CompletionPercentage.ToString("N0")%</span>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="stat-sub">لا توجد مهام مرتبطة بهذا التكليف بعد</div>
+            }
+        </div>
+    }
+}

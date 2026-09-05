@@ -17,6 +17,7 @@
 }
 
 <h1 class="athar-page-title">تعديل المهمة: @Model.Title</h1>
+<p class="stat-sub">المرحلة: @Model.Stage?.Name — المشروع: @Model.Stage?.Project?.Name</p>
 <div class="athar-card mt-3">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
@@ -159,6 +160,18 @@
          <a asp-controller="ProjectTasks" asp-action="MyTasks" class="btn athar-btn-outline">العودة لمهامي</a>
        }
 
+    <hr />
+    <h5>القيمة التقديرية للمهمة</h5>
+    <form method="post" asp-action="UpdateEstimatedValue" class="row g-2 align-items-end mb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="col-md-6">
+            <input type="number" step="0.01" min="0" name="estimatedValue" class="form-control" value="@Model.EstimatedValue" placeholder="القيمة التقديرية" />
+        </div>
+        <div class="col-md-6">
+            <button type="submit" class="btn athar-btn w-100">حفظ القيمة</button>
+        </div>
+    </form>
     <hr />
     <h5>قائمة To-Do (تقود نسبة الإنجاز تلقائياً)</h5>
     @if (Model.Todos.Any())

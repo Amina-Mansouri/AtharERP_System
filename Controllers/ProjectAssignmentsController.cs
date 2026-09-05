@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -81,6 +82,21 @@ namespace AtharERP_System.Controllers
             return View(assignments);
         }
 
+        // ============================================
+        // تكليفاتي — كل تكليفاتي الحالية بغض النظر عن حالتها
+        // ============================================
+        [Authorize]
+        public async Task<IActionResult> MyAssignments()
+        {
+            var assignments = await _context.ProjectAssignments
+                .Include(a => a.Stage).ThenInclude(s => s.Project)
+                .Include(a => a.Tasks).ThenInclude(t => t.Todos)
+                .Where(a => a.Engineers.Any(e => e.UserId == CurrentUserId))
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            return View(assignments);
+        }
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
 
@@ -117,6 +133,7 @@ namespace AtharERP_System.Controllers
                 foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
                 {
                     _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = model.Id, UserId = uid });
+                    await EnsureTeamMembershipAsync(model.ProjectId, uid);
                 }
                 await _context.SaveChangesAsync();
             }
@@ -206,6 +223,7 @@ namespace AtharERP_System.Controllers
             if (!exists)
             {
                 _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = assignmentId, UserId = userId });
+                await EnsureTeamMembershipAsync(projectId, userId);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction("Details", "Projects", new { id = projectId });
@@ -389,6 +407,22 @@ namespace AtharERP_System.Controllers
             }
 
             return userIds.ToList();
+        }
+
+
+        private async Task EnsureTeamMembershipAsync(int projectId, string userId)
+        {
+            var exists = await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId);
+            if (!exists)
+            {
+                _context.ProjectTeamMembers.Add(new ProjectTeamMember
+                {
+                    ProjectId = projectId,
+                    UserId = userId,
+                    Role = TeamRole.Engineer,
+                    JoinedAt = DateTime.UtcNow
+                });
+            }
         }
     }
 }
