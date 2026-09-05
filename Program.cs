@@ -31,6 +31,16 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddErrorDescriber<AtharIdentityErrorDescriber>()
 .AddDefaultTokenProviders();
+// نظام مصادقة منفصل تماماً للمقاولين (Cookie خاص، لا علاقة له بهوية موظفي الشركة)
+builder.Services.AddAuthentication()
+    .AddCookie("ContractorScheme", options =>
+    {
+        options.LoginPath = "/ContractorPortal/Login";
+        options.AccessDeniedPath = "/ContractorPortal/Login";
+        options.Cookie.Name = "AtharContractorAuth";
+        options.ExpireTimeSpan = TimeSpan.FromHours(12);
+        options.SlidingExpiration = true;
+    });
 
 // خدمة التحقق من الصلاحيات
 builder.Services.AddScoped<PermissionService>();
