@@ -27,17 +27,33 @@ namespace AtharERP_System.Controllers
         // قائمة مقاولي موقع معيّن
         // ============================================
         [RequirePermission("Sites.View")]
-        public async Task<IActionResult> Index(int siteId)
+        public async Task<IActionResult> Index(int? siteId)
         {
-            var site = await _context.Sites.FindAsync(siteId);
-            if (site == null)
-                return NotFound();
+            Site? site = null;
+            var query = _context.SiteContractors.Include(c => c.Site).ThenInclude(s => s.Project).AsQueryable();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
+            if (siteId.HasValue)
+            {
+                site = await _context.Sites.FindAsync(siteId.Value);
+                if (site == null)
+                    return NotFound();
 
-            var contractors = await _context.SiteContractors
-                .Where(c => c.SiteId == siteId)
+                if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                    return Forbid();
+
+                query = query.Where(c => c.SiteId == siteId.Value);
+            }
+            else if (!await _permissionService.HasPermissionAsync(User, "Projects.ViewAll"))
+            {
+                var myProjectIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.UserId == CurrentUserId)
+                    .Select(tm => tm.ProjectId)
+                    .ToListAsync();
+
+                query = query.Where(c => c.Site.Project.CreatedById == CurrentUserId || myProjectIds.Contains(c.Site.ProjectId));
+            }
+
+            var contractors = await query
                 .OrderByDescending(c => c.Status == ContractorStatus.Active)
                 .ThenBy(c => c.Name)
                 .ToListAsync();

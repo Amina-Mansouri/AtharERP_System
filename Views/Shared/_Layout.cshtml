@@ -191,14 +191,11 @@
                         </button>
                         <div class="collapse @(activeSystem == "sys03" ? "show" : "")" id="sys03">
                             <div class="nav-subgroup-title">المواقع والعمليات</div>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
-                               asp-controller="Sites" asp-action="Index">إدارة المواقع</a>
-                            <span class="nav-item disabled">المقاولون <span class="tag tag-muted">قادمة</span></span>
-                            <div class="nav-subgroup-title">طلبات الموقع والسلامة</div>
-                            <span class="nav-item disabled">الطلبات الفنية <span class="tag tag-muted">قادمة</span></span>
-                            <span class="nav-item disabled">طلبات الصيانة <span class="tag tag-muted">قادمة</span></span>
-                            <span class="nav-item disabled">تقارير السلامة <span class="tag tag-muted">قادمة</span></span>
-                        </div>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
+                                   asp-controller="Sites" asp-action="Index">إدارة المواقع</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteContractors" ? "active" : "")"
+                                   asp-controller="SiteContractors" asp-action="Index">المقاولون</a>
+                            </div>
                     </div>
                 }
 
@@ -223,7 +220,7 @@
                         <span class="nav-group-caret">▾</span>
                     </button>
                     <div class="collapse @(activeSystem == "sys05" ? "show" : "")" id="sys05">
-                        <span class="nav-item disabled">طلبات التوريد <span class="tag tag-muted">قادمة</span></span>
+                      
                         <span class="nav-item disabled">الموردون <span class="tag tag-muted">قادمة</span></span>
                         <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
                         <span class="nav-item disabled">المخازن والأصناف <span class="tag tag-muted">قادمة</span></span>
