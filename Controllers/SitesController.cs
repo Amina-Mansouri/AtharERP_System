@@ -29,7 +29,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Sites.View")]
         public async Task<IActionResult> Index(string? search, SiteStatus? status)
         {
-            var query = _context.Sites.Include(s => s.Project).AsQueryable();
+            var query = _context.Sites.Include(s => s.Project).Include(s => s.Responsible).AsQueryable();
 
             if (!await _permissionService.HasPermissionAsync(User, "Projects.ViewAll"))
             {
@@ -42,16 +42,47 @@ namespace AtharERP_System.Controllers
             }
 
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(s => s.Name.Contains(search) || s.Project.Name.Contains(search));
+                query = query.Where(s => s.Name.Contains(search) || s.Project.Name.Contains(search) || s.Code.Contains(search));
 
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
+
+            var sites = await query.OrderByDescending(s => s.CreatedAt).ToListAsync();
+            var siteIds = sites.Select(s => s.Id).ToList();
+            var today = DateTime.UtcNow.Date;
+
+            var completionBySite = await _context.SiteOperations
+                .Where(o => siteIds.Contains(o.SiteId))
+                .GroupBy(o => o.SiteId)
+                .Select(g => new { SiteId = g.Key, Avg = g.Average(o => o.CompletionPercentage) })
+                .ToDictionaryAsync(x => x.SiteId, x => x.Avg);
+
+            var sitesWithTodayReport = await _context.SiteDailyReports
+                .Where(r => siteIds.Contains(r.SiteId) && r.ReportDate.Date == today)
+                .Select(r => r.SiteId)
+                .Distinct()
+                .ToListAsync();
+
+            var pendingNeedsBySite = await _context.SiteSupplyRequests
+                .Where(r => siteIds.Contains(r.SiteId) && r.Status == SiteSupplyStatus.Pending)
+                .GroupBy(r => r.SiteId)
+                .Select(g => new { SiteId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SiteId, x => x.Count);
+
+            ViewBag.CompletionBySite = completionBySite;
+            ViewBag.SitesWithTodayReport = sitesWithTodayReport;
+            ViewBag.PendingNeedsBySite = pendingNeedsBySite;
 
             ViewBag.Search = search;
             ViewBag.Status = status;
             ViewBag.CanManage = await _permissionService.HasPermissionAsync(User, "Sites.Manage");
 
-            var sites = await query.OrderByDescending(s => s.CreatedAt).ToListAsync();
+            ViewBag.ActiveCount = sites.Count(s => s.Status == SiteStatus.Active);
+            ViewBag.AwaitingResponsibleCount = sites.Count(s => s.ResponsibleId == null);
+            ViewBag.MissingTodayReportCount = sites.Count(s => s.Status == SiteStatus.Active && !sitesWithTodayReport.Contains(s.Id));
+            ViewBag.PendingNeedsCount = pendingNeedsBySite.Values.Sum();
+            ViewBag.OnHoldCount = sites.Count(s => s.Status == SiteStatus.OnHold);
+
             return View(sites);
         }
 
@@ -63,6 +94,7 @@ namespace AtharERP_System.Controllers
         {
             var site = await _context.Sites
                 .Include(s => s.Project)
+                .Include(s => s.Responsible)
                 .Include(s => s.Operations)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -74,6 +106,10 @@ namespace AtharERP_System.Controllers
 
             ViewBag.CanManage = await _permissionService.HasPermissionAsync(User, "Sites.Manage");
             ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
+
+            ViewBag.CompletionPercentage = site.Operations.Any() ? site.Operations.Average(o => o.CompletionPercentage) : 0;
+            ViewBag.HasTodayReport = await _context.SiteDailyReports.AnyAsync(r => r.SiteId == id && r.ReportDate.Date == DateTime.UtcNow.Date);
+            ViewBag.PendingNeedsCount = await _context.SiteSupplyRequests.CountAsync(r => r.SiteId == id && r.Status == SiteSupplyStatus.Pending);
 
             return View(site);
         }
@@ -93,8 +129,17 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,Status,StartDate,ExpectedEndDate,ActualEndDate")] Site model)
+            [Bind("Code,Name,Description,ProjectId,Address,Latitude,Longitude,Status,StartDate,ExpectedEndDate,ActualEndDate,ResponsibleId,Requirements")] Site model)
         {
+            if (string.IsNullOrWhiteSpace(model.Code))
+            {
+                model.Code = await GenerateSiteCodeAsync();
+            }
+            else if (await _context.Sites.AnyAsync(s => s.Code == model.Code))
+            {
+                ModelState.AddModelError(string.Empty, "رمز الموقع مستخدم بالفعل، اختاري رمزاً آخر أو اتركيه فارغاً للتوليد التلقائي");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadProjectsAsync();
@@ -124,9 +169,6 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
-                return Forbid();
-
             await LoadProjectsAsync();
             return View(site);
         }
@@ -136,7 +178,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,Status,StartDate,ExpectedEndDate,ActualEndDate,IsActive")] Site model)
+            [Bind("Name,Description,ProjectId,Address,Latitude,Longitude,Status,StartDate,ExpectedEndDate,ActualEndDate,IsActive,ResponsibleId,Requirements")] Site model)
         {
             var site = await _context.Sites.FindAsync(id);
             if (site == null)
@@ -162,6 +204,8 @@ namespace AtharERP_System.Controllers
             site.ExpectedEndDate = model.ExpectedEndDate;
             site.ActualEndDate = model.ActualEndDate;
             site.IsActive = model.IsActive;
+            site.ResponsibleId = model.ResponsibleId;
+            site.Requirements = model.Requirements;
 
             await _context.SaveChangesAsync();
 
@@ -324,6 +368,30 @@ namespace AtharERP_System.Controllers
         private async Task LoadProjectsAsync()
         {
             ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
+            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
+        }
+
+        private async Task<string> GenerateSiteCodeAsync()
+        {
+            var year = DateTime.UtcNow.Year;
+            var prefix = $"SITE-{year}-";
+
+            var existingCodes = await _context.Sites
+                .Where(s => s.Code.StartsWith(prefix))
+                .Select(s => s.Code)
+                .ToListAsync();
+
+            int nextNumber = 1;
+            if (existingCodes.Count > 0)
+            {
+                var lastNumber = existingCodes
+                    .Select(c => int.TryParse(c.Substring(prefix.Length), out var n) ? n : 0)
+                    .DefaultIfEmpty(0)
+                    .Max();
+                nextNumber = lastNumber + 1;
+            }
+
+            return $"{prefix}{nextNumber:000}";
         }
     }
 }

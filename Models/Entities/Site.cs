@@ -8,7 +8,10 @@ namespace AtharERP_System.Models.Entities
     public class Site
     {
         public int Id { get; set; }
-
+        [StringLength(30)]
+        [Display(Name = "رمز الموقع")]
+        [ValidateNever]
+        public string Code { get; set; } = string.Empty;
         [Required(ErrorMessage = "اسم الموقع مطلوب")]
         [StringLength(255)]
         [Display(Name = "اسم الموقع")]
@@ -34,7 +37,16 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "خط الطول")]
         public double? Longitude { get; set; }
 
-       
+        [Display(Name = "مسؤول الموقع")]
+        public string? ResponsibleId { get; set; }
+
+        [ForeignKey("ResponsibleId")]
+        [ValidateNever]
+        public virtual ApplicationUser? Responsible { get; set; }
+
+        [Display(Name = "متطلبات الموقع")]
+        public string? Requirements { get; set; }
+
         [Display(Name = "الحالة")]
         public SiteStatus Status { get; set; } = SiteStatus.Active;
 

@@ -357,6 +357,11 @@ namespace AtharERP_System.Data
                 .WithMany()
                 .HasForeignKey(s => s.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Site>()
+    .HasOne(s => s.Responsible)
+    .WithMany()
+    .HasForeignKey(s => s.ResponsibleId)
+    .OnDelete(DeleteBehavior.Restrict);
 
             // ========== مراحل الموقع (SiteOperation) ==========
             builder.Entity<SiteOperation>()
