@@ -39,25 +39,28 @@ namespace AtharERP_System.Services
                                         .ToListAsync(stoppingToken);
 
             var expiringSoon = await context.Users
-                .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date == soonCutoff)
+                .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null
+                    && u.ContractEndDate.Value.Date > today
+                    && u.ContractEndDate.Value.Date <= soonCutoff)
                 .ToListAsync(stoppingToken);
 
             foreach (var user in expiringSoon)
             {
+                var dateTag = user.ContractEndDate!.Value.ToString("yyyy-MM-dd");
                 var alreadyNotified = await context.Notifications.AnyAsync(n =>
                     n.EventType == NotificationEventType.ContractExpiring
                     && n.EntityType == "ApplicationUser"
-                    && n.EntityId == null
-                    && n.Link == $"/Admin/EditUser/{user.Id}"
-                    && n.CreatedAt.Date == today, stoppingToken);
+                    && n.Message.Contains(dateTag), stoppingToken);
                 if (alreadyNotified) continue;
+
+                var daysLeft = (user.ContractEndDate.Value.Date - today).Days;
 
                 foreach (var recipientId in systemAdminIds.Union(new[] { user.Id }).Distinct())
                 {
                     context.Notifications.Add(new Notification
                     {
                         UserId = recipientId,
-                        Message = $"عقد الموظف {user.FullName} ينتهي خلال 30 يوماً ({user.ContractEndDate:yyyy-MM-dd})",
+                        Message = $"عقد الموظف {user.FullName} ينتهي خلال {daysLeft} يوماً ({dateTag})",
                         Link = $"/Admin/EditUser/{user.Id}",
                         EventType = NotificationEventType.ContractExpiring,
                         SourceModule = "01",
@@ -69,7 +72,7 @@ namespace AtharERP_System.Services
             }
 
             var expiredToday = await context.Users
-                .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date == today)
+                .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date <= today)
                 .ToListAsync(stoppingToken);
 
             foreach (var user in expiredToday)

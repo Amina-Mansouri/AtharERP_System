@@ -19,7 +19,6 @@ namespace AtharERP_System.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly PermissionService _permissionService;
         private readonly AuditService _audit;
-        private readonly NotificationService _notify;
         private readonly ProjectCalculationService _calc;
 
         public ProjectAssignmentsController(
@@ -33,8 +32,7 @@ namespace AtharERP_System.Controllers
             _context = context;
             _userManager = userManager;
             _permissionService = permissionService;
-            _audit = audit;
-            _notify = notify;
+            _audit = audit; 
             _calc = calc;
         }
 
@@ -197,41 +195,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
         }
 
-        [RequirePermission("Projects.Assignments.Edit")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-     int id,
-     [Bind("StageId,CostType,Description,Status,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model)
-        {
-            var assignment = await _context.ProjectAssignments.FindAsync(id);
-            if (assignment == null)
-                return NotFound();
-
-            var wasCompleted = assignment.Status == AssignmentStatus.Completed;
-
-            assignment.StageId = model.StageId;
-            assignment.CostType = model.CostType;
-            assignment.Description = model.Description;
-            assignment.Status = model.Status;
-            assignment.IsUrgent = model.IsUrgent;
-            assignment.ReceivedDate = model.ReceivedDate;
-            assignment.AgreedDate = model.AgreedDate;
-            assignment.ActualDate = model.ActualDate;
-
-            await _context.SaveChangesAsync();
-
-            // الترحيل التلقائي للمالية عند تغيير الحالة إلى مكتمل (القسم 5.7)
-            if (!wasCompleted && assignment.Status == AssignmentStatus.Completed)
-            {
-                await TransferToFinanceAsync(assignment);
-            }
-
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectAssignment), assignment.Id.ToString(), $"تعديل تكليف: {assignment.CostType}");
-
-            TempData["Success"] = "تم تحديث التكليف بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = assignment.ProjectId });
-        }
+       
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
@@ -375,59 +339,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
-        // ============================================
-        // دوال مساعدة
-        // ============================================
-        private async Task TransferToFinanceAsync(ProjectAssignment assignment)
-        {
-            assignment.IsTransferredToFinance = true;
-            assignment.TransferredToFinanceAt = DateTime.UtcNow;
-
-            _context.FinancialRecords.Add(new FinancialRecord
-            {
-                ProjectId = assignment.ProjectId,
-                ProjectAssignmentId = assignment.Id,
-                CostType = assignment.CostType,
-               
-                Value = assignment.FinalAmount,
-                IsCleared = false,
-                CreatedAt = DateTime.UtcNow
-            });
-
-            var project = await _context.Projects.FindAsync(assignment.ProjectId);
-            if (project != null)
-                project.ActualCost += assignment.FinalAmount;
-
-            await _context.SaveChangesAsync();
-
-            var financeUserIds = await GetUsersWithPermissionAsync("Finance.View");
-            if (financeUserIds.Count > 0)
-                await _notify.NotifyManyAsync(financeUserIds, $"تم ترحيل تكليف {assignment.CostType} إلى المالية بقيمة {assignment.FinalAmount:N2}", NotificationEventType.CostCompleted, $"/ProjectAssignments/Overview?projectId={assignment.ProjectId}", entityType: "ProjectAssignment", entityId: assignment.Id);
-        }
-
-        private async Task<List<string>> GetUsersWithPermissionAsync(string permissionCode)
-        {
-            var roleIds = await _context.RolePermissions
-                .Where(rp => rp.IsGranted && rp.Permission.Code == permissionCode)
-                .Select(rp => rp.RoleId)
-                .ToListAsync();
-
-            var roleNames = await _context.Roles
-                .Where(r => roleIds.Contains(r.Id))
-                .Select(r => r.Name!)
-                .ToListAsync();
-
-            var userIds = new HashSet<string>();
-            foreach (var roleName in roleNames)
-            {
-                var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
-                foreach (var u in usersInRole)
-                    userIds.Add(u.Id);
-            }
-
-            return userIds.ToList();
-        }
-
+      
 
         private async Task EnsureTeamMembershipAsync(int projectId, string userId)
         {

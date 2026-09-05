@@ -27,6 +27,8 @@ namespace AtharERP_System.Services
 
             if (stage == null) return;
 
+            var wasCompleted = stage.Status == StageStatus.Completed;
+
             var totalValue = stage.Assignments.Sum(a => a.FinalAmount);
             var completedValue = stage.Assignments
                 .Where(a => a.Status == AssignmentStatus.Completed)
@@ -43,6 +45,23 @@ namespace AtharERP_System.Services
 
             await _context.SaveChangesAsync();
             await RecalculateProjectAsync(stage.ProjectId);
+
+            if (!wasCompleted && stage.Status == StageStatus.Completed)
+            {
+                var teamIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.ProjectId == stage.ProjectId)
+                    .Select(tm => tm.UserId)
+                    .ToListAsync();
+                var adminIds = await (from ur in _context.UserRoles
+                                      join r in _context.Roles on ur.RoleId equals r.Id
+                                      where r.Name == "مدير النظام"
+                                      select ur.UserId)
+                                      .Distinct()
+                                      .ToListAsync();
+                var recipients = teamIds.Union(adminIds).Distinct();
+
+                await _notify.NotifyManyAsync(recipients, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
+            }
         }
 
         // الحالة التلقائية الكاملة للمرحلة — لا تدخّل يدوي إطلاقاً
@@ -177,11 +196,56 @@ namespace AtharERP_System.Services
                 assignment.Status = AssignmentStatus.Completed;
                 await _context.SaveChangesAsync();
 
+                await TransferToFinanceAsync(assignment);
+
                 if (assignment.StageId.HasValue)
                 {
                     await RecalculateStageAsync(assignment.StageId.Value);
                 }
             }
+        }
+
+        // الترحيل التلقائي للمالية عند اكتمال التكليف (القسم 5.7)
+        private async Task TransferToFinanceAsync(ProjectAssignment assignment)
+        {
+            assignment.IsTransferredToFinance = true;
+            assignment.TransferredToFinanceAt = DateTime.UtcNow;
+
+            _context.FinancialRecords.Add(new FinancialRecord
+            {
+                ProjectId = assignment.ProjectId,
+                ProjectAssignmentId = assignment.Id,
+                CostType = assignment.CostType,
+                Value = assignment.FinalAmount,
+                IsCleared = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            var project = await _context.Projects.FindAsync(assignment.ProjectId);
+            if (project != null)
+                project.ActualCost += assignment.FinalAmount;
+
+            await _context.SaveChangesAsync();
+
+            var financeUserIds = await GetUsersWithPermissionAsync("Finance.View");
+            if (financeUserIds.Count > 0)
+                await _notify.NotifyManyAsync(financeUserIds, $"تم ترحيل تكليف {assignment.CostType} إلى المالية بقيمة {assignment.FinalAmount:N2}", NotificationEventType.CostCompleted, $"/ProjectAssignments/Overview?projectId={assignment.ProjectId}", entityType: "ProjectAssignment", entityId: assignment.Id);
+        }
+
+        private async Task<List<string>> GetUsersWithPermissionAsync(string permissionCode)
+        {
+            var roleIds = await _context.RolePermissions
+                .Where(rp => rp.IsGranted && rp.Permission.Code == permissionCode)
+                .Select(rp => rp.RoleId)
+                .ToListAsync();
+
+            var userIds = await _context.UserRoles
+                .Where(ur => roleIds.Contains(ur.RoleId))
+                .Select(ur => ur.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            return userIds;
         }
 
         // حساب أيام التأخير/التبكير عند التسليم الفعلي (القسم 5.4/5.5)
