@@ -34,7 +34,8 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var requests = await _context.SiteSupplyRequests
-                .Include(r => r.RequestedBy)
+                              .Include(r => r.RequestedBy)
+                .Include(r => r.RequestedByContractor)
                 .Where(r => r.SiteId == siteId)
                 .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();

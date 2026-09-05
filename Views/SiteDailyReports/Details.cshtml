@@ -10,7 +10,7 @@
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; font-size:12px;">
         <div><strong>الطقس:</strong> @(Model.Weather ?? "-")</div>
         <div><strong>عدد العمال:</strong> @Model.WorkersCount</div>
-        <div><strong>أُنشئ بواسطة:</strong> @Model.CreatedBy.FullName</div>
+        <div><strong>أُنشئ بواسطة:</strong> @(Model.CreatedBy?.FullName ?? Model.CreatedByContractor?.Name ?? "-")</div>
         @if (!string.IsNullOrEmpty(Model.WorkCompleted))
         {
             <div style="grid-column:1/-1;"><strong>الأعمال المنجزة:</strong> @Model.WorkCompleted</div>

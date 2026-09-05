@@ -37,14 +37,16 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var qualityChecks = await _context.SiteQualityChecks
-                .Include(q => q.CheckedBy)
+                              .Include(q => q.CheckedBy)
+                .Include(q => q.CheckedByContractor)
                 .Include(q => q.ApprovedBy)
                 .Where(q => q.SiteId == siteId)
                 .OrderByDescending(q => q.CheckDate)
                 .ToListAsync();
 
             var safetyChecks = await _context.SiteSafetyChecks
-                .Include(s => s.CheckedBy)
+                               .Include(s => s.CheckedBy)
+                .Include(s => s.CheckedByContractor)
                 .Where(s => s.SiteId == siteId)
                 .OrderByDescending(s => s.CheckDate)
                 .ToListAsync();

@@ -85,7 +85,7 @@
                 <div class="cell">@QualityTypeLabel(q.QualityType)</div>
                 <div class="cell">@q.CheckType</div>
                 <div class="cell"><span class="tag @ResultTagClass(q.Result)">@ResultLabel(q.Result)</span></div>
-                <div class="cell">@q.CheckedBy.FullName</div>
+                <div class="cell">@(q.CheckedBy?.FullName ?? q.CheckedByContractor?.Name ?? "-")</div>
                 <div class="cell">@(q.IsApproved ? $"نعم - {q.ApprovedBy?.FullName}" : "لا")</div>
                 @if (canApprove)
                 {
@@ -160,7 +160,7 @@
             <div class="data-table-row @(s.Result == SafetyResult.Danger && !s.IsApproved ? "row-action-required" : "")">
                 <div class="cell">@s.CheckType</div>
                 <div class="cell"><span class="tag @SafetyTagClass(s.Result)">@SafetyLabel(s.Result)</span></div>
-                <div class="cell">@s.CheckedBy.FullName</div>
+                <div class="cell">@(s.CheckedBy?.FullName ?? s.CheckedByContractor?.Name ?? "-")</div>
                 <div class="cell">@(s.IsApproved ? "نعم" : "لا")</div>
                 @if (canApprove)
                 {

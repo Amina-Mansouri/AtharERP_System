@@ -39,7 +39,8 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var query = _context.SiteDailyReports
-                .Include(r => r.CreatedBy)
+                               .Include(r => r.CreatedBy)
+                .Include(r => r.CreatedByContractor)
                 .Include(r => r.Photos)
                 .Where(r => r.SiteId == siteId);
 
@@ -66,7 +67,8 @@ namespace AtharERP_System.Controllers
         {
             var report = await _context.SiteDailyReports
                 .Include(r => r.Site)
-                .Include(r => r.CreatedBy)
+                               .Include(r => r.CreatedBy)
+                .Include(r => r.CreatedByContractor)
                 .Include(r => r.Photos)
                 .FirstOrDefaultAsync(r => r.Id == id);
 

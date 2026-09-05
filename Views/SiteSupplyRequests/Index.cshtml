@@ -92,7 +92,7 @@
                 <div class="cell">@(r.Dimensions ?? "-")</div>
                 <div class="cell cell-num">@r.Quantity.ToString("N2")</div>
                 <div class="cell">@r.Unit</div>
-                <div class="cell">@r.RequestedBy.FullName</div>
+                <div class="cell">@(r.RequestedBy?.FullName ?? r.RequestedByContractor?.Name ?? "-")</div>
                 <div class="cell"><span class="tag @StatusTagClass(r.Status)">@StatusLabel(r.Status)</span></div>
                 @if (canApprove)
                 {
