@@ -1,0 +1,41 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<Contractor>
+@{
+    ViewData["Title"] = "حسابات المقاولين";
+}
+
+<h1 class="athar-page-title">حسابات المقاولين</h1>
+
+<div class="data-table" style="--cols: 1.2fr 1.1fr 1.3fr 110px 100px 90px 100px;">
+    <div class="data-table-head">
+        <div class="cell">الاسم</div>
+        <div class="cell">الشركة</div>
+        <div class="cell">البريد الإلكتروني</div>
+        <div class="cell">الهاتف</div>
+        <div class="cell">المواقع</div>
+        <div class="cell">الحالة</div>
+        <div class="cell">إجراءات</div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد مقاولون مسجَّلون بعد</div></div>
+    }
+    else
+    {
+        @foreach (var c in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@c.Name</div>
+                <div class="cell">@(c.CompanyName ?? "-")</div>
+                <div class="cell">@c.Email</div>
+                <div class="cell cell-num">@(c.Phone ?? "-")</div>
+                <div class="cell cell-num">@c.SiteAssignments.Count</div>
+                <div class="cell"><span class="tag @(c.IsActive ? "tag-success" : "tag-muted")">@(c.IsActive ? "نشط" : "معطّل")</span></div>
+                <div class="cell">
+                    <a asp-action="Edit" asp-route-id="@c.Id" class="btn-line">تعديل</a>
+                </div>
+            </div>
+        }
+    }
+</div>

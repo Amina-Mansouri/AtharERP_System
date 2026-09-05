@@ -1,0 +1,85 @@
+﻿@using AtharERP_System.Models.Entities
+@model Contractor
+@{
+    ViewData["Title"] = "تعديل حساب مقاول";
+}
+
+<h1 class="athar-page-title">تعديل حساب المقاول: @Model.Name</h1>
+
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الاسم</label>
+                <input type="text" name="Name" class="form-control" value="@Model.Name" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">الشركة</label>
+                <input type="text" name="CompanyName" class="form-control" value="@Model.CompanyName" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الهاتف</label>
+                <input type="text" name="Phone" class="form-control" value="@Model.Phone" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">البريد الإلكتروني (يُستخدم لتسجيل الدخول)</label>
+                <input type="email" name="Email" class="form-control" value="@Model.Email" required />
+            </div>
+            <div class="col-md-4 mb-3 d-flex align-items-end">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" class="chk-gold" name="IsActive" value="true" id="isActive" checked="@Model.IsActive" />
+                    <input type="hidden" name="IsActive" value="false" />
+                    <label class="form-check-label" for="isActive">حساب نشط</label>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-line btn-line-accent">حفظ التعديلات</button>
+        <a asp-action="Index" class="btn-line">إلغاء</a>
+        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" style="display:inline;" onsubmit="return confirm('حذف هذا الحساب نهائياً؟');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-line" style="color:#c94a42;">حذف الحساب</button>
+        </form>
+    </form>
+
+    <hr style="margin:20px 0; border-color:var(--sys-border);" />
+
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إعادة تعيين كلمة المرور</div>
+    <form method="post" asp-action="ResetPassword" asp-route-id="@Model.Id" style="display:flex; gap:8px; align-items:end;">
+        @Html.AntiForgeryToken()
+        <div>
+            <label class="form-label" style="font-size:11px;">كلمة مرور جديدة</label>
+            <input type="password" name="newPassword" class="form-control" minlength="6" required />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تحديث كلمة المرور</button>
+    </form>
+
+    @if (Model.SiteAssignments.Any())
+    {
+        <hr style="margin:20px 0; border-color:var(--sys-border);" />
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">المواقع المرتبطة (@Model.SiteAssignments.Count)</div>
+        <ul style="font-size:12px; padding-inline-start:18px;">
+            @foreach (var sa in Model.SiteAssignments)
+            {
+                <li><a asp-controller="Sites" asp-action="Details" asp-route-id="@sa.SiteId">@sa.Site.Code - @sa.Site.Name</a></li>
+            }
+        </ul>
+    }
+</div>
