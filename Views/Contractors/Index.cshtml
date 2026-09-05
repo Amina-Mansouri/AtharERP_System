@@ -4,8 +4,10 @@
     ViewData["Title"] = "حسابات المقاولين";
 }
 
-<h1 class="athar-page-title">حسابات المقاولين</h1>
-
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <h1 class="athar-page-title">حسابات المقاولين</h1>
+    <a asp-action="Create" class="btn-line btn-line-accent">+ إضافة مقاول</a>
+</div>
 <div class="data-table" style="--cols: 1.2fr 1.1fr 1.3fr 110px 100px 90px 100px;">
     <div class="data-table-head">
         <div class="cell">الاسم</div>
