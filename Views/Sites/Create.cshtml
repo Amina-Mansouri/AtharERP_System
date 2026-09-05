@@ -3,11 +3,12 @@
 @{
     ViewData["Title"] = "موقع جديد";
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
 }
 
 <h1 class="athar-page-title">إنشاء موقع جديد</h1>
 
-<div class="athar-card mt-3">
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger">
@@ -24,11 +25,15 @@
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-size:11px; color:var(--sys-text-light);">رمز الموقع (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
+                <input type="text" name="Code" class="form-control" placeholder="رمز الموقع" />
+            </div>
+            <div class="col-md-4 mb-3">
                 <label class="form-label">اسم الموقع</label>
                 <input type="text" name="Name" class="form-control" value="@Model?.Name" required />
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-5 mb-3">
                 <label class="form-label">المشروع</label>
                 <select name="ProjectId" class="form-select" required>
                     <option value="">-- اختر المشروع --</option>
@@ -41,9 +46,26 @@
         </div>
 
         <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">مسؤول الموقع</label>
+                <select name="ResponsibleId" class="form-select">
+                    <option value="">-- لا يوجد --</option>
+                    @foreach (var eng in engineers)
+                    {
+                        <option value="@eng.Id">@eng.FullName</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-md-12 mb-3">
                 <label class="form-label">الوصف</label>
                 <textarea name="Description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label class="form-label">متطلبات الموقع</label>
+                <textarea name="Requirements" class="form-control" rows="2"></textarea>
             </div>
         </div>
 
@@ -89,8 +111,8 @@
             </div>
         </div>
 
-        <button type="submit" class="btn athar-btn">إنشاء الموقع</button>
-        <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
+        <button type="submit" class="btn-line btn-line-accent">إنشاء الموقع</button>
+        <a asp-action="Index" class="btn-line">إلغاء</a>
     </form>
 </div>
 

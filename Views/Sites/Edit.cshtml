@@ -3,13 +3,14 @@
 @{
     ViewData["Title"] = "تعديل الموقع";
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var initialLat = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
     var initialLng = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
 }
 
 <h1 class="athar-page-title">تعديل الموقع: @Model.Name</h1>
 
-<div class="athar-card mt-3">
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px; margin-top:12px;">
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger">
@@ -26,11 +27,15 @@
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-size:11px; color:var(--sys-text-light);">رمز الموقع</label>
+                <input type="text" class="form-control" value="@Model.Code" disabled />
+            </div>
+            <div class="col-md-4 mb-3">
                 <label class="form-label">اسم الموقع</label>
                 <input type="text" name="Name" class="form-control" value="@Model.Name" required />
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-5 mb-3">
                 <label class="form-label">المشروع</label>
                 <select name="ProjectId" class="form-select" required>
                     @foreach (var p in projects)
@@ -42,9 +47,26 @@
         </div>
 
         <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">مسؤول الموقع</label>
+                <select name="ResponsibleId" class="form-select">
+                    <option value="">-- لا يوجد --</option>
+                    @foreach (var eng in engineers)
+                    {
+                        <option value="@eng.Id" selected="@(Model.ResponsibleId == eng.Id)">@eng.FullName</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-md-12 mb-3">
                 <label class="form-label">الوصف</label>
                 <textarea name="Description" class="form-control" rows="2">@Model.Description</textarea>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label class="form-label">متطلبات الموقع</label>
+                <textarea name="Requirements" class="form-control" rows="2">@Model.Requirements</textarea>
             </div>
         </div>
 
@@ -94,14 +116,14 @@
             </div>
         </div>
 
-        <div class="mb-3 form-check form-switch">
-            <input type="checkbox" name="IsActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
+        <div class="mb-3 d-flex align-items-center gap-2">
+            <input type="checkbox" class="chk-gold" name="IsActive" value="true" id="isActive" checked="@Model.IsActive" />
             <input type="hidden" name="IsActive" value="false" />
             <label class="form-check-label" for="isActive">نشط</label>
         </div>
 
-        <button type="submit" class="btn athar-btn">حفظ التعديلات</button>
-        <a asp-action="Details" asp-route-id="@Model.Id" class="btn athar-btn-outline">إلغاء</a>
+        <button type="submit" class="btn-line btn-line-accent">حفظ التعديلات</button>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn-line">إلغاء</a>
     </form>
 </div>
 
