@@ -1,0 +1,41 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<SiteContractor>
+@{
+    ViewData["Title"] = "لوحة المقاول";
+    ViewData["HideNav"] = true;
+    var contractorName = ViewBag.ContractorName as string;
+}
+
+<div style="max-width:900px; margin:30px auto; padding:0 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+            <div style="font-size:11px; color:#8a83a0;">بوابة المقاولين</div>
+            <h1 style="font-size:19px; font-weight:600; margin-top:2px;">مرحباً، @contractorName</h1>
+        </div>
+        <form method="post" asp-controller="ContractorPortal" asp-action="Logout">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-line">تسجيل الخروج</button>
+        </form>
+    </div>
+
+    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مواقعك</div>
+
+    @if (!Model.Any())
+    {
+        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:20px; text-align:center; color:#8a83a0; font-size:12px;">
+            لا توجد مواقع مرتبطة بحسابك بعد
+        </div>
+    }
+    else
+    {
+        <div style="display:grid; gap:10px;">
+            @foreach (var sa in Model)
+            {
+                <a asp-controller="ContractorPortal" asp-action="SiteDetails" asp-route-siteId="@sa.SiteId" style="display:block; background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:14px 16px; text-decoration:none; color:inherit;">
+                    <div style="font-size:13px; font-weight:600;">@sa.Site.Code - @sa.Site.Name</div>
+                    <div style="font-size:11px; color:#8a83a0; margin-top:3px;">@sa.Site.Project.Name @(sa.Specialty != null ? "· " + sa.Specialty : "")</div>
+                </a>
+            }
+        </div>
+    }
+</div>
