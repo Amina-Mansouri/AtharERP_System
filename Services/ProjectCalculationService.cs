@@ -118,6 +118,15 @@ namespace AtharERP_System.Services
                 ? Math.Round((decimal)completedTodos / totalTodos * 100, 2)
                 : 0;
 
+            if (task.Status != ProjectTaskStatus.Blocked)
+            {
+                task.Status = task.CompletionPercentage >= 100
+                    ? ProjectTaskStatus.Completed
+                    : task.CompletionPercentage > 0
+                        ? ProjectTaskStatus.InProgress
+                        : ProjectTaskStatus.NotStarted;
+            }
+
             await _context.SaveChangesAsync();
 
             if (task.ProjectAssignmentId.HasValue)

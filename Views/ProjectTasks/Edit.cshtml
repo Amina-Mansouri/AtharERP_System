@@ -3,10 +3,7 @@
 @model ProjectTask
 @{
     ViewData["Title"] = "تعديل المهمة";
-    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
-    var availableTasks = ViewBag.AvailableTasksForDependency as List<ProjectTask> ?? new List<ProjectTask>();
     var canManage = ViewBag.CanManage as bool? ?? false;
-    var assignments = ViewBag.Assignments as List<ProjectAssignment> ?? new List<ProjectAssignment>();
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectTaskStatus>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
 }
@@ -105,16 +102,6 @@
                         <input type="number" step="0.01" min="0" name="PenaltyAmount" value="@Model.PenaltyAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                     </div>
                 </div>
-                <div style="margin-bottom:8px;">
-                    <label style="font-size:11px; color:#8a83a0;">التكليف المرتبط</label>
-                    <select name="ProjectAssignmentId" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                        <option value="">-- بلا تكليف --</option>
-                        @foreach (var a in assignments)
-                        {
-                            <option value="@a.Id" selected="@(Model.ProjectAssignmentId == a.Id)">@a.CostType</option>
-                        }
-                    </select>
-                </div>
                 <button type="submit" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
             }
         </form>
@@ -130,17 +117,10 @@
         </div>
 
         <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
-            <div style="font-size:12px; font-weight:600; margin-bottom:8px;">تحديث الحالة</div>
-            <form method="post" asp-action="UpdateStatus" style="display:flex; gap:8px;">
+            <form method="post" asp-action="ToggleBlocked" style="display:inline;">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <select name="status" style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                    @foreach (var st in statusLabels)
-                    {
-                        <option value="@st.Value" selected="@(Model.Status.ToString() == st.Value)">@st.Label</option>
-                    }
-                </select>
-                <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; padding:0 14px;">تحديث</button>
+                <button type="submit" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:11.5px; padding:0 14px; color:@(Model.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42");">@(Model.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة")</button>
             </form>
         </div>
     </div>
@@ -161,6 +141,43 @@
             }
         </div>
 
+        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+            <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">قائمة To-Do (تقود نسبة الإنجاز والحالة تلقائياً)</div>
+            @if (!Model.Todos.Any())
+            {
+                <div class="stat-sub" style="margin-bottom:10px;">لا توجد بنود بعد</div>
+            }
+            else
+            {
+                <div style="display:grid; gap:6px; margin-bottom:10px;">
+                    @foreach (var todo in Model.Todos)
+                    {
+                        <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px;">
+                            <form method="post" asp-action="ToggleTodo" style="display:flex; align-items:center; gap:8px; flex:1;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@todo.Id" />
+                                <input type="hidden" name="taskId" value="@Model.Id" />
+                                <input type="checkbox" class="chk-gold" onchange="this.form.submit()" checked="@todo.IsCompleted" />
+                                <span style="font-size:11.5px; @(todo.IsCompleted ? "text-decoration:line-through; color:#8a83a0;" : "")">@todo.Item</span>
+                            </form>
+                            <form method="post" asp-action="RemoveTodo" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@todo.Id" />
+                                <input type="hidden" name="taskId" value="@Model.Id" />
+                                <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer;">حذف</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+            <form method="post" asp-action="AddTodo" style="display:flex; gap:8px;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="taskId" value="@Model.Id" />
+                <input type="text" name="item" placeholder="بند جديد" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; padding:0 14px;">+ إضافة بند</button>
+            </form>
+        </div>
+
         @if (canManage)
         {
             <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
@@ -177,86 +194,7 @@
                         </form>
                     </div>
                 }
-                <form method="post" asp-action="AddAssignee" style="display:flex; gap:4px; margin-top:6px;">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="taskId" value="@Model.Id" />
-                    <select name="userId" style="flex:1; height:28px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;">
-                        @foreach (var eng in engineers)
-                        {
-                            <option value="@eng.Id">@eng.FullName</option>
-                        }
-                    </select>
-                    <input type="number" step="0.01" min="0" max="100" name="contributionPercentage" value="100" style="width:60px; height:28px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;" />
-                    <button type="submit" style="height:28px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; padding:0 8px;">+</button>
-                </form>
-            </div>
-
-            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">التبعيات</div>
-                @foreach (var dep in Model.Dependencies)
-                {
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                        <span style="font-size:11.5px;">@dep.DependsOnTask.Title</span>
-                        <form method="post" asp-action="RemoveDependency" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@dep.Id" />
-                            <input type="hidden" name="taskId" value="@Model.Id" />
-                            <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer;">إزالة</button>
-                        </form>
-                    </div>
-                }
-                @if (availableTasks.Any())
-                {
-                    <form method="post" asp-action="AddDependency" style="display:flex; gap:4px; margin-top:6px;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="taskId" value="@Model.Id" />
-                        <select name="dependsOnTaskId" style="flex:1; height:28px; border:1px solid #e4e2ec; border-radius:6px; font-size:10.5px;">
-                            @foreach (var t in availableTasks)
-                            {
-                                <option value="@t.Id">@t.Title</option>
-                            }
-                        </select>
-                        <button type="submit" style="height:28px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; padding:0 8px;">+</button>
-                    </form>
-                }
             </div>
         }
     </div>
-</div>
-
-<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">قائمة To-Do (تقود نسبة الإنجاز تلقائياً)</div>
-    @if (!Model.Todos.Any())
-    {
-        <div class="stat-sub" style="margin-bottom:10px;">لا توجد بنود بعد</div>
-    }
-    else
-    {
-        <div style="display:grid; gap:6px; margin-bottom:10px;">
-            @foreach (var todo in Model.Todos)
-            {
-                <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px;">
-                    <form method="post" asp-action="ToggleTodo" style="display:flex; align-items:center; gap:8px; flex:1;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@todo.Id" />
-                        <input type="hidden" name="taskId" value="@Model.Id" />
-                        <input type="checkbox" class="chk-gold" onchange="this.form.submit()" checked="@todo.IsCompleted" />
-                        <span style="font-size:11.5px; @(todo.IsCompleted ? "text-decoration:line-through; color:#8a83a0;" : "")">@todo.Item</span>
-                    </form>
-                    <form method="post" asp-action="RemoveTodo" style="display:inline;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@todo.Id" />
-                        <input type="hidden" name="taskId" value="@Model.Id" />
-                        <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer;">حذف</button>
-                    </form>
-                </div>
-            }
-        </div>
-    }
-    <form method="post" asp-action="AddTodo" style="display:flex; gap:8px;">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="taskId" value="@Model.Id" />
-        <input type="text" name="item" placeholder="بند جديد" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-        <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; padding:0 14px;">+ إضافة بند</button>
-    </form>
 </div>

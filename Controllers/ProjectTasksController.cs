@@ -187,7 +187,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
      int id,
-     [Bind("ProjectAssignmentId,Title,Description,DueDate,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
+     [Bind("Title,Description,DueDate,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
@@ -204,9 +204,6 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Edit", new { id });
             }
 
-            var oldAssignmentId = task.ProjectAssignmentId;
-
-            task.ProjectAssignmentId = model.ProjectAssignmentId;
             task.Title = model.Title;
             task.Description = model.Description;
             task.DueDate = model.DueDate;
@@ -223,12 +220,7 @@ namespace AtharERP_System.Controllers
 
             await _context.SaveChangesAsync();
 
-            if (oldAssignmentId.HasValue)
-                await _calc.RecalculateAssignmentValueAsync(oldAssignmentId.Value);
-            if (task.ProjectAssignmentId.HasValue && task.ProjectAssignmentId != oldAssignmentId)
-                await _calc.RecalculateAssignmentValueAsync(task.ProjectAssignmentId.Value);
-
-            if (task.DelayDays > 0)
+                if (task.DelayDays > 0)
             {
                 var pmIds = await _context.ProjectTeamMembers
                     .Where(tm => tm.ProjectId == task.ProjectId && tm.Role == TeamRole.ProjectManager)
@@ -273,52 +265,23 @@ namespace AtharERP_System.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateStatus(int id, ProjectTaskStatus status)
+        public async Task<IActionResult> ToggleBlocked(int id)
         {
-            var task = await _context.ProjectTasks
-                .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
-                .Include(t => t.Assignees)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
             if (!await CanExecuteAsync(task))
                 return Forbid();
 
-            if (status == ProjectTaskStatus.InProgress)
-            {
-                var incompleteDependencies = task.Dependencies
-                    .Where(d => d.DependsOnTask.Status != ProjectTaskStatus.Completed)
-                    .Select(d => d.DependsOnTask.Title)
-                    .ToList();
-
-                if (incompleteDependencies.Any())
-                {
-                    TempData["Error"] = $"لا يمكن بدء هذه المهمة قبل إكمال: {string.Join("، ", incompleteDependencies)}";
-                    return RedirectToAction("Edit", new { id = task.Id });
-                }
-            }
-
-            task.Status = status;
-
-            if (status == ProjectTaskStatus.Completed)
-            {
-                task.CompletionPercentage = 100;
-                task.ActualDeliveryDate ??= DateTime.UtcNow.Date;
-                _calc.UpdateDeliveryMetrics(task);
-            }
+            task.Status = task.Status == ProjectTaskStatus.Blocked
+                ? (task.CompletionPercentage >= 100 ? ProjectTaskStatus.Completed : task.CompletionPercentage > 0 ? ProjectTaskStatus.InProgress : ProjectTaskStatus.NotStarted)
+                : ProjectTaskStatus.Blocked;
 
             await _context.SaveChangesAsync();
 
-            var recipientIds = await _context.ProjectTeamMembers
-                .Where(tm => tm.ProjectId == task.ProjectId)
-                .Select(tm => tm.UserId)
-                .ToListAsync();
-            await _notify.NotifyManyAsync(recipientIds, $"تغيّرت حالة المهمة \"{task.Title}\"", $"/ProjectTasks/Edit/{task.Id}");
-
-            TempData["Success"] = $"تم تحديث حالة المهمة {task.Title}";
-            return RedirectToAction("Edit", new { id = task.Id });
+            TempData["Success"] = "تم تحديث حالة المهمة";
+            return RedirectToAction("Edit", new { id });
         }
 
         // ============================================
