@@ -45,7 +45,18 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Assignments.View")]
         public async Task<IActionResult> Overview(int? projectId, int? stageId)
         {
-            ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
+            var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
+            var myProjectIds = await _context.ProjectTeamMembers
+                .Where(tm => tm.UserId == CurrentUserId)
+                .Select(tm => tm.ProjectId)
+                .ToListAsync();
+
+            var accessibleProjectsQuery = _context.Projects.AsQueryable();
+            if (!canViewAll)
+            {
+                accessibleProjectsQuery = accessibleProjectsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
+            }
+            ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.ProjectId = projectId;
             ViewBag.StageId = stageId;
 
@@ -54,6 +65,14 @@ namespace AtharERP_System.Controllers
                 ViewBag.Stages = new List<ProjectStage>();
                 return View(new List<ProjectAssignment>());
             }
+
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project == null)
+                return NotFound();
+
+            var canAccessThisProject = canViewAll || project.CreatedById == CurrentUserId || myProjectIds.Contains(project.Id);
+            if (!canAccessThisProject)
+                return Forbid();
 
             ViewBag.Stages = await _context.ProjectStages
                 .Where(s => s.ProjectId == projectId.Value)

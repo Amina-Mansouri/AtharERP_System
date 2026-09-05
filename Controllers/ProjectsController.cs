@@ -121,7 +121,7 @@ namespace AtharERP_System.Controllers
             }
 
             ViewBag.CanViewClient = await CanViewClientAsync();
-            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
+            ViewBag.CanViewCosts = await CanViewCostsAsync(project);
             ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
             ViewBag.AllEmployees = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
@@ -476,6 +476,13 @@ namespace AtharERP_System.Controllers
             return await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == project.Id && tm.UserId == userId);
         }
 
+
+        private async Task<bool> CanViewCostsAsync(Project project)
+        {
+            if (!await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View"))
+                return false;
+            return await CanAccessProjectAsync(project);
+        }
         private async Task<bool> CanViewClientAsync()
         {
             return await _permissionService.HasPermissionAsync(User, "Projects.ViewAll")

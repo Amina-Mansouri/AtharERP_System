@@ -117,6 +117,7 @@ namespace AtharERP_System.Controllers
      .Include(t => t.Todos)
      .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
      .Include(t => t.Stage).ThenInclude(s => s.Project)
+     .Include(t => t.ProjectAssignment).ThenInclude(a => a!.Engineers).ThenInclude(e => e.User)
      .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
@@ -148,6 +149,7 @@ namespace AtharERP_System.Controllers
         }
 
         // تحديد القيمة التقديرية للمهمة — يقدر المكلَّف نفسه يفعلها، وليس فقط الإدارة
+
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -179,6 +181,7 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = "تم تحديث القيمة التقديرية بنجاح";
             return RedirectToAction("Edit", new { id });
         }
+
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]

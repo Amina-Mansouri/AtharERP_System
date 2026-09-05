@@ -46,26 +46,38 @@ namespace AtharERP_System.Controllers
         [Authorize]
         public async Task<IActionResult> EngineerDashboard()
         {
+            var user = await _context.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+
             var myAssignments = await _context.ProjectAssignments
                 .Include(a => a.Stage).ThenInclude(s => s.Project)
-                                .Where(a => a.Engineers.Any(e => e.UserId == CurrentUserId))
+                .Include(a => a.Tasks)
+                .Where(a => a.Engineers.Any(e => e.UserId == CurrentUserId))
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            var activeAssignments = myAssignments
                 .Where(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
-                .OrderBy(a => a.AgreedDate)
-                .ToListAsync();
+                .ToList();
 
+            var myAssignmentIds = myAssignments.Select(a => a.Id).ToList();
             var myTasks = await _context.ProjectTasks
-                .Include(t => t.Project)
-                .Include(t => t.Stage)
-                .Where(t => t.Assignees.Any(x => x.UserId == CurrentUserId))
-                .Where(t => t.Status != ProjectTaskStatus.Completed)
-                .OrderBy(t => t.DueDate)
+                .Include(t => t.Todos)
+                .Where(t => t.Assignees.Any(x => x.UserId == CurrentUserId) || (t.ProjectAssignmentId.HasValue && myAssignmentIds.Contains(t.ProjectAssignmentId.Value)))
                 .ToListAsync();
 
-            ViewBag.MyAssignments = myAssignments;
-            ViewBag.MyTasks = myTasks;
-            ViewBag.TodayTasks = myTasks.Count(t => t.DueDate.HasValue && t.DueDate.Value.Date == DateTime.UtcNow.Date);
-            ViewBag.OverdueTasks = myTasks.Count(t => t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.UtcNow.Date);
-            ViewBag.MyProjectsCount = myAssignments.Select(a => a.Stage.ProjectId).Distinct().Count();
+            var openTasks = myTasks.Where(t => t.Status != ProjectTaskStatus.Completed).OrderBy(t => t.DueDate).ToList();
+            var today = DateTime.UtcNow.Date;
+
+            ViewBag.CurrentUser = user;
+            ViewBag.MyProjectsCount = activeAssignments.Select(a => a.Stage!.ProjectId).Distinct().Count();
+            ViewBag.MyAssignmentsCount = activeAssignments.Count;
+            ViewBag.DelayedAssignmentsCount = activeAssignments.Count(a => a.AgreedDate.HasValue && a.AgreedDate.Value.Date < today);
+            ViewBag.AvgCompletion = myTasks.Any() ? Math.Round(myTasks.Average(t => t.CompletionPercentage), 0) : 0;
+            ViewBag.MyAssignmentsList = activeAssignments;
+            ViewBag.OpenTasks = openTasks;
+            ViewBag.EarlyDays = myTasks.Sum(t => t.EarlyDeliveryDays);
+            ViewBag.DelayDays = myTasks.Sum(t => t.DelayDays);
+            ViewBag.CompletedAssignmentsCount = myAssignments.Count(a => a.Status == AssignmentStatus.Completed);
 
             return View();
         }

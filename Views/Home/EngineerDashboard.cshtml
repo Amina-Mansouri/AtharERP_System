@@ -1,20 +1,140 @@
-﻿@{
-    ViewData["Title"] = "لوحة المهندسة";
-    var myAssignments = ViewBag.MyAssignments as List<AtharERP_System.Models.Entities.ProjectAssignment> ?? new List<AtharERP_System.Models.Entities.ProjectAssignment>();
-    var myTasks = ViewBag.MyTasks as List<AtharERP_System.Models.Entities.ProjectTask> ?? new List<AtharERP_System.Models.Entities.ProjectTask>();
-    int todayTasks = ViewBag.TodayTasks as int? ?? 0;
-    int overdueTasks = ViewBag.OverdueTasks as int? ?? 0;
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@{
+    ViewData["Title"] = "الرئيسية";
+    var user = ViewBag.CurrentUser as ApplicationUser;
+    var myAssignments = ViewBag.MyAssignmentsList as List<ProjectAssignment> ?? new List<ProjectAssignment>();
+    var openTasks = ViewBag.OpenTasks as List<ProjectTask> ?? new List<ProjectTask>();
     int myProjectsCount = ViewBag.MyProjectsCount as int? ?? 0;
+    int myAssignmentsCount = ViewBag.MyAssignmentsCount as int? ?? 0;
+    int delayedCount = ViewBag.DelayedAssignmentsCount as int? ?? 0;
+    decimal avgCompletion = ViewBag.AvgCompletion as decimal? ?? 0;
+    int earlyDays = ViewBag.EarlyDays as int? ?? 0;
+    int delayDays = ViewBag.DelayDays as int? ?? 0;
+    int completedAssignmentsCount = ViewBag.CompletedAssignmentsCount as int? ?? 0;
+
+    var rankLabels = EnumDisplayHelper.GetDisplayList<JobRank>();
+    var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
+
+    string[] arabicDays = { "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت" };
+    string[] arabicMonths = { "", "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر" };
+    var today = DateTime.UtcNow;
+    var todayLabel = $"{arabicDays[(int)today.DayOfWeek]} {today.Day} {arabicMonths[today.Month]} {today.Year}";
+
+    string StatusTagClass(AssignmentStatus s) => s switch
+    {
+        AssignmentStatus.Completed => "tag-success",
+        AssignmentStatus.Cancelled => "tag-danger",
+        AssignmentStatus.InProgress => "tag-accent",
+        _ => ""
+    };
 }
 
-<div style="font-size:11px; color:#8a83a0; font-weight:500;">الرئيسية</div>
-<div style="font-size:19px; font-weight:600; margin-top:2px; margin-bottom:14px;">لوحة المهندسة</div>
-
-<div class="stat-strip stat-strip-text">
-    <div class="stat-item"><span class="kicker">تكليفاتي النشطة</span><span class="stat-value">@myAssignments.Count</span></div>
-    <div class="stat-item"><span class="kicker">مهام اليوم</span><span class="stat-value">@todayTasks</span></div>
-    <div class="stat-item"><span class="kicker">المتأخر</span><span class="stat-value" style="color:#c94a42;">@overdueTasks</span></div>
-    <div class="stat-item"><span class="kicker">مشاريعي</span><span class="stat-value">@myProjectsCount</span></div>
+<div style="display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:14px; flex-wrap:wrap;">
+    <div>
+        <div style="font-size:19px; font-weight:600;">مرحباً، @user?.FullName</div>
+        <div style="font-size:12px; color:#8a83a0; margin-top:2px;">
+            @(rankLabels.FirstOrDefault(x => x.Value == user?.Rank.ToString()).Label) — @(user?.Department?.Name ?? "-") · موجز أعمالك اليوم @todayLabel
+        </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+        <span class="tag tag-muted">طلب توريد — قادمة</span>
+        <span class="tag tag-muted">توثيق عمل منجز — قادمة</span>
+    </div>
 </div>
 
-<p class="stat-sub" style="margin-top:14px;">هذه نسخة أولية مبسّطة — سيتم استكمال تفاصيل اللوحة (المهام قيد التنفيذ، التسليم القادم، قائمة التحقق النشطة) عند الوصول لبند "لوحة المهندسة" ضمن خطة العمل.</p>
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">حضور اليوم</span><span class="stat-value">قادمة</span></div>
+    <div class="stat-item"><span class="kicker">مشاريعي</span><span class="stat-value">@myProjectsCount</span></div>
+    <div class="stat-item"><span class="kicker">تكليفاتي</span><span class="stat-value">@myAssignmentsCount</span></div>
+    <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@delayedCount</span></div>
+    <div class="stat-item"><span class="kicker">نسبة إنجازي</span><span class="stat-value">@avgCompletion.ToString("N0")%</span></div>
+</div>
+
+<div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px; margin-bottom:12px;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
+            <div style="font-size:13.5px; font-weight:600;">مشاريعي وتكليفاتي فيها</div>
+            <a asp-controller="ProjectAssignments" asp-action="MyAssignments" style="font-size:11.5px;">تكليفاتي ←</a>
+        </div>
+        <div class="data-table" style="--cols: 100px minmax(0,1.4fr) 118px 100px 84px 88px">
+            <div class="data-table-head">
+                <div class="cell">المشروع</div>
+                <div class="cell">تكليفي فيه</div>
+                <div class="cell">المرحلة</div>
+                <div class="cell">نسبة الإنجاز</div>
+                <div class="cell">التسليم</div>
+                <div class="cell">الحالة</div>
+            </div>
+            @if (!myAssignments.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات نشطة حالياً</div></div>
+            }
+            else
+            {
+                @foreach (var a in myAssignments)
+                {
+                    var pct = a.Tasks.Any() ? a.Tasks.Average(t => t.CompletionPercentage) : 0;
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@a.Stage?.Project?.Code</div>
+                        <div class="cell">@a.CostType</div>
+                        <div class="cell">@a.Stage?.Name</div>
+                        <div class="cell cell-num">@pct.ToString("N0")%</div>
+                        <div class="cell cell-num">@(a.AgreedDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                        <div class="cell"><span class="tag @StatusTagClass(a.Status)">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">مهامي المفتوحة</div>
+        @if (!openTasks.Any())
+        {
+            <div class="stat-sub" style="padding:12px 16px;">لا توجد مهام مفتوحة</div>
+        }
+        else
+        {
+            @foreach (var t in openTasks)
+            {
+                var doneTodos = t.Todos.Count(x => x.IsCompleted);
+                <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="display:grid; grid-template-columns:minmax(0,1fr) 60px 84px; gap:9px; align-items:center; padding:9px 16px; border-bottom:1px solid #f6f5fa; text-decoration:none; color:inherit;">
+                    <div style="font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@t.Title</div>
+                    <div class="cell-num" style="font-size:10.5px; color:#8a83a0;">@doneTodos/@t.Todos.Count</div>
+                    <div class="cell-num" style="font-size:10.5px; @(t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.UtcNow.Date ? "color:#c94a42;" : "color:#8a83a0;")">@(t.DueDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                </a>
+            }
+        }
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">حضوري هذا الشهر</div>
+        <div style="padding:13px 16px; display:grid; gap:10px; font-size:11.5px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">أيام الحضور</span><span class="stat-sub">قادمة</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">ساعات التأخير</span><span class="stat-sub">قادمة</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">ساعات إضافية</span><span class="stat-sub">قادمة</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">إجازات مستخدمة</span><span class="stat-sub">قادمة</span></div>
+        </div>
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">راتبي وخصوماتي ومكافآتي</div>
+        <div style="padding:13px 16px; display:grid; gap:10px; font-size:11.5px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">الراتب المتفق عليه</span><span style="font-weight:600;">@(user?.ContractSalary.ToString("N0")) د.ل</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">خصومات الشهر</span><span class="stat-sub">قادمة</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">مكافآت الشهر</span><span class="stat-sub">قادمة</span></div>
+            <div style="display:flex; justify-content:space-between; padding-top:9px; border-top:1px solid #f1f0f6;"><span style="color:#8a83a0;">الصافي</span><span class="stat-sub">قادمة</span></div>
+        </div>
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
+        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">أدائي</div>
+        <div style="padding:13px 16px; display:grid; gap:10px; font-size:11.5px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">المساحات المصمَّمة</span><span class="stat-sub">قادمة</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">تسليم مبكر</span><span style="font-weight:600; color:#2f8a57;">@earlyDays يوم</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">تسليم متأخر</span><span style="font-weight:600; color:#c94a42;">@delayDays يوم</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">تكليفات معتمدة</span><span style="font-weight:600;">@completedAssignmentsCount</span></div>
+        </div>
+    </div>
+</div>
