@@ -7,6 +7,7 @@
     ViewData["Title"] = site != null ? $"المقاولون - {site.Name}" : "المقاولون";
     var canManage = await PermissionService.HasPermissionAsync(User, "Sites.Manage");
 
+    var cols = "1.2fr " + (site == null ? "1.1fr " : "") + "1.2fr 110px 1fr 90px" + (canManage ? " 160px" : "");
     string StatusLabel(ContractorStatus s) => s switch
     {
         ContractorStatus.Active => "نشط",
