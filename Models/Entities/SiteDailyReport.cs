@@ -46,14 +46,20 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "ملاحظات")]
         public string? Notes { get; set; }
 
-        [Required]
         [ValidateNever]
-        [Display(Name = "أُنشئ بواسطة")]
-        public string CreatedById { get; set; } = string.Empty;
+        [Display(Name = "أُنشئ بواسطة (موظف)")]
+        public string? CreatedById { get; set; }
 
         [ForeignKey("CreatedById")]
         [ValidateNever]
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
+        public virtual ApplicationUser? CreatedBy { get; set; }
+
+        [Display(Name = "أُنشئ بواسطة (مقاول)")]
+        public int? CreatedByContractorId { get; set; }
+
+        [ForeignKey("CreatedByContractorId")]
+        [ValidateNever]
+        public virtual Contractor? CreatedByContractor { get; set; }
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

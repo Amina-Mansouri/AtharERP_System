@@ -445,7 +445,29 @@ namespace AtharERP_System.Data
             builder.Entity<Contractor>()
                 .HasIndex(c => c.Email)
                 .IsUnique();
+            builder.Entity<SiteDailyReport>()
+    .HasOne(r => r.CreatedByContractor)
+    .WithMany()
+    .HasForeignKey(r => r.CreatedByContractorId)
+    .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<SiteQualityCheck>()
+                .HasOne(q => q.CheckedByContractor)
+                .WithMany()
+                .HasForeignKey(q => q.CheckedByContractorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteSafetyCheck>()
+                .HasOne(sc => sc.CheckedByContractor)
+                .WithMany()
+                .HasForeignKey(sc => sc.CheckedByContractorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteSupplyRequest>()
+                .HasOne(sr => sr.RequestedByContractor)
+                .WithMany()
+                .HasForeignKey(sr => sr.RequestedByContractorId)
+                .OnDelete(DeleteBehavior.Restrict);
             // ========== الصيانة (SiteMaintenance) ==========
             builder.Entity<SiteMaintenance>()
                 .HasOne(m => m.Site)

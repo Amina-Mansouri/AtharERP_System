@@ -52,13 +52,20 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الطلب")]
         public DateTime RequestDate { get; set; } = DateTime.UtcNow;
 
-        [Required]
         [ValidateNever]
-        [Display(Name = "طلبه")]
-        public string RequestedById { get; set; } = string.Empty;
+        [Display(Name = "طلبه (موظف)")]
+        public string? RequestedById { get; set; }
 
         [ForeignKey("RequestedById")]
         [ValidateNever]
-        public virtual ApplicationUser RequestedBy { get; set; } = null!;
+        public virtual ApplicationUser? RequestedBy { get; set; }
+
+        [Display(Name = "طلبه (مقاول)")]
+        public int? RequestedByContractorId { get; set; }
+
+        [ForeignKey("RequestedByContractorId")]
+        [ValidateNever]
+        public virtual Contractor? RequestedByContractor { get; set; }
     }
 }
+   

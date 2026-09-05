@@ -36,14 +36,20 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الفحص")]
         public DateTime CheckDate { get; set; } = DateTime.UtcNow;
 
-        [Required]
         [ValidateNever]
-        [Display(Name = "فحصه")]
-        public string CheckedById { get; set; } = string.Empty;
+        [Display(Name = "فحصه (موظف)")]
+        public string? CheckedById { get; set; }
 
         [ForeignKey("CheckedById")]
         [ValidateNever]
-        public virtual ApplicationUser CheckedBy { get; set; } = null!;
+        public virtual ApplicationUser? CheckedBy { get; set; }
+
+        [Display(Name = "فحصه (مقاول)")]
+        public int? CheckedByContractorId { get; set; }
+
+        [ForeignKey("CheckedByContractorId")]
+        [ValidateNever]
+        public virtual Contractor? CheckedByContractor { get; set; }
 
         [Display(Name = "معتمد")]
         public bool IsApproved { get; set; }
