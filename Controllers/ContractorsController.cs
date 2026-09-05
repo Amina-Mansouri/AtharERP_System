@@ -34,6 +34,49 @@ namespace AtharERP_System.Controllers
 
             return View(contractors);
         }
+        [RequirePermission("Sites.Manage")]
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [RequirePermission("Sites.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(string name, string? companyName, string? phone, string email, string password)
+        {
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                TempData["Error"] = "الاسم والبريد الإلكتروني وكلمة المرور مطلوبة";
+                return RedirectToAction("Create");
+            }
+
+            if (await _context.Contractors.AnyAsync(c => c.Email == email))
+            {
+                TempData["Error"] = "البريد الإلكتروني مستخدم بالفعل لمقاول آخر";
+                return RedirectToAction("Create");
+            }
+
+            var contractor = new Contractor
+            {
+                Name = name,
+                CompanyName = companyName,
+                Phone = phone,
+                Email = email,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            contractor.PasswordHash = new PasswordHasher<Contractor>().HashPassword(contractor, password);
+
+            _context.Contractors.Add(contractor);
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(Contractor), contractor.Id.ToString(), $"إنشاء حساب مقاول: {contractor.Name} ({contractor.Email})");
+
+            TempData["Success"] = $"تم إنشاء حساب المقاول {contractor.Name} بنجاح — يمكنك الآن ربطه بموقع من صفحة الموقع";
+            return RedirectToAction("Edit", new { id = contractor.Id });
+        }
 
         [RequirePermission("Sites.Manage")]
         [HttpGet]
