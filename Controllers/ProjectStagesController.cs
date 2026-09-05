@@ -240,7 +240,10 @@ namespace AtharERP_System.Controllers
             stage.WorkDocumentation = model.WorkDocumentation;
 
             var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
-            _calc.ApplyAutomaticStageStatus(stage, allStages);
+            foreach (var s in allStages)
+            {
+                _calc.ApplyAutomaticStageStatus(s, allStages);
+            }
 
             await _context.SaveChangesAsync();
             await _calc.RecalculateProjectAsync(stage.ProjectId);

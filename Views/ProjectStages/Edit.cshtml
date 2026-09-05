@@ -40,20 +40,7 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">الحالة</label>
-                <select name="Status" class="form-select">
-                    <option value="New" selected="@(Model.Status == StageStatus.New)">جديدة</option>
-                    <option value="InProgress" selected="@(Model.Status == StageStatus.InProgress)">قيد التنفيذ</option>
-                    <option value="ClientReview" selected="@(Model.Status == StageStatus.ClientReview)">مراجعة العميل</option>
-                    <option value="Completed" selected="@(Model.Status == StageStatus.Completed)">مكتملة</option>
-                    <option value="Delayed" selected="@(Model.Status == StageStatus.Delayed)">متأخرة</option>
-                </select>
-            </div>
-           
-
-        </div>
+      
 
         <div class="row">
             <div class="col-md-6 mb-3">
@@ -65,6 +52,10 @@
                         <option value="@eng.Id" selected="@(Model.AssignedEngineerId == eng.Id)">@eng.FullName</option>
                     }
                 </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">الحالة (تلقائية)</label>
+                <input type="text" class="form-control" value="@Model.Status" disabled />
             </div>
         </div>
 
