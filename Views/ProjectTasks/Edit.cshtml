@@ -65,17 +65,13 @@
                 <textarea name="Description" rows="2" disabled="@(!canManage)" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                 <div>
-                    <label style="font-size:11px; color:#8a83a0;">تاريخ الاستحقاق</label>
-                    <input type="date" name="DueDate" value="@(Model.DueDate?.ToString("yyyy-MM-dd"))" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                </div>
-                <div>
-                    <label style="font-size:11px; color:#8a83a0;">بدء مخطط</label>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
                     <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
                 <div>
-                    <label style="font-size:11px; color:#8a83a0;">انتهاء مخطط</label>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
                     <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
                 <div>

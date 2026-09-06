@@ -56,7 +56,7 @@ namespace AtharERP_System.Controllers
                 .Include(t => t.Todos)
                 .Where(t => t.Assignees.Any(a => a.UserId == CurrentUserId))
                 .OrderBy(t => t.Status)
-                .ThenBy(t => t.DueDate)
+                               .ThenBy(t => t.PlannedEndDate)
                 .ToListAsync();
 
             return View(tasks);
@@ -69,7 +69,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-     [Bind("StageId,ProjectAssignmentId,Title,Description,DueDate,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
+     [Bind("StageId,ProjectAssignmentId,Title,Description,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == model.StageId);
             if (stage == null)
@@ -187,7 +187,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
      int id,
-     [Bind("Title,Description,DueDate,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
+     [Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
@@ -206,7 +206,7 @@ namespace AtharERP_System.Controllers
 
             task.Title = model.Title;
             task.Description = model.Description;
-            task.DueDate = model.DueDate;
+            
             task.PlannedStartDate = model.PlannedStartDate;
             task.PlannedEndDate = model.PlannedEndDate;
             task.ActualDeliveryDate = model.ActualDeliveryDate;
@@ -350,6 +350,12 @@ namespace AtharERP_System.Controllers
             if (!await CanExecuteAsync(task))
                 return Forbid();
 
+            if (task.PlannedStartDate == null || task.PlannedEndDate == null)
+            {
+                TempData["Error"] = "لا يمكن إضافة بند قبل تحديد تاريخ البداية والنهاية للمهمة";
+                return RedirectToAction("Edit", new { id = taskId });
+            }
+
             if (!string.IsNullOrWhiteSpace(item))
             {
                 _context.TaskTodos.Add(new TaskTodo { TaskId = taskId, Item = item });
@@ -369,18 +375,25 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleTodo(int id, int taskId)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
             if (!await CanExecuteAsync(task))
                 return Forbid();
 
-            var todo = await _context.TaskTodos.FindAsync(id);
+            var todo = task.Todos.FirstOrDefault(t => t.Id == id);
             if (todo != null)
             {
                 todo.IsCompleted = !todo.IsCompleted;
                 todo.CompletedAt = todo.IsCompleted ? DateTime.UtcNow : null;
+
+                if (todo.IsCompleted && task.Todos.All(t => t.IsCompleted) && task.ActualDeliveryDate == null)
+                {
+                    task.ActualDeliveryDate = DateTime.UtcNow.Date;
+                    _calc.UpdateDeliveryMetrics(task);
+                }
+
                 await _context.SaveChangesAsync();
                 await _calc.RecalculateTaskCompletionAsync(taskId);
             }

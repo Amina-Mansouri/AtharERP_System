@@ -65,7 +65,7 @@ namespace AtharERP_System.Controllers
                 .Where(t => t.Assignees.Any(x => x.UserId == CurrentUserId) || (t.ProjectAssignmentId.HasValue && myAssignmentIds.Contains(t.ProjectAssignmentId.Value)))
                 .ToListAsync();
 
-            var openTasks = myTasks.Where(t => t.Status != ProjectTaskStatus.Completed).OrderBy(t => t.DueDate).ToList();
+            var openTasks = myTasks.Where(t => t.Status != ProjectTaskStatus.Completed).OrderBy(t => t.PlannedEndDate).ToList();
             var today = DateTime.UtcNow.Date;
 
             ViewBag.CurrentUser = user;

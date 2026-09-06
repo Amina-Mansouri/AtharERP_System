@@ -35,9 +35,7 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
-        [DataType(DataType.Date)]
-        [Display(Name = "تاريخ الاستحقاق")]
-        public DateTime? DueDate { get; set; }
+   
 
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ البدء المخطط")]

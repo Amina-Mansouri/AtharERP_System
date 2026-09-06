@@ -31,7 +31,7 @@
                         <th>المرحلة</th>
                         <th>الحالة</th>
                         <th>نسبة الإنجاز</th>
-                        <th>تاريخ الاستحقاق</th>
+                        <th>تاريخ النهاية</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -44,7 +44,7 @@
                             <td>@(t.Stage?.Name ?? "-")</td>
                             <td><span class="badge athar-status-badge athar-status-@t.Status">@StatusLabel(t.Status)</span></td>
                             <td>@t.CompletionPercentage.ToString("N0")%</td>
-                            <td>@(t.DueDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                            <td>@(t.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                             <td><a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm athar-btn-outline">فتح</a></td>
                         </tr>
                     }
