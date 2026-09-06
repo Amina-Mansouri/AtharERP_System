@@ -123,8 +123,8 @@
             <nav class="app-sidebar">
                 <div class="sidebar-scroll sb">
                     <div class="nav-section-title">وصول سريع</div>
-                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
-                   asp-controller="Home" asp-action="Dashboard">الرئيسية</a>
+                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
+                       asp-controller="Home" asp-action="Index">الرئيسية</a>
                 @if (canProjects)
                 {
                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"

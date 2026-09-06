@@ -196,6 +196,13 @@ namespace AtharERP_System.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            if (task.Status == ProjectTaskStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن تعديل بيانات مهمة مكتملة";
+                return RedirectToAction("Edit", new { id });
+            }
+
+
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
             var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
             if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
@@ -230,7 +237,8 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = task.ProjectId });
+            return RedirectToAction("Edit", new { id });
+        
         }
 
         // ============================================
@@ -349,6 +357,12 @@ namespace AtharERP_System.Controllers
 
             if (!await CanExecuteAsync(task))
                 return Forbid();
+
+            if (task.Status == ProjectTaskStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة بند لمهمة مكتملة";
+                return RedirectToAction("Edit", new { id = taskId });
+            }
 
             if (task.PlannedStartDate == null || task.PlannedEndDate == null)
             {
