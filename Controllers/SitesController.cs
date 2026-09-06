@@ -13,12 +13,14 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
         private readonly PermissionService _permissionService;
+        private readonly SiteCalculationService _siteCalc;
 
-        public SitesController(AppDbContext context, AuditService audit, PermissionService permissionService)
+        public SitesController(AppDbContext context, AuditService audit, PermissionService permissionService, SiteCalculationService siteCalc)
         {
             _context = context;
             _audit = audit;
             _permissionService = permissionService;
+            _siteCalc = siteCalc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -108,7 +110,6 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             ViewBag.CanManage = await _permissionService.HasPermissionAsync(User, "Sites.Manage");
-            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
 
             ViewBag.CompletionPercentage = site.Operations.Any() ? site.Operations.Average(o => o.CompletionPercentage) : 0;
             ViewBag.HasTodayReport = await _context.SiteDailyReports.AnyAsync(r => r.SiteId == id && r.ReportDate.Date == DateTime.UtcNow.Date);
@@ -283,12 +284,13 @@ namespace AtharERP_System.Controllers
 
         // ============================================
         // مراحل العمل داخل الموقع (SiteOperation) — حالة تلقائية بالكامل
+        // تخطيطها من الموظف، ومتابعتها (التواريخ الفعلية) من مقاول الموقع عبر بوابته
         // ============================================
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateOperation(
-            [Bind("SiteId,Name,Description,Sequence,PlannedStartDate,PlannedEndDate,ResponsibleId,Notes")] SiteOperation model)
+            [Bind("SiteId,Name,Description,Sequence,PlannedStartDate,PlannedEndDate,Notes")] SiteOperation model)
         {
             var site = await _context.Sites.FindAsync(model.SiteId);
             if (site == null)
@@ -309,7 +311,7 @@ namespace AtharERP_System.Controllers
             _context.SiteOperations.Add(model);
             await _context.SaveChangesAsync();
 
-            await ApplyAutomaticSiteStatusAsync(model.SiteId);
+            await _siteCalc.ApplyAutomaticSiteStatusAsync(model.SiteId);
 
             TempData["Success"] = $"تمت إضافة مرحلة العمل {model.Name} بنجاح";
             return RedirectToAction("Details", new { id = model.SiteId });
@@ -326,7 +328,6 @@ namespace AtharERP_System.Controllers
             if (!await _permissionService.CanAccessProjectAsync(User, op.Site.ProjectId))
                 return Forbid();
 
-            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             return View(op);
         }
 
@@ -335,7 +336,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditOperation(
             int id,
-            [Bind("Name,Description,Sequence,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,ResponsibleId,Notes")] SiteOperation model)
+            [Bind("Name,Description,Sequence,PlannedStartDate,PlannedEndDate,ActualStartDate,ActualEndDate,Notes")] SiteOperation model)
         {
             var op = await _context.SiteOperations.Include(o => o.Site).FirstOrDefaultAsync(o => o.Id == id);
             if (op == null)
@@ -345,10 +346,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             if (!ModelState.IsValid)
-            {
-                ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
                 return View(model);
-            }
 
             op.Name = model.Name;
             op.Description = model.Description;
@@ -357,14 +355,13 @@ namespace AtharERP_System.Controllers
             op.PlannedEndDate = model.PlannedEndDate;
             op.ActualStartDate = model.ActualStartDate;
             op.ActualEndDate = model.ActualEndDate;
-            op.ResponsibleId = model.ResponsibleId;
             op.Notes = model.Notes;
 
             if (op.Status != OperationStatus.OnHold)
-                ApplyAutomaticOperationStatus(op);
+                SiteCalculationService.ApplyAutomaticOperationStatus(op);
 
             await _context.SaveChangesAsync();
-            await ApplyAutomaticSiteStatusAsync(op.SiteId);
+            await _siteCalc.ApplyAutomaticSiteStatusAsync(op.SiteId);
 
             TempData["Success"] = $"تم تحديث مرحلة العمل {op.Name} بنجاح";
             return RedirectToAction("Details", new { id = op.SiteId });
@@ -383,12 +380,12 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             if (op.Status == OperationStatus.OnHold)
-                ApplyAutomaticOperationStatus(op);
+                SiteCalculationService.ApplyAutomaticOperationStatus(op);
             else
                 op.Status = OperationStatus.OnHold;
 
             await _context.SaveChangesAsync();
-            await ApplyAutomaticSiteStatusAsync(op.SiteId);
+            await _siteCalc.ApplyAutomaticSiteStatusAsync(op.SiteId);
 
             TempData["Success"] = op.Status == OperationStatus.OnHold ? "تم إيقاف المرحلة" : "تم استئناف المرحلة";
             return RedirectToAction("Details", new { id = op.SiteId });
@@ -410,50 +407,10 @@ namespace AtharERP_System.Controllers
             _context.SiteOperations.Remove(op);
             await _context.SaveChangesAsync();
 
-            await ApplyAutomaticSiteStatusAsync(siteId);
+            await _siteCalc.ApplyAutomaticSiteStatusAsync(siteId);
 
             TempData["Success"] = "تم حذف مرحلة العمل بنجاح";
             return RedirectToAction("Details", new { id = siteId });
-        }
-
-        // ============================================
-        // دوال الحالة التلقائية
-        // ============================================
-        private static void ApplyAutomaticOperationStatus(SiteOperation op)
-        {
-            if (op.ActualEndDate.HasValue)
-            {
-                op.Status = OperationStatus.Completed;
-                op.CompletionPercentage = 100;
-                return;
-            }
-
-            if (op.PlannedEndDate.HasValue && DateTime.UtcNow.Date > op.PlannedEndDate.Value.Date)
-            {
-                op.Status = OperationStatus.Delayed;
-                return;
-            }
-
-            op.Status = op.ActualStartDate.HasValue ? OperationStatus.InProgress : OperationStatus.NotStarted;
-        }
-
-        private async Task ApplyAutomaticSiteStatusAsync(int siteId)
-        {
-            var site = await _context.Sites.Include(s => s.Operations).FirstOrDefaultAsync(s => s.Id == siteId);
-            if (site == null || site.Status == SiteStatus.OnHold)
-                return;
-
-            if (site.Operations.Any() && site.Operations.All(o => o.Status == OperationStatus.Completed))
-            {
-                site.Status = SiteStatus.Completed;
-                site.ActualEndDate ??= DateTime.UtcNow.Date;
-            }
-            else
-            {
-                site.Status = SiteStatus.Active;
-            }
-
-            await _context.SaveChangesAsync();
         }
 
         private async Task LoadProjectsAsync()

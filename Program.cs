@@ -47,6 +47,7 @@ builder.Services.AddScoped<PermissionService>();
 
 // خدمة حساب نسب الإنجاز للمراحل والمشاريع
 builder.Services.AddScoped<ProjectCalculationService>();
+builder.Services.AddScoped<SiteCalculationService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<FileUploadService>();

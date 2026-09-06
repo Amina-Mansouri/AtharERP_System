@@ -365,13 +365,7 @@ namespace AtharERP_System.Data
                 .HasOne(o => o.Site)
                 .WithMany(s => s.Operations)
                 .HasForeignKey(o => o.SiteId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<SiteOperation>()
-                .HasOne(o => o.Responsible)
-                .WithMany()
-                .HasForeignKey(o => o.ResponsibleId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);           
 
             // ========== التقارير اليومية (SiteDailyReport) ==========
             builder.Entity<SiteDailyReport>()

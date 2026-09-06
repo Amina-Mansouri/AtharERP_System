@@ -50,13 +50,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نسبة الإنجاز")]
         public decimal CompletionPercentage { get; set; }
 
-        [Display(Name = "المسؤول")]
-        public string? ResponsibleId { get; set; }
-
-        [ForeignKey("ResponsibleId")]
-        [ValidateNever]
-        public virtual ApplicationUser? Responsible { get; set; }
-
         [Display(Name = "ملاحظات")]
         public string? Notes { get; set; }
     }

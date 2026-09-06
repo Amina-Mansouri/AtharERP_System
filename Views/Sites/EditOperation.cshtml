@@ -2,7 +2,7 @@
 @model SiteOperation
 @{
     ViewData["Title"] = "تعديل مرحلة العمل";
-    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
+  
 
     string OpStatusLabel(OperationStatus s) => s switch
     {
@@ -76,16 +76,6 @@
             <div class="col-md-6 mb-3">
                 <label class="form-label" style="font-size:11px; color:var(--sys-text-light);">نسبة الإنجاز % (تلقائية)</label>
                 <input type="text" class="form-control" value="@Model.CompletionPercentage.ToString("N0")%" disabled />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">المسؤول</label>
-                <select name="ResponsibleId" class="form-select">
-                    <option value="">-- لا يوجد --</option>
-                    @foreach (var eng in engineers)
-                    {
-                        <option value="@eng.Id" selected="@(Model.ResponsibleId == eng.Id)">@eng.FullName</option>
-                    }
-                </select>
             </div>
         </div>
 
