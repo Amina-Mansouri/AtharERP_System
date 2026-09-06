@@ -6,11 +6,11 @@
     var contractorName = ViewBag.ContractorName as string;
 }
 
-<div style="max-width:900px; margin:30px auto; padding:0 16px;">
+<div style="max-width:1000px; margin:30px auto; padding:0 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <div>
-            <div style="font-size:11px; color:#8a83a0;">بوابة المقاولين</div>
-            <h1 style="font-size:19px; font-weight:600; margin-top:2px;">مرحباً، @contractorName</h1>
+            <div style="font-size:11px; color:var(--sys-text-light);">بوابة المقاولين</div>
+            <h1 class="athar-page-title" style="margin-top:2px;">مرحباً، @contractorName</h1>
         </div>
         <form method="post" asp-controller="ContractorPortal" asp-action="Logout">
             @Html.AntiForgeryToken()
@@ -18,24 +18,41 @@
         </form>
     </div>
 
-    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مواقعك</div>
+    <div class="stat-strip stat-strip-text">
+        <div class="stat-item"><span class="kicker">مواقعي</span><span class="stat-value">@Model.Count</span></div>
+        <div class="stat-item"><span class="kicker">مواقع نشطة</span><span class="stat-value">@Model.Count(sa => sa.Site.Status == SiteStatus.Active)</span></div>
+        <div class="stat-item"><span class="kicker">مواقع مكتملة</span><span class="stat-value">@Model.Count(sa => sa.Site.Status == SiteStatus.Completed)</span></div>
+    </div>
 
-    @if (!Model.Any())
-    {
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:20px; text-align:center; color:#8a83a0; font-size:12px;">
-            لا توجد مواقع مرتبطة بحسابك بعد
+    <div class="data-table" style="--cols: 90px 1.3fr 110px 1fr 90px;">
+        <div class="data-table-head">
+            <div class="cell">الرمز</div>
+            <div class="cell">الموقع</div>
+            <div class="cell">المشروع</div>
+            <div class="cell">التخصص</div>
+            <div class="cell">الحالة</div>
         </div>
-    }
-    else
-    {
-        <div style="display:grid; gap:10px;">
+
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مواقع مرتبطة بحسابك بعد</div></div>
+        }
+        else
+        {
             @foreach (var sa in Model)
             {
-                <a asp-controller="ContractorPortal" asp-action="SiteDetails" asp-route-siteId="@sa.SiteId" style="display:block; background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:14px 16px; text-decoration:none; color:inherit;">
-                    <div style="font-size:13px; font-weight:600;">@sa.Site.Code - @sa.Site.Name</div>
-                    <div style="font-size:11px; color:#8a83a0; margin-top:3px;">@sa.Site.Project.Name @(sa.Specialty != null ? "· " + sa.Specialty : "")</div>
+                <a asp-controller="ContractorPortal" asp-action="SiteDetails" asp-route-siteId="@sa.SiteId" class="data-table-row" style="text-decoration:none; color:inherit;">
+                    <div class="cell cell-num">@sa.Site.Code</div>
+                    <div class="cell">@sa.Site.Name</div>
+                    <div class="cell">@sa.Site.Project.Name</div>
+                    <div class="cell">@(sa.Specialty ?? "-")</div>
+                    <div class="cell">
+                        <span class="tag @(sa.Site.Status == SiteStatus.Completed ? "tag-accent" : sa.Site.Status == SiteStatus.OnHold ? "tag-warning" : "tag-success")">
+                            @(sa.Site.Status == SiteStatus.Active ? "نشط" : sa.Site.Status == SiteStatus.OnHold ? "متوقف" : "مكتمل")
+                        </span>
+                    </div>
                 </a>
             }
-        </div>
-    }
+        }
+    </div>
 </div>

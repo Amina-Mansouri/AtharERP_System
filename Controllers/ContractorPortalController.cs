@@ -1,7 +1,7 @@
 ﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
+using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +14,19 @@ namespace AtharERP_System.Controllers
     public class ContractorPortalController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly SiteCalculationService _siteCalc;
 
-        public ContractorPortalController(AppDbContext context)
+        public ContractorPortalController(AppDbContext context, SiteCalculationService siteCalc)
         {
             _context = context;
+            _siteCalc = siteCalc;
+        }
+
+        private int CurrentContractorId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        private async Task<bool> CanAccessSiteAsync(int siteId)
+        {
+            return await _context.SiteContractors.AnyAsync(sa => sa.SiteId == siteId && sa.ContractorId == CurrentContractorId);
         }
 
         [HttpGet]
@@ -84,22 +93,17 @@ namespace AtharERP_System.Controllers
         [Authorize(AuthenticationSchemes = "ContractorScheme")]
         public async Task<IActionResult> Dashboard()
         {
-            var contractorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var contractorId = CurrentContractorId;
 
             var assignments = await _context.SiteContractors
                 .Include(sa => sa.Site).ThenInclude(s => s.Project)
+                .Include(sa => sa.Site).ThenInclude(s => s.Operations)
                 .Where(sa => sa.ContractorId == contractorId)
                 .ToListAsync();
 
             ViewData["HideNav"] = true;
             ViewBag.ContractorName = User.FindFirstValue(ClaimTypes.Name);
             return View(assignments);
-        }
-        private int CurrentContractorId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-        private async Task<bool> CanAccessSiteAsync(int siteId)
-        {
-            return await _context.SiteContractors.AnyAsync(sa => sa.SiteId == siteId && sa.ContractorId == CurrentContractorId);
         }
 
         [Authorize(AuthenticationSchemes = "ContractorScheme")]
@@ -108,7 +112,9 @@ namespace AtharERP_System.Controllers
             if (!await CanAccessSiteAsync(siteId))
                 return Forbid();
 
-            var site = await _context.Sites.FindAsync(siteId);
+            var site = await _context.Sites
+                .Include(s => s.Operations)
+                .FirstOrDefaultAsync(s => s.Id == siteId);
             if (site == null)
                 return NotFound();
 
@@ -143,6 +149,32 @@ namespace AtharERP_System.Controllers
             ViewBag.SafetyChecks = safetyChecks;
             ViewBag.SupplyRequests = supplyRequests;
             return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(AuthenticationSchemes = "ContractorScheme")]
+        public async Task<IActionResult> UpdateOperationDates(int id, DateTime? actualStartDate, DateTime? actualEndDate)
+        {
+            var op = await _context.SiteOperations.FirstOrDefaultAsync(o => o.Id == id);
+            if (op == null)
+                return NotFound();
+
+            if (!await CanAccessSiteAsync(op.SiteId))
+                return Forbid();
+
+            if (op.Status != OperationStatus.OnHold)
+            {
+                op.ActualStartDate = actualStartDate;
+                op.ActualEndDate = actualEndDate;
+                SiteCalculationService.ApplyAutomaticOperationStatus(op);
+            }
+
+            await _context.SaveChangesAsync();
+            await _siteCalc.ApplyAutomaticSiteStatusAsync(op.SiteId);
+
+            TempData["Success"] = "تم تحديث مرحلة العمل بنجاح";
+            return RedirectToAction("SiteDetails", new { siteId = op.SiteId });
         }
 
         [HttpPost]
