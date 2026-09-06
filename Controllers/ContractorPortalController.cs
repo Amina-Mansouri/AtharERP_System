@@ -15,11 +15,13 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly SiteCalculationService _siteCalc;
+        private readonly FileUploadService _fileUpload;
 
-        public ContractorPortalController(AppDbContext context, SiteCalculationService siteCalc)
+        public ContractorPortalController(AppDbContext context, SiteCalculationService siteCalc, FileUploadService fileUpload)
         {
             _context = context;
             _siteCalc = siteCalc;
+            _fileUpload = fileUpload;
         }
 
         private int CurrentContractorId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -182,12 +184,13 @@ namespace AtharERP_System.Controllers
         [Authorize(AuthenticationSchemes = "ContractorScheme")]
         public async Task<IActionResult> CreateDailyReport(
             int siteId, DateTime reportDate, string? weather, int workersCount, string? workCompleted,
-            string? issues, string? materialsUsed, string? equipmentUsed, string? visits, string? notes)
+            string? issues, string? materialsUsed, string? equipmentUsed, string? visits, string? notes,
+            List<IFormFile>? photos)
         {
             if (!await CanAccessSiteAsync(siteId))
                 return Forbid();
 
-            _context.SiteDailyReports.Add(new SiteDailyReport
+            var report = new SiteDailyReport
             {
                 SiteId = siteId,
                 ReportDate = reportDate,
@@ -201,9 +204,28 @@ namespace AtharERP_System.Controllers
                 Notes = notes,
                 CreatedByContractorId = CurrentContractorId,
                 CreatedAt = DateTime.UtcNow
-            });
+            };
+
+            _context.SiteDailyReports.Add(report);
             await _context.SaveChangesAsync();
 
+            if (photos != null)
+            {
+                foreach (var photo in photos.Where(p => p.Length > 0))
+                {
+                    var result = await _fileUpload.SaveFileAsync(photo, $"sites/{siteId}/daily-reports/{report.Id}");
+                    if (result.Success)
+                    {
+                        _context.SiteDailyReportPhotos.Add(new SiteDailyReportPhoto
+                        {
+                            DailyReportId = report.Id,
+                            FilePath = result.FilePath!,
+                            UploadedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
             TempData["Success"] = "تمت إضافة التقرير اليومي بنجاح";
             return RedirectToAction("SiteDetails", new { siteId });
         }
