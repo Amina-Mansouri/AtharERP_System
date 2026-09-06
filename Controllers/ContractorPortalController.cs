@@ -191,6 +191,16 @@ namespace AtharERP_System.Controllers
             if (!await CanAccessSiteAsync(siteId))
                 return Forbid();
 
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة تقرير لموقع مكتمل";
+                return RedirectToAction("SiteDetails", new { siteId });
+            }
+
             var report = new SiteDailyReport
             {
                 SiteId = siteId,
@@ -239,6 +249,16 @@ namespace AtharERP_System.Controllers
             if (!await CanAccessSiteAsync(siteId))
                 return Forbid();
 
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة فحص لموقع مكتمل";
+                return RedirectToAction("SiteDetails", new { siteId });
+            }
+
             _context.SiteQualityChecks.Add(new SiteQualityCheck
             {
                 SiteId = siteId,
@@ -263,6 +283,16 @@ namespace AtharERP_System.Controllers
         {
             if (!await CanAccessSiteAsync(siteId))
                 return Forbid();
+
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة فحص لموقع مكتمل";
+                return RedirectToAction("SiteDetails", new { siteId });
+            }
 
             _context.SiteSafetyChecks.Add(new SiteSafetyCheck
             {
@@ -291,6 +321,12 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
                 return NotFound();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة طلب توريد لموقع مكتمل";
+                return RedirectToAction("SiteDetails", new { siteId });
+            }
 
             _context.SiteSupplyRequests.Add(new SiteSupplyRequest
             {

@@ -59,13 +59,7 @@
         }
     </div>
 
-    <form method="post" asp-action="UploadPhoto" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:14px; padding-top:14px; border-top:1px solid var(--sys-border);">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="reportId" value="@Model.Id" />
-        <input type="file" name="file" class="form-control" style="max-width:260px;" accept="image/*" required />
-        <input type="text" name="description" class="form-control" style="max-width:220px;" placeholder="وصف الصورة (اختياري)" />
-        <button type="submit" class="btn-line btn-line-accent">+ إضافة صورة</button>
-    </form>
+   
 </div>
 
 <div class="mt-3">

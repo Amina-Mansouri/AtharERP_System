@@ -81,43 +81,6 @@ namespace AtharERP_System.Controllers
             return View(report);
         }
 
-       
-      
-        // ============================================
-        // إضافة صورة لتقرير موجود
-        // ============================================
-        [RequirePermission("Sites.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UploadPhoto(int reportId, IFormFile file, string? description)
-        {
-            var report = await _context.SiteDailyReports.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == reportId);
-            if (report == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, report.Site.ProjectId))
-                return Forbid();
-
-            var result = await _fileUpload.SaveFileAsync(file, $"sites/{report.SiteId}/daily-reports/{report.Id}");
-            if (!result.Success)
-            {
-                TempData["Error"] = result.ErrorMessage;
-                return RedirectToAction("Details", new { id = reportId });
-            }
-
-            _context.SiteDailyReportPhotos.Add(new SiteDailyReportPhoto
-            {
-                DailyReportId = reportId,
-                FilePath = result.FilePath!,
-                Description = description,
-                UploadedAt = DateTime.UtcNow
-            });
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تمت إضافة الصورة بنجاح";
-            return RedirectToAction("Details", new { id = reportId });
-        }
-
         [RequirePermission("Sites.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
