@@ -48,7 +48,7 @@
                 <div class="cell">@(r.Weather ?? "-")</div>
                 <div class="cell cell-num">@r.WorkersCount</div>
                 <div class="cell cell-num">@r.Photos.Count</div>
-                <div class="cell">@r.CreatedBy.FullName</div>
+                <div class="cell">@(r.CreatedBy?.FullName ?? r.CreatedByContractor?.Name ?? "-")</div>
                 <div class="cell" style="display:flex; gap:6px;">
                     <a asp-action="Details" asp-route-id="@r.Id" class="btn-line">عرض</a>
                     <form method="post" asp-action="Delete" asp-route-id="@r.Id" onsubmit="return confirm('حذف هذا التقرير؟');">
