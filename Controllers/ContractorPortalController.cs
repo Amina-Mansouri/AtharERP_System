@@ -159,12 +159,18 @@ namespace AtharERP_System.Controllers
         [Authorize(AuthenticationSchemes = "ContractorScheme")]
         public async Task<IActionResult> UpdateOperationDates(int id, DateTime? actualStartDate, DateTime? actualEndDate)
         {
-            var op = await _context.SiteOperations.FirstOrDefaultAsync(o => o.Id == id);
+            var op = await _context.SiteOperations.Include(o => o.Site).FirstOrDefaultAsync(o => o.Id == id);
             if (op == null)
                 return NotFound();
 
             if (!await CanAccessSiteAsync(op.SiteId))
                 return Forbid();
+
+            if (op.Site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن تعديل مراحل موقع مكتمل";
+                return RedirectToAction("SiteDetails", new { siteId = op.SiteId });
+            }
 
             if (op.Status != OperationStatus.OnHold)
             {
