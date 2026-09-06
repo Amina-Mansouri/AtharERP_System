@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = $"تفاصيل الموقع - {Model.Name}";
     var canManage = ViewBag.CanManage as bool? ?? false;
-    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
+
     var completion = ViewBag.CompletionPercentage as decimal? ?? 0;
     var hasTodayReport = ViewBag.HasTodayReport as bool? ?? false;
     var pendingNeeds = ViewBag.PendingNeedsCount as int? ?? 0;
@@ -156,16 +156,7 @@
                 <label class="form-label" style="font-size:11px;">انتهاء مخطط</label>
                 <input type="date" name="PlannedEndDate" class="form-control form-control-sm" />
             </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">المسؤول</label>
-                <select name="ResponsibleId" class="form-select form-select-sm">
-                    <option value="">-- لا يوجد --</option>
-                    @foreach (var eng in engineers)
-                    {
-                        <option value="@eng.Id">@eng.FullName</option>
-                    }
-                </select>
-            </div>
+           
             <button type="submit" class="btn-line btn-line-accent">+ إضافة مرحلة</button>
         </form>
     }
