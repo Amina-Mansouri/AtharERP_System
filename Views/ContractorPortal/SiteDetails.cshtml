@@ -138,12 +138,13 @@
             <button type="submit" class="btn-line btn-line-accent">+ حفظ التقرير</button>
         </form>
     </div>
-    <div class="data-table" style="--cols: 100px 100px 90px 1fr;">
+    <div class="data-table" style="--cols: 100px 100px 90px 1fr 70px;">
         <div class="data-table-head">
             <div class="cell">التاريخ</div>
             <div class="cell">الطقس</div>
             <div class="cell">العمال</div>
             <div class="cell">الأعمال المنجزة</div>
+            <div class="cell">الصور</div>
         </div>
         @if (!dailyReports.Any())
         {
@@ -158,6 +159,7 @@
                     <div class="cell">@(r.Weather ?? "-")</div>
                     <div class="cell cell-num">@r.WorkersCount</div>
                     <div class="cell">@(r.WorkCompleted ?? "-")</div>
+                    <div class="cell cell-num">@r.Photos.Count</div>
                 </div>
             }
         }

@@ -121,10 +121,11 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             var dailyReports = await _context.SiteDailyReports
-                .Where(r => r.SiteId == siteId && r.CreatedByContractorId == CurrentContractorId)
-                .OrderByDescending(r => r.ReportDate)
-                .Take(10)
-                .ToListAsync();
+     .Include(r => r.Photos)
+     .Where(r => r.SiteId == siteId && r.CreatedByContractorId == CurrentContractorId)
+     .OrderByDescending(r => r.ReportDate)
+     .Take(10)
+     .ToListAsync();
 
             var qualityChecks = await _context.SiteQualityChecks
                 .Where(q => q.SiteId == siteId && q.CheckedByContractorId == CurrentContractorId)
