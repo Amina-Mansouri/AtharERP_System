@@ -101,7 +101,7 @@ namespace AtharERP_System.Controllers
                 .Where(sa => sa.ContractorId == contractorId)
                 .ToListAsync();
 
-            ViewData["HideNav"] = true;
+            ViewData["PlainPage"] = true;
             ViewBag.ContractorName = User.FindFirstValue(ClaimTypes.Name);
             return View(assignments);
         }
@@ -142,7 +142,7 @@ namespace AtharERP_System.Controllers
                 .Take(10)
                 .ToListAsync();
 
-            ViewData["HideNav"] = true;
+            ViewData["PlainPage"] = true;
             ViewBag.Site = site;
             ViewBag.DailyReports = dailyReports;
             ViewBag.QualityChecks = qualityChecks;
