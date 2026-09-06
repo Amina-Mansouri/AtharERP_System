@@ -170,14 +170,23 @@
         <form method="post" asp-controller="ContractorPortal" asp-action="CreateQualityCheck" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="siteId" value="@site?.Id" />
-            <select name="qualityType" class="form-select form-select-sm">
-                <option value="Technical">جودة فنية</option>
-                <option value="Site" selected>جودة موقع</option>
-                <option value="Financial">جودة مالية</option>
-                <option value="Administrative">جودة إدارية</option>
-            </select>
-            <input type="text" name="checkType" class="form-control form-control-sm" placeholder="نوع الفحص" required />
-            <input type="text" name="description" class="form-control form-control-sm" style="flex:1; min-width:180px;" placeholder="الوصف" />
+            <div>
+                <label class="form-label" style="font-size:11px;">نوع الجودة</label>
+                <select name="qualityType" class="form-select form-select-sm">
+                    <option value="Technical">جودة فنية</option>
+                    <option value="Site" selected>جودة موقع</option>
+                    <option value="Financial">جودة مالية</option>
+                    <option value="Administrative">جودة إدارية</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">نوع الفحص</label>
+                <input type="text" name="checkType" class="form-control form-control-sm" required />
+            </div>
+            <div style="flex:1; min-width:180px;">
+                <label class="form-label" style="font-size:11px;">الوصف</label>
+                <input type="text" name="description" class="form-control form-control-sm" />
+            </div>
             <button type="submit" class="btn-line btn-line-accent">+ إضافة</button>
         </form>
     </div>
@@ -209,8 +218,14 @@
         <form method="post" asp-controller="ContractorPortal" asp-action="CreateSafetyCheck" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="siteId" value="@site?.Id" />
-            <input type="text" name="checkType" class="form-control form-control-sm" placeholder="نوع الفحص" required />
-            <input type="text" name="description" class="form-control form-control-sm" style="flex:1; min-width:200px;" placeholder="الوصف" />
+            <div>
+                <label class="form-label" style="font-size:11px;">نوع الفحص</label>
+                <input type="text" name="checkType" class="form-control form-control-sm" required />
+            </div>
+            <div style="flex:1; min-width:200px;">
+                <label class="form-label" style="font-size:11px;">الوصف</label>
+                <input type="text" name="description" class="form-control form-control-sm" />
+            </div>
             <button type="submit" class="btn-line btn-line-accent">+ إضافة</button>
         </form>
     </div>
@@ -242,11 +257,26 @@
         <form method="post" asp-controller="ContractorPortal" asp-action="CreateSupplyRequest" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="siteId" value="@site?.Id" />
-            <input type="text" name="materialName" class="form-control form-control-sm" placeholder="اسم المادة" required />
-            <input type="text" name="dimensions" class="form-control form-control-sm" placeholder="الأبعاد" />
-            <input type="number" step="0.01" min="0" name="quantity" class="form-control form-control-sm" style="max-width:100px;" placeholder="الكمية" required />
-            <input type="text" name="unit" class="form-control form-control-sm" style="max-width:110px;" placeholder="الوحدة" required />
-            <input type="text" name="notes" class="form-control form-control-sm" style="flex:1; min-width:150px;" placeholder="ملاحظات" />
+            <div>
+                <label class="form-label" style="font-size:11px;">اسم المادة</label>
+                <input type="text" name="materialName" class="form-control form-control-sm" required />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الأبعاد</label>
+                <input type="text" name="dimensions" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الكمية</label>
+                <input type="number" step="0.01" min="0" name="quantity" class="form-control form-control-sm" style="max-width:100px;" required />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الوحدة</label>
+                <input type="text" name="unit" class="form-control form-control-sm" style="max-width:110px;" placeholder="متر / قطعة..." required />
+            </div>
+            <div style="flex:1; min-width:150px;">
+                <label class="form-label" style="font-size:11px;">ملاحظات</label>
+                <input type="text" name="notes" class="form-control form-control-sm" />
+            </div>
             <button type="submit" class="btn-line btn-line-accent">+ إرسال</button>
         </form>
     </div>
