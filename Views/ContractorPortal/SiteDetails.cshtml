@@ -115,10 +115,22 @@
         <form method="post" asp-controller="ContractorPortal" asp-action="CreateDailyReport" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="siteId" value="@site?.Id" />
-            <input type="date" name="reportDate" class="form-control form-control-sm" style="max-width:150px;" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
-            <input type="text" name="weather" class="form-control form-control-sm" style="max-width:120px;" placeholder="حالة الطقس" />
-            <input type="number" name="workersCount" class="form-control form-control-sm" style="max-width:110px;" placeholder="عدد العمال" min="0" value="0" />
-            <input type="text" name="workCompleted" class="form-control form-control-sm" style="flex:1; min-width:200px;" placeholder="الأعمال المنجزة" />
+            <div>
+                <label class="form-label" style="font-size:11px;">تاريخ التقرير</label>
+                <input type="date" name="reportDate" class="form-control form-control-sm" style="max-width:150px;" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">حالة الطقس</label>
+                <input type="text" name="weather" class="form-control form-control-sm" style="max-width:120px;" placeholder="مثال: مشمس" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">عدد العمال في الموقع اليوم</label>
+                <input type="number" name="workersCount" class="form-control form-control-sm" style="max-width:130px;" min="0" value="0" />
+            </div>
+            <div style="flex:1; min-width:200px;">
+                <label class="form-label" style="font-size:11px;">الأعمال المنجزة</label>
+                <input type="text" name="workCompleted" class="form-control form-control-sm" />
+            </div>
             <button type="submit" class="btn-line btn-line-accent">+ حفظ التقرير</button>
         </form>
     </div>
