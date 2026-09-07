@@ -157,7 +157,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-                     [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
+                     [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite")] Project model)
         {
             if (model.PlannedEndDate.HasValue && model.PlannedStartDate.HasValue && model.PlannedEndDate < model.PlannedStartDate)
             {
@@ -234,7 +234,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-             [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Budget,Priority,AutoTransferToSite")] Project model)
+             [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite")] Project model)
         {
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
@@ -289,7 +289,7 @@ namespace AtharERP_System.Controllers
             project.PlannedStartDate = model.PlannedStartDate;
             project.PlannedEndDate = model.PlannedEndDate;
             project.ActualDeliveryDate = model.ActualDeliveryDate;
-            project.Budget = model.Budget;
+            
             project.Priority = model.Priority;
             project.AutoTransferToSite = model.AutoTransferToSite;
 

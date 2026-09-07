@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "تعديل المرحلة";
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
-    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
 }
 
 <h1 class="athar-page-title">تعديل المرحلة: @Model.Name</h1>
@@ -37,6 +36,20 @@
                 <label class="form-label">الوزن % من المشروع</label>
                 <input type="text" class="form-control" value="@Model.Weight.ToString("N2")%" disabled />
                 <small class="text-muted">لا يمكن تعديل الوزن بعد الإنشاء</small>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">المساحة (م²)</label>
+                    <input type="number" step="0.01" min="0" name="Area" class="form-control" value="@Model.Area" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">سعر المتر</label>
+                    <input type="number" step="0.01" min="0" name="PricePerMeter" class="form-control" value="@Model.PricePerMeter" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">قيمة المرحلة </label>
+                    <input type="text" class="form-control" value="@Model.StageValue.ToString("N2")" disabled />
+                </div>
             </div>
         </div>
 

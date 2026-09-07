@@ -107,6 +107,7 @@ namespace AtharERP_System.Services
 
             if (project == null) return;
 
+            project.Budget = project.Stages.Sum(s => s.StageValue);
             var totalWeight = project.Stages.Sum(s => s.Weight);
             var weightedSum = project.Stages.Sum(s => s.Weight * s.CompletionPercentage);
 

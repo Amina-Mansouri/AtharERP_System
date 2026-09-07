@@ -60,47 +60,7 @@ namespace AtharERP_System.Controllers
         }
 
 
-        // ============================================
-        // إنشاء مرحلة جديدة (نموذج مضمّن داخل صفحة تفاصيل المشروع)
-        // ============================================
-        [RequirePermission("Projects.Stages.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            [Bind("ProjectId,Name,Sequence,Weight,Cost,AssignedEngineerId,DepartmentId")] ProjectStage model)
-        {
-            var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == model.ProjectId);
-            if (project == null)
-                return NotFound();
-
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "بيانات المرحلة غير صحيحة";
-                return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
-            }
-
-            // مجموع أوزان المراحل داخل المشروع يجب ألا يتجاوز 100% (القسم 6.1)
-            var currentTotal = project.Stages.Sum(s => s.Weight);
-            if (currentTotal + model.Weight > 100)
-            {
-                TempData["Error"] = $"مجموع أوزان المراحل سيتجاوز 100% (المجموع الحالي: {currentTotal}%)";
-                return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
-            }
-
-            model.Status = StageStatus.New;
-            model.CompletionPercentage = 0;
-            model.ActualCost = 0;
-
-            _context.ProjectStages.Add(model);
-            await _context.SaveChangesAsync();
-
-            await _calc.RecalculateProjectAsync(model.ProjectId);
-
-            TempData["Success"] = $"تمت إضافة المرحلة {model.Name} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
-        }
-
+      
         // ============================================
         // تفعيل قالب مرحلة جاهز (بند P1) مع اختيار مهامه الافتراضية + مهام إضافية
 
@@ -112,7 +72,8 @@ namespace AtharERP_System.Controllers
             [HttpPost]
             [ValidateAntiForgeryToken]
         public async Task<IActionResult> ActivateTemplate(
-                int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
+                               int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
+                decimal? area, decimal? pricePerMeter,
                 List<int>? selectedTaskIds, string? extraTasks)
         {
                 var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
@@ -141,6 +102,8 @@ namespace AtharERP_System.Controllers
                 ProjectId = projectId,
                 Name = template.Name,
                 Weight = weight,
+                Area = area,
+                PricePerMeter = pricePerMeter,
                 AssignedEngineerId = string.IsNullOrEmpty(assignedEngineerId) ? null : assignedEngineerId,
                 Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
                 Status = StageStatus.New,
@@ -217,7 +180,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-           [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation")] ProjectStage model)
+                     [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,PricePerMeter")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.FindAsync(id);
             if (stage == null)
@@ -238,6 +201,8 @@ namespace AtharERP_System.Controllers
             stage.PlannedEndDate = model.PlannedEndDate;
             stage.ActualDeliveryDate = model.ActualDeliveryDate;
             stage.WorkDocumentation = model.WorkDocumentation;
+            stage.Area = model.Area;
+            stage.PricePerMeter = model.PricePerMeter;
 
             var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
             foreach (var s in allStages)
@@ -407,7 +372,7 @@ namespace AtharERP_System.Controllers
 .Where(u => u.IsActive)
 .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
 .ToListAsync();
-            ViewBag.Departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
+
         }
     }
 }
