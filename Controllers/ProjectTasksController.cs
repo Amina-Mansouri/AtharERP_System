@@ -38,11 +38,15 @@ namespace AtharERP_System.Controllers
                 return true;
             if (task.ProjectAssignmentId.HasValue)
             {
-                return await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId);
+                if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
+                    return true;
             }
-            return false;
+            var stageEngineerId = await _context.ProjectStages
+                .Where(s => s.Id == task.StageId)
+                .Select(s => s.AssignedEngineerId)
+                .FirstOrDefaultAsync();
+            return stageEngineerId == CurrentUserId;
         }
-
         // ============================================
         // مهامي (كل المهام المكلَّف بها المستخدم الحالي عبر أي مشروع)
         // ============================================
@@ -182,16 +186,20 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Edit", new { id });
         }
 
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-     int id,
-     [Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
+int id,
+[Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
-            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.Include(t => t.Todos).Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
+
+            var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+            if (!canManage && !await CanExecuteAsync(task))
+                return Forbid();
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -202,30 +210,46 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Edit", new { id });
             }
 
-
-            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
-            var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
-            if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
+            if (canManage)
             {
-                TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
-                return RedirectToAction("Edit", new { id });
+                var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
+                var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
+                if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
+                {
+                    TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
+                    return RedirectToAction("Edit", new { id });
+                }
+
+                task.Title = model.Title;
+                task.Description = model.Description;
+                task.Priority = model.Priority;
+                task.IsUrgent = model.IsUrgent;
+                task.EstimatedValue = model.EstimatedValue;
+                task.BonusAmount = model.BonusAmount;
+                task.PenaltyAmount = model.PenaltyAmount;
             }
 
-            task.Title = model.Title;
-            task.Description = model.Description;
-            
             task.PlannedStartDate = model.PlannedStartDate;
             task.PlannedEndDate = model.PlannedEndDate;
             task.ActualDeliveryDate = model.ActualDeliveryDate;
-            task.Priority = model.Priority;
-            task.IsUrgent = model.IsUrgent;
-            task.EstimatedValue = model.EstimatedValue;
-            task.BonusAmount = model.BonusAmount;
-            task.PenaltyAmount = model.PenaltyAmount;
 
             _calc.UpdateDeliveryMetrics(task);
 
+            if (model.ActualDeliveryDate.HasValue)
+            {
+                foreach (var todo in task.Todos.Where(t => !t.IsCompleted))
+                {
+                    todo.IsCompleted = true;
+                    todo.CompletedAt = DateTime.UtcNow;
+                }
+            }
+
             await _context.SaveChangesAsync();
+
+            if (model.ActualDeliveryDate.HasValue)
+            {
+                await _calc.RecalculateTaskCompletionAsync(id);
+            }
 
             if (task.DelayDays > 0)
             {
@@ -235,7 +259,7 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";
             return RedirectToAction("Edit", new { id });
-        
+
         }
 
         // ============================================

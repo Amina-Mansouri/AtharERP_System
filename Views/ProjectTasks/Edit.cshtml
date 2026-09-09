@@ -68,15 +68,15 @@
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
-                    <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
-                    <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
-                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
             </div>
 
@@ -98,9 +98,15 @@
                         <input type="number" step="0.01" min="0" name="PenaltyAmount" value="@Model.PenaltyAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                     </div>
                 </div>
-                <button type="submit" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
             }
+            else
+            {
+                <input type="hidden" name="Title" value="@Model.Title" />
+                <input type="hidden" name="Priority" value="@Model.Priority" />
+            }
+            <button type="submit" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
         </form>
+       
 
         <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
             <div style="font-size:12px; font-weight:600; margin-bottom:8px;">القيمة التقديرية (يحددها المكلَّف)</div>
