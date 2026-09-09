@@ -8,11 +8,13 @@ namespace AtharERP_System.Services
     {
         private readonly AppDbContext _context;
         private readonly NotificationService _notify;
+        private readonly PermissionService _permission;
 
-        public ProjectCalculationService(AppDbContext context, NotificationService notify)
+        public ProjectCalculationService(AppDbContext context, NotificationService notify, PermissionService permission)
         {
             _context = context;
             _notify = notify;
+            _permission = permission;
         }
 
         // نسبة إنجاز المرحلة = مجموع قيمة التكليفات المكتملة ÷ مجموع قيمة كل التكليفات × 100
@@ -48,19 +50,12 @@ namespace AtharERP_System.Services
 
             if (!wasCompleted && stage.Status == StageStatus.Completed)
             {
-                var teamIds = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == stage.ProjectId)
-                    .Select(tm => tm.UserId)
-                    .ToListAsync();
-                var adminIds = await (from ur in _context.UserRoles
-                                      join r in _context.Roles on ur.RoleId equals r.Id
-                                      where r.Name == "مدير النظام"
-                                      select ur.UserId)
-                                      .Distinct()
-                                      .ToListAsync();
-                var recipients = teamIds.Union(adminIds).Distinct();
+                var recipientIds = await _permission.GetUserIdsWithAnyPermissionAsync(
+                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
+                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
+                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
 
-                await _notify.NotifyManyAsync(recipients, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }
         }
 
@@ -155,12 +150,12 @@ namespace AtharERP_System.Services
 
             if (task.Status != oldStatus)
             {
-                var pmIds = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == task.ProjectId && tm.Role == TeamRole.ProjectManager)
-                    .Select(tm => tm.UserId)
-                    .ToListAsync();
+                var recipientIds = await _permission.GetUserIdsWithAnyPermissionAsync(
+                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
+                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
+                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
 
-                if (pmIds.Count > 0)
+                if (recipientIds.Count > 0)
                 {
                     var statusLabel = task.Status switch
                     {
@@ -170,7 +165,7 @@ namespace AtharERP_System.Services
                         ProjectTaskStatus.Blocked => "محظورة",
                         _ => task.Status.ToString()
                     };
-                    await _notify.NotifyManyAsync(pmIds, $"تغيّرت حالة المهمة \"{task.Title}\" إلى: {statusLabel}", NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
+                    await _notify.NotifyManyAsync(recipientIds, $"تغيّرت حالة المهمة \"{task.Title}\" إلى: {statusLabel}", NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
                 }
             }
 

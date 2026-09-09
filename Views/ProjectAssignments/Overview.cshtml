@@ -67,6 +67,8 @@ else
         {
             @foreach (var a in Model)
             {
+                var totalTasks = a.Tasks.Count;
+                var doneTasks = a.Tasks.Count(t => t.CompletionPercentage >= 100);
                 <div class="data-table-row">
                     <div class="cell">
                         @a.CostType
@@ -92,6 +94,41 @@ else
                     <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
                     <div class="cell"><span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
                     <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+                </div>
+                <div style="grid-column:1/-1; background:#faf9fc; border-bottom:1px solid #f1f0f6; padding:8px 14px 12px;">
+                    <div class="stat-sub" style="margin-bottom:6px;">مهام هذا التكليف: @doneTasks / @totalTasks مكتملة</div>
+                    @if (!a.Tasks.Any())
+                    {
+                        <div class="stat-sub">لا توجد مهام مرتبطة بعد</div>
+                    }
+                    else
+                    {
+                        <div style="display:grid; gap:6px;">
+                            @foreach (var t in a.Tasks)
+                            {
+                                <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                                        <span style="font-size:11.5px; font-weight:600;">@t.Title</span>
+                                        <span class="tag @(t.CompletionPercentage >= 100 ? "tag-success" : "")">@t.CompletionPercentage.ToString("N0")%</span>
+                                    </div>
+                                    @if (t.Todos.Any())
+                                    {
+                                        <div style="display:grid; gap:3px; margin-top:6px;">
+                                            @foreach (var todo in t.Todos)
+                                            {
+                                                var todoStyle = todo.IsCompleted ? "color:#8a83a0; text-decoration:line-through;" : "color:#3a3450;";
+                                                <div style="font-size:10.5px; @todoStyle">@(todo.IsCompleted ? "✓" : "○") @todo.Item</div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="stat-sub" style="margin-top:4px;">لا توجد بنود بعد</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
         }

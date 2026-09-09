@@ -113,5 +113,24 @@ namespace AtharERP_System.Services
 
             return await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == user.Id);
         }
+        // كل المستخدمين الذين يملكون أياً من صلاحيات مُعطاة عبر أدوارهم — لإشعارات تخص وحدة كاملة (مثل المشاريع/المواقع) لا مستخدماً بعينه
+        public async Task<List<string>> GetUserIdsWithAnyPermissionAsync(params string[] permissionCodes)
+        {
+            var roleIds = await _context.RolePermissions
+                .Where(rp => rp.IsGranted && permissionCodes.Contains(rp.Permission.Code))
+                .Select(rp => rp.RoleId)
+                .Distinct()
+                .ToListAsync();
+
+            if (roleIds.Count == 0)
+                return new List<string>();
+
+            return await _context.UserRoles
+                .Where(ur => roleIds.Contains(ur.RoleId))
+                .Select(ur => ur.UserId)
+                .Distinct()
+                .ToListAsync();
+        }
     }
+
 }

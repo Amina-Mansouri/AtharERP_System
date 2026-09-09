@@ -10,6 +10,7 @@
     var canViewCosts = ViewBag.CanViewCosts as bool? ?? false;
     var canManageStages = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Stages.Manage");
     var canManageAssignments = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Assignments.Edit");
+    var canDelete = !isNew && await PermissionService.HasPermissionAsync(User, "Projects.Delete");
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var stageTemplates = ViewBag.StageTemplates as List<StageTemplate> ?? new List<StageTemplate>();
@@ -71,6 +72,13 @@
                     <button type="submit" class="btn-line" style="color:#c94a42;">إلغاء المشروع</button>
                 </form>
             }
+        }
+        @if (canDelete)
+        {
+            <form method="post" asp-action="Delete" asp-route-id="@Model.Id" style="display:inline;" onsubmit="return confirm('تحذير: سيتم حذف هذا المشروع نهائياً مع كل ما يتبعه بلا استثناء — مراحله، مهامه، تكليفاته، مواقعه الميدانية (بمقاوليها وتقاريرها وفحوصاتها وطلبات التوريد فيها)، سجلاته المالية، وأي مشاريع فرعية تابعة له وكل بياناتها. لا يمكن التراجع عن هذا الإجراء إطلاقاً. هل أنتِ متأكدة من المتابعة؟');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-line" style="color:#fff; background:#c94a42; border-color:#c94a42;">حذف المشروع نهائياً</button>
+            </form>
         }
         <a asp-action="Index" class="btn-line">رجوع للقائمة</a>
     </div>

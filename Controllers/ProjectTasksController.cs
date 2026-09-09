@@ -227,13 +227,13 @@ namespace AtharERP_System.Controllers
 
             await _context.SaveChangesAsync();
 
-                if (task.DelayDays > 0)
+            if (task.DelayDays > 0)
             {
-                var pmIds = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == task.ProjectId && tm.Role == TeamRole.ProjectManager)
-                    .Select(tm => tm.UserId)
-                    .ToListAsync();
-                await _notify.NotifyManyAsync(pmIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم", NotificationEventType.TaskDelayed, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
+                var recipientIds = await _permissionService.GetUserIdsWithAnyPermissionAsync(
+                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
+                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
+                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
+                await _notify.NotifyManyAsync(recipientIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم", NotificationEventType.TaskDelayed, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
             }
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";

@@ -128,12 +128,10 @@ namespace AtharERP_System.Controllers
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
-            if (!ModelState.IsValid)
-            {
-                await LoadDropdownsAsync(id);
-                return View(project);
-            }
+            await LoadDropdownsAsync(id);
             return View(project);
+        
+          
         }
 
         // ============================================
@@ -353,56 +351,63 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", new { id });
         }
         // ============================================
-        // حذف مشروع
+        // حذف مشروع بالكامل — مع كل تبعياته والمشاريع الفرعية منه، بلا استثناء
         // ============================================
         [RequirePermission("Projects.Delete")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var project = await _context.Projects
-                .Include(p => p.ChildProjects)
-                .Include(p => p.Tasks)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
+            var project = await _context.Projects.FindAsync(id);
             if (project == null)
                 return NotFound();
 
-            if (project.ChildProjects.Any())
+            var projectName = project.Name;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            await DeleteProjectCascadeAsync(id);
+            await transaction.CommitAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Delete", nameof(Project), id.ToString(), $"حذف مشروع بالكامل مع كل بياناته التابعة والمشاريع الفرعية: {projectName}");
+
+            TempData["Success"] = $"تم حذف المشروع {projectName} وكل بياناته التابعة بنجاح";
+            return RedirectToAction("Index");
+        }
+
+        // حذف مشروع واحد بكل تبعياته، ثم استدعاء نفسها لكل مشروع فرعي أولاً (الأبناء قبل الأب)
+        private async Task DeleteProjectCascadeAsync(int projectId)
+        {
+            var childIds = await _context.Projects
+                .Where(p => p.ParentProjectId == projectId)
+                .Select(p => p.Id)
+                .ToListAsync();
+
+            foreach (var childId in childIds)
             {
-                TempData["Error"] = "لا يمكن حذف المشروع لوجود مشاريع فرعية مرتبطة به";
-                return RedirectToAction("Index");
+                await DeleteProjectCascadeAsync(childId);
             }
 
-            var hasFinancialRecords = await _context.FinancialRecords.AnyAsync(f => f.ProjectId == id);
-            if (hasFinancialRecords)
-            {
-                TempData["Error"] = "لا يمكن حذف المشروع لوجود سجلات مالية مرتبطة به";
-                return RedirectToAction("Index");
-            }
-
-            var hasSites = await _context.Sites.AnyAsync(s => s.ProjectId == id);
-            if (hasSites)
-            {
-                TempData["Error"] = "لا يمكن حذف المشروع لوجود مواقع ميدانية مرتبطة به";
-                return RedirectToAction("Index");
-            }
-
-            // تنظيف روابط تبعيات المهام أولاً (علاقتها Restrict) قبل حذف المشروع بالكامل
-            var taskIds = project.Tasks.Select(t => t.Id).ToList();
+            var taskIds = await _context.ProjectTasks.Where(t => t.ProjectId == projectId).Select(t => t.Id).ToListAsync();
             var dependencyLinks = await _context.TaskDependencies
                 .Where(d => taskIds.Contains(d.TaskId) || taskIds.Contains(d.DependsOnTaskId))
                 .ToListAsync();
             _context.TaskDependencies.RemoveRange(dependencyLinks);
 
-            var projectName = project.Name;
-            _context.Projects.Remove(project);
+            var financialRecords = await _context.FinancialRecords.Where(f => f.ProjectId == projectId).ToListAsync();
+            _context.FinancialRecords.RemoveRange(financialRecords);
+
+            // حذف المواقع الميدانية يسحب معه تلقائياً كل ما يتبعها (مراحل، تقارير، فحوصات، مقاولون، طلبات توريد، صيانة، مستندات) عبر Cascade في قاعدة البيانات
+            var sites = await _context.Sites.Where(s => s.ProjectId == projectId).ToListAsync();
+            _context.Sites.RemoveRange(sites);
+
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Delete", nameof(Project), id.ToString(), $"حذف مشروع: {projectName}");
-
-            TempData["Success"] = $"تم حذف المشروع {projectName} بنجاح";
-            return RedirectToAction("Index");
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project != null)
+            {
+                _context.Projects.Remove(project);
+                await _context.SaveChangesAsync();
+            }
         }
 
         // ============================================

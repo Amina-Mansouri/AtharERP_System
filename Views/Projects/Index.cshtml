@@ -21,6 +21,31 @@
     int delayedProjects = ViewBag.DelayedProjects as int? ?? 0;
 
     var today = DateTime.UtcNow.Date;
+    var mainProjects = Model.Where(p => p.ParentProjectId == null).ToList();
+    var mainIds = mainProjects.Select(p => p.Id).ToHashSet();
+    var childrenByParent = Model
+        .Where(p => p.ParentProjectId.HasValue && mainIds.Contains(p.ParentProjectId.Value))
+        .GroupBy(p => p.ParentProjectId!.Value)
+        .ToDictionary(g => g.Key, g => g.ToList());
+    var nestedChildIds = childrenByParent.Values.SelectMany(v => v).Select(p => p.Id).ToHashSet();
+    var orphanChildren = Model.Where(p => p.ParentProjectId.HasValue && !nestedChildIds.Contains(p.Id)).ToList();
+
+    var orderedProjects = new List<(Project Project, bool IsNestedChild)>();
+    foreach (var mp in mainProjects)
+    {
+        orderedProjects.Add((mp, false));
+        if (childrenByParent.TryGetValue(mp.Id, out var kids))
+        {
+            foreach (var kid in kids)
+            {
+                orderedProjects.Add((kid, true));
+            }
+        }
+    }
+    foreach (var orphan in orphanChildren)
+    {
+        orderedProjects.Add((orphan, false));
+    }
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
@@ -92,20 +117,27 @@
     }
     else
     {
-        @foreach (var project in Model)
+        @foreach (var item in orderedProjects)
         {
+            var project = item.Project;
+            var isNestedChild = item.IsNestedChild;
             var delayDays = project.Status == ProjectStatus.InProgress && project.PlannedEndDate.HasValue && project.PlannedEndDate.Value.Date < today
                 ? (today - project.PlannedEndDate.Value.Date).Days
                 : 0;
-            <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" style="text-decoration:none; color:inherit;">
+            var nameCellStyle = isNestedChild ? "padding-right:24px;" : "";
+            <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" style="text-decoration:none; color:inherit; @(isNestedChild ? "background:#faf9fc;" : "")">
                 <div class="cell cell-num">@project.Code</div>
-                <div class="cell">
+                <div class="cell" style="@nameCellStyle">
+                    @if (isNestedChild)
+                    {
+                        <span style="color:#8a83a0;">↳</span>
+                    }
                     @project.Name
                     @if (project.ChildProjects.Any())
                     {
                         <span class="tag tag-accent">@project.ChildProjects.Count مشاريع فرعية</span>
                     }
-                    @if (project.ParentProject != null)
+                    @if (project.ParentProject != null && !isNestedChild)
                     {
                         <div class="stat-sub">فرعي من: @project.ParentProject.Name</div>
                     }

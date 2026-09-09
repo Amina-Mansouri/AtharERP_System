@@ -145,11 +145,11 @@ namespace AtharERP_System.Data
                 .HasForeignKey(s => s.AssignedEngineerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            
+
 
             builder.Entity<ProjectStage>()
-                .HasIndex(s => new { s.ProjectId, s.Sequence })
-                .IsUnique();
+                .HasIndex(s => new { s.ProjectId, s.Sequence });
+             
 
             // ========== خطوات المرحلة (ProjectStep) ==========
             builder.Entity<ProjectStep>()

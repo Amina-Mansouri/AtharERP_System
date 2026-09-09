@@ -15,17 +15,20 @@ namespace AtharERP_System.Controllers
         private readonly ProjectCalculationService _calc;
         private readonly NotificationService _notify;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly PermissionService _permissionService;
 
         public ProjectStagesController(
             AppDbContext context,
             ProjectCalculationService calc,
             NotificationService notify,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            PermissionService permissionService)
         {
             _context = context;
             _calc = calc;
             _notify = notify;
             _userManager = userManager;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -213,17 +216,15 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
             await _calc.RecalculateProjectAsync(stage.ProjectId);
 
-            // إشعار اكتمال المرحلة (الإدارة + فريق المشروع) - القسم 10 بند 3
+            // إشعار اكتمال المرحلة — لكل من يملك صلاحية تخص المشاريع/المواقع (القسم 10 بند 3)
             if (!wasCompleted && stage.Status == StageStatus.Completed)
             {
-                var teamIds = await _context.ProjectTeamMembers
-                    .Where(tm => tm.ProjectId == stage.ProjectId)
-                    .Select(tm => tm.UserId)
-                    .ToListAsync();
-                var adminIds = (await _userManager.GetUsersInRoleAsync("مدير النظام")).Select(u => u.Id);
-                var recipients = teamIds.Union(adminIds).Distinct();
+                var recipientIds = await _permissionService.GetUserIdsWithAnyPermissionAsync(
+                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
+                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
+                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
 
-                await _notify.NotifyManyAsync(recipients, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }
 
             TempData["Success"] = $"تم تحديث المرحلة {stage.Name} بنجاح";
