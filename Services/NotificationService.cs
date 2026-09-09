@@ -1,6 +1,7 @@
 ﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AtharERP_System.Services
 {
@@ -8,10 +9,12 @@ namespace AtharERP_System.Services
     public class NotificationService
     {
         private readonly AppDbContext _context;
+        private readonly IMemoryCache _cache;
 
-        public NotificationService(AppDbContext context)
+        public NotificationService(AppDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         public async Task NotifyAsync(string userId, string message, NotificationEventType eventType, string? link = null, bool requiresAction = false, string? entityType = null, int? entityId = null)
@@ -34,11 +37,14 @@ namespace AtharERP_System.Services
             });
 
             await _context.SaveChangesAsync();
+            _cache.Remove($"NavCounters_{userId}");
         }
 
         public async Task NotifyManyAsync(IEnumerable<string> userIds, string message, NotificationEventType eventType, string? link = null, bool requiresAction = false, string? entityType = null, int? entityId = null)
         {
-            foreach (var userId in userIds.Distinct())
+            var distinctIds = userIds.Distinct().ToList();
+
+            foreach (var userId in distinctIds)
             {
                 if (!await IsEventEnabledForUserAsync(userId, eventType))
                     continue;
@@ -59,6 +65,11 @@ namespace AtharERP_System.Services
             }
 
             await _context.SaveChangesAsync();
+
+            foreach (var userId in distinctIds)
+            {
+                _cache.Remove($"NavCounters_{userId}");
+            }
         }
 
         private async Task<bool> IsEventEnabledForUserAsync(string userId, NotificationEventType eventType)

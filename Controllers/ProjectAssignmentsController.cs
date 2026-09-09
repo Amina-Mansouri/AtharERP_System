@@ -155,6 +155,11 @@ namespace AtharERP_System.Controllers
                     await EnsureTeamMembershipAsync(model.ProjectId, uid);
                 }
                 await _context.SaveChangesAsync();
+
+                foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
+                {
+                    await _notify.NotifyAsync(uid, $"تم تكليفك بتكليف: {model.CostType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: model.Id);
+                }
             }
 
             if (taskIds != null && taskIds.Any())
