@@ -113,23 +113,22 @@ namespace AtharERP_System.Services
 
             return await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == user.Id);
         }
-        // كل المستخدمين الذين يملكون أياً من صلاحيات مُعطاة عبر أدوارهم — لإشعارات تخص وحدة كاملة (مثل المشاريع/المواقع) لا مستخدماً بعينه
-        public async Task<List<string>> GetUserIdsWithAnyPermissionAsync(params string[] permissionCodes)
+        // كل أعضاء فريق مشروع محدد (أي دور) + مدير النظام — لإشعارات خاصة بهذا المشروع تحديداً فقط
+        public async Task<List<string>> GetProjectRecipientsAsync(int projectId)
         {
-            var roleIds = await _context.RolePermissions
-                .Where(rp => rp.IsGranted && permissionCodes.Contains(rp.Permission.Code))
-                .Select(rp => rp.RoleId)
-                .Distinct()
+            var teamIds = await _context.ProjectTeamMembers
+                .Where(tm => tm.ProjectId == projectId)
+                .Select(tm => tm.UserId)
                 .ToListAsync();
 
-            if (roleIds.Count == 0)
-                return new List<string>();
+            var adminIds = await (from ur in _context.UserRoles
+                                  join r in _context.Roles on ur.RoleId equals r.Id
+                                  where r.Name == "مدير النظام"
+                                  select ur.UserId)
+                                  .Distinct()
+                                  .ToListAsync();
 
-            return await _context.UserRoles
-                .Where(ur => roleIds.Contains(ur.RoleId))
-                .Select(ur => ur.UserId)
-                .Distinct()
-                .ToListAsync();
+            return teamIds.Union(adminIds).Distinct().ToList();
         }
     }
 

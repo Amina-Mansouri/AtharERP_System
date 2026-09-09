@@ -219,10 +219,7 @@ namespace AtharERP_System.Controllers
             // إشعار اكتمال المرحلة — لكل من يملك صلاحية تخص المشاريع/المواقع (القسم 10 بند 3)
             if (!wasCompleted && stage.Status == StageStatus.Completed)
             {
-                var recipientIds = await _permissionService.GetUserIdsWithAnyPermissionAsync(
-                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
-                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
-                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
+                var recipientIds = await _permissionService.GetProjectRecipientsAsync(stage.ProjectId);
 
                 await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }

@@ -50,10 +50,7 @@ namespace AtharERP_System.Services
 
             if (!wasCompleted && stage.Status == StageStatus.Completed)
             {
-                var recipientIds = await _permission.GetUserIdsWithAnyPermissionAsync(
-                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
-                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
-                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
+                var recipientIds = await _permission.GetProjectRecipientsAsync(stage.ProjectId);
 
                 await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }
@@ -150,10 +147,7 @@ namespace AtharERP_System.Services
 
             if (task.Status != oldStatus)
             {
-                var recipientIds = await _permission.GetUserIdsWithAnyPermissionAsync(
-                    "Projects.ViewOwn", "Projects.ViewAll", "Projects.Create", "Projects.Edit",
-                    "Projects.Stages.Manage", "Projects.Tasks.Manage", "Projects.Assignments.Edit", "Projects.Assignments.View",
-                    "Sites.View", "Sites.Manage", "Quality.View", "Quality.Approve", "Supply.View", "Supply.Approve");
+                var recipientIds = await _permission.GetProjectRecipientsAsync(task.ProjectId);
 
                 if (recipientIds.Count > 0)
                 {
