@@ -19,6 +19,7 @@ namespace AtharERP_System.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly PermissionService _permissionService;
         private readonly AuditService _audit;
+        private readonly NotificationService _notify;
         private readonly ProjectCalculationService _calc;
 
         public ProjectAssignmentsController(
@@ -32,10 +33,10 @@ namespace AtharERP_System.Controllers
             _context = context;
             _userManager = userManager;
             _permissionService = permissionService;
-            _audit = audit; 
+            _audit = audit;
+            _notify = notify;
             _calc = calc;
         }
-
 
         // ============================================
         // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
@@ -196,7 +197,6 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
         }
 
-       
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
@@ -209,6 +209,12 @@ namespace AtharERP_System.Controllers
                 _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = assignmentId, UserId = userId });
                 await EnsureTeamMembershipAsync(projectId, userId);
                 await _context.SaveChangesAsync();
+
+                var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
+                if (assignment != null)
+                {
+                    await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.CostType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
+                }
             }
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
