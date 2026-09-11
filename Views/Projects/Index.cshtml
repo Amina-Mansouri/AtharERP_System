@@ -147,7 +147,7 @@
                     }
                     @if (showToggle)
                     {
-                        <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="cursor:pointer; font-size:10px; color:#8a83a0; padding:0 4px 0 0; vertical-align:middle;">▾</span>
+                        <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px; margin-left:4px; vertical-align:middle;">▾</span>
                     }
                     @project.Name
                     @if (project.ChildProjects.Any())
@@ -159,19 +159,6 @@
                         <div class="stat-sub">فرعي من: @project.ParentProject.Name</div>
                     }
                 </div>
-                @section Scripts {
-                    <script>
-                                function toggleProjectChildren(btn) {
-                                    var id = btn.getAttribute('data-target');
-                                    var expanded = btn.getAttribute('aria-expanded') !== 'false';
-                                    document.querySelectorAll('[data-parent-id="' + id + '"]').forEach(function(row) {
-                                        row.style.display = expanded ? 'none' : '';
-                                    });
-                                    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-                                    btn.textContent = expanded ? '▸' : '▾';
-                                }
-                    </script>
-                }
                 @if (canViewClient)
                 {
                     <div class="cell">@(project.Client?.Name ?? "-")</div>
@@ -189,3 +176,16 @@
         }
     }
 </div>
+@section Scripts {
+    <script>
+        function toggleProjectChildren(btn) {
+            var id = btn.getAttribute('data-target');
+            var expanded = btn.getAttribute('aria-expanded') !== 'false';
+            document.querySelectorAll('[data-parent-id="' + id + '"]').forEach(function(row) {
+                row.style.display = expanded ? 'none' : '';
+            });
+            btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            btn.textContent = expanded ? '▸' : '▾';
+        }
+    </script>
+}
