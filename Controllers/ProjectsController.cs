@@ -34,7 +34,7 @@ namespace AtharERP_System.Controllers
         // قائمة المشاريع + عزل الرؤية (القسم 6.6.2)
         // ============================================
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
-        public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectScope? scope)
+        public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectScope? scope, Priority? priority)
         {
             var baseQuery = _context.Projects
                 .Include(p => p.Client)
@@ -67,9 +67,13 @@ namespace AtharERP_System.Controllers
             if (scope.HasValue)
                 query = query.Where(p => p.Scope == scope.Value);
 
+            if (priority.HasValue)
+                query = query.Where(p => p.Priority == priority.Value);
+
             ViewBag.Search = search;
             ViewBag.Status = status;
             ViewBag.Scope = scope;
+            ViewBag.Priority = priority;
             ViewBag.CanViewClient = await CanViewClientAsync();
 
             var projects = await query

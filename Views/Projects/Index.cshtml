@@ -12,6 +12,8 @@
 
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
+    var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
+    var priority = ViewBag.Priority as Priority?;
 
     int totalProjects = ViewBag.TotalProjects as int? ?? 0;
     int inProgressProjects = ViewBag.InProgressProjects as int? ?? 0;
@@ -87,7 +89,15 @@
         <option value="Sub" selected="@(scope == ProjectScope.Sub)">فرعي</option>
     </select>
 
-    @if (!string.IsNullOrEmpty(search) || status.HasValue || scope.HasValue)
+    <select name="priority" class="filter-chip" onchange="this.form.submit()">
+        <option value="">الأولوية ▾</option>
+        @foreach (var p in priorityLabels)
+        {
+            <option value="@p.Value" selected="@(priority?.ToString() == p.Value)">@p.Label</option>
+        }
+    </select>
+
+    @if (!string.IsNullOrEmpty(search) || status.HasValue || scope.HasValue || priority.HasValue)
     {
         <a asp-action="Index" class="filter-clear">مسح التصفية</a>
     }
@@ -125,12 +135,19 @@
                 ? (today - project.PlannedEndDate.Value.Date).Days
                 : 0;
             var nameCellStyle = isNestedChild ? "padding-right:24px;" : "";
-            <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" style="text-decoration:none; color:inherit; @(isNestedChild ? "background:#faf9fc;" : "")">
+            var showToggle = !isNestedChild && project.ChildProjects.Any();
+            var parentIdAttr = isNestedChild ? project.ParentProjectId : (int?)null;
+            var rowStyle = isNestedChild ? "text-decoration:none; color:inherit; background:#faf9fc;" : "text-decoration:none; color:inherit;";
+            <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" data-parent-id="@parentIdAttr" style="@rowStyle">
                 <div class="cell cell-num">@project.Code</div>
                 <div class="cell" style="@nameCellStyle">
                     @if (isNestedChild)
                     {
                         <span style="color:#8a83a0;">↳</span>
+                    }
+                    @if (showToggle)
+                    {
+                        <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="cursor:pointer; font-size:10px; color:#8a83a0; padding:0 4px 0 0; vertical-align:middle;">▾</span>
                     }
                     @project.Name
                     @if (project.ChildProjects.Any())
@@ -142,6 +159,19 @@
                         <div class="stat-sub">فرعي من: @project.ParentProject.Name</div>
                     }
                 </div>
+                @section Scripts {
+                    <script>
+                                function toggleProjectChildren(btn) {
+                                    var id = btn.getAttribute('data-target');
+                                    var expanded = btn.getAttribute('aria-expanded') !== 'false';
+                                    document.querySelectorAll('[data-parent-id="' + id + '"]').forEach(function(row) {
+                                        row.style.display = expanded ? 'none' : '';
+                                    });
+                                    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                                    btn.textContent = expanded ? '▸' : '▾';
+                                }
+                    </script>
+                }
                 @if (canViewClient)
                 {
                     <div class="cell">@(project.Client?.Name ?? "-")</div>
