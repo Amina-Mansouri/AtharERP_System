@@ -99,6 +99,8 @@ namespace AtharERP_System.Services
 
             if (project == null) return;
 
+            var wasDelayed = project.Status == ProjectStatus.Delayed;
+
             project.Budget = project.Stages.Sum(s => s.StageValue);
             var totalWeight = project.Stages.Sum(s => s.Weight);
             var weightedSum = project.Stages.Sum(s => s.Weight * s.CompletionPercentage);
@@ -123,6 +125,12 @@ namespace AtharERP_System.Services
             }
 
             await _context.SaveChangesAsync();
+
+            if (!wasDelayed && project.Status == ProjectStatus.Delayed)
+            {
+                var recipientIds = await _permission.GetProjectRecipientsAsync(project.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"المشروع \"{project.Name}\" أصبح متأخراً", NotificationEventType.TaskDelayed, $"/Projects/Details/{project.Id}", requiresAction: true, entityType: "Project", entityId: project.Id);
+            }
         }
 
         // نسبة إنجاز المهمة = بنود To-Do المكتملة ÷ إجمالي البنود × 100 (القسم 5.6)
