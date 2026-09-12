@@ -47,6 +47,18 @@ namespace AtharERP_System.Controllers
                 .FirstOrDefaultAsync();
             return stageEngineerId == CurrentUserId;
         }
+
+        // تعديل تواريخ المهمة (بداية/نهاية/تسليم فعلي) — للمدير أو مسؤول المرحلة فقط، وليس أي مكلَّف
+        private async Task<bool> CanEditDatesAsync(ProjectTask task)
+        {
+            if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+                return true;
+            var stageEngineerId = await _context.ProjectStages
+                .Where(s => s.Id == task.StageId)
+                .Select(s => s.AssignedEngineerId)
+                .FirstOrDefaultAsync();
+            return stageEngineerId == CurrentUserId;
+        }
         // ============================================
         // مهامي (كل المهام المكلَّف بها المستخدم الحالي عبر أي مشروع)
         // ============================================
@@ -73,7 +85,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-     [Bind("StageId,ProjectAssignmentId,Title,Description,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
+[Bind("StageId,ProjectAssignmentId,Title,Description,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,Weight,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == model.StageId);
             if (stage == null)
@@ -85,10 +97,10 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
             }
 
-            var otherTasksTotal = stage.Tasks.Sum(t => t.EstimatedValue);
-            if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
+            var otherTasksWeightTotal = stage.Tasks.Sum(t => t.Weight);
+            if (otherTasksWeightTotal + model.Weight > stage.Weight)
             {
-                TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
+                TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
                 return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
             }
 
@@ -102,9 +114,7 @@ namespace AtharERP_System.Controllers
 
             _context.ProjectTasks.Add(model);
             await _context.SaveChangesAsync();
-
-            if (model.ProjectAssignmentId.HasValue)
-                await _calc.RecalculateAssignmentValueAsync(model.ProjectAssignmentId.Value);
+            await _calc.RecalculateStageAsync(stage.Id);
 
             TempData["Success"] = $"تمت إضافة المهمة {model.Title} بنجاح";
             return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
@@ -132,6 +142,7 @@ namespace AtharERP_System.Controllers
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.CanManage = canManage;
+            ViewBag.CanEditDates = canManage || await CanEditDatesAsync(task);
 
             if (canManage)
             {
@@ -152,53 +163,21 @@ namespace AtharERP_System.Controllers
             return View(task);
         }
 
-        // تحديد القيمة التقديرية للمهمة — يقدر المكلَّف نفسه يفعلها، وليس فقط الإدارة
-
-        [Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateEstimatedValue(int id, decimal estimatedValue)
-        {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
-            if (task == null)
-                return NotFound();
-
-            if (!await CanExecuteAsync(task))
-                return Forbid();
-
-            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
-            var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
-            if (otherTasksTotal + estimatedValue > stage.StageValue)
-            {
-                TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
-                return RedirectToAction("Edit", new { id });
-            }
-
-            task.EstimatedValue = estimatedValue;
-            await _context.SaveChangesAsync();
-
-            if (task.ProjectAssignmentId.HasValue)
-            {
-                await _calc.RecalculateAssignmentValueAsync(task.ProjectAssignmentId.Value);
-            }
-
-            TempData["Success"] = "تم تحديث القيمة التقديرية بنجاح";
-            return RedirectToAction("Edit", new { id });
-        }
-
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
 int id,
-[Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,EstimatedValue,BonusAmount,PenaltyAmount")] ProjectTask model)
+[Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,Weight,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var task = await _context.ProjectTasks.Include(t => t.Todos).Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
-            if (!canManage && !await CanExecuteAsync(task))
+            var canEditDates = canManage || await CanEditDatesAsync(task);
+
+            if (!canManage && !canEditDates)
                 return Forbid();
 
             if (!ModelState.IsValid)
@@ -213,10 +192,10 @@ int id,
             if (canManage)
             {
                 var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
-                var otherTasksTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.EstimatedValue);
-                if (otherTasksTotal + model.EstimatedValue > stage.StageValue)
+                var otherTasksWeightTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.Weight);
+                if (otherTasksWeightTotal + model.Weight > stage.Weight)
                 {
-                    TempData["Error"] = $"سيتجاوز مجموع قيم مهام مرحلة \"{stage.Name}\" سقفها ({stage.StageValue:N0})";
+                    TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
                     return RedirectToAction("Edit", new { id });
                 }
 
@@ -224,31 +203,39 @@ int id,
                 task.Description = model.Description;
                 task.Priority = model.Priority;
                 task.IsUrgent = model.IsUrgent;
-                task.EstimatedValue = model.EstimatedValue;
+                task.Weight = model.Weight;
                 task.BonusAmount = model.BonusAmount;
                 task.PenaltyAmount = model.PenaltyAmount;
             }
 
-            task.PlannedStartDate = model.PlannedStartDate;
-            task.PlannedEndDate = model.PlannedEndDate;
-            task.ActualDeliveryDate = model.ActualDeliveryDate;
-
-            _calc.UpdateDeliveryMetrics(task);
-
-            if (model.ActualDeliveryDate.HasValue)
+            if (canEditDates)
             {
-                foreach (var todo in task.Todos.Where(t => !t.IsCompleted))
+                task.PlannedStartDate = model.PlannedStartDate;
+                task.PlannedEndDate = model.PlannedEndDate;
+                task.ActualDeliveryDate = model.ActualDeliveryDate;
+
+                _calc.UpdateDeliveryMetrics(task);
+
+                if (model.ActualDeliveryDate.HasValue)
                 {
-                    todo.IsCompleted = true;
-                    todo.CompletedAt = DateTime.UtcNow;
+                    foreach (var todo in task.Todos.Where(t => !t.IsCompleted))
+                    {
+                        todo.IsCompleted = true;
+                        todo.CompletedAt = DateTime.UtcNow;
+                    }
                 }
             }
 
             await _context.SaveChangesAsync();
 
-            if (model.ActualDeliveryDate.HasValue)
+            if (canEditDates && model.ActualDeliveryDate.HasValue)
             {
                 await _calc.RecalculateTaskCompletionAsync(id);
+            }
+
+            if (canManage)
+            {
+                await _calc.RecalculateStageAsync(task.StageId!.Value);
             }
 
             if (task.DelayDays > 0)
@@ -261,7 +248,6 @@ int id,
             return RedirectToAction("Edit", new { id });
 
         }
-
         // ============================================
         // حذف مهمة
         // ============================================

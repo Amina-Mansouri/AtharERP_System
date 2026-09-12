@@ -17,30 +17,24 @@ namespace AtharERP_System.Services
             _permission = permission;
         }
 
-        // نسبة إنجاز المرحلة = مجموع قيمة التكليفات المكتملة ÷ مجموع قيمة كل التكليفات × 100
-        // (بعد 06-CONFLICTS.md · C6: ProjectAssignment حلّ محل ProjectStep في مسار الحساب.
-        // FinalAmount بديل مؤقت لوزن الخطوة القديم — الحساب التصاعدي الكامل عبر
-        // CompletionPercentage خاص بالتكليف نفسه يُبنى في المرحلة ٤ حسب 04-BACKEND.md §8)
         public async Task RecalculateStageAsync(int stageId)
         {
             var stage = await _context.ProjectStages
-                .Include(s => s.Assignments)
+                .Include(s => s.Tasks)
                 .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null) return;
 
             var wasCompleted = stage.Status == StageStatus.Completed;
 
-            var totalValue = stage.Assignments.Sum(a => a.FinalAmount);
-            var completedValue = stage.Assignments
-                .Where(a => a.Status == AssignmentStatus.Completed)
-                .Sum(a => a.FinalAmount);
+            var totalWeight = stage.Tasks.Sum(t => t.Weight);
+            var completedWeight = stage.Tasks
+                .Where(t => t.Status == ProjectTaskStatus.Completed)
+                .Sum(t => t.Weight);
 
-            stage.CompletionPercentage = totalValue > 0
-                ? Math.Round((completedValue / totalValue) * 100, 2)
+            stage.CompletionPercentage = totalWeight > 0
+                ? Math.Round((completedWeight / totalWeight) * 100, 2)
                 : 0;
-
-            stage.ActualCost = stage.Assignments.Sum(a => a.FinalAmount);
 
             var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
             ApplyAutomaticStageStatus(stage, allStages);
@@ -133,7 +127,6 @@ namespace AtharERP_System.Services
             }
         }
 
-        // نسبة إنجاز المهمة = بنود To-Do المكتملة ÷ إجمالي البنود × 100 (القسم 5.6)
         public async Task RecalculateTaskCompletionAsync(int taskId)
         {
             var task = await _context.ProjectTasks
@@ -180,13 +173,17 @@ namespace AtharERP_System.Services
                 }
             }
 
+            if (task.StageId.HasValue)
+            {
+                await RecalculateStageAsync(task.StageId.Value);
+            }
+
             if (task.ProjectAssignmentId.HasValue)
             {
                 await RecalculateAssignmentCompletionAsync(task.ProjectAssignmentId.Value);
             }
         }
 
-        // إكمال تلقائي للتكليف عندما تكتمل كل مهامه (بنود to-do) 100% — ثم تصعيد الحساب للمرحلة
         private async Task RecalculateAssignmentCompletionAsync(int assignmentId)
         {
             var assignment = await _context.ProjectAssignments
@@ -202,56 +199,10 @@ namespace AtharERP_System.Services
             {
                 assignment.Status = AssignmentStatus.Completed;
                 await _context.SaveChangesAsync();
-
-                if (assignment.StageId.HasValue)
-                {
-                    await RecalculateStageAsync(assignment.StageId.Value);
-                }
             }
         }
 
-        // الترحيل التلقائي للمالية عند اكتمال التكليف (القسم 5.7)
-        private async Task TransferToFinanceAsync(ProjectAssignment assignment)
-        {
-            assignment.IsTransferredToFinance = true;
-            assignment.TransferredToFinanceAt = DateTime.UtcNow;
-
-            _context.FinancialRecords.Add(new FinancialRecord
-            {
-                ProjectId = assignment.ProjectId,
-                ProjectAssignmentId = assignment.Id,
-                CostType = assignment.CostType,
-                Value = assignment.FinalAmount,
-                IsCleared = false,
-                CreatedAt = DateTime.UtcNow
-            });
-
-            var project = await _context.Projects.FindAsync(assignment.ProjectId);
-            if (project != null)
-                project.ActualCost += assignment.FinalAmount;
-
-            await _context.SaveChangesAsync();
-
-            var financeUserIds = await GetUsersWithPermissionAsync("Finance.View");
-            if (financeUserIds.Count > 0)
-                await _notify.NotifyManyAsync(financeUserIds, $"تم ترحيل تكليف {assignment.CostType} إلى المالية بقيمة {assignment.FinalAmount:N2}", NotificationEventType.CostCompleted, $"/ProjectAssignments/Overview?projectId={assignment.ProjectId}", entityType: "ProjectAssignment", entityId: assignment.Id);
-        }
-
-        private async Task<List<string>> GetUsersWithPermissionAsync(string permissionCode)
-        {
-            var roleIds = await _context.RolePermissions
-                .Where(rp => rp.IsGranted && rp.Permission.Code == permissionCode)
-                .Select(rp => rp.RoleId)
-                .ToListAsync();
-
-            var userIds = await _context.UserRoles
-                .Where(ur => roleIds.Contains(ur.RoleId))
-                .Select(ur => ur.UserId)
-                .Distinct()
-                .ToListAsync();
-
-            return userIds;
-        }
+       
 
         // حساب أيام التأخير/التبكير عند التسليم الفعلي (القسم 5.4/5.5)
         public void UpdateDeliveryMetrics(ProjectTask task)
@@ -280,23 +231,6 @@ namespace AtharERP_System.Services
                 task.DelayDays = 0;
                 task.EarlyDeliveryDays = 0;
             }
-        }
-
-
-        // إعادة حساب قيمة التكليف = مجموع القيم التقديرية لكل مهامه المرتبطة به
-        public async Task RecalculateAssignmentValueAsync(int assignmentId)
-        {
-            var assignment = await _context.ProjectAssignments
-                .Include(a => a.Tasks)
-                .FirstOrDefaultAsync(a => a.Id == assignmentId);
-
-            if (assignment == null) return;
-
-            assignment.FinalAmount = assignment.Tasks.Sum(t => t.EstimatedValue);
-            await _context.SaveChangesAsync();
-
-            if (assignment.StageId.HasValue)
-                await RecalculateStageAsync(assignment.StageId.Value);
         }
     }
 }

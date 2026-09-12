@@ -96,7 +96,6 @@ namespace AtharERP_System.Controllers
 
             var today = DateTime.UtcNow.Date;
             ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.AgreedDate.HasValue && a.AgreedDate.Value.Date < today);
-            ViewBag.TotalValue = assignments.Sum(a => a.FinalAmount);
 
             return View(assignments);
         }
@@ -140,7 +139,7 @@ namespace AtharERP_System.Controllers
                     return RedirectToAction("Details", "Projects", new { id = model.ProjectId });
                 }
             }
-            model.FinalAmount = 0;
+           
             model.Status = AssignmentStatus.Pending;
             model.CreatedAt = DateTime.UtcNow;
 
@@ -172,7 +171,7 @@ namespace AtharERP_System.Controllers
                     t.ProjectAssignmentId = model.Id;
                 }
                 await _context.SaveChangesAsync();
-                await _calc.RecalculateAssignmentValueAsync(model.Id);
+               
             }
 
             // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)

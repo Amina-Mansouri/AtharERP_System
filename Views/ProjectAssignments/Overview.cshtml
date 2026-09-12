@@ -47,15 +47,13 @@ else
         <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressAssignments</span></div>
         <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedAssignments</span></div>
         <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
-        <div class="stat-item"><span class="kicker">إجمالي القيمة</span><span class="stat-value">@(((decimal)ViewBag.TotalValue).ToString("N0"))</span></div>
     </div>
 
-    <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 88px 96px 96px">
+    <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 96px 96px">
         <div class="data-table-head">
             <div class="cell">التكليف</div>
             <div class="cell">المرحلة</div>
             <div class="cell">المهندسات</div>
-            <div class="cell">القيمة</div>
             <div class="cell">الحالة</div>
             <div class="cell"></div>
         </div>
@@ -91,7 +89,6 @@ else
                             }
                         }
                     </div>
-                    <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
                     <div class="cell"><span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
                     <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
                 </div>

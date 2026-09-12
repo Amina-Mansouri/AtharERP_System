@@ -75,30 +75,48 @@ namespace AtharERP_System.Controllers
             [HttpPost]
             [ValidateAntiForgeryToken]
         public async Task<IActionResult> ActivateTemplate(
-                               int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
+                int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
                 decimal? area, decimal? pricePerMeter,
                 List<int>? selectedTaskIds, string? extraTasks)
         {
-                var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
-                if (project == null)
-                    return NotFound();
+            var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
+            if (project == null)
+                return NotFound();
 
-                var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == stageTemplateId);
-                if (template == null)
-                    return NotFound();
+            var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == stageTemplateId);
+            if (template == null)
+                return NotFound();
 
-                if (project.Stages.Any(s => s.Name == template.Name))
+            if (project.Stages.Any(s => s.Name == template.Name))
+            {
+                TempData["Error"] = $"مرحلة {template.Name} مفعّلة بالفعل لهذا المشروع";
+                return RedirectToAction("Details", "Projects", new { id = projectId });
+            }
+
+            var currentTotal = project.Stages.Sum(s => s.Weight);
+            if (currentTotal + weight > 100)
+            {
+                TempData["Error"] = $"مجموع أوزان المراحل سيتجاوز 100% (المجموع الحالي: {currentTotal}%)";
+                return RedirectToAction("Details", "Projects", new { id = projectId });
+            }
+
+            var taskWeights = new Dictionary<int, decimal>();
+            decimal selectedTasksWeightTotal = 0;
+            if (selectedTaskIds != null)
+            {
+                foreach (var taskId in selectedTaskIds)
                 {
-                    TempData["Error"] = $"مرحلة {template.Name} مفعّلة بالفعل لهذا المشروع";
-                    return RedirectToAction("Details", "Projects", new { id = projectId });
+                    decimal.TryParse(Request.Form[$"taskWeight_{taskId}"], out var w);
+                    taskWeights[taskId] = w;
+                    selectedTasksWeightTotal += w;
                 }
+            }
 
-                var currentTotal = project.Stages.Sum(s => s.Weight);
-                if (currentTotal + weight > 100)
-                {
-                    TempData["Error"] = $"مجموع أوزان المراحل سيتجاوز 100% (المجموع الحالي: {currentTotal}%)";
-                    return RedirectToAction("Details", "Projects", new { id = projectId });
-                }
+            if (selectedTasksWeightTotal > weight)
+            {
+                TempData["Error"] = $"مجموع أوزان المهام المختارة ({selectedTasksWeightTotal}%) يتجاوز وزن المرحلة ({weight}%)";
+                return RedirectToAction("Details", "Projects", new { id = projectId });
+            }
 
             var stage = new ProjectStage
             {
@@ -114,59 +132,60 @@ namespace AtharERP_System.Controllers
                 ActualCost = 0
             };
             _context.ProjectStages.Add(stage);
-                await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-                if (selectedTaskIds != null)
+            if (selectedTaskIds != null)
+            {
+                foreach (var taskId in selectedTaskIds)
                 {
-                    foreach (var taskId in selectedTaskIds)
+                    var defaultTask = template.DefaultTasks.FirstOrDefault(t => t.Id == taskId);
+                    if (defaultTask == null) continue;
+
+                    _context.ProjectTasks.Add(new ProjectTask
                     {
-                        var defaultTask = template.DefaultTasks.FirstOrDefault(t => t.Id == taskId);
-                        if (defaultTask == null) continue;
-
-                        _context.ProjectTasks.Add(new ProjectTask
-                        {
-                            ProjectId = projectId,
-                            StageId = stage.Id,
-                            Title = defaultTask.TaskName,
-                            Status = ProjectTaskStatus.NotStarted,
-                            Priority = TaskPriority.Medium,
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedById = CurrentUserId
-                        });
-                    }
+                        ProjectId = projectId,
+                        StageId = stage.Id,
+                        Title = defaultTask.TaskName,
+                        Weight = taskWeights.TryGetValue(taskId, out var tw) ? tw : 0,
+                        Status = ProjectTaskStatus.NotStarted,
+                        Priority = TaskPriority.Medium,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = CurrentUserId
+                    });
                 }
-
-                if (!string.IsNullOrWhiteSpace(extraTasks))
-                {
-                    foreach (var line in extraTasks.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        var title = line.Trim();
-                        if (string.IsNullOrEmpty(title)) continue;
-
-                        _context.ProjectTasks.Add(new ProjectTask
-                        {
-                            ProjectId = projectId,
-                            StageId = stage.Id,
-                            Title = title,
-                            Status = ProjectTaskStatus.NotStarted,
-                            Priority = TaskPriority.Medium,
-                            CreatedAt = DateTime.UtcNow,
-                            CreatedById = CurrentUserId
-                        });
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                await _calc.RecalculateProjectAsync(projectId);
-
-                TempData["Success"] = $"تم تفعيل مرحلة {template.Name} بنجاح";
-                return RedirectToAction("Details", "Projects", new { id = projectId });
             }
 
-            // ============================================
-            // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)
-            // ============================================
-            [RequirePermission("Projects.Stages.Manage")]
+            if (!string.IsNullOrWhiteSpace(extraTasks))
+            {
+                foreach (var line in extraTasks.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var title = line.Trim();
+                    if (string.IsNullOrEmpty(title)) continue;
+
+                    _context.ProjectTasks.Add(new ProjectTask
+                    {
+                        ProjectId = projectId,
+                        StageId = stage.Id,
+                        Title = title,
+                        Weight = 0,
+                        Status = ProjectTaskStatus.NotStarted,
+                        Priority = TaskPriority.Medium,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = CurrentUserId
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await _calc.RecalculateProjectAsync(projectId);
+
+            TempData["Success"] = $"تم تفعيل مرحلة {template.Name} بنجاح — لا تنسي ضبط وزن المهام الإضافية (وزنها 0 افتراضياً) من شاشة كل مهمة";
+            return RedirectToAction("Details", "Projects", new { id = projectId });
+        }
+        // ============================================
+        // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)
+        // ============================================
+        [RequirePermission("Projects.Stages.Manage")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {

@@ -32,11 +32,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
-        // محسوبة تلقائياً = مجموع القيم التقديرية لكل مهام هذا التكليف — لا تُدخل يدوياً أبداً
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "القيمة الإجمالية")]
-        public decimal FinalAmount { get; set; }
-
         [Display(Name = "الحالة")]
         public AssignmentStatus Status { get; set; } = AssignmentStatus.Pending;
 

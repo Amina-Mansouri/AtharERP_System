@@ -410,13 +410,14 @@
                                             }
                                         </select>
                                     </div>
-                                    <div style="display:grid; gap:3px; margin-bottom:6px;">
+                                    <div style="display:grid; gap:4px; margin-bottom:6px;">
                                         @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
                                         {
-                                            <label style="display:flex; align-items:center; gap:5px; font-size:10.5px; color:#5a5370;">
+                                            <div style="display:flex; align-items:center; gap:5px;">
                                                 <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
-                                                @t.TaskName
-                                            </label>
+                                                <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
+                                                <input type="number" step="0.01" min="0" max="100" name="taskWeight_@t.Id" placeholder="الوزن %" style="width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
+                                            </div>
                                         }
                                     </div>
                                     <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;"></textarea>
@@ -442,12 +443,11 @@
             </select>
         </div>
 
-        <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 88px 96px 96px">
+        <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 96px 96px">
             <div class="data-table-head">
                 <div class="cell">التكليف</div>
                 <div class="cell">المرحلة</div>
                 <div class="cell">المهندسات</div>
-                <div class="cell">القيمة</div>
                 <div class="cell">الحالة</div>
                 <div class="cell"></div>
             </div>
@@ -502,7 +502,6 @@
                                 </form>
                             }
                         </div>
-                        <div class="cell cell-num">@a.FinalAmount.ToString("N0")</div>
                         <div class="cell">
                             <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
                             @if (canManageAssignments && !a.IsTransferredToFinance && a.Status != AssignmentStatus.Completed)
