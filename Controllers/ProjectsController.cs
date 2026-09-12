@@ -15,17 +15,20 @@ namespace AtharERP_System.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly PermissionService _permissionService;
         private readonly AuditService _audit;
+        private readonly ProjectCalculationService _calc;
 
         public ProjectsController(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             PermissionService permissionService,
-            AuditService audit)
+            AuditService audit,
+            ProjectCalculationService calc)
         {
             _context = context;
             _userManager = userManager;
             _permissionService = permissionService;
             _audit = audit;
+            _calc = calc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -52,7 +55,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CompletedProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.Completed);
             ViewBag.OnHoldProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.OnHold);
             ViewBag.SoonDeliveryProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.InProgress && p.PlannedEndDate != null && p.PlannedEndDate >= today && p.PlannedEndDate <= soonCutoff);
-            ViewBag.DelayedProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.InProgress && p.PlannedEndDate != null && p.PlannedEndDate < today);
+            ViewBag.DelayedProjects = await baseQuery.CountAsync(p => p.Status == ProjectStatus.Delayed);
 
             var query = baseQuery;
 
@@ -296,6 +299,7 @@ namespace AtharERP_System.Controllers
             project.AutoTransferToSite = model.AutoTransferToSite;
 
             await _context.SaveChangesAsync();
+            await _calc.RecalculateProjectAsync(project.Id);
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(Project), project.Id.ToString(), $"تعديل مشروع: {project.Name}");
 

@@ -131,9 +131,9 @@
         {
             var project = item.Project;
             var isNestedChild = item.IsNestedChild;
-            var delayDays = project.Status == ProjectStatus.InProgress && project.PlannedEndDate.HasValue && project.PlannedEndDate.Value.Date < today
-                ? (today - project.PlannedEndDate.Value.Date).Days
-                : 0;
+            var delayDays = project.Status == ProjectStatus.Delayed && project.PlannedEndDate.HasValue && project.PlannedEndDate.Value.Date < today
+    ? (today - project.PlannedEndDate.Value.Date).Days
+    : 0;
             var nameCellStyle = isNestedChild ? "padding-right:24px;" : "";
             var showToggle = !isNestedChild && project.ChildProjects.Any();
             var parentIdAttr = isNestedChild ? project.ParentProjectId : (int?)null;
@@ -171,7 +171,7 @@
                 <div class="cell cell-num">@project.CompletionPercentage.ToString("N0")%</div>
                 <div class="cell cell-num">@(project.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
                 <div class="cell cell-num">@(delayDays > 0 ? delayDays + " يوم" : "-")</div>
-                <div class="cell"><span class="tag @(project.Status == ProjectStatus.Completed ? "tag-success" : delayDays > 0 ? "tag-danger" : "")">@statusLabels.FirstOrDefault(x => x.Value == project.Status.ToString()).Label</span></div>
+                <div class="cell"><span class="tag @(project.Status == ProjectStatus.Completed ? "tag-success" : project.Status == ProjectStatus.Delayed ? "tag-danger" : "")">@statusLabels.FirstOrDefault(x => x.Value == project.Status.ToString()).Label</span></div>
             </a>
         }
     }

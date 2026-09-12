@@ -112,6 +112,15 @@ namespace AtharERP_System.Services
             {
                 project.Status = ProjectStatus.Completed;
             }
+            else if (project.Status == ProjectStatus.InProgress || project.Status == ProjectStatus.Delayed)
+            {
+                // متأخر: باقي 30 يوماً أو أقل على تاريخ التسليم (أو تجاوزه فعلاً) ونسبة الإنجاز أقل من 70%
+                var daysRemaining = project.PlannedEndDate.HasValue
+                    ? (int?)(project.PlannedEndDate.Value.Date - DateTime.UtcNow.Date).Days
+                    : null;
+                var isAtRisk = daysRemaining.HasValue && daysRemaining.Value <= 30 && project.CompletionPercentage < 70;
+                project.Status = isAtRisk ? ProjectStatus.Delayed : ProjectStatus.InProgress;
+            }
 
             await _context.SaveChangesAsync();
         }

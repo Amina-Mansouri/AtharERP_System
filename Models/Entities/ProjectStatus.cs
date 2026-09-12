@@ -17,6 +17,9 @@ namespace AtharERP_System.Models.Entities
         Completed = 4,
 
         [Display(Name = "ملغى")]
-        Cancelled = 5
+        Cancelled = 5,
+
+        [Display(Name = "متأخر")]
+        Delayed = 6
     }
 }
