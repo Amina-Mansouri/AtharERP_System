@@ -415,12 +415,6 @@ int id,
                 todo.IsCompleted = !todo.IsCompleted;
                 todo.CompletedAt = todo.IsCompleted ? DateTime.UtcNow : null;
 
-                if (todo.IsCompleted && task.Todos.All(t => t.IsCompleted) && task.ActualDeliveryDate == null)
-                {
-                    task.ActualDeliveryDate = DateTime.UtcNow.Date;
-                    _calc.UpdateDeliveryMetrics(task);
-                }
-
                 await _context.SaveChangesAsync();
                 await _calc.RecalculateTaskCompletionAsync(taskId);
             }
@@ -557,6 +551,8 @@ int id,
 
             task.Status = ProjectTaskStatus.Completed;
             task.ReviewComment = comment;
+            task.ActualDeliveryDate = DateTime.UtcNow.Date;
+            _calc.UpdateDeliveryMetrics(task);
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(task.StageId!.Value);
 
@@ -596,9 +592,12 @@ int id,
                 todo.IsCompleted = false;
                 todo.CompletedAt = null;
             }
+
             task.CompletionPercentage = 0;
             task.Status = ProjectTaskStatus.InProgress;
             task.ReviewComment = comment;
+            task.ActualDeliveryDate = null;
+            _calc.UpdateDeliveryMetrics(task);
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(task.StageId!.Value);
 
