@@ -144,10 +144,10 @@ namespace AtharERP_System.Services
 
             var oldStatus = task.Status;
 
-            if (task.Status != ProjectTaskStatus.Blocked)
+            if (task.Status != ProjectTaskStatus.Blocked && task.Status != ProjectTaskStatus.Completed)
             {
                 task.Status = task.CompletionPercentage >= 100
-                    ? ProjectTaskStatus.Completed
+                    ? ProjectTaskStatus.PendingReview
                     : task.CompletionPercentage > 0
                         ? ProjectTaskStatus.InProgress
                         : ProjectTaskStatus.NotStarted;
@@ -165,6 +165,7 @@ namespace AtharERP_System.Services
                     {
                         ProjectTaskStatus.NotStarted => "لم تبدأ",
                         ProjectTaskStatus.InProgress => "قيد التنفيذ",
+                        ProjectTaskStatus.PendingReview => "قيد المراجعة",
                         ProjectTaskStatus.Completed => "مكتملة",
                         ProjectTaskStatus.Blocked => "محظورة",
                         _ => task.Status.ToString()

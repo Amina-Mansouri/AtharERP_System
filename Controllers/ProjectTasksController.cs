@@ -365,9 +365,9 @@ int id,
             if (!await CanExecuteAsync(task))
                 return Forbid();
 
-            if (task.Status == ProjectTaskStatus.Completed)
+            if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
-                TempData["Error"] = "لا يمكن إضافة بند لمهمة مكتملة";
+                TempData["Error"] = "لا يمكن إضافة بند لمهمة مكتملة أو قيد المراجعة";
                 return RedirectToAction("Edit", new { id = taskId });
             }
 
@@ -403,6 +403,12 @@ int id,
             if (!await CanExecuteAsync(task))
                 return Forbid();
 
+            if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
+            {
+                TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";
+                return RedirectToAction("Edit", new { id = taskId });
+            }
+
             var todo = task.Todos.FirstOrDefault(t => t.Id == id);
             if (todo != null)
             {
@@ -421,7 +427,6 @@ int id,
 
             return RedirectToAction("Edit", new { id = taskId });
         }
-
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -433,6 +438,12 @@ int id,
 
             if (!await CanExecuteAsync(task))
                 return Forbid();
+
+            if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
+            {
+                TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";
+                return RedirectToAction("Edit", new { id = taskId });
+            }
 
             var todo = await _context.TaskTodos.FindAsync(id);
             if (todo != null)
@@ -508,6 +519,91 @@ int id,
             }
 
             return RedirectToAction("Edit", new { id = taskId });
+        }
+        // ============================================
+        // اعتماد/رفض مهمة قيد المراجعة — للمدير أو مسؤول المرحلة فقط
+        // ============================================
+        private async Task<List<string>> GetTaskWorkerIdsAsync(ProjectTask task)
+        {
+            var ids = task.Assignees.Select(a => a.UserId).ToList();
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                var engineerIds = await _context.AssignmentEngineers
+                    .Where(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value)
+                    .Select(e => e.UserId)
+                    .ToListAsync();
+                ids.AddRange(engineerIds);
+            }
+            return ids.Distinct().ToList();
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
+        {
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            if (task == null)
+                return NotFound();
+
+            if (!await CanEditDatesAsync(task))
+                return Forbid();
+
+            if (task.Status != ProjectTaskStatus.PendingReview)
+            {
+                TempData["Error"] = "المهمة ليست قيد المراجعة";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
+
+            task.Status = ProjectTaskStatus.Completed;
+            await _context.SaveChangesAsync();
+            await _calc.RecalculateStageAsync(task.StageId!.Value);
+
+            var workerIds = await GetTaskWorkerIdsAsync(task);
+            var message = string.IsNullOrWhiteSpace(comment)
+                ? $"تم اعتماد مهمتك \"{task.Title}\""
+                : $"تم اعتماد مهمتك \"{task.Title}\" — {comment}";
+            foreach (var workerId in workerIds)
+            {
+                await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
+            }
+
+            TempData["Success"] = "تم اعتماد المهمة";
+            return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
+        {
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            if (task == null)
+                return NotFound();
+
+            if (!await CanEditDatesAsync(task))
+                return Forbid();
+
+            if (task.Status != ProjectTaskStatus.PendingReview)
+            {
+                TempData["Error"] = "المهمة ليست قيد المراجعة";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
+
+            task.Status = ProjectTaskStatus.InProgress;
+            await _context.SaveChangesAsync();
+
+            var workerIds = await GetTaskWorkerIdsAsync(task);
+            var message = string.IsNullOrWhiteSpace(comment)
+                ? $"تم رفض مهمتك \"{task.Title}\" — تحتاج مراجعة"
+                : $"تم رفض مهمتك \"{task.Title}\" — {comment}";
+            foreach (var workerId in workerIds)
+            {
+                await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
+            }
+
+            TempData["Success"] = "تم رفض المهمة وإعادتها قيد التنفيذ";
+            return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
         }
     }
 }

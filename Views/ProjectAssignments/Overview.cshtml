@@ -1,4 +1,5 @@
-﻿@using AtharERP_System.Services
+﻿@inject PermissionService PermissionService﻿
+@using AtharERP_System.Services
 @using AtharERP_System.Models.Entities
 @model List<ProjectAssignment>
 @{
@@ -7,6 +8,7 @@
     var stages = ViewBag.Stages as List<ProjectStage> ?? new List<ProjectStage>();
     var selectedProjectId = ViewBag.ProjectId as int?;
     var selectedStageId = ViewBag.StageId as int?;
+    var taskFilter = ViewBag.TaskFilter as string ?? "all";
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
 }
 
@@ -33,6 +35,7 @@
             }
         </select>
     }
+    <input type="hidden" name="taskFilter" value="@taskFilter" />
 </form>
 
 @if (!selectedProjectId.HasValue)
@@ -47,6 +50,26 @@ else
         <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressAssignments</span></div>
         <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedAssignments</span></div>
         <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
+    </div>
+
+    <div style="display:flex; gap:6px; margin-bottom:12px;">
+        @{
+            var tabs = new (string Key, string Label)[]
+            {
+                ("all", "كل البنود"),
+                ("completed", "المكتملة"),
+                ("pending", "قيد المراجعة"),
+                ("delayed", "المتأخرة")
+            };
+        }
+        @foreach (var tab in tabs)
+        {
+            var isActive = taskFilter == tab.Key;
+            var tabStyle = isActive
+                ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
+                : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
+            <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, taskFilter = tab.Key })" style="text-decoration:none; font-size:11.5px; padding:6px 14px; border-radius:8px; border:1px solid; @tabStyle">@tab.Label</a>
+        }
     </div>
 
     <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 96px 96px">
@@ -65,8 +88,22 @@ else
         {
             @foreach (var a in Model)
             {
+                IEnumerable<ProjectTask> filteredTasks = taskFilter switch
+                {
+                    "completed" => a.Tasks.Where(t => t.Status == ProjectTaskStatus.Completed),
+                    "pending" => a.Tasks.Where(t => t.Status == ProjectTaskStatus.PendingReview),
+                    "delayed" => a.Tasks.Where(t => t.DelayDays > 0),
+                    _ => a.Tasks
+                };
+                var tasksToShow = filteredTasks.ToList();
                 var totalTasks = a.Tasks.Count;
-                var doneTasks = a.Tasks.Count(t => t.CompletionPercentage >= 100);
+                var doneTasks = a.Tasks.Count(t => t.Status == ProjectTaskStatus.Completed);
+
+                if (taskFilter != "all" && !tasksToShow.Any())
+                {
+                    continue;
+                }
+
                 <div class="data-table-row">
                     <div class="cell">
                         @a.CostType
@@ -94,19 +131,24 @@ else
                 </div>
                 <div style="grid-column:1/-1; background:#faf9fc; border-bottom:1px solid #f1f0f6; padding:8px 14px 12px;">
                     <div class="stat-sub" style="margin-bottom:6px;">مهام هذا التكليف: @doneTasks / @totalTasks مكتملة</div>
-                    @if (!a.Tasks.Any())
+                    @if (!tasksToShow.Any())
                     {
-                        <div class="stat-sub">لا توجد مهام مرتبطة بعد</div>
+                        <div class="stat-sub">لا توجد مهام مطابقة لهذا التصنيف</div>
                     }
                     else
                     {
+                        var canReview = a.Stage?.AssignedEngineerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value
+                            || await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
                         <div style="display:grid; gap:6px;">
-                            @foreach (var t in a.Tasks)
+                            @foreach (var t in tasksToShow)
                             {
+                                var taskTagClass = t.Status == ProjectTaskStatus.Completed ? "tag-success"
+                                    : t.Status == ProjectTaskStatus.PendingReview ? "tag-warning"
+                                    : "";
                                 <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
                                     <div style="display:flex; align-items:center; justify-content:space-between;">
                                         <span style="font-size:11.5px; font-weight:600;">@t.Title</span>
-                                        <span class="tag @(t.CompletionPercentage >= 100 ? "tag-success" : "")">@t.CompletionPercentage.ToString("N0")%</span>
+                                        <span class="tag @taskTagClass">@(t.Status == ProjectTaskStatus.PendingReview ? "قيد المراجعة" : t.CompletionPercentage.ToString("N0") + "%")</span>
                                     </div>
                                     @if (t.Todos.Any())
                                     {
@@ -121,6 +163,29 @@ else
                                     else
                                     {
                                         <div class="stat-sub" style="margin-top:4px;">لا توجد بنود بعد</div>
+                                    }
+                                    @if (t.Status == ProjectTaskStatus.PendingReview && canReview)
+                                    {
+                                        <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+                                            <form method="post" asp-controller="ProjectTasks" asp-action="ApproveTask" style="display:flex; gap:4px; flex:1;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@t.Id" />
+                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                <input type="text" name="comment" placeholder="تعليق (اختياري)" style="flex:1; height:26px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10.5px;" />
+                                                <button type="submit" style="height:26px; border:none; border-radius:6px; background:#2f8a57; color:#fff; font-size:10.5px; padding:0 10px;">اعتماد</button>
+                                            </form>
+                                            <form method="post" asp-controller="ProjectTasks" asp-action="RejectTask" style="display:flex; gap:4px; flex:1;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@t.Id" />
+                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                <input type="text" name="comment" placeholder="سبب الرفض (اختياري)" style="flex:1; height:26px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10.5px;" />
+                                                <button type="submit" style="height:26px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10.5px; padding:0 10px;">رفض</button>
+                                            </form>
+                                        </div>
                                     }
                                 </div>
                             }

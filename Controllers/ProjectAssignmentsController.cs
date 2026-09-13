@@ -42,7 +42,7 @@ namespace AtharERP_System.Controllers
         // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
         // ============================================
         [RequirePermission("Projects.Assignments.View")]
-        public async Task<IActionResult> Overview(int? projectId, int? stageId)
+        public async Task<IActionResult> Overview(int? projectId, int? stageId, string? taskFilter)
         {
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
@@ -58,6 +58,7 @@ namespace AtharERP_System.Controllers
             ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.ProjectId = projectId;
             ViewBag.StageId = stageId;
+            ViewBag.TaskFilter = string.IsNullOrEmpty(taskFilter) ? "all" : taskFilter;
 
             if (!projectId.HasValue)
             {
