@@ -35,8 +35,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
-   
-
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ البدء المخطط")]
         public DateTime? PlannedStartDate { get; set; }
@@ -91,6 +89,9 @@ namespace AtharERP_System.Models.Entities
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "مبلغ الغرامة")]
         public decimal PenaltyAmount { get; set; }
+
+        [Display(Name = "تعليق آخر مراجعة")]
+        public string? ReviewComment { get; set; }
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

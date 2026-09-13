@@ -556,6 +556,7 @@ int id,
             }
 
             task.Status = ProjectTaskStatus.Completed;
+            task.ReviewComment = comment;
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(task.StageId!.Value);
 
@@ -577,7 +578,7 @@ int id,
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.Include(t => t.Assignees).Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
@@ -590,7 +591,14 @@ int id,
                 return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
             }
 
+            foreach (var todo in task.Todos)
+            {
+                todo.IsCompleted = false;
+                todo.CompletedAt = null;
+            }
+            task.CompletionPercentage = 0;
             task.Status = ProjectTaskStatus.InProgress;
+            task.ReviewComment = comment;
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(task.StageId!.Value);
 
