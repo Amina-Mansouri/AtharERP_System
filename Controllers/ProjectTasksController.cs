@@ -282,18 +282,19 @@ int id,
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleBlocked(int id)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
-            if (!await CanExecuteAsync(task))
+            if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
                 return Forbid();
 
             task.Status = task.Status == ProjectTaskStatus.Blocked
-                ? (task.CompletionPercentage >= 100 ? ProjectTaskStatus.Completed : task.CompletionPercentage > 0 ? ProjectTaskStatus.InProgress : ProjectTaskStatus.NotStarted)
+                ? (task.CompletionPercentage >= 100 ? ProjectTaskStatus.PendingReview : task.CompletionPercentage > 0 ? ProjectTaskStatus.InProgress : ProjectTaskStatus.NotStarted)
                 : ProjectTaskStatus.Blocked;
 
             await _context.SaveChangesAsync();
+            await _calc.RecalculateStageAsync(task.StageId!.Value);
 
             TempData["Success"] = "تم تحديث حالة المهمة";
             return RedirectToAction("Edit", new { id });

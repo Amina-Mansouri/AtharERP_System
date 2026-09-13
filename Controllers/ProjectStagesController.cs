@@ -208,7 +208,7 @@ namespace AtharERP_System.Controllers
             int id,
                      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,PricePerMeter")] ProjectStage model)
         {
-            var stage = await _context.ProjectStages.FindAsync(id);
+            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
                 return NotFound();
 
@@ -234,7 +234,7 @@ namespace AtharERP_System.Controllers
             stage.Area = model.Area;
             stage.PricePerMeter = model.PricePerMeter;
 
-            var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
+            var allStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
             foreach (var s in allStages)
             {
                 _calc.ApplyAutomaticStageStatus(s, allStages);

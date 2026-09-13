@@ -125,13 +125,18 @@
             }
         </form>
 
-        <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
-            <form method="post" asp-action="ToggleBlocked" style="display:inline;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:11.5px; padding:0 14px; color:@(Model.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42");">@(Model.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة")</button>
-            </form>
-        </div>
+        @if (canManage)
+        {
+            var blockButtonColor = Model.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42";
+            var blockButtonLabel = Model.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة";
+            <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
+                <form method="post" asp-action="ToggleBlocked" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:11.5px; padding:0 14px; color:@blockButtonColor;">@blockButtonLabel</button>
+                </form>
+            </div>
+        }
     </div>
 
     <div style="display:flex; flex-direction:column; gap:12px;">

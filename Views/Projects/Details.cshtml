@@ -347,6 +347,10 @@
                             {
                                 <span class="tag tag-danger">تجاوز السقف</span>
                             }
+                            @if (stage.CompletionPercentage >= 100 && stage.Status != StageStatus.Completed && stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
+                            {
+                                <span class="tag tag-warning">100% — توجد مهام محظورة</span>
+                            }
                         </div>
                         <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
                         <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>

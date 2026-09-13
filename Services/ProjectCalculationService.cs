@@ -27,8 +27,10 @@ namespace AtharERP_System.Services
 
             var wasCompleted = stage.Status == StageStatus.Completed;
 
-            var totalWeight = stage.Tasks.Sum(t => t.Weight);
-            var completedWeight = stage.Tasks
+            // المهام المحظورة تُستبعد كلياً من الحساب (لا بسط ولا مقام) — لا تعرقل نسبة إنجاز باقي المهام
+            var activeTasks = stage.Tasks.Where(t => t.Status != ProjectTaskStatus.Blocked).ToList();
+            var totalWeight = activeTasks.Sum(t => t.Weight);
+            var completedWeight = activeTasks
                 .Where(t => t.Status == ProjectTaskStatus.Completed)
                 .Sum(t => t.Weight);
 
@@ -36,7 +38,7 @@ namespace AtharERP_System.Services
                 ? Math.Round((completedWeight / totalWeight) * 100, 2)
                 : 0;
 
-            var allStages = await _context.ProjectStages.Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
+            var allStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
             ApplyAutomaticStageStatus(stage, allStages);
 
             await _context.SaveChangesAsync();
@@ -53,7 +55,8 @@ namespace AtharERP_System.Services
         // الحالة التلقائية الكاملة للمرحلة — لا تدخّل يدوي إطلاقاً
         public void ApplyAutomaticStageStatus(ProjectStage stage, IEnumerable<ProjectStage> allProjectStages)
         {
-            if (stage.CompletionPercentage >= 100)
+            // 100% لكن توجد مهمة محظورة معلَّقة — لا تُعتبر مكتملة فعلياً حتى تُحل
+            if (stage.CompletionPercentage >= 100 && !stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
             {
                 stage.Status = StageStatus.Completed;
                 return;
