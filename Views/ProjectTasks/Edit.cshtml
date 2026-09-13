@@ -114,18 +114,6 @@
             }
         </form>
 
-       
-
-        <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
-            <div style="font-size:12px; font-weight:600; margin-bottom:8px;">القيمة التقديرية (يحددها المكلَّف)</div>
-            <form method="post" asp-action="UpdateEstimatedValue" style="display:flex; gap:8px;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-                <input type="number" step="0.01" min="0" name="estimatedValue" value="@Model.EstimatedValue" style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; padding:0 14px;">حفظ القيمة</button>
-            </form>
-        </div>
-
         <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
             <form method="post" asp-action="ToggleBlocked" style="display:inline;">
                 @Html.AntiForgeryToken()

@@ -82,7 +82,7 @@ namespace AtharERP_System.Models.Entities
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "الوزن (% من المرحلة)")]
         public decimal Weight { get; set; }
-        public decimal EstimatedValue { get; set; }
+
 
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "مبلغ المكافأة")]

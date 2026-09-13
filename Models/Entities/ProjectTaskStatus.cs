@@ -12,8 +12,11 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "قيد التنفيذ")]
         InProgress = 2,
 
+        [Display(Name = "قيد المراجعة")]
+        PendingReview = 3,
+
         [Display(Name = "مكتملة")]
-        Completed = 3,
+        Completed = 5,
 
         [Display(Name = "محظورة")]
         Blocked = 4
