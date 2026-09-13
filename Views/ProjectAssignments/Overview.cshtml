@@ -147,7 +147,7 @@ else
                                     : "";
                                 <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
                                     <div style="display:flex; align-items:center; justify-content:space-between;">
-                                        <span style="font-size:11.5px; font-weight:600;">@t.Title</span>
+                                        <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; font-weight:600; color:inherit; text-decoration:underline;">@t.Title</a>
                                         <span class="tag @taskTagClass">@(t.Status == ProjectTaskStatus.PendingReview ? "قيد المراجعة" : t.CompletionPercentage.ToString("N0") + "%")</span>
                                     </div>
                                     @if (t.Todos.Any())
