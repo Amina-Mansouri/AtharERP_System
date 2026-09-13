@@ -80,7 +80,7 @@
                         <div class="cell">@a.CostType</div>
                         <div class="cell">@a.Stage?.Name</div>
                         <div class="cell cell-num">@pct.ToString("N0")%</div>
-                        <div class="cell cell-num">@(a.AgreedDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                        <div class="cell cell-num">-</div>
                         <div class="cell"><span class="tag @StatusTagClass(a.Status)">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
                     </div>
                 }

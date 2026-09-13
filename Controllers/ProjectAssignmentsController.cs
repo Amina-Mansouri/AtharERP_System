@@ -96,7 +96,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CompletedAssignments = assignments.Count(a => a.Status == AssignmentStatus.Completed);
 
             var today = DateTime.UtcNow.Date;
-            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.AgreedDate.HasValue && a.AgreedDate.Value.Date < today);
+            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.Tasks.Any(t => t.DelayDays > 0));
 
             return View(assignments);
         }
@@ -117,14 +117,25 @@ namespace AtharERP_System.Controllers
             return View(assignments);
         }
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
+        private async Task<bool> CanEditAssignmentDatesAsync(ProjectAssignment assignment)
+        {
+            if (await _permissionService.HasPermissionAsync(User, "Projects.Assignments.Edit"))
+                return true;
+            if (!assignment.StageId.HasValue)
+                return false;
+            var stageEngineerId = await _context.ProjectStages
+                .Where(s => s.Id == assignment.StageId.Value)
+                .Select(s => s.AssignedEngineerId)
+                .FirstOrDefaultAsync();
+            return stageEngineerId == CurrentUserId;
+        }
 
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("ProjectId,StageId,CostType,Description,IsUrgent,ReceivedDate,AgreedDate,ActualDate")] ProjectAssignment model,
+       [Bind("ProjectId,StageId,CostType,Description,IsUrgent")] ProjectAssignment model,
     List<string>? engineerIds,
     List<int>? taskIds)
         {
@@ -351,8 +362,7 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }
 
-      
-
+    
         private async Task EnsureTeamMembershipAsync(int projectId, string userId)
         {
             var exists = await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId);

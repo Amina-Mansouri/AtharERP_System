@@ -592,6 +592,7 @@ int id,
 
             task.Status = ProjectTaskStatus.InProgress;
             await _context.SaveChangesAsync();
+            await _calc.RecalculateStageAsync(task.StageId!.Value);
 
             var workerIds = await GetTaskWorkerIdsAsync(task);
             var message = string.IsNullOrWhiteSpace(comment)

@@ -12,6 +12,7 @@
     var canManageAssignments = canEdit || await PermissionService.HasPermissionAsync(User, "Projects.Assignments.Edit");
     var canDelete = !isNew && await PermissionService.HasPermissionAsync(User, "Projects.Delete");
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var stageTemplates = ViewBag.StageTemplates as List<StageTemplate> ?? new List<StageTemplate>();
     var aggregatedTasks = ViewBag.AggregatedSubProjectTasks as List<ProjectTask>;
@@ -460,6 +461,7 @@
                 @foreach (var item in allAssignments)
                 {
                     var a = item.Assignment;
+                    var canEditAssignmentDates = canManageAssignments || item.Stage.AssignedEngineerId == currentUserId;
                     <div class="data-table-row" data-stage="@item.Stage.Id">
                         <div class="cell">
                             @a.CostType
@@ -527,7 +529,7 @@
                             }
                         </div>
                         <div class="cell">
-                            @if (canManageAssignments && !a.IsTransferredToFinance)
+                                                       @if (canManageAssignments && !a.IsTransferredToFinance)
                             {
                                 <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');">
                                     @Html.AntiForgeryToken()
@@ -536,6 +538,8 @@
                             }
                         </div>
                     </div>
+
+                   
                 }
             }
         </div>

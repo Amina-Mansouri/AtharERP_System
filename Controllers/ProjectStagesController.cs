@@ -132,6 +132,10 @@ namespace AtharERP_System.Controllers
                 ActualCost = 0
             };
             _context.ProjectStages.Add(stage);
+            if (stage.AssignedEngineerId != null)
+            {
+                await EnsureTeamMembershipAsync(projectId, stage.AssignedEngineerId);
+            }
             await _context.SaveChangesAsync();
 
             if (selectedTaskIds != null)
@@ -219,6 +223,10 @@ namespace AtharERP_System.Controllers
             stage.Name = model.Name;
             stage.Sequence = model.Sequence;
             stage.AssignedEngineerId = model.AssignedEngineerId;
+            if (!string.IsNullOrEmpty(model.AssignedEngineerId))
+            {
+                await EnsureTeamMembershipAsync(stage.ProjectId, model.AssignedEngineerId);
+            }
             stage.PlannedStartDate = model.PlannedStartDate;
             stage.PlannedEndDate = model.PlannedEndDate;
             stage.ActualDeliveryDate = model.ActualDeliveryDate;
@@ -390,6 +398,20 @@ namespace AtharERP_System.Controllers
 .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
 .ToListAsync();
 
+        }
+        private async Task EnsureTeamMembershipAsync(int projectId, string userId)
+        {
+            var exists = await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId);
+            if (!exists)
+            {
+                _context.ProjectTeamMembers.Add(new ProjectTeamMember
+                {
+                    ProjectId = projectId,
+                    UserId = userId,
+                    Role = TeamRole.Engineer,
+                    JoinedAt = DateTime.UtcNow
+                });
+            }
         }
     }
 }

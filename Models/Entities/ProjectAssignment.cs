@@ -38,17 +38,7 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "عاجل")]
         public bool IsUrgent { get; set; }
 
-        [DataType(DataType.Date)]
-        [Display(Name = "تاريخ الاستلام")]
-        public DateTime? ReceivedDate { get; set; }
-
-        [DataType(DataType.Date)]
-        [Display(Name = "التاريخ المتفق عليه")]
-        public DateTime? AgreedDate { get; set; }
-
-        [DataType(DataType.Date)]
-        [Display(Name = "التاريخ الفعلي")]
-        public DateTime? ActualDate { get; set; }
+       
 
         [Display(Name = "مرحّل إلى المالية")]
         public bool IsTransferredToFinance { get; set; }
