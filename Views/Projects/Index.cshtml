@@ -55,14 +55,19 @@
         <div style="font-size:11px; color:#8a83a0; font-weight:500;">الإدارة</div>
         <div style="font-size:19px; font-weight:600; margin-top:2px;">المشاريع</div>
     </div>
-    <div class="page-head-actions">
-        @if (canCreate)
-        {
-            <a asp-action="Create" class="btn-line btn-line-accent">+ مشروع جديد</a>
-        }
+    <div style="display:flex; align-items:center; gap:12px;">
+        <div style="display:inline-flex; align-items:center; gap:10px; background:#f1eefc; border-radius:12px; padding:8px 16px;">
+            <span style="font-size:12px; font-weight:600; color:#7b6bd6;">إجمالي المشاريع</span>
+            <span style="font-size:18px; font-weight:700; color:#3a3450; font-variant-numeric:tabular-nums;">@totalProjects</span>
+        </div>
+        <div class="page-head-actions">
+            @if (canCreate)
+            {
+                <a asp-action="Create" class="btn-line btn-line-accent">+ مشروع جديد</a>
+            }
+        </div>
     </div>
 </div>
-
 @{
     var otherProjectsCount = totalProjects - inProgressProjects - completedProjects - onHoldProjects - delayedProjects;
     var regularInProgressProjects = inProgressProjects - soonDeliveryProjects;
@@ -78,10 +83,7 @@
 }
 @await Html.PartialAsync("_StatDonutChart", projectSlices)
 
-<div style="display:inline-flex; align-items:center; gap:10px; background:#f1eefc; border-radius:12px; padding:10px 18px; margin-bottom:12px;">
-    <span style="font-size:12px; font-weight:600; color:#7b6bd6;">إجمالي المشاريع</span>
-    <span style="font-size:20px; font-weight:700; color:#3a3450; font-variant-numeric:tabular-nums;">@totalProjects</span>
-</div>
+
 
 <form method="get" class="filter-bar">  
 
