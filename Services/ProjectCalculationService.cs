@@ -156,6 +156,12 @@ namespace AtharERP_System.Services
                         : ProjectTaskStatus.NotStarted;
             }
 
+            if (task.Status == ProjectTaskStatus.PendingReview && oldStatus != ProjectTaskStatus.PendingReview && task.ActualDeliveryDate == null)
+            {
+                task.ActualDeliveryDate = DateTime.UtcNow.Date;
+                UpdateDeliveryMetrics(task);
+            }
+
             await _context.SaveChangesAsync();
 
             if (task.Status != oldStatus)

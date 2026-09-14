@@ -552,8 +552,6 @@ int id,
 
             task.Status = ProjectTaskStatus.Completed;
             task.ReviewComment = comment;
-            task.ActualDeliveryDate = DateTime.UtcNow.Date;
-            _calc.UpdateDeliveryMetrics(task);
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(task.StageId!.Value);
 
