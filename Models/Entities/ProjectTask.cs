@@ -93,6 +93,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تعليق آخر مراجعة")]
         public string? ReviewComment { get; set; }
 
+        [Display(Name = "عدد مرات الرفض")]
+        public int RejectionCount { get; set; }
+
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

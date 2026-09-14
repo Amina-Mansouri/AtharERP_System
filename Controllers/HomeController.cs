@@ -102,6 +102,11 @@ namespace AtharERP_System.Controllers
                 ViewBag.PrivateProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Private);
                 ViewBag.InvestmentProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Investment);
                 ViewBag.UnclassifiedProjects = await _context.Projects.CountAsync(p => p.Type == null);
+
+                ViewBag.LowPriorityProjects = await _context.Projects.CountAsync(p => p.Priority == Priority.Low);
+                ViewBag.NormalPriorityProjects = await _context.Projects.CountAsync(p => p.Priority == Priority.Normal);
+                ViewBag.HighPriorityProjects = await _context.Projects.CountAsync(p => p.Priority == Priority.High);
+                ViewBag.CriticalPriorityProjects = await _context.Projects.CountAsync(p => p.Priority == Priority.Critical);
             }
 
             // ========== الوحدة 02: إدارة المشاريع (لمن يملك ViewAll أو ViewOwn) ==========
@@ -186,6 +191,49 @@ namespace AtharERP_System.Controllers
                 ViewBag.OverdueAssignmentsCount = allAssignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.DelayDays > 0));
                 ViewBag.CompletedAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Completed);
                 ViewBag.CancelledAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Cancelled);
+            }
+
+            // ========== الوحدة 05: تحليلات المراحل (لمن يملك ViewAll أو ViewOwn للمشاريع) ==========
+            ViewBag.CanViewModule05 = canViewProjects;
+
+            if (canViewProjects)
+            {
+                var stagesQuery = _context.ProjectStages.Include(s => s.Project).Include(s => s.Tasks).AsQueryable();
+
+                if (!canViewAllProjects)
+                {
+                    var myProjectIds = await _context.ProjectTeamMembers
+                        .Where(tm => tm.UserId == CurrentUserId)
+                        .Select(tm => tm.ProjectId)
+                        .ToListAsync();
+
+                    stagesQuery = stagesQuery.Where(s => s.Project.CreatedById == CurrentUserId || myProjectIds.Contains(s.ProjectId));
+                }
+
+                var allStagesForAnalytics = await stagesQuery.ToListAsync();
+
+                ViewBag.AvgDurationByStageName = allStagesForAnalytics
+                    .Where(s => s.Status == StageStatus.Completed && s.PlannedStartDate.HasValue && s.ActualDeliveryDate.HasValue)
+                    .GroupBy(s => s.Name)
+                    .Select(g => (Name: g.Key, AvgDays: g.Average(s => (s.ActualDeliveryDate!.Value - s.PlannedStartDate!.Value).TotalDays)))
+                    .OrderByDescending(x => x.AvgDays)
+                    .Take(6)
+                    .ToList();
+
+                ViewBag.MostDelayedStages = allStagesForAnalytics
+                    .Where(s => s.PlannedEndDate.HasValue && s.Status != StageStatus.New)
+                    .Select(s => (StageName: s.Name, ProjectName: s.Project.Name, DelayDays: ((s.ActualDeliveryDate ?? DateTime.UtcNow.Date) - s.PlannedEndDate!.Value).Days))
+                    .Where(x => x.DelayDays > 0)
+                    .OrderByDescending(x => x.DelayDays)
+                    .Take(5)
+                    .ToList();
+
+                ViewBag.MostReworkedStages = allStagesForAnalytics
+                    .Select(s => (StageName: s.Name, ProjectName: s.Project.Name, ReworkCount: s.Tasks.Sum(t => t.RejectionCount)))
+                    .Where(x => x.ReworkCount > 0)
+                    .OrderByDescending(x => x.ReworkCount)
+                    .Take(5)
+                    .ToList();
             }
 
             return View();

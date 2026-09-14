@@ -596,6 +596,7 @@ int id,
             task.Status = ProjectTaskStatus.InProgress;
             task.ReviewComment = comment;
             task.ActualDeliveryDate = null;
+            task.RejectionCount++;
             _calc.UpdateDeliveryMetrics(task);
             await _context.SaveChangesAsync();
             await _calc.RecalculateStageAsync(task.StageId!.Value);
