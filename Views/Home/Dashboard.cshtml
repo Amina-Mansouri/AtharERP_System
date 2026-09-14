@@ -7,6 +7,7 @@
     var canViewModule02 = ViewBag.CanViewModule02 as bool? ?? false;
     var canViewModule03 = ViewBag.CanViewModule03 as bool? ?? false;
     var canViewModule04 = ViewBag.CanViewModule04 as bool? ?? false;
+    var canViewModule05 = ViewBag.CanViewModule05 as bool? ?? false;
     var projectsScopeIsAll = ViewBag.ProjectsScopeIsAll as bool? ?? false;
 }
 
@@ -72,13 +73,32 @@
             ("غير مصنف", unclassifiedProjects, "#ecebf2")
         };
 
-        <div class="side-panel">
-            <div class="side-panel-title">المشاريع حسب القطاع</div>
-            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
-                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">الإجمالي</span>
-                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalSectorProjects</span>
+        int lowPriorityProjects = ViewBag.LowPriorityProjects as int? ?? 0;
+        int normalPriorityProjects = ViewBag.NormalPriorityProjects as int? ?? 0;
+        int highPriorityProjects = ViewBag.HighPriorityProjects as int? ?? 0;
+        int criticalPriorityProjects = ViewBag.CriticalPriorityProjects as int? ?? 0;
+        var prioritySlices = new List<(string Label, int Value, string Color)>
+        {
+            ("منخفضة", lowPriorityProjects, "#8a83a0"),
+            ("عادية", normalPriorityProjects, "#7b6bd6"),
+            ("عالية", highPriorityProjects, "#c9700f"),
+            ("حرجة", criticalPriorityProjects, "#c94a42")
+        };
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div class="side-panel">
+                <div class="side-panel-title">المشاريع حسب القطاع</div>
+                <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
+                    <span style="font-size:11px; font-weight:600; color:#7b6bd6;">الإجمالي</span>
+                    <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalSectorProjects</span>
+                </div>
+                @await Html.PartialAsync("_StatDonutChart", sectorSlices)
             </div>
-            @await Html.PartialAsync("_StatDonutChart", sectorSlices)
+
+            <div class="side-panel">
+                <div class="side-panel-title">المشاريع حسب الأولوية</div>
+                @await Html.PartialAsync("_StatDonutChart", prioritySlices)
+            </div>
         </div>
     }
 
@@ -170,10 +190,78 @@
         </div>
     }
 
-    <div class="side-panel" style="opacity:0.6;">
-        <div class="side-panel-title">إحصائيات المراحل المتقدمة <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
-        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">متوسط مدة إنجاز كل نوع مرحلة، المراحل الأكثر تأخرًا مقارنة بخطتها، ومعدل إعادة العمل (المهام المرفوضة) لكل مرحلة.</p>
-    </div>
+    @if (canViewModule05)
+    {
+        var avgDurationByStage = ViewBag.AvgDurationByStageName as List<(string Name, double AvgDays)> ?? new();
+        var mostDelayedStages = ViewBag.MostDelayedStages as List<(string StageName, string ProjectName, int DelayDays)> ?? new();
+        var mostReworkedStages = ViewBag.MostReworkedStages as List<(string StageName, string ProjectName, int ReworkCount)> ?? new();
+        double maxAvgDays = avgDurationByStage.Any() ? avgDurationByStage.Max(x => x.AvgDays) : 1;
+        int maxDelayDays = mostDelayedStages.Any() ? mostDelayedStages.Max(x => x.DelayDays) : 1;
+        int maxRework = mostReworkedStages.Any() ? mostReworkedStages.Max(x => x.ReworkCount) : 1;
+
+        <div class="side-panel">
+            <div class="side-panel-title">متوسط مدة إنجاز المراحل (حسب الاسم)</div>
+            @if (!avgDurationByStage.Any())
+            {
+                <p class="mb-0">لا توجد بيانات كافية بعد</p>
+            }
+            else
+            {
+                @foreach (var s in avgDurationByStage)
+                {
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
+                        <span>@s.Name</span>
+                        <span class="cell-num">@s.AvgDays.ToString("N0") يوم</span>
+                    </div>
+                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
+                        <span style="width:@((s.AvgDays * 100 / maxAvgDays).ToString("F0"))%"></span>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="side-panel">
+            <div class="side-panel-title">المراحل الأكثر تأخرًا عن خطتها</div>
+            @if (!mostDelayedStages.Any())
+            {
+                <p class="mb-0">لا توجد مراحل متأخرة حالياً</p>
+            }
+            else
+            {
+                @foreach (var s in mostDelayedStages)
+                {
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
+                        <span>@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></span>
+                        <span class="cell-num" style="color:#c94a42;">@s.DelayDays يوم</span>
+                    </div>
+                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
+                        <span style="width:@((s.DelayDays * 100 / maxDelayDays).ToString("F0"))%; background:#c94a42;"></span>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="side-panel">
+            <div class="side-panel-title">المراحل الأكثر إعادة عمل (مهام مرفوضة)</div>
+            @if (!mostReworkedStages.Any())
+            {
+                <p class="mb-0">لا توجد إعادة عمل مسجّلة بعد</p>
+            }
+            else
+            {
+                @foreach (var s in mostReworkedStages)
+                {
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
+                        <span>@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></span>
+                        <span class="cell-num" style="color:#c9700f;">@s.ReworkCount</span>
+                    </div>
+                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
+                        <span style="width:@((s.ReworkCount * 100 / maxRework).ToString("F0"))%; background:#c9700f;"></span>
+                    </div>
+                }
+            }
+        </div>
+    }
 
     <div class="side-panel" style="opacity:0.6;">
         <div class="side-panel-title">إحصائيات المالية <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>

@@ -1,290 +1,32 @@
-﻿@using AtharERP_System.Models.Entities
-@{
-    ViewData["Title"] = "لوحة التحكم";
-    var latestNotifications = ViewBag.LatestNotifications as List<Notification> ?? new List<Notification>();
-
-    var canViewModule01 = ViewBag.CanViewModule01 as bool? ?? false;
-    var canViewModule02 = ViewBag.CanViewModule02 as bool? ?? false;
-    var canViewModule03 = ViewBag.CanViewModule03 as bool? ?? false;
-    var canViewModule04 = ViewBag.CanViewModule04 as bool? ?? false;
-    var canViewModule05 = ViewBag.CanViewModule05 as bool? ?? false;
-    var projectsScopeIsAll = ViewBag.ProjectsScopeIsAll as bool? ?? false;
+﻿@{
+    ViewData["Title"] = "الرئيسية";
 }
 
-<div class="page-head">
-    <div>
-        <span class="kicker">نظرة عامة</span>
-        <h1>لوحة المعلومات</h1>
+<div class="athar-hero">
+    <div class="athar-hero-inner text-center">
+        <h1 class="athar-hero-title">أثر</h1>
+        <p class="athar-hero-subtitle">نظام إدارة المشاريع الهندسية</p>
+        <p class="athar-hero-text">
+            منصة متكاملة لإدارة المشاريع، المواقع، التوريدات، الموارد المالية والبشرية،
+            والعلاقات مع العملاء في مكان واحد.
+        </p>
+
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <div class="mt-4">
+                <p class="athar-hero-welcome">مرحباً بعودتك، @User.Identity.Name</p>
+                <a asp-controller="Home" asp-action="Dashboard" class="btn athar-btn-accent btn-lg me-2">الذهاب إلى لوحة التحكم</a>
+                @if (User.IsInRole("مدير النظام"))
+                {
+                    <a asp-controller="Admin" asp-action="Users" class="btn athar-btn-outline btn-lg">إضافة موظف جديد</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="mt-4">
+                <a asp-controller="Account" asp-action="Login" class="btn athar-btn-accent btn-lg">تسجيل الدخول</a>
+            </div>
+        }
     </div>
-    @if (User.IsInRole("مدير النظام"))
-    {
-        <div class="page-head-actions">
-            <a class="btn-line">تصدير</a>
-            <a asp-controller="Admin" asp-action="Users" class="btn-line btn-line-accent">+ موظف</a>
-        </div>
-    }
 </div>
-
-@if (!canViewModule01 && !canViewModule02 && !canViewModule03 && !canViewModule04)
-{
-    <div class="side-panel"><p class="mb-0">لا توجد إحصائيات لعرضها حسب صلاحياتك الحالية.</p></div>
-}
-
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
-
-    @if (canViewModule01)
-    {
-        <div class="side-panel">
-            <div class="side-panel-title">آخر الإشعارات</div>
-            @if (!latestNotifications.Any())
-            {
-                <p class="mb-0">لا توجد إشعارات بعد</p>
-            }
-            else
-            {
-                @foreach (var n in latestNotifications)
-                {
-                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid var(--sys-row-line);">
-                        <div>
-                            <div style="font-size:11.5px;">@n.Message</div>
-                            <div style="font-size:10.5px; color:var(--sys-text-light); margin-top:2px;">@n.User.FullName · @n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
-                        </div>
-                        @if (!n.IsRead)
-                        {
-                            <span class="tag tag-accent">جديد</span>
-                        }
-                    </div>
-                }
-            }
-        </div>
-
-        int govProjects = ViewBag.GovernmentalProjects as int? ?? 0;
-        int munProjects = ViewBag.MunicipalProjects as int? ?? 0;
-        int privProjects = ViewBag.PrivateProjects as int? ?? 0;
-        int invProjects = ViewBag.InvestmentProjects as int? ?? 0;
-        int unclassifiedProjects = ViewBag.UnclassifiedProjects as int? ?? 0;
-        int totalSectorProjects = govProjects + munProjects + privProjects + invProjects + unclassifiedProjects;
-        var sectorSlices = new List<(string Label, int Value, string Color)>
-        {
-            ("حكومي", govProjects, "#7b6bd6"),
-            ("بلدي", munProjects, "#2f8a57"),
-            ("خاص", privProjects, "#c9700f"),
-            ("استثماري", invProjects, "#8a83a0"),
-            ("غير مصنف", unclassifiedProjects, "#ecebf2")
-        };
-
-        int lowPriorityProjects = ViewBag.LowPriorityProjects as int? ?? 0;
-        int normalPriorityProjects = ViewBag.NormalPriorityProjects as int? ?? 0;
-        int highPriorityProjects = ViewBag.HighPriorityProjects as int? ?? 0;
-        int criticalPriorityProjects = ViewBag.CriticalPriorityProjects as int? ?? 0;
-        var prioritySlices = new List<(string Label, int Value, string Color)>
-        {
-            ("منخفضة", lowPriorityProjects, "#8a83a0"),
-            ("عادية", normalPriorityProjects, "#7b6bd6"),
-            ("عالية", highPriorityProjects, "#c9700f"),
-            ("حرجة", criticalPriorityProjects, "#c94a42")
-        };
-
-        <div style="display:flex; flex-direction:column; gap:12px;">
-            <div class="side-panel">
-                <div class="side-panel-title">المشاريع حسب القطاع</div>
-                <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
-                    <span style="font-size:11px; font-weight:600; color:#7b6bd6;">الإجمالي</span>
-                    <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalSectorProjects</span>
-                </div>
-                @await Html.PartialAsync("_StatDonutChart", sectorSlices)
-            </div>
-
-            <div class="side-panel">
-                <div class="side-panel-title">المشاريع حسب الأولوية</div>
-                @await Html.PartialAsync("_StatDonutChart", prioritySlices)
-            </div>
-        </div>
-    }
-
-    @if (canViewModule02)
-    {
-        int totalProjectsDash = ViewBag.TotalProjects as int? ?? 0;
-        int activeProjectsDash = ViewBag.ActiveProjects as int? ?? 0;
-        int completedProjectsDash = ViewBag.CompletedProjects as int? ?? 0;
-        int otherProjectsDash = totalProjectsDash - activeProjectsDash - completedProjectsDash;
-        var dashProjectSlices = new List<(string Label, int Value, string Color)>
-        {
-            ("قيد التنفيذ", activeProjectsDash, "#7b6bd6"),
-            ("مكتملة", completedProjectsDash, "#2f8a57"),
-            ("أخرى", otherProjectsDash, "#ecebf2")
-        };
-
-        <div class="side-panel">
-            <div class="side-panel-title">إدارة المشاريع @(projectsScopeIsAll ? "" : "(مشاريعك)")</div>
-            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
-                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">@(projectsScopeIsAll ? "إجمالي المشاريع" : "مشاريعي")</span>
-                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalProjectsDash</span>
-            </div>
-            @await Html.PartialAsync("_StatDonutChart", dashProjectSlices)
-        </div>
-    }
-
-    @if (canViewModule03)
-    {
-        int totalSitesDash = ViewBag.TotalSites as int? ?? 0;
-        int activeSitesDash = ViewBag.ActiveSites as int? ?? 0;
-        int onHoldSitesDash = ViewBag.OnHoldSites as int? ?? 0;
-        int completedSitesDash = ViewBag.CompletedSites as int? ?? 0;
-        var siteStatusSlices = new List<(string Label, int Value, string Color)>
-        {
-            ("نشطة", activeSitesDash, "#7b6bd6"),
-            ("متوقفة", onHoldSitesDash, "#c94a42"),
-            ("مكتملة", completedSitesDash, "#2f8a57")
-        };
-
-        int pendingQualityDash = ViewBag.PendingQualityChecks as int? ?? 0;
-        int pendingSupplyDash = ViewBag.PendingSupplyRequests as int? ?? 0;
-        var siteNeedsSlices = new List<(string Label, int Value, string Color)>
-        {
-            ("فحوصات معلقة", pendingQualityDash, "#c9700f"),
-            ("توريد معلق", pendingSupplyDash, "#8a83a0")
-        };
-
-        <div class="side-panel">
-            <div class="side-panel-title">مواقع وعمليات @(projectsScopeIsAll ? "" : "(مواقع مشاريعك)")</div>
-            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
-                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">إجمالي المواقع</span>
-                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalSitesDash</span>
-            </div>
-            @await Html.PartialAsync("_StatDonutChart", siteStatusSlices)
-            @if (pendingQualityDash + pendingSupplyDash > 0)
-            {
-                <div style="margin-top:6px; border-top:1px solid var(--sys-row-line); padding-top:6px;">
-                    <div style="font-size:10.5px; color:var(--sys-text-light); margin-bottom:4px;">الاحتياجات المعلّقة</div>
-                    @await Html.PartialAsync("_StatDonutChart", siteNeedsSlices)
-                </div>
-            }
-        </div>
-    }
-
-    @if (canViewModule04)
-    {
-        int totalAssignmentsDash = ViewBag.TotalAssignments as int? ?? 0;
-        int pendingAssignmentsDash = ViewBag.PendingAssignments as int? ?? 0;
-        int inProgressAssignmentsDash = ViewBag.InProgressAssignments as int? ?? 0;
-        int overdueAssignmentsDash = ViewBag.OverdueAssignmentsCount as int? ?? 0;
-        int completedAssignmentsDash = ViewBag.CompletedAssignments as int? ?? 0;
-        int cancelledAssignmentsDash = ViewBag.CancelledAssignments as int? ?? 0;
-        var dashAssignmentSlices = new List<(string Label, int Value, string Color)>
-        {
-            ("معلقة", pendingAssignmentsDash, "#8a83a0"),
-            ("قيد التنفيذ", inProgressAssignmentsDash, "#7b6bd6"),
-            ("متأخرة", overdueAssignmentsDash, "#c94a42"),
-            ("مكتملة", completedAssignmentsDash, "#2f8a57"),
-            ("ملغاة", cancelledAssignmentsDash, "#ecebf2")
-        };
-
-        <div class="side-panel">
-            <div class="side-panel-title">تكليفات المشاريع</div>
-            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
-                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">إجمالي التكليفات</span>
-                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalAssignmentsDash</span>
-            </div>
-            @await Html.PartialAsync("_StatDonutChart", dashAssignmentSlices)
-        </div>
-    }
-
-    @if (canViewModule05)
-    {
-        var avgDurationByStage = ViewBag.AvgDurationByStageName as List<(string Name, double AvgDays)> ?? new();
-        var mostDelayedStages = ViewBag.MostDelayedStages as List<(string StageName, string ProjectName, int DelayDays)> ?? new();
-        var mostReworkedStages = ViewBag.MostReworkedStages as List<(string StageName, string ProjectName, int ReworkCount)> ?? new();
-        double maxAvgDays = avgDurationByStage.Any() ? avgDurationByStage.Max(x => x.AvgDays) : 1;
-        int maxDelayDays = mostDelayedStages.Any() ? mostDelayedStages.Max(x => x.DelayDays) : 1;
-        int maxRework = mostReworkedStages.Any() ? mostReworkedStages.Max(x => x.ReworkCount) : 1;
-
-        <div class="side-panel">
-            <div class="side-panel-title">متوسط مدة إنجاز المراحل (حسب الاسم)</div>
-            @if (!avgDurationByStage.Any())
-            {
-                <p class="mb-0">لا توجد بيانات كافية بعد</p>
-            }
-            else
-            {
-                @foreach (var s in avgDurationByStage)
-                {
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
-                        <span>@s.Name</span>
-                        <span class="cell-num">@s.AvgDays.ToString("N0") يوم</span>
-                    </div>
-                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
-                        <span style="width:@((s.AvgDays * 100 / maxAvgDays).ToString("F0"))%"></span>
-                    </div>
-                }
-            }
-        </div>
-
-        <div class="side-panel">
-            <div class="side-panel-title">المراحل الأكثر تأخرًا عن خطتها</div>
-            @if (!mostDelayedStages.Any())
-            {
-                <p class="mb-0">لا توجد مراحل متأخرة حالياً</p>
-            }
-            else
-            {
-                @foreach (var s in mostDelayedStages)
-                {
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
-                        <span>@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></span>
-                        <span class="cell-num" style="color:#c94a42;">@s.DelayDays يوم</span>
-                    </div>
-                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
-                        <span style="width:@((s.DelayDays * 100 / maxDelayDays).ToString("F0"))%; background:#c94a42;"></span>
-                    </div>
-                }
-            }
-        </div>
-
-        <div class="side-panel">
-            <div class="side-panel-title">المراحل الأكثر إعادة عمل (مهام مرفوضة)</div>
-            @if (!mostReworkedStages.Any())
-            {
-                <p class="mb-0">لا توجد إعادة عمل مسجّلة بعد</p>
-            }
-            else
-            {
-                @foreach (var s in mostReworkedStages)
-                {
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
-                        <span>@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></span>
-                        <span class="cell-num" style="color:#c9700f;">@s.ReworkCount</span>
-                    </div>
-                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
-                        <span style="width:@((s.ReworkCount * 100 / maxRework).ToString("F0"))%; background:#c9700f;"></span>
-                    </div>
-                }
-            }
-        </div>
-    }
-
-    <div class="side-panel" style="opacity:0.6;">
-        <div class="side-panel-title">إحصائيات المالية <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
-        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">القيمة الإجمالية للعقود، المستحقات المحصّلة والمعلّقة، صافي الربح التقديري لكل مشروع، والفواتير الصادرة والمسددة.</p>
-    </div>
-
-    <div class="side-panel" style="opacity:0.6;">
-        <div class="side-panel-title">إحصائيات الموارد البشرية <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
-        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">نسب الحضور والانصراف، الإجازات النشطة، تقييمات الموظفين الدورية، وتوزيع الموظفين حسب القسم والرتبة.</p>
-    </div>
-
-    <div class="side-panel" style="opacity:0.6;">
-        <div class="side-panel-title">إحصائيات العلاقات العامة <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
-        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">عدد العملاء النشطين، الشكاوى الواردة وحالتها، طلبات التواصل الجديدة، ومؤشر رضا العملاء.</p>
-    </div>
-
-</div>
-
-@if (User.IsInRole("مدير النظام"))
-{
-    <div class="mt-3">
-        <a asp-controller="Admin" asp-action="Users" class="btn-line">إدارة المستخدمين</a>
-        <a asp-controller="Admin" asp-action="Roles" class="btn-line">إدارة الأدوار</a>
-        <a asp-controller="Admin" asp-action="Departments" class="btn-line">إدارة الأقسام</a>
-    </div>
-}
