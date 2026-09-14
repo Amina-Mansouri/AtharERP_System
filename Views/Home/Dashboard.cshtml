@@ -200,10 +200,12 @@
         int maxRework = mostReworkedStages.Any() ? mostReworkedStages.Max(x => x.ReworkCount) : 1;
 
         <div class="side-panel">
-            <div class="side-panel-title">متوسط مدة إنجاز المراحل (حسب الاسم)</div>
+            <div class="side-panel-title">مراحل المشاريع</div>
+
+            <div style="font-size:10.5px; color:var(--sys-text-light); font-weight:600; margin-bottom:4px;">متوسط مدة الإنجاز (حسب اسم المرحلة)</div>
             @if (!avgDurationByStage.Any())
             {
-                <p class="mb-0">لا توجد بيانات كافية بعد</p>
+                <p class="mb-0" style="font-size:11px;">لا توجد بيانات كافية بعد</p>
             }
             else
             {
@@ -218,13 +220,11 @@
                     </div>
                 }
             }
-        </div>
 
-        <div class="side-panel">
-            <div class="side-panel-title">المراحل الأكثر تأخرًا عن خطتها</div>
+            <div style="font-size:10.5px; color:var(--sys-text-light); font-weight:600; margin:10px 0 4px; border-top:1px solid var(--sys-row-line); padding-top:8px;">الأكثر تأخرًا عن الخطة</div>
             @if (!mostDelayedStages.Any())
             {
-                <p class="mb-0">لا توجد مراحل متأخرة حالياً</p>
+                <p class="mb-0" style="font-size:11px;">لا توجد مراحل متأخرة حالياً</p>
             }
             else
             {
@@ -239,13 +239,11 @@
                     </div>
                 }
             }
-        </div>
 
-        <div class="side-panel">
-            <div class="side-panel-title">المراحل الأكثر إعادة عمل (مهام مرفوضة)</div>
+            <div style="font-size:10.5px; color:var(--sys-text-light); font-weight:600; margin:10px 0 4px; border-top:1px solid var(--sys-row-line); padding-top:8px;">الأكثر إعادة عمل (مهام مرفوضة)</div>
             @if (!mostReworkedStages.Any())
             {
-                <p class="mb-0">لا توجد إعادة عمل مسجّلة بعد</p>
+                <p class="mb-0" style="font-size:11px;">لا توجد إعادة عمل مسجّلة بعد</p>
             }
             else
             {
@@ -262,7 +260,6 @@
             }
         </div>
     }
-
     <div class="side-panel" style="opacity:0.6;">
         <div class="side-panel-title">إحصائيات المالية <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
         <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">القيمة الإجمالية للعقود، المستحقات المحصّلة والمعلّقة، صافي الربح التقديري لكل مشروع، والفواتير الصادرة والمسددة.</p>
