@@ -91,12 +91,14 @@ namespace AtharERP_System.Controllers
             var assignments = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
 
             ViewBag.TotalAssignments = assignments.Count;
-            ViewBag.PendingAssignments = assignments.Count(a => a.Status == AssignmentStatus.Pending);
-            ViewBag.InProgressAssignments = assignments.Count(a => a.Status == AssignmentStatus.InProgress);
+            ViewBag.PendingAssignments = assignments.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.DelayDays > 0));
+            ViewBag.InProgressAssignments = assignments.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.DelayDays > 0));
             ViewBag.CompletedAssignments = assignments.Count(a => a.Status == AssignmentStatus.Completed);
+            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.DelayDays > 0));
 
-            var today = DateTime.UtcNow.Date;
-            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.Tasks.Any(t => t.DelayDays > 0));
+            var tasksInScope = assignments.SelectMany(a => a.Tasks).ToList();
+            ViewBag.ReworkCount = tasksInScope.Sum(t => t.RejectionCount);
+            ViewBag.AvgCompletionInScope = tasksInScope.Any() ? Math.Round(tasksInScope.Average(t => t.CompletionPercentage), 1) : 0;
 
             return View(assignments);
         }

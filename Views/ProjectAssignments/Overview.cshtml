@@ -47,15 +47,19 @@ else
     var totalAssignmentsCount = (int)ViewBag.TotalAssignments;
     var pendingAssignmentsCount = (int)ViewBag.PendingAssignments;
     var inProgressAssignmentsCount = (int)ViewBag.InProgressAssignments;
+    var overdueAssignmentsCount = (int)ViewBag.OverdueAssignments;
     var completedAssignmentsCount = (int)ViewBag.CompletedAssignments;
-    var otherAssignmentsCount = totalAssignmentsCount - pendingAssignmentsCount - inProgressAssignmentsCount - completedAssignmentsCount;
+    var otherAssignmentsCount = totalAssignmentsCount - pendingAssignmentsCount - inProgressAssignmentsCount - overdueAssignmentsCount - completedAssignmentsCount;
     var assignmentSlices = new List<(string Label, int Value, string Color)>
     {
         ("معلقة", pendingAssignmentsCount, "#8a83a0"),
         ("قيد التنفيذ", inProgressAssignmentsCount, "#7b6bd6"),
+        ("متأخرة", overdueAssignmentsCount, "#c94a42"),
         ("مكتملة", completedAssignmentsCount, "#2f8a57"),
         ("ملغاة", otherAssignmentsCount, "#ecebf2")
     };
+    var reworkCountInScope = (int)ViewBag.ReworkCount;
+    var avgCompletionInScope = (decimal)ViewBag.AvgCompletionInScope;
 
     <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
         <div style="display:inline-block;">
@@ -64,8 +68,9 @@ else
     </div>
 
     <div class="stat-strip stat-strip-text">
-        <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@ViewBag.TotalAssignments</span></div>
-        <div class="stat-item"><span class="kicker">متأخرة (بند متأخر بداخلها)</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
+        <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@totalAssignmentsCount</span></div>
+        <div class="stat-item"><span class="kicker">متوسط نسبة الإنجاز @(selectedStageId.HasValue ? "(المرحلة)" : "(المشروع)")</span><span class="stat-value">@avgCompletionInScope.ToString("N1")%</span></div>
+        <div class="stat-item"><span class="kicker">معدل إعادة العمل @(selectedStageId.HasValue ? "(المرحلة)" : "(المشروع)")</span><span class="stat-value" style="color:#c9700f;">@reworkCountInScope</span></div>
     </div>
 
     <div style="display:flex; gap:6px; margin-bottom:12px;">

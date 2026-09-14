@@ -56,9 +56,11 @@ namespace AtharERP_System.Controllers
             ViewBag.CompletedStages = stages.Count(s => s.Status == StageStatus.Completed);
             ViewBag.InProgressStages = stages.Count(s => s.Status == StageStatus.InProgress);
             ViewBag.DelayedStages = stages.Count(s => s.Status == StageStatus.Delayed);
-            ViewBag.WeightSum = stages.Sum(s => s.Weight);
-            ViewBag.AvgCompletion = stages.Any() ? Math.Round(stages.Average(s => s.CompletionPercentage), 1) : 0;
-
+            var totalStageWeight = stages.Sum(s => s.Weight);
+            ViewBag.WeightSum = totalStageWeight;
+            ViewBag.WeightedCompletion = totalStageWeight > 0
+                ? Math.Round(stages.Sum(s => s.Weight * s.CompletionPercentage) / totalStageWeight, 1)
+                : 0;
             return View(stages);
         }
 
