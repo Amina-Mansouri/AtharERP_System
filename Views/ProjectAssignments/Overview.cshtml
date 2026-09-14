@@ -57,6 +57,12 @@ else
         ("ملغاة", otherAssignmentsCount, "#ecebf2")
     };
 
+    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+        <div style="display:inline-block;">
+            @await Html.PartialAsync("_StatDonutChart", assignmentSlices)
+        </div>
+    </div>
+
     <div class="stat-strip stat-strip-text">
         <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@ViewBag.TotalAssignments</span></div>
         <div class="stat-item"><span class="kicker">متأخرة (بند متأخر بداخلها)</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
