@@ -98,9 +98,7 @@
     <form method="post" asp-controller="Account" asp-action="Login">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-        <input type="hidden" name="latitude" id="loginLatitude" />
-        <input type="hidden" name="longitude" id="loginLongitude" />
-
+   
         <div class="field">
             <label>البريد الإلكتروني</label>
             <input type="email" name="email" required autofocus style="direction:ltr; text-align:right;" />
@@ -135,13 +133,3 @@
     </form>
 </div>
 
-@section Scripts {
-    <script>
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(pos) {
-                document.getElementById('loginLatitude').value = pos.coords.latitude;
-                document.getElementById('loginLongitude').value = pos.coords.longitude;
-            });
-        }
-    </script>
-}
