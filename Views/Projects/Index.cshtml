@@ -78,13 +78,12 @@
 }
 @await Html.PartialAsync("_StatDonutChart", projectSlices)
 
-<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:2px;">
-    <div style="background:#f1eefc; color:#7b6bd6; font-weight:700; font-size:13px; padding:8px 16px; border-radius:10px; display:flex; align-items:center; gap:6px; white-space:nowrap;">
-        <span style="font-size:15px;">@totalProjects</span>
-        <span style="font-size:11px; font-weight:500; color:#8a83a0;">مشروع</span>
-    </div>
+<div style="display:inline-flex; align-items:center; gap:10px; background:#f1eefc; border-radius:12px; padding:10px 18px; margin-bottom:12px;">
+    <span style="font-size:12px; font-weight:600; color:#7b6bd6;">إجمالي المشاريع</span>
+    <span style="font-size:20px; font-weight:700; color:#3a3450; font-variant-numeric:tabular-nums;">@totalProjects</span>
+</div>
 
-    <form method="get" class="filter-bar" style="flex:1; margin-bottom:0;">
+<form method="get" class="filter-bar">  
 
     <input type="text" name="search" class="filter-search" placeholder="الكود أو الاسم…" value="@search" />
 

@@ -68,8 +68,6 @@ else
         <div class="stat-item"><span class="kicker">متأخرة (بند متأخر بداخلها)</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
     </div>
 
-    @await Html.PartialAsync("_StatDonutChart", assignmentSlices)
-
     <div style="display:flex; gap:6px; margin-bottom:12px;">
         @{
             var tabs = new (string Key, string Label)[]
