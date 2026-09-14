@@ -98,7 +98,7 @@
             </a>
             @if (currentUser != null)
             {
-                <div class="ds-user-chip">
+                <a asp-controller="Profile" asp-action="Index" class="ds-user-chip" style="text-decoration:none; color:inherit; cursor:pointer;">
                     <div class="ds-user-text">
                         <span class="ds-user-name">@currentUser.FullName</span>
                         <span class="ds-role">@(currentRole ?? currentUser.Email)</span>
@@ -111,7 +111,7 @@
                     {
                         <div class="ds-avatar-placeholder">@(currentUser.FirstName.Length > 0 ? currentUser.FirstName.Substring(0, 1) : "")@(currentUser.LastName.Length > 0 ? currentUser.LastName.Substring(0, 1) : "")</div>
                     }
-                </div>
+                </a>
             }
             else
             {
