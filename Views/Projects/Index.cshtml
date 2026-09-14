@@ -65,12 +65,21 @@
 
 <div class="stat-strip stat-strip-text">
     <div class="stat-item"><span class="kicker">الإجمالي</span><span class="stat-value">@totalProjects</span></div>
-    <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@inProgressProjects</span></div>
-    <div class="stat-item"><span class="kicker">المنجزة</span><span class="stat-value">@completedProjects</span></div>
-    <div class="stat-item"><span class="kicker">متوقفة أو مؤجلة</span><span class="stat-value">@onHoldProjects</span></div>
     <div class="stat-item"><span class="kicker">اقترب تسليمها</span><span class="stat-value" style="color:#c9700f;">@soonDeliveryProjects</span></div>
-    <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@delayedProjects</span></div>
 </div>
+
+@{
+    var otherProjectsCount = totalProjects - inProgressProjects - completedProjects - onHoldProjects - delayedProjects;
+    var projectSlices = new List<(string Label, int Value, string Color)>
+    {
+        ("قيد التنفيذ", inProgressProjects, "#7b6bd6"),
+        ("منجزة", completedProjects, "#2f8a57"),
+        ("متوقفة أو مؤجلة", onHoldProjects, "#8a83a0"),
+        ("متأخرة", delayedProjects, "#c94a42"),
+        ("أخرى (جديد/ملغى)", otherProjectsCount, "#ecebf2")
+    };
+}
+@await Html.PartialAsync("_StatDonutChart", projectSlices)
 
 <form method="get" class="filter-bar">
     <input type="text" name="search" class="filter-search" placeholder="الكود أو الاسم…" value="@search" />

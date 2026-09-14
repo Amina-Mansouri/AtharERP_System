@@ -1,0 +1,36 @@
+﻿@model List<(string Label, int Value, string Color)>
+@{
+    var total = Model.Sum(s => s.Value);
+    const int radius = 40;
+    var circumference = 2 * Math.PI * radius;
+    decimal cumulative = 0;
+}
+<div style="display:flex; align-items:center; gap:16px; padding:10px 0;">
+    <svg width="100" height="100" viewBox="0 0 100 100" style="transform:rotate(-90deg); flex-shrink:0;">
+        <circle cx="50" cy="50" r="@radius" fill="none" stroke="#f1f0f6" stroke-width="14" />
+        @if (total > 0)
+        {
+            foreach (var slice in Model.Where(s => s.Value > 0))
+            {
+                var fraction = (decimal)slice.Value / total;
+                var dash = fraction * (decimal)circumference;
+                var gap = (decimal)circumference - dash;
+                var offset = -(cumulative * (decimal)circumference);
+                cumulative += fraction;
+                var dashArray = dash.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " " + gap.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                var dashOffset = offset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                <circle cx="50" cy="50" r="@radius" fill="none" stroke="@slice.Color" stroke-width="14" stroke-dasharray="@dashArray" stroke-dashoffset="@dashOffset" />
+            }
+        }
+    </svg>
+    <div style="display:grid; gap:5px;">
+        @foreach (var slice in Model)
+        {
+            <div style="display:flex; align-items:center; gap:6px; font-size:11px;">
+                <span style="width:10px; height:10px; border-radius:3px; background:@slice.Color; display:inline-block; flex-shrink:0;"></span>
+                <span style="color:#8a83a0;">@slice.Label</span>
+                <span style="font-weight:600;">@slice.Value</span>
+            </div>
+        }
+    </div>
+</div>

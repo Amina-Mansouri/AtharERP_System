@@ -44,13 +44,25 @@
 }
 else
 {
+    var totalAssignmentsCount = (int)ViewBag.TotalAssignments;
+    var pendingAssignmentsCount = (int)ViewBag.PendingAssignments;
+    var inProgressAssignmentsCount = (int)ViewBag.InProgressAssignments;
+    var completedAssignmentsCount = (int)ViewBag.CompletedAssignments;
+    var otherAssignmentsCount = totalAssignmentsCount - pendingAssignmentsCount - inProgressAssignmentsCount - completedAssignmentsCount;
+    var assignmentSlices = new List<(string Label, int Value, string Color)>
+    {
+        ("معلقة", pendingAssignmentsCount, "#8a83a0"),
+        ("قيد التنفيذ", inProgressAssignmentsCount, "#7b6bd6"),
+        ("مكتملة", completedAssignmentsCount, "#2f8a57"),
+        ("ملغاة", otherAssignmentsCount, "#ecebf2")
+    };
+
     <div class="stat-strip stat-strip-text">
         <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@ViewBag.TotalAssignments</span></div>
-        <div class="stat-item"><span class="kicker">معلقة</span><span class="stat-value">@ViewBag.PendingAssignments</span></div>
-        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressAssignments</span></div>
-        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedAssignments</span></div>
-        <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
+        <div class="stat-item"><span class="kicker">متأخرة (بند متأخر بداخلها)</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
     </div>
+
+    @await Html.PartialAsync("_StatDonutChart", assignmentSlices)
 
     <div style="display:flex; gap:6px; margin-bottom:12px;">
         @{

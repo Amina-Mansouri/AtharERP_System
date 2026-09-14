@@ -37,14 +37,27 @@
 }
 else
 {
-    <div class="stat-strip stat-strip-text">
+      <div class="stat-strip stat-strip-text">
         <div class="stat-item"><span class="kicker">عدد المراحل</span><span class="stat-value">@ViewBag.TotalStages</span></div>
-        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedStages</span></div>
-        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressStages</span></div>
-        <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.DelayedStages</span></div>
         <div class="stat-item"><span class="kicker">مجموع الأوزان</span><span class="stat-value">@(((decimal)ViewBag.WeightSum).ToString("N0"))%</span></div>
         <div class="stat-item"><span class="kicker">متوسط الإنجاز</span><span class="stat-value">@(((decimal)ViewBag.AvgCompletion).ToString("N1"))%</span></div>
     </div>
+
+    @{
+        var totalStagesCount = (int)ViewBag.TotalStages;
+        var completedStagesCount = (int)ViewBag.CompletedStages;
+        var inProgressStagesCount = (int)ViewBag.InProgressStages;
+        var delayedStagesCount = (int)ViewBag.DelayedStages;
+        var notStartedStagesCount = totalStagesCount - completedStagesCount - inProgressStagesCount - delayedStagesCount;
+        var stageSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("لم تبدأ", notStartedStagesCount, "#8a83a0"),
+            ("قيد التنفيذ", inProgressStagesCount, "#7b6bd6"),
+            ("مكتملة", completedStagesCount, "#2f8a57"),
+            ("متأخرة", delayedStagesCount, "#c94a42")
+        };
+    }
+    @await Html.PartialAsync("_StatDonutChart", stageSlices)
 
     <div class="data-table" style="--cols: 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 84px">
         <div class="data-table-head">
