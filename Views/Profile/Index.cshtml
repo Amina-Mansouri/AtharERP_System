@@ -46,7 +46,7 @@
         <div class="side-panel-title">الصورة الشخصية</div>
         <form asp-controller="Profile" asp-action="UpdatePhoto" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
-            <input type="file" name="profilePhoto" accept="image/*" style="width:100%; font-size:11.5px; margin-bottom:10px;" />
+            <input type="file" name="profilePhoto" accept="image/*" style="width:100%; font-size:12.5px; font-family:inherit; margin-bottom:10px;" />
             <button type="submit" class="btn-line btn-line-accent">حفظ الصورة</button>
         </form>
     </div>
@@ -55,10 +55,19 @@
         <div class="side-panel-title">تغيير كلمة المرور</div>
         <form asp-controller="Profile" asp-action="ChangePassword" method="post">
             @Html.AntiForgeryToken()
-            <div style="display:grid; gap:8px; margin-bottom:10px;">
-                <input type="password" name="currentPassword" class="filter-search" style="width:100%;" placeholder="كلمة المرور الحالية" required />
-                <input type="password" name="newPassword" class="filter-search" style="width:100%;" placeholder="كلمة المرور الجديدة" required />
-                <input type="password" name="confirmPassword" class="filter-search" style="width:100%;" placeholder="تأكيد كلمة المرور الجديدة" required />
+            <div style="display:grid; gap:10px; margin-bottom:10px;">
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">كلمة المرور الحالية</div>
+                    <input type="password" name="currentPassword" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">كلمة المرور الجديدة</div>
+                    <input type="password" name="newPassword" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">تأكيد كلمة المرور الجديدة</div>
+                    <input type="password" name="confirmPassword" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                </div>
             </div>
             <button type="submit" class="btn-line btn-line-accent">تغيير كلمة المرور</button>
         </form>
