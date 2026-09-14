@@ -8,10 +8,11 @@ function initAtharLocationPicker(options) {
         coordsDisplayId,
         searchInputId,
         radiusInputId,
+        useMyLocationButtonId,
         initialLat,
         initialLng,
-        defaultLat = 32.8872,   // طرابلس، ليبيا كموقع افتراضي
-        defaultLng = 13.1913,
+        defaultLat = 32.1167,   // بنغازي، ليبيا كموقع افتراضي
+        defaultLng = 20.0667,
         defaultZoom = 12
     } = options;
 
@@ -117,6 +118,41 @@ function initAtharLocationPicker(options) {
     } else if (coordsDisplayId) {
         const el = document.getElementById(coordsDisplayId);
         if (el) el.textContent = 'المتصفح لا يدعم تحديد الموقع تلقائياً — حددي الموقع يدوياً بالنقر على الخريطة أو بالبحث عن عنوان';
+    }
+
+    if (useMyLocationButtonId) {
+        const useMyLocationBtn = document.getElementById(useMyLocationButtonId);
+        if (useMyLocationBtn) {
+            useMyLocationBtn.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    if (coordsDisplayId) {
+                        const el = document.getElementById(coordsDisplayId);
+                        if (el) el.textContent = 'المتصفح لا يدعم تحديد الموقع تلقائياً';
+                    }
+                    return;
+                }
+                const originalText = useMyLocationBtn.textContent;
+                useMyLocationBtn.disabled = true;
+                useMyLocationBtn.textContent = 'جارٍ تحديد موقعك...';
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    map.setView([lat, lng], 16);
+                    placeMarker(lat, lng);
+                    updateFields(lat, lng);
+                    suggestRadius(pos.coords.accuracy);
+                    useMyLocationBtn.disabled = false;
+                    useMyLocationBtn.textContent = originalText;
+                }, function (err) {
+                    useMyLocationBtn.disabled = false;
+                    useMyLocationBtn.textContent = originalText;
+                    if (coordsDisplayId) {
+                        const el = document.getElementById(coordsDisplayId);
+                        if (el) el.textContent = 'تعذّر تحديد موقعك الحالي: ' + ((err && err.message) ? err.message : 'تم رفض الإذن');
+                    }
+                });
+            });
+        }
     }
 
     setTimeout(function () {
