@@ -75,9 +75,17 @@ namespace AtharERP_System.Controllers
             ViewBag.AvgCompletion = myTasks.Any() ? Math.Round(myTasks.Average(t => t.CompletionPercentage), 0) : 0;
             ViewBag.MyAssignmentsList = activeAssignments;
             ViewBag.OpenTasks = openTasks;
-            ViewBag.EarlyDays = myTasks.Sum(t => t.EarlyDeliveryDays);
-            ViewBag.DelayDays = myTasks.Sum(t => t.DelayDays);
             ViewBag.CompletedAssignmentsCount = myAssignments.Count(a => a.Status == AssignmentStatus.Completed);
+
+            var completedTasks = myTasks.Where(t => t.Status == ProjectTaskStatus.Completed).ToList();
+            ViewBag.EarlyDeliveryRate = completedTasks.Any() ? Math.Round(completedTasks.Count(t => t.EarlyDeliveryDays > 0) * 100m / completedTasks.Count, 0) : 0;
+            ViewBag.DelayRate = completedTasks.Any() ? Math.Round(completedTasks.Count(t => t.DelayDays > 0) * 100m / completedTasks.Count, 0) : 0;
+
+            ViewBag.DesignedArea = myAssignments
+                .Where(a => a.Status == AssignmentStatus.Completed && a.Stage != null)
+                .Select(a => a.Stage!)
+                .Distinct()
+                .Sum(s => s.Area ?? 0);
 
             return View();
         }
