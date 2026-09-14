@@ -85,32 +85,23 @@ namespace AtharERP_System.Controllers
         [Authorize]
         public async Task<IActionResult> Dashboard()
         {
-            // ========== الوحدة 01: الهوية والصلاحيات (لمن يملك Users.View فقط) ==========
+            // ========== الوحدة 01: نظرة عامة على الشركة (لمن يملك Users.View فقط) ==========
             bool canViewUsers = await _permissionService.HasPermissionAsync(User, "Users.View");
             ViewBag.CanViewModule01 = canViewUsers;
 
             if (canViewUsers)
             {
-                ViewBag.TotalUsers = await _userManager.Users.CountAsync();
-                ViewBag.ActiveUsers = await _userManager.Users.CountAsync(u => u.IsActive);
-                ViewBag.TotalRoles = await _roleManager.Roles.CountAsync();
-                ViewBag.TotalDepartments = await _context.Departments.CountAsync(d => d.IsActive);
-
-                ViewBag.LatestUsers = await _userManager.Users
-                    .Include(u => u.Department)
-                    .OrderByDescending(u => u.CreatedAt)
-                    .Take(5)
+                ViewBag.LatestNotifications = await _context.Notifications
+                    .Include(n => n.User)
+                    .OrderByDescending(n => n.CreatedAt)
+                    .Take(8)
                     .ToListAsync();
 
-                var deptCounts = await _context.Departments
-                    .Where(d => d.IsActive)
-                    .Select(d => new { d.Name, Count = d.Users.Count(u => u.IsActive) })
-                    .OrderByDescending(d => d.Count)
-                    .ToListAsync();
-
-                ViewBag.DepartmentDistribution = deptCounts
-                    .Select(d => new KeyValuePair<string, int>(d.Name, d.Count))
-                    .ToList();
+                ViewBag.GovernmentalProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Governmental);
+                ViewBag.MunicipalProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Municipal);
+                ViewBag.PrivateProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Private);
+                ViewBag.InvestmentProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Investment);
+                ViewBag.UnclassifiedProjects = await _context.Projects.CountAsync(p => p.Type == null);
             }
 
             // ========== الوحدة 02: إدارة المشاريع (لمن يملك ViewAll أو ViewOwn) ==========
@@ -137,10 +128,6 @@ namespace AtharERP_System.Controllers
                 ViewBag.TotalProjects = await projectsQuery.CountAsync();
                 ViewBag.ActiveProjects = await projectsQuery.CountAsync(p => p.Status == ProjectStatus.InProgress);
                 ViewBag.CompletedProjects = await projectsQuery.CountAsync(p => p.Status == ProjectStatus.Completed);
-
-                ViewBag.MyActiveTasks = await _context.TaskAssignees
-                    .Where(a => a.UserId == CurrentUserId && a.Task.Status != ProjectTaskStatus.Completed)
-                    .CountAsync();
             }
 
             // ========== الوحدة 03: إدارة المواقع (لمن يملك Sites.View) ==========
@@ -165,10 +152,40 @@ namespace AtharERP_System.Controllers
 
                 ViewBag.TotalSites = siteIds.Count;
                 ViewBag.ActiveSites = await sitesQuery.CountAsync(s => s.Status == SiteStatus.Active);
+                ViewBag.OnHoldSites = await sitesQuery.CountAsync(s => s.Status == SiteStatus.OnHold);
+                ViewBag.CompletedSites = await sitesQuery.CountAsync(s => s.Status == SiteStatus.Completed);
                 ViewBag.PendingQualityChecks = await _context.SiteQualityChecks
                     .CountAsync(q => siteIds.Contains(q.SiteId) && !q.IsApproved);
                 ViewBag.PendingSupplyRequests = await _context.SiteSupplyRequests
                     .CountAsync(r => siteIds.Contains(r.SiteId) && r.Status == SiteSupplyStatus.Pending);
+            }
+
+            // ========== الوحدة 04: تكليفات المشاريع (لمن يملك Projects.Assignments.View) ==========
+            bool canViewAssignments = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
+            ViewBag.CanViewModule04 = canViewAssignments;
+
+            if (canViewAssignments)
+            {
+                var assignmentsQuery = _context.ProjectAssignments.Include(a => a.Tasks).AsQueryable();
+
+                if (!canViewAllProjects)
+                {
+                    var myProjectIds = await _context.ProjectTeamMembers
+                        .Where(tm => tm.UserId == CurrentUserId)
+                        .Select(tm => tm.ProjectId)
+                        .ToListAsync();
+
+                    assignmentsQuery = assignmentsQuery.Where(a => a.Project.CreatedById == CurrentUserId || myProjectIds.Contains(a.ProjectId));
+                }
+
+                var allAssignments = await assignmentsQuery.ToListAsync();
+
+                ViewBag.TotalAssignments = allAssignments.Count;
+                ViewBag.PendingAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.DelayDays > 0));
+                ViewBag.InProgressAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.DelayDays > 0));
+                ViewBag.OverdueAssignmentsCount = allAssignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.DelayDays > 0));
+                ViewBag.CompletedAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Completed);
+                ViewBag.CancelledAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Cancelled);
             }
 
             return View();

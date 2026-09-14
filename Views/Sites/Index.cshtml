@@ -37,23 +37,36 @@
     }
 </div>
 
-<div class="stat-strip stat-strip-text">
-    <div class="stat-item"><span class="kicker">مواقع نشطة</span><span class="stat-value">@ViewBag.ActiveCount</span></div>
-    <div class="stat-item"><span class="kicker">بانتظار ربط مقاول</span><span class="stat-value">@ViewBag.AwaitingResponsibleCount</span></div>
-    <div class="stat-item"><span class="kicker">تقارير اليوم الناقصة</span><span class="stat-value" style="color:#c9700f;">@ViewBag.MissingTodayReportCount</span></div>
-    <div class="stat-item"><span class="kicker">احتياجات معلّقة</span><span class="stat-value">@ViewBag.PendingNeedsCount</span></div>
-    <div class="stat-item"><span class="kicker">متوقفة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OnHoldCount</span></div>
+@{
+    var siteSlices = new List<(string Label, int Value, string Color)>
+    {
+        ("نشطة", (int)ViewBag.ActiveCount, "#7b6bd6"),
+        ("متوقفة", (int)ViewBag.OnHoldCount, "#c94a42"),
+        ("مكتملة", (int)ViewBag.CompletedCount, "#2f8a57")
+    };
+}
+<div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-bottom:10px;">
+    @await Html.PartialAsync("_StatDonutChart", siteSlices)
+    <div class="stat-strip stat-strip-text" style="flex:1; min-width:260px;">
+        <div class="stat-item"><span class="kicker">بانتظار ربط مقاول</span><span class="stat-value">@ViewBag.AwaitingResponsibleCount</span></div>
+        <div class="stat-item"><span class="kicker">تقارير اليوم الناقصة</span><span class="stat-value" style="color:#c9700f;">@ViewBag.MissingTodayReportCount</span></div>
+        <div class="stat-item"><span class="kicker">احتياجات معلّقة</span><span class="stat-value">@ViewBag.PendingNeedsCount</span></div>
+    </div>
 </div>
 
-<form method="get" asp-action="Index" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-    <input type="text" name="search" value="@search" class="form-control" style="max-width:280px;" placeholder="ابحث بالرمز أو اسم الموقع أو المشروع..." />
-    <select name="status" class="form-select" style="max-width:160px;">
+<form method="get" asp-action="Index" class="filter-bar">
+    <input type="text" name="search" value="@search" class="filter-search" placeholder="ابحث بالرمز أو اسم الموقع أو المشروع..." />
+    <select name="status" class="filter-chip" onchange="this.form.submit()">
         <option value="">-- كل الحالات --</option>
         <option value="Active" selected="@(status == SiteStatus.Active)">نشط</option>
         <option value="OnHold" selected="@(status == SiteStatus.OnHold)">متوقف</option>
         <option value="Completed" selected="@(status == SiteStatus.Completed)">مكتمل</option>
     </select>
     <button type="submit" class="btn-line">بحث</button>
+    @if (!string.IsNullOrEmpty(search) || status.HasValue)
+    {
+        <a asp-action="Index" class="filter-clear">مسح التصفية</a>
+    }
 </form>
 
 <div class="data-table" style="--cols: 82px 1.3fr 92px 158px 122px 92px 100px 84px 78px 74px;">

@@ -18,10 +18,23 @@
         </form>
     </div>
 
-    <div class="stat-strip stat-strip-text">
-        <div class="stat-item"><span class="kicker">مواقعي</span><span class="stat-value">@Model.Count</span></div>
-        <div class="stat-item"><span class="kicker">مواقع نشطة</span><span class="stat-value">@Model.Count(sa => sa.Site.Status == SiteStatus.Active)</span></div>
-        <div class="stat-item"><span class="kicker">مواقع مكتملة</span><span class="stat-value">@Model.Count(sa => sa.Site.Status == SiteStatus.Completed)</span></div>
+    @{
+        var myActiveSites = Model.Count(sa => sa.Site.Status == SiteStatus.Active);
+        var myCompletedSites = Model.Count(sa => sa.Site.Status == SiteStatus.Completed);
+        var myOnHoldSites = Model.Count - myActiveSites - myCompletedSites;
+        var mySiteSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("نشطة", myActiveSites, "#7b6bd6"),
+            ("مكتملة", myCompletedSites, "#2f8a57"),
+            ("متوقفة", myOnHoldSites, "#c94a42")
+        };
+    }
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px;">
+        <div style="display:inline-flex; align-items:center; gap:10px; background:#f1eefc; border-radius:12px; padding:8px 16px;">
+            <span style="font-size:12px; font-weight:600; color:#7b6bd6;">مواقعي</span>
+            <span style="font-size:18px; font-weight:700; color:#3a3450;">@Model.Count</span>
+        </div>
+        @await Html.PartialAsync("_StatDonutChart", mySiteSlices)
     </div>
 
     <div class="data-table" style="--cols: 90px 1.3fr 110px 1fr 90px;">

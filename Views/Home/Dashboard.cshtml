@@ -1,19 +1,18 @@
 ﻿@using AtharERP_System.Models.Entities
 @{
     ViewData["Title"] = "لوحة التحكم";
-    var latestUsers = ViewBag.LatestUsers as List<ApplicationUser> ?? new List<ApplicationUser>();
-    var deptDistribution = ViewBag.DepartmentDistribution as List<KeyValuePair<string, int>> ?? new List<KeyValuePair<string, int>>();
-    var maxDept = deptDistribution.Any() ? deptDistribution.Max(d => d.Value) : 1;
+    var latestNotifications = ViewBag.LatestNotifications as List<Notification> ?? new List<Notification>();
 
     var canViewModule01 = ViewBag.CanViewModule01 as bool? ?? false;
     var canViewModule02 = ViewBag.CanViewModule02 as bool? ?? false;
     var canViewModule03 = ViewBag.CanViewModule03 as bool? ?? false;
+    var canViewModule04 = ViewBag.CanViewModule04 as bool? ?? false;
     var projectsScopeIsAll = ViewBag.ProjectsScopeIsAll as bool? ?? false;
 }
 
 <div class="page-head">
     <div>
-        <span class="kicker">الصلاحيات والمصادقة</span>
+        <span class="kicker">نظرة عامة</span>
         <h1>لوحة المعلومات</h1>
     </div>
     @if (User.IsInRole("مدير النظام"))
@@ -25,101 +24,173 @@
     }
 </div>
 
-@if (!canViewModule01 && !canViewModule02 && !canViewModule03)
+@if (!canViewModule01 && !canViewModule02 && !canViewModule03 && !canViewModule04)
 {
     <div class="side-panel"><p class="mb-0">لا توجد إحصائيات لعرضها حسب صلاحياتك الحالية.</p></div>
 }
 
-@if (canViewModule01)
-{
-    <div class="stat-strip">
-        <div class="stat-item"><span class="kicker">المستخدمون</span><span class="stat-value">@ViewBag.TotalUsers</span></div>
-        <div class="stat-item"><span class="kicker">النشطون</span><span class="stat-value">@ViewBag.ActiveUsers</span></div>
-        <div class="stat-item"><span class="kicker">الأدوار</span><span class="stat-value">@ViewBag.TotalRoles</span></div>
-        <div class="stat-item"><span class="kicker">الصلاحيات</span><span class="stat-value">@ViewBag.TotalPermissions</span></div>
-        <div class="stat-item"><span class="kicker">الأقسام</span><span class="stat-value">@ViewBag.TotalDepartments</span></div>
-    </div>
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
 
-    <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:12px; margin-bottom:16px;">
-        <div class="data-table" style="--cols: 1fr 120px 90px 70px">
-            <div class="data-table-head">
-                <div class="cell">الاسم</div>
-                <div class="cell">القسم</div>
-                <div class="cell">الرتبة</div>
-                <div class="cell">الحالة</div>
-            </div>
-            @if (!latestUsers.Any())
+    @if (canViewModule01)
+    {
+        <div class="side-panel">
+            <div class="side-panel-title">آخر الإشعارات</div>
+            @if (!latestNotifications.Any())
             {
-                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد مستخدمون بعد</div></div>
+                <p class="mb-0">لا توجد إشعارات بعد</p>
             }
             else
             {
-                @foreach (var u in latestUsers)
+                @foreach (var n in latestNotifications)
                 {
-                    <div class="data-table-row">
-                        <div class="cell">@u.FullName</div>
-                        <div class="cell">@(u.Department?.Name ?? "-")</div>
-                        <div class="cell">@u.Rank</div>
-                        <div class="cell">
-                            @if (u.IsActive)
-                            {
-                                <span class="tag tag-accent">نشط</span>
-                            }
-                            else
-                            {
-                                <span class="tag">غير نشط</span>
-                            }
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid var(--sys-row-line);">
+                        <div>
+                            <div style="font-size:11.5px;">@n.Message</div>
+                            <div style="font-size:10.5px; color:var(--sys-text-light); margin-top:2px;">@n.User.FullName · @n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
                         </div>
+                        @if (!n.IsRead)
+                        {
+                            <span class="tag tag-accent">جديد</span>
+                        }
                     </div>
                 }
             }
         </div>
+
+        int govProjects = ViewBag.GovernmentalProjects as int? ?? 0;
+        int munProjects = ViewBag.MunicipalProjects as int? ?? 0;
+        int privProjects = ViewBag.PrivateProjects as int? ?? 0;
+        int invProjects = ViewBag.InvestmentProjects as int? ?? 0;
+        int unclassifiedProjects = ViewBag.UnclassifiedProjects as int? ?? 0;
+        int totalSectorProjects = govProjects + munProjects + privProjects + invProjects + unclassifiedProjects;
+        var sectorSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("حكومي", govProjects, "#7b6bd6"),
+            ("بلدي", munProjects, "#2f8a57"),
+            ("خاص", privProjects, "#c9700f"),
+            ("استثماري", invProjects, "#8a83a0"),
+            ("غير مصنف", unclassifiedProjects, "#ecebf2")
+        };
 
         <div class="side-panel">
-            <div class="side-panel-title">التوزيع على الأقسام</div>
-            @if (!deptDistribution.Any())
+            <div class="side-panel-title">المشاريع حسب القطاع</div>
+            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">الإجمالي</span>
+                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalSectorProjects</span>
+            </div>
+            @await Html.PartialAsync("_StatDonutChart", sectorSlices)
+        </div>
+    }
+
+    @if (canViewModule02)
+    {
+        int totalProjectsDash = ViewBag.TotalProjects as int? ?? 0;
+        int activeProjectsDash = ViewBag.ActiveProjects as int? ?? 0;
+        int completedProjectsDash = ViewBag.CompletedProjects as int? ?? 0;
+        int otherProjectsDash = totalProjectsDash - activeProjectsDash - completedProjectsDash;
+        var dashProjectSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("قيد التنفيذ", activeProjectsDash, "#7b6bd6"),
+            ("مكتملة", completedProjectsDash, "#2f8a57"),
+            ("أخرى", otherProjectsDash, "#ecebf2")
+        };
+
+        <div class="side-panel">
+            <div class="side-panel-title">إدارة المشاريع @(projectsScopeIsAll ? "" : "(مشاريعك)")</div>
+            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">@(projectsScopeIsAll ? "إجمالي المشاريع" : "مشاريعي")</span>
+                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalProjectsDash</span>
+            </div>
+            @await Html.PartialAsync("_StatDonutChart", dashProjectSlices)
+        </div>
+    }
+
+    @if (canViewModule03)
+    {
+        int totalSitesDash = ViewBag.TotalSites as int? ?? 0;
+        int activeSitesDash = ViewBag.ActiveSites as int? ?? 0;
+        int onHoldSitesDash = ViewBag.OnHoldSites as int? ?? 0;
+        int completedSitesDash = ViewBag.CompletedSites as int? ?? 0;
+        var siteStatusSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("نشطة", activeSitesDash, "#7b6bd6"),
+            ("متوقفة", onHoldSitesDash, "#c94a42"),
+            ("مكتملة", completedSitesDash, "#2f8a57")
+        };
+
+        int pendingQualityDash = ViewBag.PendingQualityChecks as int? ?? 0;
+        int pendingSupplyDash = ViewBag.PendingSupplyRequests as int? ?? 0;
+        var siteNeedsSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("فحوصات معلقة", pendingQualityDash, "#c9700f"),
+            ("توريد معلق", pendingSupplyDash, "#8a83a0")
+        };
+
+        <div class="side-panel">
+            <div class="side-panel-title">مواقع وعمليات @(projectsScopeIsAll ? "" : "(مواقع مشاريعك)")</div>
+            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">إجمالي المواقع</span>
+                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalSitesDash</span>
+            </div>
+            @await Html.PartialAsync("_StatDonutChart", siteStatusSlices)
+            @if (pendingQualityDash + pendingSupplyDash > 0)
             {
-                <p class="mb-0">لا توجد بيانات بعد</p>
-            }
-            else
-            {
-                @foreach (var d in deptDistribution)
-                {
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
-                        <span>@d.Key</span>
-                        <span class="cell-num">@d.Value</span>
-                    </div>
-                    <div class="progress-hair" style="height:4px; margin-bottom:8px;">
-                        <span style="width:@(d.Value * 100 / maxDept)%"></span>
-                    </div>
-                }
-                <a asp-controller="Admin" asp-action="Departments" class="btn-line btn-line-accent" style="margin-top:6px;">عرض الأقسام الـ@ViewBag.TotalDepartments</a>
+                <div style="margin-top:6px; border-top:1px solid var(--sys-row-line); padding-top:6px;">
+                    <div style="font-size:10.5px; color:var(--sys-text-light); margin-bottom:4px;">الاحتياجات المعلّقة</div>
+                    @await Html.PartialAsync("_StatDonutChart", siteNeedsSlices)
+                </div>
             }
         </div>
-    </div>
-}
+    }
 
-@if (canViewModule02)
-{
-    <div class="kicker" style="margin-top:8px;">إدارة المشاريع @(projectsScopeIsAll ? "" : "(مشاريعك)")</div>
-    <div class="stat-strip">
-        <div class="stat-item"><span class="kicker">@(projectsScopeIsAll ? "إجمالي المشاريع" : "مشاريعي")</span><span class="stat-value">@ViewBag.TotalProjects</span></div>
-        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.ActiveProjects</span></div>
-        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value">@ViewBag.CompletedProjects</span></div>
-        <div class="stat-item"><span class="kicker">مهامي النشطة</span><span class="stat-value">@ViewBag.MyActiveTasks</span></div>
-    </div>
-}
+    @if (canViewModule04)
+    {
+        int totalAssignmentsDash = ViewBag.TotalAssignments as int? ?? 0;
+        int pendingAssignmentsDash = ViewBag.PendingAssignments as int? ?? 0;
+        int inProgressAssignmentsDash = ViewBag.InProgressAssignments as int? ?? 0;
+        int overdueAssignmentsDash = ViewBag.OverdueAssignmentsCount as int? ?? 0;
+        int completedAssignmentsDash = ViewBag.CompletedAssignments as int? ?? 0;
+        int cancelledAssignmentsDash = ViewBag.CancelledAssignments as int? ?? 0;
+        var dashAssignmentSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("معلقة", pendingAssignmentsDash, "#8a83a0"),
+            ("قيد التنفيذ", inProgressAssignmentsDash, "#7b6bd6"),
+            ("متأخرة", overdueAssignmentsDash, "#c94a42"),
+            ("مكتملة", completedAssignmentsDash, "#2f8a57"),
+            ("ملغاة", cancelledAssignmentsDash, "#ecebf2")
+        };
 
-@if (canViewModule03)
-{
-    <div class="kicker" style="margin-top:8px;">المواقع والعمليات @(projectsScopeIsAll ? "" : "(مواقع مشاريعك)")</div>
-    <div class="stat-strip">
-        <div class="stat-item"><span class="kicker">إجمالي المواقع</span><span class="stat-value">@ViewBag.TotalSites</span></div>
-        <div class="stat-item"><span class="kicker">مواقع نشطة</span><span class="stat-value">@ViewBag.ActiveSites</span></div>
-        <div class="stat-item"><span class="kicker">فحوصات معلقة</span><span class="stat-value">@ViewBag.PendingQualityChecks</span></div>
-        <div class="stat-item"><span class="kicker">توريد معلق</span><span class="stat-value">@ViewBag.PendingSupplyRequests</span></div>
+        <div class="side-panel">
+            <div class="side-panel-title">تكليفات المشاريع</div>
+            <div style="display:inline-flex; align-items:center; gap:8px; background:#f1eefc; border-radius:10px; padding:6px 14px; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:600; color:#7b6bd6;">إجمالي التكليفات</span>
+                <span style="font-size:15px; font-weight:700; color:#3a3450;">@totalAssignmentsDash</span>
+            </div>
+            @await Html.PartialAsync("_StatDonutChart", dashAssignmentSlices)
+        </div>
+    }
+
+    <div class="side-panel" style="opacity:0.6;">
+        <div class="side-panel-title">إحصائيات المراحل المتقدمة <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
+        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">متوسط مدة إنجاز كل نوع مرحلة، المراحل الأكثر تأخرًا مقارنة بخطتها، ومعدل إعادة العمل (المهام المرفوضة) لكل مرحلة.</p>
     </div>
-}
+
+    <div class="side-panel" style="opacity:0.6;">
+        <div class="side-panel-title">إحصائيات المالية <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
+        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">القيمة الإجمالية للعقود، المستحقات المحصّلة والمعلّقة، صافي الربح التقديري لكل مشروع، والفواتير الصادرة والمسددة.</p>
+    </div>
+
+    <div class="side-panel" style="opacity:0.6;">
+        <div class="side-panel-title">إحصائيات الموارد البشرية <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
+        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">نسب الحضور والانصراف، الإجازات النشطة، تقييمات الموظفين الدورية، وتوزيع الموظفين حسب القسم والرتبة.</p>
+    </div>
+
+    <div class="side-panel" style="opacity:0.6;">
+        <div class="side-panel-title">إحصائيات العلاقات العامة <span class="tag" style="margin-inline-start:6px;">قريباً</span></div>
+        <p class="mb-0" style="font-size:11.5px; color:var(--sys-text-light);">عدد العملاء النشطين، الشكاوى الواردة وحالتها، طلبات التواصل الجديدة، ومؤشر رضا العملاء.</p>
+    </div>
+
+</div>
 
 @if (User.IsInRole("مدير النظام"))
 {

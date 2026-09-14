@@ -87,7 +87,7 @@ namespace AtharERP_System.Controllers
             ViewBag.MissingTodayReportCount = sites.Count(s => s.Status == SiteStatus.Active && !sitesWithTodayReport.Contains(s.Id));
             ViewBag.PendingNeedsCount = pendingNeedsBySite.Values.Sum();
             ViewBag.OnHoldCount = sites.Count(s => s.Status == SiteStatus.OnHold);
-
+            ViewBag.CompletedCount = sites.Count(s => s.Status == SiteStatus.Completed);
             return View(sites);
         }
 
