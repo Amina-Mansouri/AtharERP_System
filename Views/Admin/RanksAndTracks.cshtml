@@ -1,0 +1,188 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<CareerTrack>
+@{
+    ViewData["Title"] = "الرتب والمسارات";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">الصلاحيات والمصادقة</span>
+        <h1>الرتب والمسارات</h1>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-line btn-line-accent" onclick="openTrackModal()">+ مسار جديد</button>
+    </div>
+</div>
+
+@foreach (var track in Model)
+{
+    <div class="side-panel" style="margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div class="side-panel-title" style="margin-bottom:0;">
+                @track.NameAr <span class="tag">@track.Code</span>
+                @if (!string.IsNullOrEmpty(track.NameEn))
+                {
+                    <span class="stat-sub">(@track.NameEn)</span>
+                }
+            </div>
+            <div style="display:flex; gap:6px;">
+                <button type="button" class="btn-line" style="font-size:11px; padding:4px 10px;"
+                        onclick='openTrackModal(@track.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(track.Code)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(track.NameAr)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(track.NameEn)), @track.DisplayOrder)'>
+                    تعديل
+                </button>
+                <form method="post" asp-action="DeleteTrack" asp-route-id="@track.Id" onsubmit="return confirm('حذف هذا المسار؟')" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-line" style="font-size:11px; padding:4px 10px; color:#c94a42;">حذف</button>
+                </form>
+                <button type="button" class="btn-line btn-line-accent" style="font-size:11px; padding:4px 10px;" onclick="openRankModal(null, @track.Id)">+ رتبة</button>
+            </div>
+        </div>
+
+        @if (!track.Ranks.Any())
+        {
+            <div class="stat-sub">لا توجد رتب في هذا المسار بعد</div>
+        }
+        else
+        {
+            <div class="data-table" style="--cols: 70px minmax(0,1fr) minmax(0,1fr) 110px 90px 130px">
+                <div class="data-table-head">
+                    <div class="cell">الرمز</div>
+                    <div class="cell">بالعربي</div>
+                    <div class="cell">بالإنجليزي</div>
+                    <div class="cell cell-num">الراتب الأساسي</div>
+                    <div class="cell cell-num">الترتيب</div>
+                    <div class="cell"></div>
+                </div>
+                @foreach (var rank in track.Ranks.OrderBy(r => r.DisplayOrder))
+                {
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@rank.Code</div>
+                        <div class="cell">@rank.NameAr</div>
+                        <div class="cell">@(rank.NameEn ?? "-")</div>
+                        <div class="cell cell-num">@(rank.BaseSalary?.ToString("N0") ?? "-")</div>
+                        <div class="cell cell-num">@rank.DisplayOrder</div>
+                        <div class="cell" style="display:flex; gap:6px;">
+                            <a href="#" style="font-size:11px;"
+                               onclick='openRankModal(@rank.Id, @rank.CareerTrackId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.Code)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.NameAr)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.NameEn)), @rank.DisplayOrder, @(rank.BaseSalary?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null")); return false;'>
+                                تعديل
+                            </a>
+                            <form method="post" asp-action="DeleteRank" asp-route-id="@rank.Id" onsubmit="return confirm('حذف هذه الرتبة؟')" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" style="font-size:11px; color:#c94a42; background:none; border:none; padding:0;">حذف</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<div class="modal fade" id="trackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="trackForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="track-id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="track-modal-title">مسار جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرمز (مثال: E)</div>
+                        <input type="text" name="code" id="track-code" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم المسار بالعربي</div>
+                        <input type="text" name="nameAr" id="track-nameAr" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم الإنجليزي</div>
+                        <input type="text" name="nameEn" id="track-nameEn" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">ترتيب العرض</div>
+                        <input type="number" name="displayOrder" id="track-displayOrder" value="0" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="rankModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="rankForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="rank-id" />
+                <input type="hidden" name="careerTrackId" id="rank-trackId" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rank-modal-title">رتبة جديدة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرمز (مثال: E2)</div>
+                        <input type="text" name="code" id="rank-code" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم الرتبة بالعربي</div>
+                        <input type="text" name="nameAr" id="rank-nameAr" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم الإنجليزي</div>
+                        <input type="text" name="nameEn" id="rank-nameEn" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الراتب الأساسي (اختياري)</div>
+                        <input type="number" step="0.01" name="baseSalary" id="rank-baseSalary" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">ترتيب العرض</div>
+                        <input type="number" name="displayOrder" id="rank-displayOrder" value="0" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openTrackModal(id, code, nameAr, nameEn, displayOrder) {
+            const form = document.getElementById('trackForm');
+            const isEdit = id !== undefined && id !== null;
+            form.action = isEdit ? '@Url.Action("EditTrack")' : '@Url.Action("CreateTrack")';
+            document.getElementById('track-id').value = id ?? '';
+            document.getElementById('track-code').value = code ?? '';
+            document.getElementById('track-nameAr').value = nameAr ?? '';
+            document.getElementById('track-nameEn').value = nameEn ?? '';
+            document.getElementById('track-displayOrder').value = displayOrder ?? 0;
+            document.getElementById('track-modal-title').textContent = isEdit ? 'تعديل مسار' : 'مسار جديد';
+            new bootstrap.Modal(document.getElementById('trackModal')).show();
+        }
+
+        function openRankModal(id, trackId, code, nameAr, nameEn, displayOrder, baseSalary) {
+            const form = document.getElementById('rankForm');
+            const isEdit = id !== undefined && id !== null;
+            form.action = isEdit ? '@Url.Action("EditRank")' : '@Url.Action("CreateRank")';
+            document.getElementById('rank-id').value = id ?? '';
+            document.getElementById('rank-trackId').value = trackId ?? '';
+            document.getElementById('rank-code').value = code ?? '';
+            document.getElementById('rank-nameAr').value = nameAr ?? '';
+            document.getElementById('rank-nameEn').value = nameEn ?? '';
+            document.getElementById('rank-displayOrder').value = displayOrder ?? 0;
+            document.getElementById('rank-baseSalary').value = baseSalary ?? '';
+            document.getElementById('rank-modal-title').textContent = isEdit ? 'تعديل رتبة' : 'رتبة جديدة';
+            new bootstrap.Modal(document.getElementById('rankModal')).show();
+        }
+    </script>
+}

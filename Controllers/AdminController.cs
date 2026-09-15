@@ -731,7 +731,159 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = "تم حذف القسم بنجاح";
             return RedirectToAction("Departments");
         }
+        // ============================================
+        // إدارة المسارات والرتب (CareerTrack / JobRank)
+        // ============================================
 
+        [HttpGet]
+        public async Task<IActionResult> RanksAndTracks()
+        {
+            var tracks = await _context.CareerTracks
+                .Include(t => t.Ranks)
+                .OrderBy(t => t.DisplayOrder)
+                .ToListAsync();
+
+            return View(tracks);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTrack(string code, string nameAr, string? nameEn, int displayOrder)
+        {
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nameAr))
+            {
+                TempData["Error"] = "الرمز واسم المسار مطلوبان";
+                return RedirectToAction("RanksAndTracks");
+            }
+
+            _context.CareerTracks.Add(new CareerTrack { Code = code.Trim(), NameAr = nameAr.Trim(), NameEn = nameEn, DisplayOrder = displayOrder });
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة مسار", "CareerTrack", code, $"إنشاء مسار {nameAr}");
+            TempData["Success"] = $"تم إنشاء المسار {nameAr} بنجاح";
+            return RedirectToAction("RanksAndTracks");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditTrack(int id, string code, string nameAr, string? nameEn, int displayOrder)
+        {
+            var track = await _context.CareerTracks.FindAsync(id);
+            if (track == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nameAr))
+            {
+                TempData["Error"] = "الرمز واسم المسار مطلوبان";
+                return RedirectToAction("RanksAndTracks");
+            }
+
+            track.Code = code.Trim();
+            track.NameAr = nameAr.Trim();
+            track.NameEn = nameEn;
+            track.DisplayOrder = displayOrder;
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل مسار", "CareerTrack", id.ToString(), $"تعديل مسار {track.NameAr}");
+            TempData["Success"] = $"تم تحديث المسار {track.NameAr} بنجاح";
+            return RedirectToAction("RanksAndTracks");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTrack(int id)
+        {
+            var track = await _context.CareerTracks.Include(t => t.Ranks).FirstOrDefaultAsync(t => t.Id == id);
+            if (track == null) return NotFound();
+
+            if (track.Ranks.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف المسار لوجود رتب مرتبطة به";
+                return RedirectToAction("RanksAndTracks");
+            }
+
+            var deletedName = track.NameAr;
+            _context.CareerTracks.Remove(track);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف مسار", "CareerTrack", id.ToString(), $"حذف مسار {deletedName}");
+            TempData["Success"] = "تم حذف المسار بنجاح";
+            return RedirectToAction("RanksAndTracks");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateRank(int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary)
+        {
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nameAr))
+            {
+                TempData["Error"] = "الرمز واسم الرتبة مطلوبان";
+                return RedirectToAction("RanksAndTracks");
+            }
+
+            _context.JobRanks.Add(new JobRank
+            {
+                CareerTrackId = careerTrackId,
+                Code = code.Trim(),
+                NameAr = nameAr.Trim(),
+                NameEn = nameEn,
+                DisplayOrder = displayOrder,
+                BaseSalary = baseSalary
+            });
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة رتبة", "JobRank", code, $"إنشاء رتبة {nameAr}");
+            TempData["Success"] = $"تم إنشاء الرتبة {nameAr} بنجاح";
+            return RedirectToAction("RanksAndTracks");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditRank(int id, int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary)
+        {
+            var rank = await _context.JobRanks.FindAsync(id);
+            if (rank == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nameAr))
+            {
+                TempData["Error"] = "الرمز واسم الرتبة مطلوبان";
+                return RedirectToAction("RanksAndTracks");
+            }
+
+            rank.CareerTrackId = careerTrackId;
+            rank.Code = code.Trim();
+            rank.NameAr = nameAr.Trim();
+            rank.NameEn = nameEn;
+            rank.DisplayOrder = displayOrder;
+            rank.BaseSalary = baseSalary;
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل رتبة", "JobRank", id.ToString(), $"تعديل رتبة {rank.NameAr}");
+            TempData["Success"] = $"تم تحديث الرتبة {rank.NameAr} بنجاح";
+            return RedirectToAction("RanksAndTracks");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRank(int id)
+        {
+            var rank = await _context.JobRanks.FindAsync(id);
+            if (rank == null) return NotFound();
+
+            var hasEmployees = await _userManager.Users.AnyAsync(u => u.JobRankId == id);
+            if (hasEmployees)
+            {
+                TempData["Error"] = "لا يمكن حذف الرتبة لوجود موظفين مرتبطين بها";
+                return RedirectToAction("RanksAndTracks");
+            }
+
+            var deletedName = rank.NameAr;
+            _context.JobRanks.Remove(rank);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف رتبة", "JobRank", id.ToString(), $"حذف رتبة {deletedName}");
+            TempData["Success"] = "تم حذف الرتبة بنجاح";
+            return RedirectToAction("RanksAndTracks");
+        }
         // ============================================
         // دالة مساعدة
         // ============================================

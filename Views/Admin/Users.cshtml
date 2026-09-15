@@ -88,8 +88,11 @@
                     </button>
                 </div>
             </div>
-                       <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسار الوظيفي</div>
+                                 <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">المسار الوظيفي</span>
+                    <a asp-action="RanksAndTracks" target="_blank" style="font-size:10px;">+ إدارة الرتب والمسارات</a>
+                </div>
                 <select id="users-modal-track-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
                     <option value="">-- اختر مسارًا --</option>
                     @foreach (var ct in trackOptions)
