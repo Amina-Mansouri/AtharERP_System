@@ -12,6 +12,16 @@
     var trackLabel = Model.JobRankRef?.CareerTrack?.NameAr ?? "-";
     var contractRange = (Model.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-") + " → " + (Model.ContractEndDate?.ToString("yyyy-MM-dd") ?? "مفتوح");
     int? daysToExpiry = Model.ContractEndDate.HasValue ? (int?)(Model.ContractEndDate.Value.Date - DateTime.UtcNow.Date).Days : null;
+
+    var roles = ViewBag.RoleOptions as List<string> ?? new List<string>();
+    var currentRole = ViewBag.CurrentRole as string;
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var careerTracks = ViewBag.CareerTracks as List<CareerTrack> ?? new List<CareerTrack>();
+    var jobRanks = ViewBag.JobRanks as List<JobRank> ?? new List<JobRank>();
+    var currentDept = departments.FirstOrDefault(d => d.Id == Model.DepartmentId);
+    int? currentTopId = currentDept == null ? (int?)null : (currentDept.ParentDepartmentId ?? currentDept.Id);
+    var initialLat = Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
+    var initialLng = Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
 }
 
 <div class="profile-head">
@@ -33,7 +43,13 @@
             @Html.AntiForgeryToken()
             <button type="submit" class="btn-line">@(Model.IsActive ? "تعطيل الحساب" : "تفعيل الحساب")</button>
         </form>
-        <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn-line btn-line-accent">تعديل</a>
+        <div class="tab-pane fade show active" id="pane-data">
+            <p><strong>البريد الإلكتروني:</strong> @Model.Email</p>
+            <p><strong>رقم الهاتف:</strong> @(Model.PhoneNumber ?? "-")</p>
+            <p><strong>رقم أقرب الأقارب:</strong> @(Model.NextOfKinPhone ?? "-")</p>
+            <p><strong>المسؤوليات:</strong> @(Model.Responsibilities ?? "-")</p>
+            <p><strong>آخر دخول:</strong> @(Model.LastLogin?.ToString("yyyy-MM-dd HH:mm") ?? "لم يسجل بعد")</p>
+        </div>
     </div>
 </div>
 
@@ -71,11 +87,165 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
 
 <div class="tab-content">
     <div class="tab-pane fade show active" id="pane-data">
-        <p><strong>البريد الإلكتروني:</strong> @Model.Email</p>
-        <p><strong>رقم الهاتف:</strong> @(Model.PhoneNumber ?? "-")</p>
-        <p><strong>رقم أقرب الأقارب:</strong> @(Model.NextOfKinPhone ?? "-")</p>
-        <p><strong>المسؤوليات:</strong> @(Model.Responsibilities ?? "-")</p>
-        <p><strong>آخر دخول:</strong> @(Model.LastLogin?.ToString("yyyy-MM-dd HH:mm") ?? "لم يسجل بعد")</p>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button type="button" id="userDataEditBtn" class="btn-line" onclick="enableUserDataEdit()">تعديل</button>
+        </div>
+        <form method="post" asp-action="EditUser" asp-route-id="@Model.Id" enctype="multipart/form-data" id="userDataForm" style="display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
+            @Html.AntiForgeryToken()
+
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم <span style="color:#e35d54;">*</span></div>
+                <input type="text" name="FirstName" required value="@Model.FirstName" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اللقب <span style="color:#e35d54;">*</span></div>
+                <input type="text" name="LastName" required value="@Model.LastName" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">رقم أقرب الأقارب</div>
+                <input type="text" name="NextOfKinPhone" value="@Model.NextOfKinPhone" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">البريد الإلكتروني</div>
+                <input type="email" value="@Model.Email" disabled style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#f1f0f6; padding:0 11px; font-size:12.5px; font-family:inherit; direction:ltr; text-align:right;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرقم الوظيفي</div>
+                <input type="text" name="JobNumber" value="@Model.JobNumber" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">رقم الهاتف</div>
+                <input type="tel" name="PhoneNumber" value="@Model.PhoneNumber" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">المسار الوظيفي</span>
+                    <a asp-action="RanksAndTracks" target="_blank" style="font-size:10px;">+ إدارة الرتب والمسارات</a>
+                </div>
+                <select id="edituser-track-select" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختر مسارًا --</option>
+                    @foreach (var ct in careerTracks)
+                    {
+                        <option value="@ct.Id" selected="@(Model.JobRankRef?.CareerTrackId == ct.Id)">@ct.NameAr</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
+                <select name="JobRankId" id="edituser-rank-select" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    @foreach (var jr in jobRanks)
+                    {
+                        <option value="@jr.Id" data-track="@jr.CareerTrackId" selected="@(Model.JobRankId == jr.Id)">@jr.Code - @jr.NameAr (@jr.NameEn)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">الإدارة</span>
+                    <a asp-action="Departments" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                </div>
+                <select id="edit-dept-parent" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختر الإدارة --</option>
+                    @foreach (var top in departments.Where(x => x.ParentDepartmentId == null))
+                    {
+                        <option value="@top.Id" selected="@(top.Id == currentTopId)">@top.Name</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">القسم</span>
+                    <a asp-action="Departments" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                </div>
+                <select name="DepartmentId" id="edit-dept-child" required disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    @foreach (var top in departments.Where(x => x.ParentDepartmentId == null))
+                    {
+                        <option value="@top.Id" data-group="@top.Id" selected="@(top.Id == Model.DepartmentId)" style="display:@(top.Id == currentTopId ? "block" : "none")">(الإدارة مباشرة) @top.Name</option>
+                        @foreach (var child in departments.Where(x => x.ParentDepartmentId == top.Id))
+                        {
+                            <option value="@child.Id" data-group="@top.Id" selected="@(child.Id == Model.DepartmentId)" style="display:@(top.Id == currentTopId ? "block" : "none")">@child.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">الدور</span>
+                    <a asp-action="Roles" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                </div>
+                <select name="role" required disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    @foreach (var r in roles)
+                    {
+                        <option value="@r" selected="@(r == currentRole)">@r</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الراتب التعاقدي</div>
+                <input type="number" step="0.01" min="0" name="ContractSalary" value="@Model.ContractSalary" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">بداية العقد</div>
+                <input type="date" name="ContractStartDate" value="@(Model.ContractStartDate?.ToString("yyyy-MM-dd"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نهاية العقد</div>
+                <input type="date" name="ContractEndDate" value="@(Model.ContractEndDate?.ToString("yyyy-MM-dd"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الصورة الشخصية</div>
+                @if (!string.IsNullOrEmpty(Model.ProfilePhotoPath))
+                {
+                    <img src="@Model.ProfilePhotoPath" alt="" style="max-width:60px; max-height:60px; border-radius:6px; display:block; margin-bottom:5px;" />
+                }
+                <input type="file" name="profilePhoto" accept="image/*" disabled class="proj-editable" style="width:100%; font-size:11.5px;" />
+            </div>
+            <div style="grid-column:span 2;">
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">صورة العقد</div>
+                @if (!string.IsNullOrEmpty(Model.ContractImagePath))
+                {
+                    <div style="font-size:10.5px; margin-bottom:5px;">
+                        <a href="@Model.ContractImagePath" target="_blank">عرض العقد الحالي</a>
+                        <span style="color:#8a83a0;"> — اختاري ملفاً أدناه لاستبدالها</span>
+                    </div>
+                }
+                <input type="file" name="contractImage" accept="image/*,application/pdf" disabled class="proj-editable" style="width:100%; font-size:11.5px;" />
+            </div>
+
+            <div style="grid-column:span 2;">
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">موقع الحضور المتوقع</div>
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <input type="text" id="edituser-address-search" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" disabled class="proj-editable" style="flex:1; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    <button type="button" id="edituser-use-my-location" disabled class="proj-editable" style="height:34px; padding:0 14px; border:1px solid #7b6bd6; border-radius:8px; background:#fff; color:#7b6bd6; font-size:11.5px; font-weight:600; white-space:nowrap;">📍 موقعي الحالي</button>
+                </div>
+                <div id="edituser-map" style="direction:ltr; height:220px; width:100%; border-radius:8px; border:1px solid #e4e2ec;"></div>
+                <div id="edituser-coords-display" style="font-size:10.5px; color:#8a83a0; margin-top:6px;">
+                    @(Model.ExpectedLatitude.HasValue && Model.ExpectedLongitude.HasValue
+                        ? $"الإحداثيات المختارة: {Model.ExpectedLatitude.Value:F6}, {Model.ExpectedLongitude.Value:F6}"
+                        : "لم يتم تحديد موقع بعد")
+                </div>
+                <input type="hidden" id="ExpectedLocationName" name="ExpectedLocationName" value="@Model.ExpectedLocationName" />
+                <input type="hidden" id="ExpectedLatitude" name="ExpectedLatitude" value="@(Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                <input type="hidden" id="ExpectedLongitude" name="ExpectedLongitude" value="@(Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                <div style="margin-top:8px; max-width:220px;">
+                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نصف القطر المسموح (متر)</div>
+                    <input type="number" min="1" name="AllowedRadiusMeters" id="AllowedRadiusMeters" value="@Model.AllowedRadiusMeters" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسؤوليات</div>
+                <p class="stat-sub">@(Model.Responsibilities ?? "-")</p>
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">آخر دخول</div>
+                <p class="stat-sub">@(Model.LastLogin?.ToString("yyyy-MM-dd HH:mm") ?? "لم يسجل بعد")</p>
+            </div>
+
+            <div style="grid-column:span 2;">
+                <button type="submit" id="userDataSaveBtn" hidden style="height:36px; padding:0 20px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
+            </div>
+        </form>
     </div>
 
     <div class="tab-pane fade" id="pane-permissions">
@@ -197,3 +367,48 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="~/js/location-picker.js" asp-append-version="true"></script>
+    <script src="~/js/rank-track-picker.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initAtharRankTrackPicker('edituser-track-select', 'edituser-rank-select');
+
+            var deptParentSelect = document.getElementById('edit-dept-parent');
+            var deptChildSelect = document.getElementById('edit-dept-child');
+            deptParentSelect.addEventListener('change', function () {
+                var groupId = this.value;
+                Array.from(deptChildSelect.options).forEach(function (opt) {
+                    opt.style.display = (opt.getAttribute('data-group') === groupId) ? '' : 'none';
+                });
+                deptChildSelect.value = groupId || '';
+            });
+
+            initAtharLocationPicker({
+                mapId: 'edituser-map',
+                searchInputId: 'edituser-address-search',
+                useMyLocationButtonId: 'edituser-use-my-location',
+                latInputId: 'ExpectedLatitude',
+                lngInputId: 'ExpectedLongitude',
+                nameInputId: 'ExpectedLocationName',
+                coordsDisplayId: 'edituser-coords-display',
+                radiusInputId: 'AllowedRadiusMeters',
+                initialLat: @initialLat,
+                initialLng: @initialLng
+            });
+        });
+
+        function enableUserDataEdit() {
+            document.querySelectorAll('#userDataForm .proj-editable').forEach(function (el) { el.disabled = false; });
+            document.getElementById('userDataEditBtn').hidden = true;
+            document.getElementById('userDataSaveBtn').hidden = false;
+        }
+    </script>
+}

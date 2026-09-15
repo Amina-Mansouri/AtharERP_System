@@ -39,17 +39,29 @@
         <div style="font-size:11px; color:#8a83a0; font-weight:500;">الإدارة</div>
         <div style="font-size:19px; font-weight:600; margin-top:2px;">إدارة الموظفين</div>
     </div>
-    <div class="page-head-actions">
+       <div class="page-head-actions">
+        <div style="display:inline-flex; align-items:center; gap:10px; background:#f1eefc; border-radius:12px; padding:8px 16px;">
+            <span style="font-size:12px; font-weight:600; color:#7b6bd6;">إجمالي الموظفين</span>
+            <span style="font-size:18px; font-weight:700; color:#3a3450; font-variant-numeric:tabular-nums;">@totalEmployees</span>
+        </div>
         <a asp-action="CreateUser" class="btn-line btn-line-accent">+ موظف جديد</a>
     </div>
 </div>
 
-<div class="stat-strip stat-strip-text">
-    <div class="stat-item"><span class="kicker">الإجمالي</span><span class="stat-value">@totalEmployees</span></div>
-    <div class="stat-item"><span class="kicker">نشط</span><span class="stat-value" style="color:#3fae6f;">@totalActiveEmployees</span></div>
-    <div class="stat-item"><span class="kicker">عقود تنتهي قريباً</span><span class="stat-value" style="color:#ff9130;">@totalContractsSoon</span></div>
-    <div class="stat-item"><span class="kicker">عقود منتهية</span><span class="stat-value" style="color:#e35d54;">@totalContractsExpired</span></div>
-</div>
+@{
+    int soonExpiringCount = totalContractsSoon;
+    int suspendedCount = totalContractsExpired;
+    int regularActiveCount = totalActiveEmployees - soonExpiringCount;
+    int otherInactiveCount = totalEmployees - totalActiveEmployees - suspendedCount;
+    var employeeSlices = new List<(string Label, int Value, string Color)>
+    {
+        ("نشط", regularActiveCount, "#7b6bd6"),
+        ("عقد ينتهي قريباً", soonExpiringCount, "#ff9130"),
+        ("عقد منتهٍ / موقوف", suspendedCount, "#e35d54"),
+        ("غير نشط لسبب آخر", otherInactiveCount, "#8a83a0")
+    };
+}
+@await Html.PartialAsync("_StatDonutChart", employeeSlices)
 
 <div style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid #f1f0f6; background:#fcfbfe; margin-bottom:0;">
    
@@ -169,11 +181,16 @@
 </div>
 
 <div class="pager">
-      <span class="cell-num">@(totalCount == 0 ? 0 : (page - 1) * pageSize + 1)–@Math.Min(page * pageSize, totalCount)</span> من <span class="cell-num">@totalCount</span>
+    <span class="cell-num">@(totalCount == 0 ? 0 : (page - 1) * pageSize + 1)–@Math.Min(page * pageSize, totalCount)</span> من <span class="cell-num">@totalCount</span>
     <div class="pager-pages">
-        @for (int p = 1; p <= totalPages; p++)
+        @if (page > 1)
         {
-            <a href="@Url.Action("Users", new { q, departmentId, rankId, trackId, role = roleFilter, status, page = p })#employee-list" class="pager-page @(p == page ? "active" : "")">@p</a>
+            <a href="@Url.Action("Users", new { q, departmentId, rankId, trackId, role = roleFilter, status, page = page - 1 })#employee-list" class="pager-page">‹ السابق</a>
+        }
+        <span class="stat-sub">صفحة @(page) من @Math.Max(totalPages, 1)</span>
+        @if (page < totalPages)
+        {
+            <a href="@Url.Action("Users", new { q, departmentId, rankId, trackId, role = roleFilter, status, page = page + 1 })#employee-list" class="pager-page">التالي ›</a>
         }
     </div>
 </div>

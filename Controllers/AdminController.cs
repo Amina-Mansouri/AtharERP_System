@@ -115,27 +115,6 @@ namespace AtharERP_System.Controllers
 
             return View(users);
         }
-        [HttpGet]
-        public async Task<IActionResult> EditUser(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-                return NotFound();
-
-            var user = await _userManager.Users.Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack).FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null)
-                return NotFound();
-
-            var currentRoles = await _userManager.GetRolesAsync(user);
-            ViewBag.CurrentRole = currentRoles.FirstOrDefault();
-            await ReloadEditUserViewBagsAsync(id, ViewBag.CurrentRole);
-
-            ViewBag.ProjectCount = await _context.ProjectTeamMembers.CountAsync(tm => tm.UserId == id);
-            ViewBag.ActiveAssignmentCount = await _context.ProjectAssignments.CountAsync(a =>
-                        a.Engineers.Any(e => e.UserId == id)
-                && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled);
-
-            return View(user);
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -183,8 +162,8 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                await ReloadEditUserViewBagsAsync(id, role);
-                return View(user);
+                TempData["Error"] = "بيانات غير صحيحة";
+                return RedirectToAction("UserDetails", new { id });
             }
 
             user.FirstName = model.FirstName;
@@ -256,11 +235,8 @@ namespace AtharERP_System.Controllers
 
             if (!result.Succeeded)
             {
-                foreach (var error in result.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
-
-                await ReloadEditUserViewBagsAsync(id, role);
-                return View(user);
+                TempData["Error"] = string.Join(" — ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("UserDetails", new { id });
             }
 
             if (!string.IsNullOrEmpty(role))
@@ -273,7 +249,7 @@ namespace AtharERP_System.Controllers
 
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل", "ApplicationUser", user.Id, $"تعديل بيانات {user.FullName}");
             TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
-            return RedirectToAction("Users");
+            return RedirectToAction("UserDetails", new { id });
         }
 
         [HttpPost]
@@ -369,6 +345,13 @@ namespace AtharERP_System.Controllers
             ViewBag.AuditActors = await _userManager.Users
     .Where(u => actorIds.Contains(u.Id))
     .ToDictionaryAsync(u => u.Id, u => u.FirstName + " " + u.LastName);
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            ViewBag.CurrentRole = currentRoles.FirstOrDefault();
+            ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
+            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
+            ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
 
             return View(user);
         }
@@ -988,33 +971,6 @@ namespace AtharERP_System.Controllers
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف رتبة", "JobRank", id.ToString(), $"حذف رتبة {deletedName}");
             TempData["Success"] = "تم حذف الرتبة بنجاح";
             return RedirectToAction("RanksAndTracks");
-        }
-        // ============================================
-        // دالة مساعدة
-        // ============================================
-        private async Task ReloadEditUserViewBagsAsync(string userId, string? selectedRole)
-        {
-            ViewBag.Roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
-            ViewBag.RoleOptions = await _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
-
-            var soonCutoff = DateTime.UtcNow.AddDays(30);
-            ViewBag.TotalEmployees = await _userManager.Users.CountAsync();
-            ViewBag.TotalActiveEmployees = await _userManager.Users.CountAsync(u => u.IsActive);
-            ViewBag.TotalContractsSoon = await _userManager.Users.CountAsync(u => u.ContractEndDate != null && u.ContractEndDate <= soonCutoff && u.ContractEndDate >= DateTime.UtcNow && !u.IsSuspended);
-            ViewBag.TotalContractsExpired = await _userManager.Users.CountAsync(u => u.IsSuspended);
-            ViewBag.CurrentRole = selectedRole;
-            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
-            ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
-            ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
-
-
-
-            ViewBag.AllPermissions = await _context.Permissions
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.Module).ThenBy(p => p.Code)
-                .ToListAsync();
-
-            
         }
     }
 }
