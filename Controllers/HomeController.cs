@@ -46,7 +46,7 @@ namespace AtharERP_System.Controllers
         [Authorize]
         public async Task<IActionResult> EngineerDashboard()
         {
-            var user = await _context.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+            var user = await _context.Users.Include(u => u.Department).Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
             var myAssignments = await _context.ProjectAssignments
                 .Include(a => a.Stage).ThenInclude(s => s.Project)

@@ -44,10 +44,10 @@ namespace AtharERP_System.Models.Entities
         public string? Responsibilities { get; set; }
 
         [Display(Name = "الرتبة الوظيفية")]
-        public JobRank Rank { get; set; } = JobRank.E0_TraineeEngineer;
+        public int? JobRankId { get; set; }
 
-        [Display(Name = "المسار الوظيفي")]
-        public CareerTrack CareerTrack { get; set; } = CareerTrack.Engineering;
+        [ForeignKey("JobRankId")]
+        public virtual JobRank? JobRankRef { get; set; }
 
         [Display(Name = "التعهد")]
         public string? Pledge { get; set; }

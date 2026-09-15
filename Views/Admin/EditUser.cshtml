@@ -6,14 +6,14 @@
        var roles = ViewBag.RoleOptions as List<string> ?? new List<string>();
     var currentRole = ViewBag.CurrentRole as string;
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
-    var jobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();
-    var careerTracks = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+    var careerTracks = ViewBag.CareerTracks as List<CareerTrack> ?? new List<CareerTrack>();
+    var jobRanks = ViewBag.JobRanks as List<JobRank> ?? new List<JobRank>();
     var initialLat = Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
     var initialLng = Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
     var currentDept = departments.FirstOrDefault(d => d.Id == Model.DepartmentId);
     int? currentTopId = currentDept == null ? (int?)null : (currentDept.ParentDepartmentId ?? currentDept.Id);
-    var rankLabel = jobRanks.FirstOrDefault(x => x.Value == Model.Rank.ToString()).Label;
-    var trackLabel = careerTracks.FirstOrDefault(x => x.Value == Model.CareerTrack.ToString()).Label;
+    var rankLabel = Model.JobRankRef != null ? $"{Model.JobRankRef.Code} - {Model.JobRankRef.NameAr}" : "-";
+    var trackLabel = Model.JobRankRef?.CareerTrack?.NameAr ?? "-";
     string DeptLabel() => Model.Department == null ? "-" : (Model.Department.ParentDepartmentId == null ? Model.Department.Name : (Model.Department.ParentDepartment?.Name ?? "-"));
     string SectionLabel() => Model.Department == null || Model.Department.ParentDepartmentId == null ? "-" : Model.Department.Name;
     int projectCount = ViewBag.ProjectCount as int? ?? 0;
@@ -119,12 +119,22 @@
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">رقم الهاتف</div>
                 <input type="tel" name="PhoneNumber" value="@Model.PhoneNumber" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
             </div>
+                       <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسار الوظيفي</div>
+                <select id="edituser-track-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختر مسارًا --</option>
+                    @foreach (var ct in careerTracks)
+                    {
+                        <option value="@ct.Id" selected="@(Model.JobRankRef?.CareerTrackId == ct.Id)">@ct.NameAr</option>
+                    }
+                </select>
+            </div>
             <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
-                <select name="Rank" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                <select name="JobRankId" id="edituser-rank-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
                     @foreach (var jr in jobRanks)
                     {
-                        <option value="@jr.Value" selected="@(Model.Rank.ToString() == jr.Value)">@jr.Label</option>
+                        <option value="@jr.Id" data-track="@jr.CareerTrackId" selected="@(Model.JobRankId == jr.Id)">@jr.Code - @jr.NameAr (@jr.NameEn)</option>
                     }
                 </select>
             </div>
@@ -246,8 +256,10 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
     <script src="~/js/location-picker.js" asp-append-version="true"></script>
+        <script src="~/js/rank-track-picker.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            initAtharRankTrackPicker('edituser-track-select', 'edituser-rank-select');
             var deptParentSelect = document.getElementById('edit-dept-parent');
             var deptChildSelect = document.getElementById('edit-dept-child');
             deptParentSelect.addEventListener('change', function () {

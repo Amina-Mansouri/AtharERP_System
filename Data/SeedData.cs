@@ -217,6 +217,45 @@ namespace AtharERP_System.Data
                 "Quality.View", "Quality.Approve", "Quality.Reports",
                 "Reports.View"
             });
+            // ========== المسارات والرتب الوظيفية ==========
+            if (!await context.CareerTracks.AnyAsync())
+            {
+                var engineeringTrack = new CareerTrack { Code = "E", NameAr = "المسار الهندسي", NameEn = "Engineering", DisplayOrder = 1 };
+                var architectureTrack = new CareerTrack { Code = "AI", NameAr = "المسار المعماري", NameEn = "Architecture", DisplayOrder = 2 };
+                var administrativeTrack = new CareerTrack { Code = "M", NameAr = "المسار الإداري", NameEn = "Administrative", DisplayOrder = 3 };
+                var fieldTrack = new CareerTrack { Code = "F", NameAr = "المسار الميداني", NameEn = "Field", DisplayOrder = 4 };
+
+                context.CareerTracks.AddRange(engineeringTrack, architectureTrack, administrativeTrack, fieldTrack);
+                await context.SaveChangesAsync();
+
+                context.JobRanks.AddRange(
+                    new JobRank { CareerTrackId = engineeringTrack.Id, Code = "E0", NameAr = "مهندس متدرب", NameEn = "Trainee Engineer", DisplayOrder = 1 },
+                    new JobRank { CareerTrackId = engineeringTrack.Id, Code = "E1", NameAr = "مهندس مبتدئ", NameEn = "Junior Engineer", DisplayOrder = 2 },
+                    new JobRank { CareerTrackId = engineeringTrack.Id, Code = "E2", NameAr = "مهندس", NameEn = "Engineer", DisplayOrder = 3 },
+                    new JobRank { CareerTrackId = engineeringTrack.Id, Code = "E3", NameAr = "مهندس أول / قائد فريق", NameEn = "Senior / Lead Engineer", DisplayOrder = 4 },
+                    new JobRank { CareerTrackId = engineeringTrack.Id, Code = "E4", NameAr = "مهندس متخصص", NameEn = "Specialized Engineer", DisplayOrder = 5 },
+                    new JobRank { CareerTrackId = engineeringTrack.Id, Code = "E5", NameAr = "مدير هندسي", NameEn = "Engineering Manager", DisplayOrder = 6 },
+
+                    new JobRank { CareerTrackId = architectureTrack.Id, Code = "AI0", NameAr = "معماري متدرب", NameEn = "Trainee Architect", DisplayOrder = 1 },
+                    new JobRank { CareerTrackId = architectureTrack.Id, Code = "AI1", NameAr = "معماري مبتدئ", NameEn = "Junior Architect", DisplayOrder = 2 },
+                    new JobRank { CareerTrackId = architectureTrack.Id, Code = "AI2", NameAr = "معماري", NameEn = "Architect", DisplayOrder = 3 },
+                    new JobRank { CareerTrackId = architectureTrack.Id, Code = "AI3", NameAr = "معماري أول / قائد فريق", NameEn = "Senior / Lead Architect", DisplayOrder = 4 },
+
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M0", NameAr = "متدرب إداري", NameEn = "Trainee", DisplayOrder = 1 },
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M1", NameAr = "موظف", NameEn = "Employee", DisplayOrder = 2 },
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M2", NameAr = "مشرف", NameEn = "Supervisor", DisplayOrder = 3 },
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M3", NameAr = "مدير", NameEn = "Manager", DisplayOrder = 4 },
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M4", NameAr = "رئيس قسم", NameEn = "Head of Department", DisplayOrder = 5 },
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M5", NameAr = "الرئيس التنفيذي", NameEn = "CEO", DisplayOrder = 6 },
+                    new JobRank { CareerTrackId = administrativeTrack.Id, Code = "M6", NameAr = "رئيس مجلس الإدارة", NameEn = "Chairman", DisplayOrder = 7 },
+
+                    new JobRank { CareerTrackId = fieldTrack.Id, Code = "F0", NameAr = "مهندس موقع متدرب", NameEn = "Trainee Site Engineer", DisplayOrder = 1 },
+                    new JobRank { CareerTrackId = fieldTrack.Id, Code = "F1", NameAr = "مهندس موقع", NameEn = "Site Engineer", DisplayOrder = 2 },
+                    new JobRank { CareerTrackId = fieldTrack.Id, Code = "F2", NameAr = "مشرف موقع", NameEn = "Site Supervisor", DisplayOrder = 3 },
+                    new JobRank { CareerTrackId = fieldTrack.Id, Code = "F3", NameAr = "مدير ميداني", NameEn = "Field Manager", DisplayOrder = 4 }
+                );
+                await context.SaveChangesAsync();
+            }
 
             // ========== المستخدم الافتراضي ==========
             var adminEmail = "admin@athar.ly";
@@ -232,8 +271,7 @@ namespace AtharERP_System.Data
                     JobNumber = "EMP-0001",
                     DepartmentId = topManagement?.Id,
                     Responsibilities = "الإدارة الكاملة للنظام",
-                    Rank = JobRank.M5_CEO,
-                    CareerTrack = CareerTrack.Administrative,
+                    JobRankId = (await context.JobRanks.FirstOrDefaultAsync(r => r.Code == "M5"))?.Id,
                     ContractSalary = 0,
                     EmailConfirmed = true,
                     IsActive = true,

@@ -39,13 +39,13 @@ namespace AtharERP_System.Controllers
         // ============================================
 
         [HttpGet]
-        public async Task<IActionResult> Users(string? q, int? departmentId, JobRank? rank, CareerTrack? track, string? role, string status = "all", int page = 1)
+        public async Task<IActionResult> Users(string? q, int? departmentId, int? rankId, int? trackId, string? role, string status = "all", int page = 1)
         {
             const int pageSize = 20;
 
             var query = _userManager.Users
     .Include(u => u.Department).ThenInclude(d => d!.ParentDepartment)
-    
+    .Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack)
     .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(q))
@@ -54,11 +54,11 @@ namespace AtharERP_System.Controllers
             if (departmentId.HasValue)
                 query = query.Where(u => u.DepartmentId == departmentId);
 
-            if (rank.HasValue)
-                query = query.Where(u => u.Rank == rank);
+            if (rankId.HasValue)
+                query = query.Where(u => u.JobRankId == rankId);
 
-            if (track.HasValue)
-                query = query.Where(u => u.CareerTrack == track);
+            if (trackId.HasValue)
+                query = query.Where(u => u.JobRankRef!.CareerTrackId == trackId);
 
             if (!string.IsNullOrEmpty(role))
             {
@@ -103,8 +103,10 @@ namespace AtharERP_System.Controllers
             ViewBag.TotalContractsExpired = await _userManager.Users.CountAsync(u => u.IsSuspended);
             ViewBag.CurrentQ = q;
             ViewBag.CurrentDepartmentId = departmentId;
-            ViewBag.CurrentRank = rank;
-            ViewBag.CurrentTrack = track;
+            ViewBag.CurrentRank = rankId;
+            ViewBag.CurrentTrack = trackId;
+            ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
+            ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
             ViewBag.CurrentRoleFilter = role;
             ViewBag.CurrentStatus = status;
             ViewBag.Page = page;
@@ -119,7 +121,7 @@ namespace AtharERP_System.Controllers
             if (string.IsNullOrEmpty(id))
                 return NotFound();
 
-            var user = await _userManager.FindByIdAsync(id);
+            var user = await _userManager.Users.Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack).FirstOrDefaultAsync(u => u.Id == id);
             if (user == null)
                 return NotFound();
 
@@ -139,7 +141,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
     string id,
-    [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,Rank,CareerTrack,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+     [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,JobRankId,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
     IFormFile? profilePhoto,
     IFormFile? contractImage,
     string role)
@@ -190,8 +192,7 @@ namespace AtharERP_System.Controllers
             user.JobNumber = jobNumber;
             user.NextOfKinPhone = model.NextOfKinPhone;
             user.DepartmentId = model.DepartmentId;
-            user.Rank = model.Rank;
-            user.CareerTrack = model.CareerTrack;
+            user.JobRankId = model.JobRankId;
             user.PhoneNumber = model.PhoneNumber;
             user.ExpectedLocationName = model.ExpectedLocationName;
             user.ExpectedLatitude = model.ExpectedLatitude;
@@ -338,8 +339,9 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> UserDetails(string id)
         {
             var user = await _userManager.Users
-                .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.Id == id);
+      .Include(u => u.Department)
+      .Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack)
+      .FirstOrDefaultAsync(u => u.Id == id);
             if (user == null)
                 return NotFound();
 
@@ -745,10 +747,10 @@ namespace AtharERP_System.Controllers
             ViewBag.TotalContractsExpired = await _userManager.Users.CountAsync(u => u.IsSuspended);
             ViewBag.CurrentRole = selectedRole;
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
-            ViewBag.JobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();
-            ViewBag.CareerTracks = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+            ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
+            ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
 
-           
+
 
             ViewBag.AllPermissions = await _context.Permissions
                 .Where(p => p.IsActive)

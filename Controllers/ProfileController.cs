@@ -27,7 +27,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Index()
         {
             var userId = _userManager.GetUserId(User);
-            var user = await _userManager.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _userManager.Users.Include(u => u.Department).Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack).FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return RedirectToAction("Login", "Account");
             return View(user);
         }

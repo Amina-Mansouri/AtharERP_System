@@ -8,9 +8,8 @@
     var contractHistory = ViewBag.ContractHistory as List<ContractHistory> ?? new List<ContractHistory>();
     var auditLogs = ViewBag.AuditLogs as List<AuditLog> ?? new List<AuditLog>();
     var auditActors = ViewBag.AuditActors as Dictionary<string, string> ?? new Dictionary<string, string>();
-    var rankLabel = EnumDisplayHelper.GetDisplayList<JobRank>().FirstOrDefault(x => x.Value == Model.Rank.ToString()).Label;
-    var trackLabel = EnumDisplayHelper.GetDisplayList<CareerTrack>().FirstOrDefault(x => x.Value == Model.CareerTrack.ToString()).Label;
-    var trackOptions = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+    var rankLabel = Model.JobRankRef != null ? $"{Model.JobRankRef.Code} - {Model.JobRankRef.NameAr}" : "-";
+    var trackLabel = Model.JobRankRef?.CareerTrack?.NameAr ?? "-";
     var contractRange = (Model.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-") + " → " + (Model.ContractEndDate?.ToString("yyyy-MM-dd") ?? "مفتوح");
     int? daysToExpiry = Model.ContractEndDate.HasValue ? (int?)(Model.ContractEndDate.Value.Date - DateTime.UtcNow.Date).Days : null;
 }

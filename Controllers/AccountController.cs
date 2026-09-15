@@ -89,8 +89,7 @@ namespace AtharERP_System.Controllers
     IFormFile? profilePhoto,
     IFormFile? contractImage,
     int? departmentId,
-    JobRank rank,
-    CareerTrack careerTrack,
+    int jobRankId,
     decimal contractSalary,
     DateTime? contractStartDate,
     DateTime? contractEndDate,
@@ -126,8 +125,7 @@ namespace AtharERP_System.Controllers
                 JobNumber = jobNumber,
                 NextOfKinPhone = nextOfKinPhone,
                 DepartmentId = departmentId,
-                Rank = rank,
-                CareerTrack = careerTrack,
+                JobRankId = jobRankId,
                 ContractSalary = contractSalary,
                 ContractStartDate = contractStartDate,
                 ContractEndDate = contractEndDate,
@@ -256,14 +254,6 @@ namespace AtharERP_System.Controllers
         public IActionResult AccessDenied()
         {
             return View();
-        }
-
-        private async Task LoadRegisterDropdownsAsync()
-        {
-            ViewBag.Roles = await _roleManager.Roles.Where(r => r.IsActive).Select(r => r.Name).ToListAsync();
-            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
-            ViewBag.JobRanks = EnumDisplayHelper.GetDisplayList<JobRank>();
-            ViewBag.CareerTracks = EnumDisplayHelper.GetDisplayList<CareerTrack>();
         }
     }
 }

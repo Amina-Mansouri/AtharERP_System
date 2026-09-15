@@ -3,8 +3,7 @@
 @model ApplicationUser
 @{
     ViewData["Title"] = "ملفي الشخصي";
-    var rankLabels = EnumDisplayHelper.GetDisplayList<JobRank>();
-    var careerTrackLabels = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+  
 }
 
 <div class="profile-head">
@@ -30,9 +29,8 @@
         <div><span style="color:var(--sys-text-light);">رقم الهاتف</span><div style="font-weight:600; margin-top:2px;">@(Model.PhoneNumber ?? "-")</div></div>
         <div><span style="color:var(--sys-text-light);">الرقم الوظيفي</span><div style="font-weight:600; margin-top:2px;">@(Model.JobNumber ?? "-")</div></div>
         <div><span style="color:var(--sys-text-light);">القسم</span><div style="font-weight:600; margin-top:2px;">@(Model.Department?.Name ?? "-")</div></div>
-        <div><span style="color:var(--sys-text-light);">الرتبة الوظيفية</span><div style="font-weight:600; margin-top:2px;">@(rankLabels.FirstOrDefault(x => x.Value == Model.Rank.ToString()).Label)</div></div>
-        <div><span style="color:var(--sys-text-light);">المسار المهني</span><div style="font-weight:600; margin-top:2px;">@(careerTrackLabels.FirstOrDefault(x => x.Value == Model.CareerTrack.ToString()).Label)</div></div>
-        <div><span style="color:var(--sys-text-light);">الراتب التعاقدي</span><div style="font-weight:600; margin-top:2px;">@Model.ContractSalary.ToString("N0") د.ل</div></div>
+        <div><span style="color:var(--sys-text-light);">الرتبة الوظيفية</span><div style="font-weight:600; margin-top:2px;">@(Model.JobRankRef?.NameAr ?? "-")</div></div>
+        <div><span style="color:var(--sys-text-light);">المسار المهني</span><div style="font-weight:600; margin-top:2px;">@(Model.JobRankRef?.CareerTrack?.NameAr ?? "-")</div></div>        <div><span style="color:var(--sys-text-light);">الراتب التعاقدي</span><div style="font-weight:600; margin-top:2px;">@Model.ContractSalary.ToString("N0") د.ل</div></div>
         <div><span style="color:var(--sys-text-light);">بداية العقد</span><div style="font-weight:600; margin-top:2px;">@(Model.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-")</div></div>
         <div><span style="color:var(--sys-text-light);">نهاية العقد</span><div style="font-weight:600; margin-top:2px;">@(Model.ContractEndDate?.ToString("yyyy-MM-dd") ?? "-")</div></div>
         <div><span style="color:var(--sys-text-light);">تاريخ الانضمام</span><div style="font-weight:600; margin-top:2px;">@Model.CreatedAt.ToString("yyyy-MM-dd")</div></div>

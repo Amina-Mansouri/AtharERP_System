@@ -7,13 +7,13 @@
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var roles = ViewBag.Roles as List<ApplicationRole> ?? new List<ApplicationRole>();
     var roleOptions = ViewBag.RoleOptions as List<string> ?? new List<string>();
-    var rankOptions = EnumDisplayHelper.GetDisplayList<JobRank>();
-    var trackOptions = EnumDisplayHelper.GetDisplayList<CareerTrack>();
+     var rankOptions = ViewBag.JobRanks as List<JobRank> ?? new List<JobRank>();
+    var trackOptions = ViewBag.CareerTracks as List<CareerTrack> ?? new List<CareerTrack>();
 
     string q = ViewBag.CurrentQ as string ?? "";
     int? departmentId = ViewBag.CurrentDepartmentId as int?;
-    JobRank? rank = ViewBag.CurrentRank as JobRank?;
-    CareerTrack? track = ViewBag.CurrentTrack as CareerTrack?;
+    int? rankId = ViewBag.CurrentRank as int?;
+    int? trackId = ViewBag.CurrentTrack as int?;
     string? roleFilter = ViewBag.CurrentRoleFilter as string;
     string status = ViewBag.CurrentStatus as string ?? "all";
     int page = ViewBag.Page as int? ?? 1;
@@ -89,21 +89,22 @@
                     </button>
                 </div>
             </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
-                <select name="rank" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    @foreach (var jr in rankOptions)
+                       <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسار الوظيفي</div>
+                <select id="users-modal-track-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختر مسارًا --</option>
+                    @foreach (var ct in trackOptions)
                     {
-                        <option value="@jr.Value">@jr.Label</option>
+                        <option value="@ct.Id">@ct.NameAr</option>
                     }
                 </select>
             </div>
             <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسار الوظيفي</div>
-                <select name="careerTrack" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    @foreach (var ct in trackOptions)
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
+                <select name="jobRankId" id="users-modal-rank-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    @foreach (var jr in rankOptions)
                     {
-                        <option value="@ct.Value">@ct.Label</option>
+                        <option value="@jr.Id" data-track="@jr.CareerTrackId">@jr.Code - @jr.NameAr (@jr.NameEn)</option>
                     }
                 </select>
             </div>
@@ -259,19 +260,19 @@
         }
     </select>
 
-    <select name="rank" class="filter-chip" onchange="this.form.submit()">
+       <select name="rankId" class="filter-chip" onchange="this.form.submit()">
         <option value="">الرتبة ▾</option>
         @foreach (var r in rankOptions)
         {
-            <option value="@r.Value" selected="@(rank?.ToString() == r.Value)">@r.Label</option>
+            <option value="@r.Id" selected="@(rankId == r.Id)">@r.Code - @r.NameAr</option>
         }
     </select>
 
-    <select name="track" class="filter-chip" onchange="this.form.submit()">
+    <select name="trackId" class="filter-chip" onchange="this.form.submit()">
         <option value="">المسار ▾</option>
         @foreach (var t in trackOptions)
         {
-            <option value="@t.Value" selected="@(track?.ToString() == t.Value)">@t.Label</option>
+            <option value="@t.Id" selected="@(trackId == t.Id)">@t.NameAr</option>
         }
     </select>
 
@@ -311,9 +312,9 @@
     {
         @foreach (var user in Model)
         {
-                      var rankLabel = rankOptions.FirstOrDefault(x => x.Value == user.Rank.ToString()).Label;
-            var rankCode = user.Rank.ToString().Split('_')[0];
-            var trackLabel = trackOptions.FirstOrDefault(x => x.Value == user.CareerTrack.ToString()).Label;
+                               var rankLabel = user.JobRankRef?.NameAr ?? "-";
+            var rankCode = user.JobRankRef?.Code ?? "-";
+            var trackLabel = user.JobRankRef?.CareerTrack?.NameAr ?? "-";
             var contractSoon = !user.IsSuspended && user.ContractEndDate.HasValue
                 && user.ContractEndDate.Value.Date >= DateTime.UtcNow.Date
                 && user.ContractEndDate.Value.Date <= DateTime.UtcNow.Date.AddDays(30);
@@ -373,8 +374,10 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
         <script src="~/js/location-picker.js" asp-append-version="true"></script>
+            <script src="~/js/rank-track-picker.js" asp-append-version="true"></script>
     <script>
-                           document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function () {
+             initAtharRankTrackPicker('users-modal-track-select', 'users-modal-rank-select');
             var deptParentSelect = document.getElementById('create-dept-parent');
             var deptChildSelect = document.getElementById('create-dept-child');
             deptParentSelect.addEventListener('change', function () {

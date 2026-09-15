@@ -16,7 +16,8 @@ namespace AtharERP_System.Data
 
         // Module 01: الهيكل التنظيمي والصلاحيات الموسّعة
         public DbSet<Department> Departments { get; set; } = null!;
-     
+        public DbSet<CareerTrack> CareerTracks { get; set; } = null!;
+        public DbSet<JobRank> JobRanks { get; set; } = null!;
 
         // Module 02: إدارة المشاريع
         public DbSet<Client> Clients { get; set; } = null!;

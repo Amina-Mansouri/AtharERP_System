@@ -22,7 +22,7 @@
         ("تسليم متأخر", lateDeliveryCount, "#c94a42")
     };
 
-    var rankLabels = EnumDisplayHelper.GetDisplayList<JobRank>();
+    
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
 
     string[] arabicDays = { "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت" };
@@ -43,7 +43,7 @@
     <div>
         <div style="font-size:19px; font-weight:600;">مرحباً، @user?.FullName</div>
         <div style="font-size:12px; color:#8a83a0; margin-top:2px;">
-            @(rankLabels.FirstOrDefault(x => x.Value == user?.Rank.ToString()).Label) — @(user?.Department?.Name ?? "-") · موجز أعمالك اليوم @todayLabel
+            @(user?.JobRankRef?.NameAr ?? "-") — @(user?.Department?.Name ?? "-") · موجز أعمالك اليوم @todayLabel
         </div>
     </div>
     <div style="display:flex; gap:8px;">

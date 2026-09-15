@@ -1,61 +1,35 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AtharERP_System.Models.Entities
 {
-    public enum JobRank
+    public class JobRank
     {
-        // المسار الهندسي (Engineering Track)
-        [Display(Name = "مهندس متدرب")]
-        E0_TraineeEngineer = 0,
+        public int Id { get; set; }
 
-        [Display(Name = "مهندس مبتدئ")]
-        E1_JuniorEngineer = 1,
+        [Display(Name = "المسار")]
+        public int CareerTrackId { get; set; }
 
-        [Display(Name = "مهندس")]
-        E2_Engineer = 2,
+        [ForeignKey("CareerTrackId")]
+        public virtual CareerTrack CareerTrack { get; set; } = null!;
 
-        [Display(Name = "مهندس أول / قائد فريق")]
-        E3_SeniorLeadEngineer = 3,
+        [Required, StringLength(10)]
+        [Display(Name = "الرمز")]
+        public string Code { get; set; } = string.Empty;
 
-        [Display(Name = "مهندس متخصص")]
-        E4_SpecializedEngineer = 4,
+        [Required, StringLength(100)]
+        [Display(Name = "اسم الرتبة")]
+        public string NameAr { get; set; } = string.Empty;
 
-        [Display(Name = "مدير هندسي")]
-        E5_EngineeringManager = 5,
+        [StringLength(100)]
+        [Display(Name = "الاسم الإنجليزي")]
+        public string? NameEn { get; set; }
 
-        // المسار المعماري (Architecture Track)
-        [Display(Name = "معماري متدرب")]
-        AI0_TraineeArchitect = 10,
+        [Display(Name = "ترتيب العرض")]
+        public int DisplayOrder { get; set; }
 
-        [Display(Name = "معماري مبتدئ")]
-        AI1_JuniorArchitect = 11,
-
-        [Display(Name = "معماري")]
-        AI2_Architect = 12,
-
-        [Display(Name = "معماري أول / قائد فريق")]
-        AI3_SeniorLeadArchitect = 13,
-
-        // المسار الإداري (Administrative Track)
-        [Display(Name = "متدرب إداري")]
-        M0_Trainee = 20,
-
-        [Display(Name = "موظف")]
-        M1_Employee = 21,
-
-        [Display(Name = "مشرف")]
-        M2_Supervisor = 22,
-
-        [Display(Name = "مدير")]
-        M3_Manager = 23,
-
-        [Display(Name = "رئيس قسم")]
-        M4_HeadOfDepartment = 24,
-
-        [Display(Name = "الرئيس التنفيذي")]
-        M5_CEO = 25,
-
-        [Display(Name = "رئيس مجلس الإدارة")]
-        M6_Chairman = 26
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "الراتب الأساسي")]
+        public decimal? BaseSalary { get; set; }
     }
 }
