@@ -104,9 +104,8 @@
     }
 </form>
 
-<div class="data-table" style="--cols: 60px minmax(0,1.3fr) 86px 108px 132px 140px 118px 74px 118px 98px 74px">
+<div class="data-table" style="--cols: minmax(0,1.3fr) 86px 108px 132px 140px 118px 74px 118px 98px 74px">
     <div class="data-table-head">
-        <div class="cell"></div>
         <div class="cell">الاسم واللقب</div>
         <div class="cell">الرقم</div>
         <div class="cell">أقرب الأقارب</div>
@@ -132,9 +131,8 @@
             var contractSoon = !user.IsSuspended && user.ContractEndDate.HasValue
                 && user.ContractEndDate.Value.Date >= DateTime.UtcNow.Date
                 && user.ContractEndDate.Value.Date <= DateTime.UtcNow.Date.AddDays(30);
-            <div class="data-table-row @(user.IsActive ? "" : "row-faded") @(contractSoon ? "row-contract-soon" : "")">
-            <div class="cell"><a asp-action="UserDetails" asp-route-id="@user.Id" class="btn-line" style="height:24px; padding:0 10px; font-size:10.5px;">فتح</a></div>
-                               <div class="cell">
+            <div class="data-table-row @(user.IsActive ? "" : "row-faded") @(contractSoon ? "row-contract-soon" : "")" style="cursor:pointer;" onclick="location.href='@Url.Action("UserDetails", new { id = user.Id })'">
+                <div class="cell">
                     @user.FullName
                 </div>
                 <div class="cell cell-num">@(user.JobNumber ?? "-")</div>
