@@ -63,16 +63,6 @@
 }
 @await Html.PartialAsync("_StatDonutChart", employeeSlices)
 
-<div style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid #f1f0f6; background:#fcfbfe; margin-bottom:0;">
-   
-    <a id="btn-view-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; pointer-events:none; opacity:.4;">عرض</a>
-    <a id="btn-edit-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; pointer-events:none; opacity:.4;">تعديل</a>
-    <form method="post" asp-action="ToggleUserStatus" id="toggle-status-form" style="display:inline;">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="id" id="toggle-status-id" value="" />
-        <button type="submit" id="btn-toggle-user" class="btn-line" style="height:26px; padding:0 10px; font-size:11px; color:#c94a42; opacity:.4;" disabled>تعطيل</button>
-    </form>
-</div>
 <form method="get" class="filter-bar" action="@Url.Action("Users")#employee-list">    
     <input type="hidden" name="status" value="@status" />    <input type="text" name="q" class="filter-search" placeholder="الرقم الوظيفي" value="@q" />
 
@@ -114,7 +104,7 @@
     }
 </form>
 
-<div class="data-table" style="--cols: 26px minmax(0,1.3fr) 86px 108px 132px 140px 118px 74px 118px 98px 74px">
+<div class="data-table" style="--cols: 60px minmax(0,1.3fr) 86px 108px 132px 140px 118px 74px 118px 98px 74px">
     <div class="data-table-head">
         <div class="cell"></div>
         <div class="cell">الاسم واللقب</div>
@@ -143,7 +133,7 @@
                 && user.ContractEndDate.Value.Date >= DateTime.UtcNow.Date
                 && user.ContractEndDate.Value.Date <= DateTime.UtcNow.Date.AddDays(30);
             <div class="data-table-row @(user.IsActive ? "" : "row-faded") @(contractSoon ? "row-contract-soon" : "")">
-            <div class="cell"><input type="checkbox" class="row-select" data-id="@user.Id" data-active="@user.IsActive.ToString().ToLower()" /></div>
+            <div class="cell"><a asp-action="UserDetails" asp-route-id="@user.Id" class="btn-line" style="height:24px; padding:0 10px; font-size:10.5px;">فتح</a></div>
                                <div class="cell">
                     @user.FullName
                 </div>
@@ -195,36 +185,3 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-            document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.row-select').forEach(function (cb) {
-                cb.addEventListener('change', function () {
-                    document.querySelectorAll('.row-select').forEach(function (other) {
-                        if (other !== cb) other.checked = false;
-                        });
-                    var viewBtn = document.getElementById('btn-view-user');
-                    var editBtn = document.getElementById('btn-edit-user');
-                    var toggleBtn = document.getElementById('btn-toggle-user');
-                    var toggleId = document.getElementById('toggle-status-id');
-                    if (cb.checked) {
-                        var id = cb.getAttribute('data-id');
-                        var isActive = cb.getAttribute('data-active') === 'true';
-                        viewBtn.href = '@Url.Action("UserDetails", new { id = "__ID__" })'.replace('__ID__', id);
-                        editBtn.href = '@Url.Action("EditUser", new { id = "__ID__" })'.replace('__ID__', id);
-                        viewBtn.style.pointerEvents = 'auto'; viewBtn.style.opacity = '1';
-                        editBtn.style.pointerEvents = 'auto'; editBtn.style.opacity = '1';
-                        toggleBtn.disabled = false; toggleBtn.style.opacity = '1';
-                        toggleBtn.textContent = isActive ? 'تعطيل' : 'تفعيل';
-                toggleId.value = id;
-           } else {
-                viewBtn.removeAttribute('href'); viewBtn.style.pointerEvents = 'none'; viewBtn.style.opacity = '.4';
-                editBtn.removeAttribute('href'); editBtn.style.pointerEvents = 'none'; editBtn.style.opacity = '.4';
-                toggleBtn.disabled = true; toggleBtn.style.opacity = '.4'; toggleBtn.textContent = 'تعطيل';
-                toggleId.value = '';
-            }
-                });
-            });
-        });
-    </script>
-}
