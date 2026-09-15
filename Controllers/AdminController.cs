@@ -373,7 +373,123 @@ namespace AtharERP_System.Controllers
             return View(user);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> CreateUser()
+        {
+            ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
+            ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
+            ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
+            return View();
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser(
+            string firstName,
+            string lastName,
+            string email,
+            string password,
+            string confirmPassword,
+            string? jobNumber,
+            string? nextOfKinPhone,
+            IFormFile? profilePhoto,
+            IFormFile? contractImage,
+            int? departmentId,
+            int jobRankId,
+            decimal contractSalary,
+            DateTime? contractStartDate,
+            DateTime? contractEndDate,
+            string? phoneNumber,
+            string? expectedLocationName,
+            double? expectedLatitude,
+            double? expectedLongitude,
+            int? allowedRadiusMeters,
+            string role)
+        {
+            if (password != confirmPassword)
+            {
+                TempData["Error"] = "كلمتا المرور غير متطابقتين";
+                return RedirectToAction("CreateUser");
+            }
+
+            if (await _userManager.FindByEmailAsync(email) != null)
+            {
+                TempData["Error"] = "البريد الإلكتروني مستخدم بالفعل";
+                return RedirectToAction("CreateUser");
+            }
+
+            if (departmentId == null)
+            {
+                TempData["Error"] = "القسم مطلوب";
+                return RedirectToAction("CreateUser");
+            }
+
+            jobNumber = string.IsNullOrWhiteSpace(jobNumber) ? null : jobNumber.Trim();
+
+            if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber))
+            {
+                TempData["Error"] = "الرقم الوظيفي مستخدم بالفعل لموظف آخر";
+                return RedirectToAction("CreateUser");
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                FirstName = firstName,
+                LastName = lastName,
+                JobNumber = jobNumber,
+                NextOfKinPhone = nextOfKinPhone,
+                DepartmentId = departmentId,
+                JobRankId = jobRankId,
+                ContractSalary = contractSalary,
+                ContractStartDate = contractStartDate,
+                ContractEndDate = contractEndDate,
+                PhoneNumber = phoneNumber,
+                ExpectedLocationName = expectedLocationName,
+                ExpectedLatitude = expectedLatitude,
+                ExpectedLongitude = expectedLongitude,
+                AllowedRadiusMeters = allowedRadiusMeters ?? 100,
+                EmailConfirmed = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(user, password);
+
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" · ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("CreateUser");
+            }
+
+            if (!string.IsNullOrEmpty(role))
+                await _userManager.AddToRoleAsync(user, role);
+
+            if (profilePhoto != null && profilePhoto.Length > 0)
+            {
+                var photoResult = await _fileUpload.SaveFileAsync(profilePhoto, $"users/{user.Id}");
+                if (photoResult.Success)
+                {
+                    user.ProfilePhotoPath = photoResult.FilePath;
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+            if (contractImage != null && contractImage.Length > 0)
+            {
+                var contractResult = await _fileUpload.SaveFileAsync(contractImage, $"contracts/{user.Id}");
+                if (contractResult.Success)
+                {
+                    user.ContractImagePath = contractResult.FilePath;
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة موظف", "ApplicationUser", user.Id, $"إنشاء موظف {firstName} {lastName}");
+            TempData["Success"] = $"تم إنشاء الموظف {firstName} {lastName} بنجاح";
+            return RedirectToAction("Users");
+        }
         // ============================================
         // إدارة الأدوار
         // ============================================

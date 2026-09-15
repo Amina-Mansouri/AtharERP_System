@@ -39,206 +39,16 @@
         <div style="font-size:11px; color:#8a83a0; font-weight:500;">الإدارة</div>
         <div style="font-size:19px; font-weight:600; margin-top:2px;">إدارة الموظفين</div>
     </div>
-        <div class="page-head-actions"></div>
-</div>
-
-<div style="display:grid; grid-template-columns:1.35fr 1fr; gap:12px; margin-bottom:12px;">
-    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
-        <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
-            <div style="font-size:13.5px; font-weight:600;">نموذج إضافة موظف</div>
-        </div>
-
-               <div id="create-employee-error" style="display:none; margin:12px 16px 0; padding:9px 12px; border:1px solid rgba(227,93,84,.35); background:rgba(227,93,84,.06); border-radius:8px; font-size:11.5px; color:#c94a42;"></div>
-
-        <form id="create-employee-form" method="post" asp-controller="Account" asp-action="Register" enctype="multipart/form-data" style="padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:13px 14px;">
-            @Html.AntiForgeryToken()
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم <span style="color:#e35d54;">*</span></div>
-                <input name="firstName" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اللقب <span style="color:#e35d54;">*</span></div>
-                <input name="lastName" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">رقم أقرب الأقارب <span style="color:#e35d54;">*</span></div>
-                <input name="nextOfKinPhone" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">البريد الإلكتروني</div>
-                <input type="email" name="email" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit; direction:ltr; text-align:right;" />
-            </div>
-                       <div style="grid-column:span 2;">
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">كلمة المرور <span style="color:#e35d54;">*</span></div>
-                <div class="pwd-wrap">
-                    <input type="password" name="password" required style="width:100%; height:34px; border:1px solid #7b6bd6; border-radius:8px; background:#fff; padding:0 34px 0 11px; font-size:12.5px; font-family:inherit;" />
-                    <button type="button" tabindex="-1" class="pwd-toggle" onclick="togglePwd(this)">
-                        <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        <svg class="eye-off" hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.8 21.8 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a21.77 21.77 0 01-3.22 4.53M14.12 14.12a3 3 0 11-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    </button>
-                </div>
-            </div>
-            <div style="grid-column:span 2;">
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">تأكيد كلمة المرور <span style="color:#e35d54;">*</span></div>
-                <div class="pwd-wrap">
-                    <input type="password" name="confirmPassword" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 34px 0 11px; font-size:12.5px; font-family:inherit;" />
-                    <button type="button" tabindex="-1" class="pwd-toggle" onclick="togglePwd(this)">
-                        <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        <svg class="eye-off" hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.8 21.8 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a21.77 21.77 0 01-3.22 4.53M14.12 14.12a3 3 0 11-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    </button>
-                </div>
-            </div>
-                                 <div>
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span style="font-size:11px; color:#5a5370;">المسار الوظيفي</span>
-                    <a asp-action="RanksAndTracks" target="_blank" style="font-size:10px;">+ إدارة الرتب والمسارات</a>
-                </div>
-                <select id="users-modal-track-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="">-- اختر مسارًا --</option>
-                    @foreach (var ct in trackOptions)
-                    {
-                        <option value="@ct.Id">@ct.NameAr</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
-                <select name="jobRankId" id="users-modal-rank-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    @foreach (var jr in rankOptions)
-                    {
-                        <option value="@jr.Id" data-track="@jr.CareerTrackId">@jr.Code - @jr.NameAr (@jr.NameEn)</option>
-                    }
-                </select>
-            </div>
-                       <div>
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span style="font-size:11px; color:#5a5370;">الإدارة</span>
-                      <a asp-action="Departments" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
-                </div>
-                <select id="create-dept-parent" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="">-- اختر الإدارة --</option>
-                    @foreach (var top in departments.Where(x => x.ParentDepartmentId == null))
-                    {
-                        <option value="@top.Id">@top.Name</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span style="font-size:11px; color:#5a5370;">القسم</span>
-                    <a asp-action="Departments" style="font-size:10px;">+ إدارة الخيارات</a>
-                </div>
-                <select name="departmentId" id="create-dept-child" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="">-- اختاري الإدارة أولاً --</option>
-                    @foreach (var top in departments.Where(x => x.ParentDepartmentId == null))
-                    {
-                        <option value="@top.Id" data-group="@top.Id" style="display:none;">(الإدارة مباشرة) @top.Name</option>
-                        @foreach (var child in departments.Where(x => x.ParentDepartmentId == top.Id))
-                        {
-                            <option value="@child.Id" data-group="@top.Id" style="display:none;">@child.Name</option>
-                        }
-                    }
-                </select>
-            </div>
-            <div>
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span style="font-size:11px; color:#5a5370;">الدور</span>
-                    <a asp-action="Roles" style="font-size:10px;">+ إدارة الخيارات</a>
-                </div>
-                <select name="role" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="">-- اختر --</option>
-                    @foreach (var r in roleOptions)
-                    {
-                        <option value="@r">@r</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرقم الوظيفي</div>
-                <input name="jobNumber" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">رقم الهاتف</div>
-                <input name="phoneNumber" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الراتب التعاقدي</div>
-                <input type="number" step="0.01" min="0" name="contractSalary" value="0" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">بداية العقد</div>
-                <input type="date" name="contractStartDate" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-                      <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نهاية العقد</div>
-                <input type="date" name="contractEndDate" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الصورة الشخصية</div>
-                <input type="file" name="profilePhoto" accept="image/*" style="width:100%; font-size:11.5px;" />
-            </div>
-            <div style="grid-column:span 2;">
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">صورة العقد</div>
-                <input type="file" name="contractImage" accept="image/*,application/pdf" style="width:100%; font-size:11.5px;" />
-            </div>
-
-            <div style="grid-column:span 2;">
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">موقع الحضور المتوقع</div>
-                <input type="text" id="register-address-search" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit; margin-bottom:8px;" />
-                <div id="register-map" style="direction:ltr; height:220px; width:100%; border-radius:8px; border:1px solid #e4e2ec;"></div>
-                <input type="hidden" id="expectedLocationName" name="expectedLocationName" />
-                <input type="hidden" id="expectedLatitude" name="expectedLatitude" />
-                <input type="hidden" id="expectedLongitude" name="expectedLongitude" />
-                               <div id="register-coords-display" style="font-size:10.5px; color:#8a83a0; margin-top:6px;">لم يتم تحديد موقع بعد</div>
-                <div style="margin-top:8px; max-width:220px;">
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نصف القطر المسموح (متر)</div>
-                    <input type="number" min="1" name="allowedRadiusMeters" id="allowedRadiusMeters" value="100" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-                </div>
-            </div>
-
-            <div style="grid-column:span 2;">
-                <button type="submit" style="height:36px; padding:0 20px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">+ إنشاء الموظف</button>
-            </div>
-        </form>
-    </div>
-
-    <div style="display:grid; gap:12px; align-content:start;">
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
-            <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">موقع الحضور</div>
-            <div style="padding:13px 16px; display:grid; gap:9px; font-size:11.5px;">
-                <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">الموقع</span><span id="loc-approved" style="font-weight:500;">—</span></div>
-                <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">الإحداثيات</span><span id="loc-coords" style="font-weight:500;">—</span></div>
-                <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">النطاق المسموح</span><span id="loc-radius" style="font-weight:500;">—</span></div>
-            </div>
-        </div>
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
-            <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">إجماليات الموظفين</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr;">
-                <div style="padding:12px 16px; border-left:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">
-                    <div style="font-size:10.5px; color:#8a83a0;">الإجمالي</div>
-                    <div style="font-size:20px; font-weight:700;">@totalEmployees</div>
-                </div>
-                <div style="padding:12px 16px; border-bottom:1px solid #f1f0f6;">
-                    <div style="font-size:10.5px; color:#8a83a0;">نشط</div>
-                    <div style="font-size:20px; font-weight:700; color:#3fae6f;">@totalActiveEmployees</div>
-                </div>
-                <div style="padding:12px 16px; border-left:1px solid #f1f0f6;">
-                    <div style="font-size:10.5px; color:#8a83a0;">عقود تنتهي قريباً</div>
-                    <div style="font-size:20px; font-weight:700; color:#ff9130;">@totalContractsSoon</div>
-                </div>
-                <div style="padding:12px 16px;">
-                    <div style="font-size:10.5px; color:#8a83a0;">عقود منتهية</div>
-                    <div style="font-size:20px; font-weight:700; color:#e35d54;">@totalContractsExpired</div>
-                </div>
-            </div>
-        </div>
+    <div class="page-head-actions">
+        <a asp-action="CreateUser" class="btn-line btn-line-accent">+ موظف جديد</a>
     </div>
 </div>
 
-<div class="tabs" id="employee-list">
-    <a class="tab-item @(status == "all" ? "active" : "")" href="@TabUrl("all")">الكل @countAll</a>
-    <a class="tab-item @(status == "active" ? "active" : "")" href="@TabUrl("active")">نشط @countActive</a>
-    <a class="tab-item @(status == "inactive" ? "active" : "")" href="@TabUrl("inactive")">غير نشط @countInactive</a>
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">الإجمالي</span><span class="stat-value">@totalEmployees</span></div>
+    <div class="stat-item"><span class="kicker">نشط</span><span class="stat-value" style="color:#3fae6f;">@totalActiveEmployees</span></div>
+    <div class="stat-item"><span class="kicker">عقود تنتهي قريباً</span><span class="stat-value" style="color:#ff9130;">@totalContractsSoon</span></div>
+    <div class="stat-item"><span class="kicker">عقود منتهية</span><span class="stat-value" style="color:#e35d54;">@totalContractsExpired</span></div>
 </div>
 
 <div style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-bottom:1px solid #f1f0f6; background:#fcfbfe; margin-bottom:0;">
@@ -369,65 +179,13 @@
 </div>
 
 @section Scripts {
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
-        <script src="~/js/location-picker.js" asp-append-version="true"></script>
-            <script src="~/js/rank-track-picker.js" asp-append-version="true"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-             initAtharRankTrackPicker('users-modal-track-select', 'users-modal-rank-select');
-            var deptParentSelect = document.getElementById('create-dept-parent');
-            var deptChildSelect = document.getElementById('create-dept-child');
-            deptParentSelect.addEventListener('change', function () {
-                var groupId = this.value;
-                Array.from(deptChildSelect.options).forEach(function (opt) {
-                    if (!opt.value) { opt.style.display = ''; return; }
-                    opt.style.display = (opt.getAttribute('data-group') === groupId) ? '' : 'none';
-                });
-                deptChildSelect.value = groupId || '';
-            });
-
-            var createForm = document.getElementById('create-employee-form');
-            createForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                var form = this;
-                var errorBox = document.getElementById('create-employee-error');
-                var submitBtn = form.querySelector('button[type="submit"]');
-                errorBox.style.display = 'none';
-                errorBox.textContent = '';
-                submitBtn.disabled = true;
-                var originalText = submitBtn.textContent;
-                submitBtn.textContent = 'جارٍ الحفظ...';
-
-                fetch(form.action, { method: 'POST', body: new FormData(form) })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            errorBox.textContent = data.message || 'حدث خطأ غير متوقع';
-                            errorBox.style.display = 'block';
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = originalText;
-                        }
-                    })
-                    .catch(function () {
-                        errorBox.textContent = 'تعذّر الاتصال بالخادم — حاولي مرة أخرى';
-                        errorBox.style.display = 'block';
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                    });
-            });
-
+            document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.row-select').forEach(function (cb) {
                 cb.addEventListener('change', function () {
                     document.querySelectorAll('.row-select').forEach(function (other) {
                         if (other !== cb) other.checked = false;
-                    });
+                        });
                     var viewBtn = document.getElementById('btn-view-user');
                     var editBtn = document.getElementById('btn-edit-user');
                     var toggleBtn = document.getElementById('btn-toggle-user');
@@ -441,34 +199,15 @@
                         editBtn.style.pointerEvents = 'auto'; editBtn.style.opacity = '1';
                         toggleBtn.disabled = false; toggleBtn.style.opacity = '1';
                         toggleBtn.textContent = isActive ? 'تعطيل' : 'تفعيل';
-                        toggleId.value = id;
-                    } else {
-                        viewBtn.removeAttribute('href'); viewBtn.style.pointerEvents = 'none'; viewBtn.style.opacity = '.4';
-                        editBtn.removeAttribute('href'); editBtn.style.pointerEvents = 'none'; editBtn.style.opacity = '.4';
-                        toggleBtn.disabled = true; toggleBtn.style.opacity = '.4'; toggleBtn.textContent = 'تعطيل';
-                        toggleId.value = '';
-                    }
+                toggleId.value = id;
+           } else {
+                viewBtn.removeAttribute('href'); viewBtn.style.pointerEvents = 'none'; viewBtn.style.opacity = '.4';
+                editBtn.removeAttribute('href'); editBtn.style.pointerEvents = 'none'; editBtn.style.opacity = '.4';
+                toggleBtn.disabled = true; toggleBtn.style.opacity = '.4'; toggleBtn.textContent = 'تعطيل';
+                toggleId.value = '';
+            }
                 });
             });
-            initAtharLocationPicker({
-                mapId: 'register-map',
-                latInputId: 'expectedLatitude',
-                lngInputId: 'expectedLongitude',
-                nameInputId: 'expectedLocationName',
-                coordsDisplayId: 'register-coords-display',
-                searchInputId: 'register-address-search',
-                radiusInputId: 'allowedRadiusMeters'
-            });
-
-            setInterval(function () {
-                var lat = document.getElementById('expectedLatitude').value;
-                var lng = document.getElementById('expectedLongitude').value;
-                var radius = document.getElementById('allowedRadiusMeters').value;
-                var name = document.getElementById('expectedLocationName').value;
-                document.getElementById('loc-approved').textContent = name || '—';
-                document.getElementById('loc-coords').textContent = (lat && lng) ? (lat + '، ' + lng) : '—';
-                document.getElementById('loc-radius').textContent = radius ? (radius + ' م') : '—';
-            }, 500);
         });
     </script>
 }
