@@ -1,5 +1,4 @@
 ﻿@using AtharERP_System.Models.Entities
-@using AtharERP_System.Services
 @model List<ApplicationUser>
 @{
     ViewData["Title"] = "إدارة الموظفين";
@@ -29,7 +28,7 @@
     int totalContractsSoon = ViewBag.TotalContractsSoon as int? ?? 0;
     int totalContractsExpired = ViewBag.TotalContractsExpired as int? ?? 0;
 
-      string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status = s, page = 1 })! + "#employee-list";
+          string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rankId, trackId, role = roleFilter, status = s, page = 1 })! + "#employee-list";
 
     string DeptLabel(ApplicationUser u) => u.Department == null ? "-" : (u.Department.ParentDepartmentId == null ? u.Department.Name : (u.Department.ParentDepartment?.Name ?? "-"));
     string SectionLabel(ApplicationUser u) => u.Department == null || u.Department.ParentDepartmentId == null ? "-" : u.Department.Name;
@@ -284,7 +283,7 @@
         }
     </select>
 
-    @if (!string.IsNullOrEmpty(q) || departmentId.HasValue || rank.HasValue || track.HasValue || !string.IsNullOrEmpty(roleFilter))
+    @if (!string.IsNullOrEmpty(q) || departmentId.HasValue || rankId.HasValue || trackId.HasValue || !string.IsNullOrEmpty(roleFilter))
     {
         <a href="@Url.Action("Users", new { status })" class="filter-clear">مسح التصفية</a>
     }
@@ -361,7 +360,7 @@
     <div class="pager-pages">
         @for (int p = 1; p <= totalPages; p++)
         {
-            <a href="@Url.Action("Users", new { q, departmentId, rank, track, role = roleFilter, status, page = p })#employee-list" class="pager-page @(p == page ? "active" : "")">@p</a>
+            <a href="@Url.Action("Users", new { q, departmentId, rankId, trackId, role = roleFilter, status, page = p })#employee-list" class="pager-page @(p == page ? "active" : "")">@p</a>
         }
     </div>
 </div>

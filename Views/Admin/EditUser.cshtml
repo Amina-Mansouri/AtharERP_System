@@ -119,7 +119,16 @@
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">رقم الهاتف</div>
                 <input type="tel" name="PhoneNumber" value="@Model.PhoneNumber" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
             </div>
-                    
+         <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسار الوظيفي</div>
+                <select id="edituser-track-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- اختر مسارًا --</option>
+                    @foreach (var ct in careerTracks)
+                    {
+                        <option value="@ct.Id" selected="@(Model.JobRankRef?.CareerTrackId == ct.Id)">@ct.NameAr</option>
+                    }
+                </select>
+            </div>     
             <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
                 <select name="JobRankId" id="edituser-rank-select" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
