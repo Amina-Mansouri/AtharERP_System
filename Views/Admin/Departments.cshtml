@@ -2,10 +2,14 @@
 @model List<Department>
 @{
     ViewData["Title"] = "الإدارات والأقسام";
-    var roots = Model.Where(d => d.ParentDepartmentId == null).OrderBy(d => d.Name).ToList();
+    var roots = Model.Where(d => d.ParentDepartmentId == null)
+     .OrderBy(d => d.Name == "الإدارة العليا" ? 0 : 1)
+     .ThenBy(d => d.Name)
+     .ToList();
     var selected = ViewBag.SelectedDepartment as Department;
     var selectedChildCount = ViewBag.SelectedChildCount as int? ?? 0;
     var selectedEmployees = ViewBag.SelectedEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var allDepartments = Model.OrderBy(d => d.ParentDepartmentId == null ? 0 : 1).ThenBy(d => d.Name).ToList();
 }
 
 <div class="page-head">
@@ -14,12 +18,12 @@
         <h1>الإدارات والأقسام</h1>
     </div>
     <div class="page-head-actions">
-        <button type="button" class="btn-line" onclick="document.querySelectorAll('.dept-children').forEach(function(c){ new bootstrap.Collapse(c, {toggle:false}).show(); })">توسيع الكل</button>
+     
         @if (selected != null)
         {
-            <a asp-action="CreateDepartment" asp-route-parentId="@selected.Id" class="btn-line">+ قسم تابع لـ«@selected.Name»</a>
+            <button type="button" class="btn-line" onclick='openDeptModal(null, null, @selected.Id, null, true)'>+ قسم تابع لـ«@selected.Name»</button>
         }
-        <a asp-action="CreateDepartment" class="btn-line btn-line-accent">+ إدارة</a>
+        <button type="button" class="btn-line btn-line-accent" onclick="openDeptModal()">+ إدارة</button>
     </div>
 </div>
 
@@ -27,7 +31,7 @@
     <div class="col-lg-7">
         <div class="side-panel">
             <div class="side-panel-title">الشجرة — إدارة ثم قسم تابع لها</div>
-        
+
             <div class="dept-tree">
                 @{
                     async Task RenderNode(Department d)
@@ -103,11 +107,79 @@
                 </div>
 
                 <div style="display:flex; gap:8px; margin-top:13px; padding-top:12px; border-top:1px solid #f1f0f6;">
-                    <a asp-action="EditDepartment" asp-route-id="@selected.Id" class="btn-line" style="flex:1; text-align:center;">تعديل</a>
+                    <button type="button" class="btn-line" style="flex:1;"
+                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower())'>
+                        تعديل
+                    </button>
+                    <form method="post" asp-action="DeleteDepartment" asp-route-id="@selected.Id" onsubmit="return confirm('حذف هذا العنصر؟')" style="flex:1;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-line" style="width:100%; color:#c94a42;">حذف</button>
+                    </form>
                 </div>
             }
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="deptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="deptForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="dept-id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dept-modal-title">إدارة جديدة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم</div>
+                        <input type="text" name="Name" id="dept-name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الإدارة الرئيسية (اختياري)</div>
+                        <select name="ParentDepartmentId" id="dept-parent" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                            <option value="">-- لا يوجد (إدارة رئيسية) --</option>
+                            @foreach (var d in allDepartments)
+                            {
+                                <option value="@d.Id">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوصف</div>
+                        <textarea name="Description" id="dept-description" rows="3" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:8px 11px; font-size:12.5px; font-family:inherit;"></textarea>
+                    </div>
+                    <div id="dept-active-wrapper" style="display:none; align-items:center; gap:8px;">
+                        <input type="checkbox" name="IsActive" id="dept-isActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label for="dept-isActive" style="font-size:11.5px;">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">حفظ</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function openDeptModal(id, name, parentId, description, isActive) {
+            const form = document.getElementById('deptForm');
+            const isEdit = id !== undefined && id !== null;
+            form.action = isEdit ? '@Url.Action("EditDepartment")' : '@Url.Action("CreateDepartment")';
+            document.getElementById('dept-id').value = id ?? '';
+            document.getElementById('dept-name').value = name ?? '';
+            document.getElementById('dept-parent').value = (parentId !== undefined && parentId !== null) ? parentId : '';
+            document.getElementById('dept-description').value = description ?? '';
+            document.getElementById('dept-modal-title').textContent = isEdit ? 'تعديل' : ((parentId !== undefined && parentId !== null) ? 'قسم تابع جديد' : 'إدارة جديدة');
+            document.getElementById('dept-active-wrapper').style.display = isEdit ? 'flex' : 'none';
+            if (isEdit) {
+                document.getElementById('dept-isActive').checked = !!isActive;
+            }
+            new bootstrap.Modal(document.getElementById('deptModal')).show();
+        }
+    </script>
+}

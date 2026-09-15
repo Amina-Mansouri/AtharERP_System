@@ -15,8 +15,7 @@
         <h1>الأدوار والصلاحيات</h1>
     </div>
     <div class="page-head-actions">
-      
-        <a asp-action="CreateRole" class="btn-line btn-line-accent">+ دور مخصص</a>
+        <button type="button" class="btn-line btn-line-accent" onclick="openRoleModal()">+ دور مخصص</button>
     </div>
 </div>
 
@@ -51,9 +50,22 @@
         {
             var totalCount = allPermissions.Count;
             var selectedCount = selectedIds.Count;
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                 <div class="side-panel-title" style="margin:0;">صلاحيات «@selectedRole.Name» · مجمّعة بالوحدة</div>
-                <span class="stat-sub"><span class="cell-num">@selectedCount</span> من <span class="cell-num">@totalCount</span></span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="stat-sub"><span class="cell-num">@selectedCount</span> من <span class="cell-num">@totalCount</span></span>
+                    <button type="button" class="btn-line" style="font-size:11px; padding:4px 10px;"
+                            onclick='openRoleModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(selectedRole.Id)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selectedRole.Name)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selectedRole.Description)), @selectedRole.IsActive.ToString().ToLower())'>
+                        تعديل
+                    </button>
+                    @if (selectedRole.CanDelete)
+                    {
+                        <form method="post" asp-action="DeleteRole" asp-route-id="@selectedRole.Id" onsubmit="return confirm('حذف هذا الدور؟')" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-line" style="font-size:11px; padding:4px 10px; color:#c94a42;">حذف</button>
+                        </form>
+                    }
+                </div>
             </div>
 
           
@@ -93,3 +105,52 @@
     </div>
 </div>
 
+<div class="modal fade" id="roleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="roleForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="role-modal-title">دور جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم الدور</div>
+                        <input type="text" name="Name" id="role-name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوصف</div>
+                        <textarea name="Description" id="role-description" rows="3" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:8px 11px; font-size:12.5px; font-family:inherit;"></textarea>
+                    </div>
+                    <div id="role-active-wrapper" style="display:none; align-items:center; gap:8px;">
+                        <input type="checkbox" name="IsActive" id="role-isActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label for="role-isActive" style="font-size:11.5px;">نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openRoleModal(id, name, description, isActive) {
+            const form = document.getElementById('roleForm');
+            const isEdit = id !== undefined && id !== null;
+            form.action = isEdit ? '@Url.Action("EditRoleDetails")' + '?id=' + encodeURIComponent(id) : '@Url.Action("CreateRole")';
+            document.getElementById('role-name').value = name ?? '';
+            document.getElementById('role-description').value = description ?? '';
+            document.getElementById('role-modal-title').textContent = isEdit ? 'تعديل بيانات الدور' : 'دور جديد';
+            document.getElementById('role-active-wrapper').style.display = isEdit ? 'flex' : 'none';
+            if (isEdit) {
+                document.getElementById('role-isActive').checked = !!isActive;
+            }
+            new bootstrap.Modal(document.getElementById('roleModal')).show();
+        }
+    </script>
+}

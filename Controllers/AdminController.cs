@@ -415,20 +415,7 @@ namespace AtharERP_System.Controllers
             return View(roles);
         }
 
-        
-
-        [HttpGet]
-        public async Task<IActionResult> CreateRole()
-        {
-            ViewBag.AllPermissions = await _context.Permissions
-                .Where(p => p.IsActive)
-                .OrderBy(p => p.Module).ThenBy(p => p.Code)
-                .ToListAsync();
-            ViewBag.SelectedPermissionIds = new List<int>();
-
-            return View();
-        }
-
+       
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateRole(
@@ -440,12 +427,8 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewBag.AllPermissions = await _context.Permissions
-                    .Where(p => p.IsActive)
-                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
-                    .ToListAsync();
-                ViewBag.SelectedPermissionIds = selectedPermissions?.ToList() ?? new List<int>();
-                return View(model);
+                TempData["Error"] = "بيانات غير صحيحة، تأكدي من إدخال اسم الدور";
+                return RedirectToAction("Roles");
             }
 
             model.CreatedAt = DateTime.UtcNow;
@@ -454,15 +437,8 @@ namespace AtharERP_System.Controllers
 
             if (!result.Succeeded)
             {
-                foreach (var error in result.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
-
-                ViewBag.AllPermissions = await _context.Permissions
-                    .Where(p => p.IsActive)
-                    .OrderBy(p => p.Module).ThenBy(p => p.Code)
-                    .ToListAsync();
-                ViewBag.SelectedPermissionIds = selectedPermissions?.ToList() ?? new List<int>();
-                return View(model);
+                TempData["Error"] = string.Join(" — ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("Roles");
             }
 
             if (selectedPermissions != null && selectedPermissions.Length > 0)
@@ -559,6 +535,42 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditRoleDetails(string id, string name, string? description, bool isActive)
+        {
+            var role = await _roleManager.FindByIdAsync(id);
+            if (role == null)
+                return NotFound();
+
+            if (role.IsTemplate && !string.Equals(name, role.Name, StringComparison.Ordinal))
+            {
+                TempData["Error"] = "لا يمكن تغيير اسم دور قالب جاهز";
+                return RedirectToAction("Roles", new { roleId = id });
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                TempData["Error"] = "اسم الدور مطلوب";
+                return RedirectToAction("Roles", new { roleId = id });
+            }
+
+            role.Name = name.Trim();
+            role.Description = description;
+            role.IsActive = isActive;
+
+            var result = await _roleManager.UpdateAsync(role);
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" — ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("Roles", new { roleId = id });
+            }
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل دور", "ApplicationRole", id, $"تعديل بيانات دور {role.Name}");
+            TempData["Success"] = $"تم تحديث بيانات الدور {role.Name} بنجاح";
+            return RedirectToAction("Roles", new { roleId = id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteRole(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
@@ -621,13 +633,7 @@ namespace AtharERP_System.Controllers
             return View(departments);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> CreateDepartment(int? parentId)
-        {
-            ViewBag.ParentDepartments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
-            ViewBag.PresetParentId = parentId;
-            return View();
-        }
+       
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -635,8 +641,8 @@ namespace AtharERP_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ViewBag.ParentDepartments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
-                return View(model);
+                TempData["Error"] = "بيانات غير صحيحة، تأكدي من إدخال الاسم";
+                return RedirectToAction("Departments");
             }
 
             model.IsActive = true;
@@ -650,20 +656,6 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Departments");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> EditDepartment(int id)
-        {
-            var department = await _context.Departments.FindAsync(id);
-            if (department == null)
-                return NotFound();
-
-            ViewBag.ParentDepartments = await _context.Departments
-                .Where(d => d.IsActive && d.Id != id)
-                .OrderBy(d => d.Name)
-                .ToListAsync();
-
-            return View(department);
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -680,11 +672,8 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewBag.ParentDepartments = await _context.Departments
-                    .Where(d => d.IsActive && d.Id != id)
-                    .OrderBy(d => d.Name)
-                    .ToListAsync();
-                return View(model);
+                TempData["Error"] = "بيانات غير صحيحة، تأكدي من إدخال الاسم";
+                return RedirectToAction("Departments");
             }
 
             department.Name = model.Name;
