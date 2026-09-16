@@ -98,7 +98,7 @@ namespace AtharERP_System.Controllers
                 TempData["FailedPricePerMeter"] = pricePerMeter;
                 TempData["FailedEngineerId"] = assignedEngineerId;
                 TempData["FailedExtraTasks"] = extraTasks;
-                return RedirectKeepingTab("Details", "Projects", new { id = projectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
             }
 
             if (project.Stages.Any(s => s.Name == template.Name))
@@ -189,7 +189,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateProjectAsync(projectId);
 
             TempData["Success"] = $"تم تفعيل مرحلة {template.Name} بنجاح — لا تنسي ضبط وزن المهام الإضافية (وزنها 0 افتراضياً) من شاشة كل مهمة";
-            return RedirectKeepingTab("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
         // ============================================
         // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)
