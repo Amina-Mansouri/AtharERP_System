@@ -721,10 +721,7 @@ else
                     <div style="display:grid; gap:10px;">
                         @foreach (var stage in timelineStages)
                         {
-                            var barColor = stage.Status == StageStatus.Completed ? "#2f8a57"
-                                : stage.Status == StageStatus.Delayed ? "#c94a42"
-                                : stage.Status == StageStatus.InProgress ? "#7b6bd6"
-                                : "#c7c2d9";
+                            var barColor = stage.Status == StageStatus.Completed ? "#2f8a57" : (stage.Status == StageStatus.Delayed ? "#c94a42" : (stage.Status == StageStatus.InProgress ? "#7b6bd6" : "#c7c2d9"));
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <div style="width:170px; flex-shrink:0; font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@stage.Name">@stage.Sequence. @stage.Name</div>
                                 <div style="flex:1; position:relative; height:26px; background:#f7f6fb; border-radius:6px;">

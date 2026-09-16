@@ -234,10 +234,8 @@
                 <div style="display:grid; gap:8px; margin-bottom:10px;">
                     @foreach (var p in proposals)
                     {
-                        var pTagClass = p.Status == ProposalStatus.Approved ? "tag-success"
-                            : p.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning";
-                        var pLabel = p.Status == ProposalStatus.Approved ? "معتمد"
-                            : p.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد";
+                        var pTagClass = p.Status == ProposalStatus.Approved ? "tag-success" : (p.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning");
+                        var pLabel = p.Status == ProposalStatus.Approved ? "معتمد" : (p.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد");
                         <div style="border:1px solid #f1f0f6; border-radius:8px; padding:8px 12px;">
                             <div style="display:flex; align-items:center; justify-content:space-between;">
                                 <a href="@p.FilePath" target="_blank" style="font-size:11.5px; font-weight:600;">@p.Code — @p.Name (نسخة @p.Revision)</a>

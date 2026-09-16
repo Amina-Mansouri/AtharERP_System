@@ -191,10 +191,8 @@ else
                                             <div style="font-size:10.5px; font-weight:600; color:#5a5370;">مقترحات التصميم</div>
                                             @foreach (var proposal in t.DesignProposals.OrderByDescending(p => p.CreatedAt))
                                             {
-                                                var propTagClass = proposal.Status == ProposalStatus.Approved ? "tag-success"
-                                                    : proposal.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning";
-                                                var propLabel = proposal.Status == ProposalStatus.Approved ? "معتمد"
-                                                    : proposal.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد";
+                                                var propTagClass = proposal.Status == ProposalStatus.Approved ? "tag-success" : (proposal.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning");
+                                                var propLabel = proposal.Status == ProposalStatus.Approved ? "معتمد" : (proposal.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد");
                                                 <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#faf9fd;">
                                                     <div style="display:flex; align-items:center; justify-content:space-between;">
                                                         <a href="@proposal.FilePath" target="_blank" style="font-size:11px; font-weight:600; color:inherit; text-decoration:underline;">@proposal.Code — @proposal.Name (نسخة @proposal.Revision)</a>
