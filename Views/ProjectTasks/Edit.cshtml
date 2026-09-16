@@ -7,7 +7,7 @@
     var canEditDates = ViewBag.CanEditDates as bool? ?? false;
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectTaskStatus>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
-    var proposals = ViewBag.Proposals as List<DesignProposal> ?? new List<DesignProposal>();
+    var proposals = ViewBag.Proposals as List<DesignProposal> ?? [];
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
