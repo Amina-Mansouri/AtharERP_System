@@ -60,8 +60,16 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = "بيانات طلب الصيانة غير صحيحة";
-                return RedirectToAction("Index", new { siteId = model.SiteId });
+                ViewBag.Error = "بيانات طلب الصيانة غير صحيحة";
+                ViewBag.Site = site;
+                ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
+                ViewBag.PostedModel = model;
+                var listData = await _context.SiteMaintenances
+                    .Include(m => m.Responsible)
+                    .Where(m => m.SiteId == model.SiteId)
+                    .OrderByDescending(m => m.RequestDate)
+                    .ToListAsync();
+                return View("Index", listData);
             }
 
             model.Status = MaintenanceStatus.Pending;

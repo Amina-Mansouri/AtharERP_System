@@ -91,30 +91,46 @@ namespace AtharERP_System.Controllers
             if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
                 return Forbid();
 
+            async Task<IActionResult> FailAsync(string error)
+            {
+                ViewBag.Error = error;
+                ViewBag.Site = site;
+                ViewBag.AllContractors = await _context.Contractors.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
+                ViewBag.PostedContractorId = contractorId;
+                ViewBag.PostedNewName = newName;
+                ViewBag.PostedNewCompanyName = newCompanyName;
+                ViewBag.PostedNewPhone = newPhone;
+                ViewBag.PostedNewEmail = newEmail;
+                ViewBag.PostedNewPassword = newPassword;
+                ViewBag.PostedSpecialty = specialty;
+                ViewBag.PostedStartDate = startDate;
+                ViewBag.PostedEndDate = endDate;
+
+                var listData = await _context.SiteContractors
+                    .Include(c => c.Contractor)
+                    .Include(c => c.Site).ThenInclude(s => s.Project)
+                    .Where(c => c.SiteId == siteId)
+                    .OrderByDescending(c => c.Status == ContractorStatus.Active)
+                    .ThenBy(c => c.Contractor.Name)
+                    .ToListAsync();
+                return View("Index", listData);
+            }
+
             Contractor? contractor;
 
             if (contractorId.HasValue)
             {
                 contractor = await _context.Contractors.FindAsync(contractorId.Value);
                 if (contractor == null)
-                {
-                    TempData["Error"] = "المقاول المحدد غير موجود";
-                    return RedirectToAction("Index", new { siteId });
-                }
+                    return await FailAsync("المقاول المحدد غير موجود");
             }
             else
             {
                 if (string.IsNullOrWhiteSpace(newName) || string.IsNullOrWhiteSpace(newEmail) || string.IsNullOrWhiteSpace(newPassword))
-                {
-                    TempData["Error"] = "لإنشاء مقاول جديد: الاسم والبريد الإلكتروني وكلمة المرور مطلوبة";
-                    return RedirectToAction("Index", new { siteId });
-                }
+                    return await FailAsync("لإنشاء مقاول جديد: الاسم والبريد الإلكتروني وكلمة المرور مطلوبة");
 
                 if (await _context.Contractors.AnyAsync(c => c.Email == newEmail))
-                {
-                    TempData["Error"] = "البريد الإلكتروني مستخدم بالفعل لمقاول آخر";
-                    return RedirectToAction("Index", new { siteId });
-                }
+                    return await FailAsync("البريد الإلكتروني مستخدم بالفعل لمقاول آخر");
 
                 contractor = new Contractor
                 {
@@ -135,10 +151,7 @@ namespace AtharERP_System.Controllers
 
             var alreadyLinked = await _context.SiteContractors.AnyAsync(sc => sc.SiteId == siteId && sc.ContractorId == contractor.Id);
             if (alreadyLinked)
-            {
-                TempData["Error"] = "هذا المقاول مرتبط بهذا الموقع بالفعل";
-                return RedirectToAction("Index", new { siteId });
-            }
+                return await FailAsync("هذا المقاول مرتبط بهذا الموقع بالفعل");
 
             _context.SiteContractors.Add(new SiteContractor
             {
