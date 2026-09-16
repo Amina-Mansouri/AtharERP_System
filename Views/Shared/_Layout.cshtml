@@ -72,12 +72,11 @@
         string activeSystem = ViewContext.RouteData.Values["controller"]?.ToString() switch
         {
             "Admin" => "sys01",
-            "Projects" or "ProjectTasks" or "ProjectStages" => "sys02",
+            "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
             "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" or "SiteSupplyRequests" => "sys03",
             "Clients" => "sys07",
             _ => ""
         };
-
         <header class="app-topbar">
             <img src="~/images/logo-icon.png" alt="أثر" class="ds-logo" />
             <span class="ds-brand">منظومة أثر</span>
