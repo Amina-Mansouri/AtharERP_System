@@ -118,6 +118,9 @@ namespace AtharERP_System.Controllers
                     taskWeights[taskId] = w;
                     selectedTasksWeightTotal += w;
                 }
+
+                if (taskWeights.Values.Any(w => w <= 0))
+                    return Fail("كل تكليف (مهمة) مختار يجب أن يكون له وزن أكبر من صفر");
             }
 
             if (selectedTasksWeightTotal > weight)
