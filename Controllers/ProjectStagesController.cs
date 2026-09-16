@@ -76,7 +76,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
             [HttpPost]
             [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ActivateTemplate(
+               public async Task<IActionResult> ActivateTemplate(
                 int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
                 decimal? area, decimal? pricePerMeter,
                 List<int>? selectedTaskIds, string? extraTasks)
@@ -257,7 +257,7 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = $"تم تحديث المرحلة {stage.Name} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
         }
 
         // ============================================
@@ -280,7 +280,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateProjectAsync(projectId);
 
             TempData["Success"] = "تم حذف المرحلة بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
 
         // ============================================
@@ -299,14 +299,14 @@ namespace AtharERP_System.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات الخطوة غير صحيحة";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             var currentTotal = stage.Steps.Sum(s => s.Weight);
             if (currentTotal + model.Weight > 100)
             {
                 TempData["Error"] = $"مجموع أوزان الخطوات سيتجاوز 100% (المجموع الحالي: {currentTotal}%)";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             model.Status = StepStatus.NotStarted;
@@ -316,7 +316,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateStageAsync(stage.Id);
 
             TempData["Success"] = $"تمت إضافة الخطوة {model.Name} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
         }
 
         // ============================================
@@ -369,7 +369,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateStageAsync(step.StageId);
 
             TempData["Success"] = $"تم تحديث الخطوة {step.Name} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = step.Stage.ProjectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = step.Stage.ProjectId });
         }
 
         // ============================================
@@ -393,7 +393,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateStageAsync(stageId);
 
             TempData["Success"] = "تم حذف الخطوة بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
 
         private async Task LoadDropdownsAsync(int projectId)

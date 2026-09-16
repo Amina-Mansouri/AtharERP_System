@@ -44,7 +44,7 @@ namespace AtharERP_System.Controllers
             if (!result.Success)
             {
                 TempData["Error"] = result.ErrorMessage;
-                return RedirectToAction("Details", "Projects", new { id = projectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
             }
 
             var document = new ProjectDocument
@@ -65,7 +65,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Upload", nameof(ProjectDocument), document.Id.ToString(), $"رفع مستند: {document.FileName}");
 
             TempData["Success"] = "تم رفع المستند بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
 
         [RequirePermission("Projects.Edit")]
@@ -87,7 +87,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectDocument), id.ToString(), $"حذف مستند: {fileName}");
 
             TempData["Success"] = "تم حذف المستند بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
     }
 }

@@ -163,7 +163,7 @@ namespace AtharERP_System.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات غير صحيحة";
-                return RedirectToAction("UserDetails", new { id });
+                return this.RedirectKeepingTab("UserDetails", new { id });
             }
 
             user.FirstName = model.FirstName;
@@ -236,7 +236,7 @@ namespace AtharERP_System.Controllers
             if (!result.Succeeded)
             {
                 TempData["Error"] = string.Join(" — ", result.Errors.Select(e => e.Description));
-                return RedirectToAction("UserDetails", new { id });
+                return this.RedirectKeepingTab("UserDetails", new { id });
             }
 
             if (!string.IsNullOrEmpty(role))
@@ -249,7 +249,7 @@ namespace AtharERP_System.Controllers
 
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل", "ApplicationUser", user.Id, $"تعديل بيانات {user.FullName}");
             TempData["Success"] = $"تم تحديث بيانات {user.FullName} بنجاح";
-            return RedirectToAction("UserDetails", new { id });
+            return this.RedirectKeepingTab("UserDetails", new { id });
         }
 
         [HttpPost]
@@ -309,7 +309,7 @@ namespace AtharERP_System.Controllers
                 ? $"تم تحديث كلمة مرور {user.FullName} بنجاح"
                 : string.Join("، ", result.Errors.Select(e => e.Description));
 
-            return RedirectToAction("UserDetails", new { id });
+            return this.RedirectKeepingTab("UserDetails", new { id });
         }
         [HttpGet]
         public async Task<IActionResult> UserDetails(string id)

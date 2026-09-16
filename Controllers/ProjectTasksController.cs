@@ -191,7 +191,7 @@ int id,
             if (task.Status == ProjectTaskStatus.Completed)
             {
                 TempData["Error"] = "لا يمكن تعديل بيانات مهمة مكتملة";
-                return RedirectToAction("Edit", new { id });
+                return this.RedirectKeepingTab("Edit", new { id });
             }
 
             if (canManage)
@@ -201,7 +201,7 @@ int id,
                 if (otherTasksWeightTotal + model.Weight > stage.Weight)
                 {
                     TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
-                    return RedirectToAction("Edit", new { id });
+                    return this.RedirectKeepingTab("Edit", new { id });
                 }
 
                 task.Title = model.Title;
@@ -250,7 +250,7 @@ int id,
             }
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";
-            return RedirectToAction("Edit", new { id });
+            return this.RedirectKeepingTab("Edit", new { id });
 
         }
         // ============================================
@@ -302,7 +302,7 @@ int id,
             await _calc.RecalculateStageAsync(task.StageId!.Value);
 
             TempData["Success"] = "تم تحديث حالة المهمة";
-            return RedirectToAction("Edit", new { id });
+            return this.RedirectKeepingTab("Edit", new { id });
         }
 
         // ============================================
@@ -338,7 +338,7 @@ int id,
                 TempData["Error"] = "هذا المهندس مكلَّف بالفعل بهذه المهمة";
             }
 
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
 
         [RequirePermission("Projects.Tasks.Manage")]
@@ -353,7 +353,7 @@ int id,
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
 
         // ============================================
@@ -374,13 +374,13 @@ int id,
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "لا يمكن إضافة بند لمهمة مكتملة أو قيد المراجعة";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             if (task.PlannedStartDate == null || task.PlannedEndDate == null)
             {
                 TempData["Error"] = "لا يمكن إضافة بند قبل تحديد تاريخ البداية والنهاية للمهمة";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             if (!string.IsNullOrWhiteSpace(item))
@@ -394,7 +394,7 @@ int id,
                 }
             }
 
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
 
         [Authorize]
@@ -412,7 +412,7 @@ int id,
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             var todo = task.Todos.FirstOrDefault(t => t.Id == id);
@@ -425,7 +425,7 @@ int id,
                 await _calc.RecalculateTaskCompletionAsync(taskId);
             }
 
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
         [Authorize]
         [HttpPost]
@@ -442,7 +442,7 @@ int id,
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             var todo = await _context.TaskTodos.FindAsync(id);
@@ -453,7 +453,7 @@ int id,
                 await _calc.RecalculateTaskCompletionAsync(taskId);
             }
 
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
 
         // ============================================
@@ -472,13 +472,13 @@ int id,
             if (!dependsOnTaskExists)
             {
                 TempData["Error"] = "لم يتم اختيار مهمة صحيحة للاعتماد عليها";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             if (taskId == dependsOnTaskId)
             {
                 TempData["Error"] = "لا يمكن أن تعتمد المهمة على نفسها";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             var alreadyExists = await _context.TaskDependencies
@@ -490,20 +490,20 @@ int id,
             if (alreadyExists)
             {
                 TempData["Error"] = "رابط التبعية موجود بالفعل";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             if (reverseExists)
             {
                 TempData["Error"] = "لا يمكن إنشاء تبعية دائرية بين هاتين المهمتين";
-                return RedirectToAction("Edit", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
 
             _context.TaskDependencies.Add(new TaskDependency { TaskId = taskId, DependsOnTaskId = dependsOnTaskId });
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تمت إضافة التبعية بنجاح";
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
 
         [RequirePermission("Projects.Tasks.Manage")]
@@ -518,7 +518,7 @@ int id,
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Edit", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
         // ============================================
         // اعتماد/رفض مهمة قيد المراجعة — للمدير أو مسؤول المرحلة فقط
