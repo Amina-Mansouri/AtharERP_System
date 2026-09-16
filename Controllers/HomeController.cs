@@ -69,7 +69,7 @@ namespace AtharERP_System.Controllers
             var today = DateTime.UtcNow.Date;
 
             ViewBag.CurrentUser = user;
-            ViewBag.MyProjectsCount = activeAssignments.Select(a => a.Stage!.ProjectId).Distinct().Count();
+            ViewBag.MyProjectsCount = activeAssignments.Where(a => a.Stage != null).Select(a => a.Stage!.ProjectId).Distinct().Count();
             ViewBag.MyAssignmentsCount = activeAssignments.Count;
             ViewBag.DelayedAssignmentsCount = activeAssignments.Count(a => a.Tasks.Any(t => t.DelayDays > 0));
             ViewBag.AvgCompletion = myTasks.Any() ? Math.Round(myTasks.Average(t => t.CompletionPercentage), 0) : 0;

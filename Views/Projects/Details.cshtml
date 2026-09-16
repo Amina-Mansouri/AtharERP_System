@@ -587,31 +587,33 @@ else
                                                                <div class="cell">
                                     <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
                                 </div>
-                                <div class="cell" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                                                               <div class="cell" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
                                     @if (canManageAssignments && !a.IsTransferredToFinance)
                                     {
-                                                                                @if (a.Status != AssignmentStatus.Pending)
+                                        @if (a.Status != AssignmentStatus.Completed)
                                         {
-                                            <form method="post" asp-controller="ProjectAssignments" asp-action="Hold" style="display:block; width:100%;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@a.Id" />
-                                                <input type="hidden" name="projectId" value="@Model.Id" />
-                                                <button type="submit" style="width:100%; height:22px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10px; font-weight:600; cursor:pointer;">تعليق</button>
-                                            </form>
+                                            @if (a.Status != AssignmentStatus.Pending)
+                                            {
+                                                <form method="post" asp-controller="ProjectAssignments" asp-action="Hold">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@a.Id" />
+                                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                                    <button type="submit" class="btn-line" style="height:22px; padding:0 8px; font-size:10px; color:#7b6bd6;">تعليق</button>
+                                                </form>
+                                            }
+                                            @if (a.Status != AssignmentStatus.Cancelled)
+                                            {
+                                                <form method="post" asp-controller="ProjectAssignments" asp-action="Cancel">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@a.Id" />
+                                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                                    <button type="submit" class="btn-line" style="height:22px; padding:0 8px; font-size:10px; color:#ff9130;">إلغاء</button>
+                                                </form>
+                                            }
                                         }
-                                        @if (a.Status != AssignmentStatus.Cancelled)
-                                        {
-                                            <form method="post" asp-controller="ProjectAssignments" asp-action="Cancel" style="display:block; width:100%;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@a.Id" />
-                                                <input type="hidden" name="projectId" value="@Model.Id" />
-                                                <button type="submit" style="width:100%; height:22px; border:none; border-radius:6px; background:#ff9130; color:#fff; font-size:10px; font-weight:600; cursor:pointer;">إلغاء</button>
-                                            </form>
-                                        }
-                                        }
-                                         <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');" style="display:block; width:100%;">
+                                        <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" style="width:100%; height:22px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10px; font-weight:600; cursor:pointer;">حذف</button>
+                                            <button type="submit" class="btn-line" style="height:22px; padding:0 8px; font-size:10px; color:#c94a42;">حذف</button>
                                         </form>
                                     }
                                 </div>

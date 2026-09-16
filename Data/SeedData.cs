@@ -211,8 +211,9 @@ namespace AtharERP_System.Data
             // مهندسة جودة (03-SCREENS.md): إضافة المشاريع والمهام · متابعة جميع المشاريع وأعمال التصميم ·
             // الاطلاع على جميع المهام والحضور · اعتماد الجودة والتقارير. نفس الممنوعات الثلاثة.
             await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[]
-            {
+ {
                 "Projects.ViewAll", "Projects.Create", "Projects.Stages.Manage", "Projects.Tasks.Manage",
+                "Projects.Assignments.View",
                 "HR.Attendance.View",
                 "Sites.View",
                 "Quality.View", "Quality.Approve", "Quality.Reports",
