@@ -89,18 +89,24 @@ namespace AtharERP_System.Controllers
             if (template == null)
                 return NotFound();
 
-            if (project.Stages.Any(s => s.Name == template.Name))
+            IActionResult Fail(string error)
             {
-                TempData["Error"] = $"مرحلة {template.Name} مفعّلة بالفعل لهذا المشروع";
-                return RedirectToAction("Details", "Projects", new { id = projectId });
+                TempData["Error"] = error;
+                TempData["FailedTemplateId"] = stageTemplateId;
+                TempData["FailedWeight"] = weight;
+                TempData["FailedArea"] = area;
+                TempData["FailedPricePerMeter"] = pricePerMeter;
+                TempData["FailedEngineerId"] = assignedEngineerId;
+                TempData["FailedExtraTasks"] = extraTasks;
+                return RedirectKeepingTab("Details", "Projects", new { id = projectId });
             }
+
+            if (project.Stages.Any(s => s.Name == template.Name))
+                return Fail($"مرحلة {template.Name} مفعّلة بالفعل لهذا المشروع");
 
             var currentTotal = project.Stages.Sum(s => s.Weight);
             if (currentTotal + weight > 100)
-            {
-                TempData["Error"] = $"مجموع أوزان المراحل سيتجاوز 100% (المجموع الحالي: {currentTotal}%)";
-                return RedirectToAction("Details", "Projects", new { id = projectId });
-            }
+                return Fail($"مجموع أوزان المراحل سيتجاوز 100% (المجموع الحالي: {currentTotal}%)");
 
             var taskWeights = new Dictionary<int, decimal>();
             decimal selectedTasksWeightTotal = 0;
@@ -115,10 +121,7 @@ namespace AtharERP_System.Controllers
             }
 
             if (selectedTasksWeightTotal > weight)
-            {
-                TempData["Error"] = $"مجموع أوزان المهام المختارة ({selectedTasksWeightTotal}%) يتجاوز وزن المرحلة ({weight}%)";
-                return RedirectToAction("Details", "Projects", new { id = projectId });
-            }
+                return Fail($"مجموع أوزان المهام المختارة ({selectedTasksWeightTotal}%) يتجاوز وزن المرحلة ({weight}%)");
 
             var stage = new ProjectStage
             {
@@ -186,7 +189,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateProjectAsync(projectId);
 
             TempData["Success"] = $"تم تفعيل مرحلة {template.Name} بنجاح — لا تنسي ضبط وزن المهام الإضافية (وزنها 0 افتراضياً) من شاشة كل مهمة";
-            return RedirectToAction("Details", "Projects", new { id = projectId });
+            return RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
         // ============================================
         // تعديل مرحلة (لا يمكن تعديل الوزن بعد الإنشاء)

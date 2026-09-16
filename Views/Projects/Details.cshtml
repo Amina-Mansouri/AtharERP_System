@@ -21,6 +21,12 @@
 
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
+    var failedTemplateId = TempData.Peek("FailedTemplateId") as int?;
+    var failedWeight = TempData.Peek("FailedWeight") as decimal?;
+    var failedArea = TempData.Peek("FailedArea") as decimal?;
+    var failedPricePerMeter = TempData.Peek("FailedPricePerMeter") as decimal?;
+    var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
+    var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
     var weightSum = Model.Stages.Sum(s => s.Weight);
@@ -440,10 +446,11 @@ else
                             <div style="font-size:12px; font-weight:600;">قوالب المراحل — فعّلي ما يحتاجه هذا المشروع</div>
                             <a asp-controller="StageTemplates" asp-action="Index" style="font-size:11px;">+ إدارة القوالب</a>
                         </div>
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                                                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
                             @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
                             {
                                 var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
+                                var isFailedTemplate = failedTemplateId == tpl.Id;
                                 <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff");">
                                     <div style="display:flex; align-items:center; justify-content:space-between;">
                                         <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
@@ -456,23 +463,27 @@ else
 
                                     @if (!isUsed)
                                     {
+                                        @if (isFailedTemplate && !string.IsNullOrEmpty(TempData.Peek("Error") as string))
+                                        {
+                                            <div style="background:#fdecea; border:1px solid #e35d54; color:#c94a42; border-radius:7px; padding:6px 8px; margin-top:8px; font-size:10.5px; font-weight:600;">@(TempData.Peek("Error") as string)</div>
+                                        }
                                         <form method="post" asp-controller="ProjectStages" asp-action="ActivateTemplate" style="margin-top:8px;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="projectId" value="@Model.Id" />
                                             <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
                                             <div style="margin-bottom:6px;">
-                                                <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                                             </div>
                                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-                                                <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                                <input type="number" step="0.01" min="0" name="pricePerMeter" placeholder="سعر المتر" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" value="@(isFailedTemplate ? failedArea : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                <input type="number" step="0.01" min="0" name="pricePerMeter" placeholder="سعر المتر" value="@(isFailedTemplate ? failedPricePerMeter : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                                             </div>
                                             <div style="margin-bottom:6px;">
                                                 <select name="assignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
                                                     <option value="">-- المسؤول عن المرحلة --</option>
                                                     @foreach (var eng in engineers)
                                                     {
-                                                        <option value="@eng.Id">@eng.FullName</option>
+                                                        <option value="@eng.Id" selected="@(isFailedTemplate && failedEngineerId == eng.Id)">@eng.FullName</option>
                                                     }
                                                 </select>
                                             </div>
@@ -486,7 +497,7 @@ else
                                                     </div>
                                                 }
                                             </div>
-                                            <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;"></textarea>
+                                            <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;">@(isFailedTemplate ? failedExtraTasks : "")</textarea>
                                             <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
                                         </form>
                                     }
@@ -813,6 +824,7 @@ else
     </div>
 }
 @section Scripts {
+        <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>
         function toggleParentDependentFields() {
             var scopeSelect = document.getElementById('scopeSelect');
