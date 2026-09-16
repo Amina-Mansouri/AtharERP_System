@@ -93,9 +93,9 @@ namespace AtharERP_System.Controllers
             {
                 TempData["Error"] = error;
                 TempData["FailedTemplateId"] = stageTemplateId;
-                TempData["FailedWeight"] = weight;
-                TempData["FailedArea"] = area;
-                TempData["FailedPricePerMeter"] = pricePerMeter;
+                TempData["FailedWeight"] = (double)weight;
+                TempData["FailedArea"] = (double?)area;
+                TempData["FailedPricePerMeter"] = (double?)pricePerMeter;
                 TempData["FailedEngineerId"] = assignedEngineerId;
                 TempData["FailedExtraTasks"] = extraTasks;
                 return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });

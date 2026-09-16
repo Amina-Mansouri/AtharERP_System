@@ -61,7 +61,7 @@ namespace AtharERP_System.Services
                     {
                         UserId = recipientId,
                         Message = $"عقد الموظف {user.FullName} ينتهي خلال {daysLeft} يوماً ({dateTag})",
-                        Link = $"/Admin/EditUser/{user.Id}",
+                        Link = $"/Admin/UserDetails/{user.Id}",
                         EventType = NotificationEventType.ContractExpiring,
                         SourceModule = "01",
                         RequiresAction = true,
@@ -86,7 +86,7 @@ namespace AtharERP_System.Services
                     {
                         UserId = recipientId,
                         Message = $"انتهى عقد الموظف {user.FullName} ولم يُجدَّد — تم إيقاف الحساب",
-                        Link = $"/Admin/EditUser/{user.Id}",
+                        Link = $"/Admin/UserDetails/{user.Id}",
                         EventType = NotificationEventType.ContractExpired,
                         SourceModule = "01",
                         RequiresAction = true,
