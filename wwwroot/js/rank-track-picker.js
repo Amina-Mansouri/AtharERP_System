@@ -10,7 +10,7 @@ function initAtharRankTrackPicker(trackSelectId, rankSelectId) {
         let hasSelectedVisible = false;
         Array.from(rankSelect.options).forEach(function (opt) {
             if (!opt.value) return;
-            const matches = !trackId || opt.getAttribute('data-track') === trackId;
+            const matches = trackId !== '' && opt.getAttribute('data-track') === trackId;
             opt.hidden = !matches;
             if (matches && !firstVisible) firstVisible = opt;
             if (matches && opt.selected) hasSelectedVisible = true;
