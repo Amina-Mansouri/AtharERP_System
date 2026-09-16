@@ -128,7 +128,6 @@
             }
         </div>
     </div>
-</div>
 
 @{
     int pagerPage = ViewBag.Page as int? ?? 1;
@@ -149,4 +148,5 @@
             <a href="@Url.Action("Index", new { filter, eventType = eventTypeFilter, period, page = pagerPage + 1 })" class="pager-page">التالي ›</a>
         }
     </div>
+</div>
 </div>
