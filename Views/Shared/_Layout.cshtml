@@ -89,6 +89,16 @@
                     <path d="M20 20l-3.5-3.5"></path>
                 </svg>
             </div>
+            @if (canProjects)
+            {
+                <a class="ds-icon-link" asp-controller="ProjectAssignments" asp-action="MyAssignments" title="تكليفاتي">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke-linecap="round" stroke-linejoin="round" />
+                        <rect x="9" y="3" width="6" height="4" rx="1" />
+                        <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </a>
+            }
             <a class="ds-bell" asp-controller="Notifications" asp-action="Index" title="الإشعارات">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round" />
@@ -192,8 +202,7 @@
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
                                        asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشروع</a>
                                 }
-                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
-                                   asp-controller="ProjectAssignments" asp-action="MyAssignments">تكليفاتي</a>
+                                
                             <div class="nav-subgroup-title">التسليم والمتابعة</div>
                             <span class="nav-item disabled">المقترحات التصميمية <span class="tag tag-muted">قادمة</span></span>
                             <span class="nav-item disabled">الجدول الزمني العام <span class="tag tag-muted">قادمة</span></span>

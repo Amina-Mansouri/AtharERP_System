@@ -885,6 +885,25 @@ button:focus-visible {
         justify-content: center;
         line-height: 1;
     }
+    
+.app-topbar .ds-icon-link {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    background: rgba(255,255,255,.08);
+}
+
+    .app-topbar .ds-icon-link svg {
+        width: 14px;
+        height: 14px;
+        stroke: #fff;
+        stroke-width: 1.7;
+    }
 
 .app-topbar .ds-user-chip {
     display: flex;
