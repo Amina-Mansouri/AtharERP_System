@@ -11,7 +11,7 @@ function initAtharRankTrackPicker(trackSelectId, rankSelectId) {
         Array.from(rankSelect.options).forEach(function (opt) {
             if (!opt.value) return;
             const matches = trackId !== '' && opt.getAttribute('data-track') === trackId;
-            opt.hidden = !matches;
+            opt.style.display = matches ? '' : 'none';
             if (matches && !firstVisible) firstVisible = opt;
             if (matches && opt.selected) hasSelectedVisible = true;
         });
