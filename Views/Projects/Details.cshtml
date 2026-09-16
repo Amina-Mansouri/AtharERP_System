@@ -22,9 +22,12 @@
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
     var failedTemplateId = TempData.Peek("FailedTemplateId") as int?;
-    var failedWeight = TempData.Peek("FailedWeight") as decimal?;
-    var failedArea = TempData.Peek("FailedArea") as decimal?;
-    var failedPricePerMeter = TempData.Peek("FailedPricePerMeter") as decimal?;
+      var failedWeightRaw = TempData.Peek("FailedWeight") as double?;
+    var failedAreaRaw = TempData.Peek("FailedArea") as double?;
+    var failedPricePerMeterRaw = TempData.Peek("FailedPricePerMeter") as double?;
+    decimal? failedWeight = failedWeightRaw.HasValue ? (decimal?)failedWeightRaw.Value : null;
+    decimal? failedArea = failedAreaRaw.HasValue ? (decimal?)failedAreaRaw.Value : null;
+    decimal? failedPricePerMeter = failedPricePerMeterRaw.HasValue ? (decimal?)failedPricePerMeterRaw.Value : null;
     var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
     var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
