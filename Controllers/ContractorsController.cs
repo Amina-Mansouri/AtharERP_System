@@ -24,16 +24,30 @@ namespace AtharERP_System.Controllers
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [RequirePermission("Sites.Manage")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var contractors = await _context.Contractors
-                .Include(c => c.SiteAssignments)
+            const int pageSize = 20;
+            var query = _context.Contractors.Include(c => c.SiteAssignments).AsQueryable();
+
+            var totalCount = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Max(1, Math.Min(page, totalPages));
+
+            var contractors = await query
                 .OrderByDescending(c => c.IsActive)
                 .ThenBy(c => c.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.PageSize = pageSize;
 
             return View(contractors);
         }
+
         [RequirePermission("Sites.Manage")]
         [HttpGet]
         public IActionResult Create()

@@ -2,6 +2,7 @@
 using AtharERP_System.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -19,7 +20,7 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        public async Task<IActionResult> Index(string? filter, string? eventType, string? period)
+        public async Task<IActionResult> Index(string? filter, string? eventType, string? period, int page = 1)
         {
             var baseQuery = _context.Notifications.Where(n => n.UserId == CurrentUserId);
 
@@ -43,7 +44,21 @@ namespace AtharERP_System.Controllers
             else if (period == "month")
                 query = query.Where(n => n.CreatedAt >= DateTime.UtcNow.AddMonths(-1));
 
-            var notifications = await query.OrderByDescending(n => n.CreatedAt).Take(200).ToListAsync();
+            const int pageSize = 20;
+            var totalCount = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Max(1, Math.Min(page, totalPages));
+
+            var notifications = await query
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.PageSize = pageSize;
 
             var settings = await _context.NotificationSettings
                 .Where(s => s.UserId == CurrentUserId)

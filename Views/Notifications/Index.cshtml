@@ -129,3 +129,24 @@
         </div>
     </div>
 </div>
+
+@{
+    int pagerPage = ViewBag.Page as int? ?? 1;
+    int pagerTotalPages = ViewBag.TotalPages as int? ?? 1;
+    int pagerTotalCount = ViewBag.TotalCount as int? ?? 0;
+    int pagerPageSize = ViewBag.PageSize as int? ?? 20;
+}
+<div class="pager">
+    <span class="cell-num">@(pagerTotalCount == 0 ? 0 : (pagerPage - 1) * pagerPageSize + 1)–@Math.Min(pagerPage * pagerPageSize, pagerTotalCount)</span> من <span class="cell-num">@pagerTotalCount</span>
+    <div class="pager-pages">
+        @if (pagerPage > 1)
+        {
+            <a href="@Url.Action("Index", new { filter, eventType = eventTypeFilter, period, page = pagerPage - 1 })" class="pager-page">‹ السابق</a>
+        }
+        <span class="stat-sub">صفحة @(pagerPage) من @(pagerTotalPages)</span>
+        @if (pagerPage < pagerTotalPages)
+        {
+            <a href="@Url.Action("Index", new { filter, eventType = eventTypeFilter, period, page = pagerPage + 1 })" class="pager-page">التالي ›</a>
+        }
+    </div>
+</div>
