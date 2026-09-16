@@ -309,7 +309,7 @@ namespace AtharERP_System.Controllers
                 ? $"تم تحديث كلمة مرور {user.FullName} بنجاح"
                 : string.Join("، ", result.Errors.Select(e => e.Description));
 
-            return RedirectToAction("EditUser", new { id });
+            return RedirectToAction("UserDetails", new { id });
         }
         [HttpGet]
         public async Task<IActionResult> UserDetails(string id)
@@ -390,31 +390,60 @@ namespace AtharERP_System.Controllers
             int? allowedRadiusMeters,
             string role)
         {
-            if (password != confirmPassword)
+            async Task<IActionResult> FailAsync(string error)
             {
-                TempData["Error"] = "كلمتا المرور غير متطابقتين";
-                return RedirectToAction("CreateUser");
+                ViewBag.Error = error;
+                ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+                ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
+                ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
+                ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
+
+                ViewBag.PostedFirstName = firstName;
+                ViewBag.PostedLastName = lastName;
+                ViewBag.PostedEmail = email;
+                ViewBag.PostedPassword = password;
+                ViewBag.PostedConfirmPassword = confirmPassword;
+                ViewBag.PostedJobNumber = jobNumber;
+                ViewBag.PostedNextOfKinPhone = nextOfKinPhone;
+                ViewBag.PostedDepartmentId = departmentId;
+                ViewBag.PostedJobRankId = jobRankId;
+                ViewBag.PostedContractSalary = contractSalary;
+                ViewBag.PostedContractStartDate = contractStartDate;
+                ViewBag.PostedContractEndDate = contractEndDate;
+                ViewBag.PostedPhoneNumber = phoneNumber;
+                ViewBag.PostedExpectedLocationName = expectedLocationName;
+                ViewBag.PostedExpectedLatitude = expectedLatitude;
+                ViewBag.PostedExpectedLongitude = expectedLongitude;
+                ViewBag.PostedAllowedRadiusMeters = allowedRadiusMeters;
+                ViewBag.PostedRole = role;
+
+                if (departmentId.HasValue)
+                {
+                    var deptForRestore = await _context.Departments.FindAsync(departmentId.Value);
+                    ViewBag.PostedDeptParentId = deptForRestore?.ParentDepartmentId ?? deptForRestore?.Id;
+                }
+                if (jobRankId > 0)
+                {
+                    var rankForRestore = await _context.JobRanks.FindAsync(jobRankId);
+                    ViewBag.PostedTrackId = rankForRestore?.CareerTrackId;
+                }
+
+                return View();
             }
+
+            if (password != confirmPassword)
+                return await FailAsync("كلمتا المرور غير متطابقتين");
 
             if (await _userManager.FindByEmailAsync(email) != null)
-            {
-                TempData["Error"] = "البريد الإلكتروني مستخدم بالفعل";
-                return RedirectToAction("CreateUser");
-            }
+                return await FailAsync("البريد الإلكتروني مستخدم بالفعل");
 
             if (departmentId == null)
-            {
-                TempData["Error"] = "القسم مطلوب";
-                return RedirectToAction("CreateUser");
-            }
+                return await FailAsync("القسم مطلوب");
 
             jobNumber = string.IsNullOrWhiteSpace(jobNumber) ? null : jobNumber.Trim();
 
             if (jobNumber != null && await _userManager.Users.AnyAsync(u => u.JobNumber == jobNumber))
-            {
-                TempData["Error"] = "الرقم الوظيفي مستخدم بالفعل لموظف آخر";
-                return RedirectToAction("CreateUser");
-            }
+                return await FailAsync("الرقم الوظيفي مستخدم بالفعل لموظف آخر");
 
             var user = new ApplicationUser
             {
@@ -442,10 +471,7 @@ namespace AtharERP_System.Controllers
             var result = await _userManager.CreateAsync(user, password);
 
             if (!result.Succeeded)
-            {
-                TempData["Error"] = string.Join(" · ", result.Errors.Select(e => e.Description));
-                return RedirectToAction("CreateUser");
-            }
+                return await FailAsync(string.Join(" · ", result.Errors.Select(e => e.Description)));
 
             if (!string.IsNullOrEmpty(role))
                 await _userManager.AddToRoleAsync(user, role);

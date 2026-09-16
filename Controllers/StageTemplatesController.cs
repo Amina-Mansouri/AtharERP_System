@@ -29,8 +29,10 @@ namespace AtharERP_System.Controllers
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                TempData["Error"] = "اسم القالب مطلوب";
-                return RedirectToAction("Create");
+                ViewBag.Error = "اسم القالب مطلوب";
+                ViewBag.PostedName = name;
+                ViewBag.PostedTasks = tasks;
+                return View();
             }
 
             var template = new StageTemplate

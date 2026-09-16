@@ -1,8 +1,16 @@
 ﻿@{
     ViewData["Title"] = "قالب مرحلة جديد";
+    string? error = ViewBag.Error as string;
+    string postedName = ViewBag.PostedName as string ?? "";
+    string postedTasks = ViewBag.PostedTasks as string ?? "";
 }
 
 <h1 class="athar-page-title">إنشاء قالب مرحلة جديد</h1>
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger mt-3">@error</div>
+}
 
 <div class="athar-card mt-3">
     <form method="post" asp-action="Create">
@@ -11,14 +19,14 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">اسم القالب</label>
-                <input type="text" name="name" class="form-control" required />
+                <input type="text" name="name" class="form-control" required value="@postedName" />
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-12 mb-3">
                 <label class="form-label">المهام الافتراضية (سطر لكل مهمة)</label>
-                <textarea name="tasks" class="form-control" rows="6"></textarea>
+                <textarea name="tasks" class="form-control" rows="6">@postedTasks</textarea>
             </div>
         </div>
 
