@@ -525,13 +525,13 @@ else
                     </select>
                 </div>
 
-                <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 96px 96px">
+                <div class="data-table" style="--cols: minmax(0,1.2fr) 100px 170px 90px 150px">
                     <div class="data-table-head">
                         <div class="cell">التكليف</div>
                         <div class="cell">المرحلة</div>
                         <div class="cell">المهندسات</div>
                         <div class="cell">الحالة</div>
-                        <div class="cell"></div>
+                        <div class="cell">إجراءات</div>
                     </div>
                     @if (!allAssignments.Any())
                     {
@@ -584,36 +584,34 @@ else
                                         </form>
                                     }
                                 </div>
-                                <div class="cell">
+                                                               <div class="cell">
                                     <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
-                                    @if (canManageAssignments && !a.IsTransferredToFinance && a.Status != AssignmentStatus.Completed)
+                                </div>
+                                <div class="cell" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                                    @if (canManageAssignments && !a.IsTransferredToFinance)
                                     {
-                                        @if (a.Status != AssignmentStatus.Pending)
+                                                                                @if (a.Status != AssignmentStatus.Pending)
                                         {
-                                            <form method="post" asp-controller="ProjectAssignments" asp-action="Hold" style="display:inline;">
+                                            <form method="post" asp-controller="ProjectAssignments" asp-action="Hold" style="display:block; width:100%;">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@a.Id" />
                                                 <input type="hidden" name="projectId" value="@Model.Id" />
-                                                <button type="submit" style="border:none; background:none; color:#7b6bd6; font-size:10px; cursor:pointer; text-decoration:underline;">تعليق</button>
+                                                <button type="submit" style="width:100%; height:22px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10px; font-weight:600; cursor:pointer;">تعليق</button>
                                             </form>
                                         }
                                         @if (a.Status != AssignmentStatus.Cancelled)
                                         {
-                                            <form method="post" asp-controller="ProjectAssignments" asp-action="Cancel" style="display:inline;">
+                                            <form method="post" asp-controller="ProjectAssignments" asp-action="Cancel" style="display:block; width:100%;">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@a.Id" />
                                                 <input type="hidden" name="projectId" value="@Model.Id" />
-                                                <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer; text-decoration:underline;">إلغاء</button>
+                                                <button type="submit" style="width:100%; height:22px; border:none; border-radius:6px; background:#ff9130; color:#fff; font-size:10px; font-weight:600; cursor:pointer;">إلغاء</button>
                                             </form>
                                         }
-                                    }
-                                </div>
-                                <div class="cell">
-                                    @if (canManageAssignments && !a.IsTransferredToFinance)
-                                    {
-                                        <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');">
+                                        }
+                                         <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');" style="display:block; width:100%;">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10.5px; color:#c94a42;">حذف</button>
+                                            <button type="submit" style="width:100%; height:22px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10px; font-weight:600; cursor:pointer;">حذف</button>
                                         </form>
                                     }
                                 </div>

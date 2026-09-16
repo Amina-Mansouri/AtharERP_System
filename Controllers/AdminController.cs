@@ -360,6 +360,11 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> CreateUser()
         {
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
+            ViewBag.LastJobNumber = await _userManager.Users
+      .Where(u => u.JobNumber != null)
+      .OrderByDescending(u => u.CreatedAt)
+      .Select(u => u.JobNumber)
+      .FirstOrDefaultAsync();
             ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
             ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
             ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
