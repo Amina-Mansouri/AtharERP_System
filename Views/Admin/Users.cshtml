@@ -28,8 +28,6 @@
     int totalContractsSoon = ViewBag.TotalContractsSoon as int? ?? 0;
     int totalContractsExpired = ViewBag.TotalContractsExpired as int? ?? 0;
 
-          string TabUrl(string s) => Url.Action("Users", new { q, departmentId, rankId, trackId, role = roleFilter, status = s, page = 1 })! + "#employee-list";
-
     string DeptLabel(ApplicationUser u) => u.Department == null ? "-" : (u.Department.ParentDepartmentId == null ? u.Department.Name : (u.Department.ParentDepartment?.Name ?? "-"));
     string SectionLabel(ApplicationUser u) => u.Department == null || u.Department.ParentDepartmentId == null ? "-" : u.Department.Name;
 }
