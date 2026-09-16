@@ -191,10 +191,10 @@
                             <span>المشاريع <span class="tag tag-success">كاملة</span></span>
                             <span class="nav-group-caret">▾</span>
                         </button>
-                        <div class="collapse @(activeSystem == "sys02" ? "show" : "")" id="sys02">
-                            <div class="nav-subgroup-title">المشاريع والتكليفات</div>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
-                               asp-controller="Projects" asp-action="Index">المشاريع</a>
+                            <div class="collapse @(activeSystem == "sys02" ? "show" : "")" id="sys02">
+                                <div class="nav-subgroup-title">المشاريع والتكليفات</div>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
+                                   asp-controller="Projects" asp-action="Index">المشاريع</a>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
                                    asp-controller="ProjectStages" asp-action="Overview">مراحل المشروع</a>
                                 @if (canViewAssignments)
@@ -202,14 +202,7 @@
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
                                        asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشروع</a>
                                 }
-                                
-                            <div class="nav-subgroup-title">التسليم والمتابعة</div>
-                            <span class="nav-item disabled">المقترحات التصميمية <span class="tag tag-muted">قادمة</span></span>
-                            <span class="nav-item disabled">الجدول الزمني العام <span class="tag tag-muted">قادمة</span></span>
-                            <div class="nav-subgroup-title">الجودة والوثائق</div>
-                            <span class="nav-item disabled">التدقيق والجودة <span class="tag tag-muted">قادمة</span></span>
-                            <span class="nav-item disabled">ضبط الوثائق <span class="tag tag-muted">قادمة</span></span>
-                        </div>
+                            </div>
                     </div>
                 }
 

@@ -80,10 +80,11 @@ namespace AtharERP_System.Controllers
                 .ToListAsync();
 
             var query = _context.ProjectAssignments
-     .Include(a => a.Stage)
-     .Include(a => a.Engineers).ThenInclude(e => e.User)
-     .Include(a => a.Tasks).ThenInclude(t => t.Todos)
-     .Where(a => a.ProjectId == projectId.Value);
+.Include(a => a.Stage)
+.Include(a => a.Engineers).ThenInclude(e => e.User)
+.Include(a => a.Tasks).ThenInclude(t => t.Todos)
+.Include(a => a.Tasks).ThenInclude(t => t.DesignProposals).ThenInclude(p => p.PreparedBy)
+.Where(a => a.ProjectId == projectId.Value);
 
             if (stageId.HasValue)
                 query = query.Where(a => a.StageId == stageId.Value);

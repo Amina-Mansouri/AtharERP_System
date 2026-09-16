@@ -550,6 +550,13 @@ namespace AtharERP_System.Data
                 .HasForeignKey(p => p.PreparedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
+
+            builder.Entity<DesignProposal>()
+                .HasOne(p => p.ProjectTask)
+                .WithMany(t => t.DesignProposals)
+                .HasForeignKey(p => p.ProjectTaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // ========== المطالبات المالية (FinancialClaim) ==========
             builder.Entity<FinancialClaim>()
                 .HasOne(c => c.Project)

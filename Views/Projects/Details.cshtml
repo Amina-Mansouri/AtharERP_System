@@ -229,6 +229,8 @@ else
         <a class="tab-item" data-bs-toggle="tab" href="#pane-stages">مراحل المشروع (@Model.Stages.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-assignments">التكليفات (@allAssignments.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">وثائق المشروع (@documents.Count)</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-timeline">الجدول الزمني</a>
+        @if (Model.Scope == ProjectScope.Main)
         @if (Model.Scope == ProjectScope.Main)
         {
             <a class="tab-item" data-bs-toggle="tab" href="#pane-subprojects">المشاريع الفرعية (@Model.ChildProjects.Count)</a>
@@ -689,6 +691,63 @@ else
                         <input type="text" name="description" placeholder="وصف مختصر (اختياري)" style="height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                         <button type="submit" style="height:30px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ رفع مستند</button>
                     </form>
+                }
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pane-timeline">
+            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:16px;">
+                <div style="font-size:13.5px; font-weight:600; margin-bottom:14px;">الجدول الزمني للمشروع</div>
+                @{
+                    var timelineStages = Model.Stages.OrderBy(s => s.Sequence).ToList();
+                    var datedStages = timelineStages.Where(s => s.PlannedStartDate.HasValue && s.PlannedEndDate.HasValue).ToList();
+                }
+                @if (!datedStages.Any())
+                {
+                    <div class="stat-sub">لم يتم تحديد تواريخ بدء/انتهاء مخططة للمراحل بعد</div>
+                }
+                else
+                {
+                    var minDate = datedStages.Min(s => s.PlannedStartDate!.Value);
+                    var maxDate = datedStages.Max(s => s.PlannedEndDate!.Value);
+                    var maxActual = timelineStages.Where(s => s.ActualDeliveryDate.HasValue).Select(s => s.ActualDeliveryDate!.Value).DefaultIfEmpty(maxDate).Max();
+                    if (maxActual > maxDate) { maxDate = maxActual; }
+                    var totalDays = Math.Max(1, (maxDate - minDate).Days);
+
+                    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#8a83a0; margin-bottom:8px; padding-right:180px;">
+                        <span>@minDate.ToString("yyyy/MM/dd")</span>
+                        <span>@maxDate.ToString("yyyy/MM/dd")</span>
+                    </div>
+                    <div style="display:grid; gap:10px;">
+                        @foreach (var stage in timelineStages)
+                        {
+                            var barColor = stage.Status == StageStatus.Completed ? "#2f8a57"
+                                : stage.Status == StageStatus.Delayed ? "#c94a42"
+                                : stage.Status == StageStatus.InProgress ? "#7b6bd6"
+                                : "#c7c2d9";
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:170px; flex-shrink:0; font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@stage.Name">@stage.Sequence. @stage.Name</div>
+                                <div style="flex:1; position:relative; height:26px; background:#f7f6fb; border-radius:6px;">
+                                    @if (stage.PlannedStartDate.HasValue && stage.PlannedEndDate.HasValue)
+                                    {
+                                        var leftPct = Math.Max(0, Math.Min(100, (stage.PlannedStartDate.Value - minDate).TotalDays / totalDays * 100));
+                                        var rightPct = Math.Max(0, Math.Min(100, (stage.PlannedEndDate.Value - minDate).TotalDays / totalDays * 100));
+                                        var widthPct = Math.Max(1.5, rightPct - leftPct);
+                                        <div style="position:absolute; right:@(leftPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; width:@(widthPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; top:3px; bottom:3px; background:@barColor; border-radius:5px; display:flex; align-items:center; justify-content:center; overflow:hidden;" title="@stage.PlannedStartDate.Value.ToString("yyyy/MM/dd") - @stage.PlannedEndDate.Value.ToString("yyyy/MM/dd")">
+                                            <span style="font-size:9.5px; color:#fff; font-weight:600; white-space:nowrap; padding:0 6px;">@stage.CompletionPercentage.ToString("N0")%</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div style="position:absolute; inset:0; display:flex; align-items:center; padding-right:8px;">
+                                            <span class="stat-sub" style="font-size:10px;">لا توجد تواريخ محددة</span>
+                                        </div>
+                                    }
+                                </div>
+                                <span class="tag @StageTagClass(stage.Status)" style="flex-shrink:0;">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span>
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>

@@ -143,6 +143,11 @@ namespace AtharERP_System.Controllers
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.CanManage = canManage;
             ViewBag.CanEditDates = canManage || await CanEditDatesAsync(task);
+            ViewBag.Proposals = await _context.DesignProposals
+    .Include(p => p.PreparedBy)
+    .Where(p => p.ProjectTaskId == id)
+    .OrderByDescending(p => p.CreatedAt)
+    .ToListAsync();
 
             if (canManage)
             {

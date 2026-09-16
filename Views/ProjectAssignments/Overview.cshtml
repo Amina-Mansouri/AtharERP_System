@@ -185,6 +185,53 @@ else
                                     {
                                         <div class="stat-sub" style="margin-top:4px;">لا توجد بنود بعد</div>
                                     }
+                                    @if (t.DesignProposals.Any())
+                                    {
+                                        <div style="display:grid; gap:6px; margin-top:8px; border-top:1px dashed #ecebf2; padding-top:8px;">
+                                            <div style="font-size:10.5px; font-weight:600; color:#5a5370;">مقترحات التصميم</div>
+                                            @foreach (var proposal in t.DesignProposals.OrderByDescending(p => p.CreatedAt))
+                                            {
+                                                var propTagClass = proposal.Status == ProposalStatus.Approved ? "tag-success"
+                                                    : proposal.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning";
+                                                var propLabel = proposal.Status == ProposalStatus.Approved ? "معتمد"
+                                                    : proposal.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد";
+                                                <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#faf9fd;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                                                        <a href="@proposal.FilePath" target="_blank" style="font-size:11px; font-weight:600; color:inherit; text-decoration:underline;">@proposal.Code — @proposal.Name (نسخة @proposal.Revision)</a>
+                                                        <span class="tag @propTagClass">@propLabel</span>
+                                                    </div>
+                                                    <div class="stat-sub" style="margin-top:2px;">@proposal.PreparedBy.FullName — @proposal.SubmittedDate?.ToString("yyyy/MM/dd")</div>
+                                                    @if (!string.IsNullOrWhiteSpace(proposal.ManagerComment))
+                                                    {
+                                                        <div style="font-size:10.5px; color:#5a5370; margin-top:3px;">تعليق: @proposal.ManagerComment</div>
+                                                    }
+                                                    @if (proposal.Status == ProposalStatus.Submitted && canReview)
+                                                    {
+                                                        <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+                                                            <form method="post" asp-controller="DesignProposals" asp-action="Approve" style="display:flex; gap:4px; flex:1;">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="id" value="@proposal.Id" />
+                                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                                <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                                <input type="text" name="comment" placeholder="تعليق (اختياري)" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
+                                                                <button type="submit" style="height:24px; border:none; border-radius:6px; background:#2f8a57; color:#fff; font-size:10px; padding:0 8px;">اعتماد</button>
+                                                            </form>
+                                                            <form method="post" asp-controller="DesignProposals" asp-action="Reject" style="display:flex; gap:4px; flex:1;">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="id" value="@proposal.Id" />
+                                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                                <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                                <input type="text" name="comment" placeholder="سبب الرفض" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
+                                                                <button type="submit" style="height:24px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10px; padding:0 8px;">رفض</button>
+                                                            </form>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                     @if (t.Status == ProjectTaskStatus.PendingReview && canReview)
                                     {
                                         <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
