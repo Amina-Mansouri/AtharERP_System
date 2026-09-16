@@ -22,12 +22,12 @@
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
     var failedTemplateId = TempData.Peek("FailedTemplateId") as int?;
-      var failedWeightRaw = TempData.Peek("FailedWeight") as double?;
-    var failedAreaRaw = TempData.Peek("FailedArea") as double?;
-    var failedPricePerMeterRaw = TempData.Peek("FailedPricePerMeter") as double?;
-    decimal? failedWeight = failedWeightRaw.HasValue ? (decimal?)failedWeightRaw.Value : null;
-    decimal? failedArea = failedAreaRaw.HasValue ? (decimal?)failedAreaRaw.Value : null;
-    decimal? failedPricePerMeter = failedPricePerMeterRaw.HasValue ? (decimal?)failedPricePerMeterRaw.Value : null;
+      var failedWeightStr = TempData.Peek("FailedWeight") as string;
+    var failedAreaStr = TempData.Peek("FailedArea") as string;
+    var failedPricePerMeterStr = TempData.Peek("FailedPricePerMeter") as string;
+    decimal? failedWeight = failedWeightStr != null ? decimal.Parse(failedWeightStr, System.Globalization.CultureInfo.InvariantCulture) : (decimal?)null;
+    decimal? failedArea = failedAreaStr != null ? decimal.Parse(failedAreaStr, System.Globalization.CultureInfo.InvariantCulture) : (decimal?)null;
+    decimal? failedPricePerMeter = failedPricePerMeterStr != null ? decimal.Parse(failedPricePerMeterStr, System.Globalization.CultureInfo.InvariantCulture) : (decimal?)null;
     var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
     var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
