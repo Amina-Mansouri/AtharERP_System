@@ -93,20 +93,14 @@ else
         }
     </div>
 
-    <div class="data-table" style="--cols: minmax(0,1.3fr) 108px 170px 96px 96px">
-        <div class="data-table-head">
-            <div class="cell">التكليف</div>
-            <div class="cell">المرحلة</div>
-            <div class="cell">المهندسات</div>
-            <div class="cell">الحالة</div>
-            <div class="cell"></div>
-        </div>
+    <div style="display:grid; gap:12px;">
         @if (!Model.Any())
         {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مطابقة</div></div>
+            <div class="stat-sub">لا توجد تكليفات مطابقة</div>
         }
         else
         {
+            var canReview = await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             @foreach (var a in Model)
             {
                 IEnumerable<ProjectTask> filteredTasks = taskFilter switch
@@ -125,138 +119,147 @@ else
                     continue;
                 }
 
-                <div class="data-table-row">
-                    <div class="cell">
-                        @a.CostType
-                        @if (a.IsUrgent)
+                var assignmentCanReview = a.Stage?.AssignedEngineerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value || canReview;
+                var allProposals = a.Tasks.SelectMany(t => t.DesignProposals.Select(p => new { Task = t, Proposal = p })).OrderByDescending(x => x.Proposal.CreatedAt).ToList();
+
+                <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px; align-items:start;">
+                    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                            <div style="font-size:13px; font-weight:600;">
+                                @a.CostType
+                                @if (a.IsUrgent)
+                                {
+                                    <span class="tag tag-danger">مستعجل</span>
+                                }
+                            </div>
+                            <span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
+                        </div>
+                        <div class="stat-sub" style="margin-bottom:6px;">المرحلة: @(a.Stage?.Name ?? "-")</div>
+                        <div style="margin-bottom:8px;">
+                            @if (!a.Engineers.Any())
+                            {
+                                <span class="stat-sub">لا يوجد مهندسون</span>
+                            }
+                            else
+                            {
+                                @foreach (var eng in a.Engineers)
+                                {
+                                    <div style="font-size:11px;">• @eng.User.FullName</div>
+                                }
+                            }
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                            <div class="stat-sub">مهام هذا التكليف: @doneTasks / @totalTasks مكتملة</div>
+                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a>
+                        </div>
+
+                        @if (!tasksToShow.Any())
                         {
-                            <span class="tag tag-danger">مستعجل</span>
-                        }
-                    </div>
-                    <div class="cell">@(a.Stage?.Name ?? "-")</div>
-                    <div class="cell">
-                        @if (!a.Engineers.Any())
-                        {
-                            <span>-</span>
+                            <div class="stat-sub">لا توجد مهام مطابقة لهذا التصنيف</div>
                         }
                         else
                         {
-                            @foreach (var eng in a.Engineers)
-                            {
-                                <div style="font-size:11px;">• @eng.User.FullName</div>
-                            }
+                            <div style="display:grid; gap:6px;">
+                                @foreach (var t in tasksToShow)
+                                {
+                                    var taskTagClass = t.Status == ProjectTaskStatus.Completed ? "tag-success" : (t.Status == ProjectTaskStatus.PendingReview ? "tag-warning" : "");
+                                    <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#faf9fd;">
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; font-weight:600; color:inherit; text-decoration:underline;">@t.Title</a>
+                                            <span class="tag @taskTagClass">@(t.Status == ProjectTaskStatus.PendingReview ? "قيد المراجعة" : t.CompletionPercentage.ToString("N0") + "%")</span>
+                                        </div>
+                                        @if (t.Todos.Any())
+                                        {
+                                            <div style="display:grid; gap:3px; margin-top:6px;">
+                                                @foreach (var todo in t.Todos)
+                                                {
+                                                    var todoStyle = todo.IsCompleted ? "color:#8a83a0; text-decoration:line-through;" : "color:#3a3450;";
+                                                    <div style="font-size:10.5px; @todoStyle">@(todo.IsCompleted ? "✓" : "○") @todo.Item</div>
+                                                }
+                                            </div>
+                                        }
+                                        @if (t.Status == ProjectTaskStatus.PendingReview && assignmentCanReview)
+                                        {
+                                            <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+                                                <form method="post" asp-controller="ProjectTasks" asp-action="ApproveTask" style="display:flex; gap:4px; flex:1;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@t.Id" />
+                                                    <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                    <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                    <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                    <input type="text" name="comment" placeholder="تعليق (اختياري)" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
+                                                    <button type="submit" style="height:24px; border:none; border-radius:6px; background:#2f8a57; color:#fff; font-size:10px; padding:0 8px;">اعتماد</button>
+                                                </form>
+                                                <form method="post" asp-controller="ProjectTasks" asp-action="RejectTask" style="display:flex; gap:4px; flex:1;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@t.Id" />
+                                                    <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                    <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                    <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                    <input type="text" name="comment" placeholder="سبب الرفض (اختياري)" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
+                                                    <button type="submit" style="height:24px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10px; padding:0 8px;">رفض</button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
                         }
                     </div>
-                    <div class="cell"><span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
-                    <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
-                </div>
-                <div style="grid-column:1/-1; background:#faf9fc; border-bottom:1px solid #f1f0f6; padding:8px 14px 12px;">
-                    <div class="stat-sub" style="margin-bottom:6px;">مهام هذا التكليف: @doneTasks / @totalTasks مكتملة</div>
-                    @if (!tasksToShow.Any())
-                    {
-                        <div class="stat-sub">لا توجد مهام مطابقة لهذا التصنيف</div>
-                    }
-                    else
-                    {
-                        var canReview = a.Stage?.AssignedEngineerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value
-                            || await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
-                        <div style="display:grid; gap:6px;">
-                            @foreach (var t in tasksToShow)
-                            {
-                                var taskTagClass = t.Status == ProjectTaskStatus.Completed ? "tag-success"
-                                    : t.Status == ProjectTaskStatus.PendingReview ? "tag-warning"
-                                    : "";
-                                <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                                        <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; font-weight:600; color:inherit; text-decoration:underline;">@t.Title</a>
-                                        <span class="tag @taskTagClass">@(t.Status == ProjectTaskStatus.PendingReview ? "قيد المراجعة" : t.CompletionPercentage.ToString("N0") + "%")</span>
+
+                    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+                        <div style="font-size:13px; font-weight:600; margin-bottom:8px;">مستندات التكليف (مقترحات التصميم)</div>
+                        @if (!allProposals.Any())
+                        {
+                            <div class="stat-sub">لا توجد مستندات مرفوعة بعد</div>
+                        }
+                        else
+                        {
+                            <div style="display:grid; gap:8px;">
+                                @foreach (var item in allProposals)
+                                {
+                                    var proposal = item.Proposal;
+                                    var propTagClass = proposal.Status == ProposalStatus.Approved ? "tag-success" : (proposal.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning");
+                                    var propLabel = proposal.Status == ProposalStatus.Approved ? "معتمد" : (proposal.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد");
+                                    <div style="border:1px solid #ecebf2; border-radius:8px; padding:8px 10px; background:#faf9fd;">
+                                        <div class="stat-sub" style="margin-bottom:3px;">للمهمة: @item.Task.Title</div>
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <a href="@proposal.FilePath" target="_blank" style="font-size:11px; font-weight:600; color:inherit; text-decoration:underline;">@proposal.Code — @proposal.Name (نسخة @proposal.Revision)</a>
+                                            <span class="tag @propTagClass">@propLabel</span>
+                                        </div>
+                                        <div class="stat-sub" style="margin-top:2px;">@proposal.PreparedBy.FullName — @proposal.SubmittedDate?.ToString("yyyy/MM/dd")</div>
+                                        @if (!string.IsNullOrWhiteSpace(proposal.ManagerComment))
+                                        {
+                                            <div style="font-size:10.5px; color:#5a5370; margin-top:3px;">تعليق: @proposal.ManagerComment</div>
+                                        }
+                                        @if (proposal.Status == ProposalStatus.Submitted && assignmentCanReview)
+                                        {
+                                            <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+                                                <form method="post" asp-controller="DesignProposals" asp-action="Approve" style="display:flex; gap:4px; flex:1;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@proposal.Id" />
+                                                    <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                    <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                    <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                    <input type="text" name="comment" placeholder="تعليق (اختياري)" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
+                                                    <button type="submit" style="height:24px; border:none; border-radius:6px; background:#2f8a57; color:#fff; font-size:10px; padding:0 8px;">اعتماد</button>
+                                                </form>
+                                                <form method="post" asp-controller="DesignProposals" asp-action="Reject" style="display:flex; gap:4px; flex:1;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@proposal.Id" />
+                                                    <input type="hidden" name="projectId" value="@selectedProjectId" />
+                                                    <input type="hidden" name="stageId" value="@selectedStageId" />
+                                                    <input type="hidden" name="taskFilter" value="@taskFilter" />
+                                                    <input type="text" name="comment" placeholder="سبب الرفض" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
+                                                    <button type="submit" style="height:24px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10px; padding:0 8px;">رفض</button>
+                                                </form>
+                                            </div>
+                                        }
                                     </div>
-                                    @if (t.Todos.Any())
-                                    {
-                                        <div style="display:grid; gap:3px; margin-top:6px;">
-                                            @foreach (var todo in t.Todos)
-                                            {
-                                                var todoStyle = todo.IsCompleted ? "color:#8a83a0; text-decoration:line-through;" : "color:#3a3450;";
-                                                <div style="font-size:10.5px; @todoStyle">@(todo.IsCompleted ? "✓" : "○") @todo.Item</div>
-                                            }
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="stat-sub" style="margin-top:4px;">لا توجد بنود بعد</div>
-                                    }
-                                    @if (t.DesignProposals.Any())
-                                    {
-                                        <div style="display:grid; gap:6px; margin-top:8px; border-top:1px dashed #ecebf2; padding-top:8px;">
-                                            <div style="font-size:10.5px; font-weight:600; color:#5a5370;">مقترحات التصميم</div>
-                                            @foreach (var proposal in t.DesignProposals.OrderByDescending(p => p.CreatedAt))
-                                            {
-                                                var propTagClass = proposal.Status == ProposalStatus.Approved ? "tag-success" : (proposal.Status == ProposalStatus.Rejected ? "tag-danger" : "tag-warning");
-                                                var propLabel = proposal.Status == ProposalStatus.Approved ? "معتمد" : (proposal.Status == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد");
-                                                <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#faf9fd;">
-                                                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                                                        <a href="@proposal.FilePath" target="_blank" style="font-size:11px; font-weight:600; color:inherit; text-decoration:underline;">@proposal.Code — @proposal.Name (نسخة @proposal.Revision)</a>
-                                                        <span class="tag @propTagClass">@propLabel</span>
-                                                    </div>
-                                                    <div class="stat-sub" style="margin-top:2px;">@proposal.PreparedBy.FullName — @proposal.SubmittedDate?.ToString("yyyy/MM/dd")</div>
-                                                    @if (!string.IsNullOrWhiteSpace(proposal.ManagerComment))
-                                                    {
-                                                        <div style="font-size:10.5px; color:#5a5370; margin-top:3px;">تعليق: @proposal.ManagerComment</div>
-                                                    }
-                                                    @if (proposal.Status == ProposalStatus.Submitted && canReview)
-                                                    {
-                                                        <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
-                                                            <form method="post" asp-controller="DesignProposals" asp-action="Approve" style="display:flex; gap:4px; flex:1;">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="id" value="@proposal.Id" />
-                                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
-                                                                <input type="hidden" name="stageId" value="@selectedStageId" />
-                                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
-                                                                <input type="text" name="comment" placeholder="تعليق (اختياري)" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
-                                                                <button type="submit" style="height:24px; border:none; border-radius:6px; background:#2f8a57; color:#fff; font-size:10px; padding:0 8px;">اعتماد</button>
-                                                            </form>
-                                                            <form method="post" asp-controller="DesignProposals" asp-action="Reject" style="display:flex; gap:4px; flex:1;">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="id" value="@proposal.Id" />
-                                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
-                                                                <input type="hidden" name="stageId" value="@selectedStageId" />
-                                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
-                                                                <input type="text" name="comment" placeholder="سبب الرفض" style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10px;" />
-                                                                <button type="submit" style="height:24px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10px; padding:0 8px;">رفض</button>
-                                                            </form>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                    @if (t.Status == ProjectTaskStatus.PendingReview && canReview)
-                                    {
-                                        <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
-                                            <form method="post" asp-controller="ProjectTasks" asp-action="ApproveTask" style="display:flex; gap:4px; flex:1;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@t.Id" />
-                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
-                                                <input type="hidden" name="stageId" value="@selectedStageId" />
-                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
-                                                <input type="text" name="comment" placeholder="تعليق (اختياري)" style="flex:1; height:26px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10.5px;" />
-                                                <button type="submit" style="height:26px; border:none; border-radius:6px; background:#2f8a57; color:#fff; font-size:10.5px; padding:0 10px;">اعتماد</button>
-                                            </form>
-                                            <form method="post" asp-controller="ProjectTasks" asp-action="RejectTask" style="display:flex; gap:4px; flex:1;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@t.Id" />
-                                                <input type="hidden" name="projectId" value="@selectedProjectId" />
-                                                <input type="hidden" name="stageId" value="@selectedStageId" />
-                                                <input type="hidden" name="taskFilter" value="@taskFilter" />
-                                                <input type="text" name="comment" placeholder="سبب الرفض (اختياري)" style="flex:1; height:26px; border:1px solid #e4e2ec; border-radius:6px; padding:0 6px; font-size:10.5px;" />
-                                                <button type="submit" style="height:26px; border:none; border-radius:6px; background:#c94a42; color:#fff; font-size:10.5px; padding:0 10px;">رفض</button>
-                                            </form>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             }
         }
