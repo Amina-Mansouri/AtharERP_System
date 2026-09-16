@@ -32,22 +32,35 @@
     var nestedChildIds = childrenByParent.Values.SelectMany(v => v).Select(p => p.Id).ToHashSet();
     var orphanChildren = Model.Where(p => p.ParentProjectId.HasValue && !nestedChildIds.Contains(p.Id)).ToList();
 
-    var orderedProjects = new List<(Project Project, bool IsNestedChild)>();
+    var groups = new List<List<(Project Project, bool IsNestedChild)>>();
     foreach (var mp in mainProjects)
     {
-        orderedProjects.Add((mp, false));
+        var group = new List<(Project, bool)> { (mp, false) };
         if (childrenByParent.TryGetValue(mp.Id, out var kids))
         {
             foreach (var kid in kids)
             {
-                orderedProjects.Add((kid, true));
+                group.Add((kid, true));
             }
         }
+        groups.Add(group);
     }
     foreach (var orphan in orphanChildren)
     {
-        orderedProjects.Add((orphan, false));
+        groups.Add(new List<(Project, bool)> { (orphan, false) });
     }
+
+    const int pagerPageSize = 20;
+    int pagerPage = ViewBag.Page as int? ?? 1;
+    int pagerTotalCount = groups.Count;
+    int pagerTotalPages = Math.Max(1, (int)Math.Ceiling(pagerTotalCount / (double)pagerPageSize));
+    pagerPage = Math.Max(1, Math.Min(pagerPage, pagerTotalPages));
+
+    var orderedProjects = groups
+        .Skip((pagerPage - 1) * pagerPageSize)
+        .Take(pagerPageSize)
+        .SelectMany(g => g)
+        .ToList();
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
@@ -190,6 +203,22 @@
         }
     }
 </div>
+
+<div class="pager">
+    <span class="cell-num">@(pagerTotalCount == 0 ? 0 : (pagerPage - 1) * pagerPageSize + 1)–@Math.Min(pagerPage * pagerPageSize, pagerTotalCount)</span> من <span class="cell-num">@pagerTotalCount</span>
+    <div class="pager-pages">
+        @if (pagerPage > 1)
+        {
+            <a href="@Url.Action("Index", new { search, status, scope, priority, page = pagerPage - 1 })" class="pager-page">‹ السابق</a>
+        }
+        <span class="stat-sub">صفحة @(pagerPage) من @(pagerTotalPages)</span>
+        @if (pagerPage < pagerTotalPages)
+        {
+            <a href="@Url.Action("Index", new { search, status, scope, priority, page = pagerPage + 1 })" class="pager-page">التالي ›</a>
+        }
+    </div>
+</div>
+
 @section Scripts {
     <script>
         function toggleProjectChildren(btn) {

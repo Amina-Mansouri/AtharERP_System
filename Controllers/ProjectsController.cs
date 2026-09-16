@@ -37,8 +37,9 @@ namespace AtharERP_System.Controllers
         // قائمة المشاريع + عزل الرؤية (القسم 6.6.2)
         // ============================================
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
-        public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectScope? scope, Priority? priority)
+        public async Task<IActionResult> Index(string? search, ProjectStatus? status, ProjectScope? scope, Priority? priority, int page = 1)
         {
+            ViewBag.Page = page;
             var baseQuery = _context.Projects
                 .Include(p => p.Client)
                 .Include(p => p.ParentProject)
