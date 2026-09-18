@@ -154,7 +154,13 @@ namespace AtharERP_System.Controllers
                     return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
                 }
             }
-           
+
+            if (taskIds == null || !taskIds.Any())
+            {
+                TempData["Error"] = "يجب اختيار مهمة واحدة على الأقل عند إنشاء التكليف";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
+            }
+
             model.Status = AssignmentStatus.Pending;
             model.CreatedAt = DateTime.UtcNow;
 
