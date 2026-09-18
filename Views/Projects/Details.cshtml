@@ -412,7 +412,10 @@ else
                             <div class="data-table-row">
                                 <div class="cell cell-num">@stage.Sequence</div>
                                 <div class="cell">
-                                    @stage.Name
+                                    <a href="#" data-bs-toggle="collapse" data-bs-target="#stage-tasks-@stage.Id" style="text-decoration:none; color:inherit;">
+                                        ▾ @stage.Name
+                                    </a>
+                                    <span class="stat-sub">(@stage.Tasks.Count مهمة)</span>
                                     @if (stage.ActualCost > stage.StageValue)
                                     {
                                         <span class="tag tag-danger">تجاوز السقف</span>
@@ -435,6 +438,37 @@ else
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
                                         </form>
+                                    }
+                                </div>
+                            </div>
+                            <div class="collapse" id="stage-tasks-@stage.Id" style="grid-column:1/-1;">
+                                <div style="background:#faf9fc; border-bottom:1px solid #f1f0f6; padding:8px 14px 12px;">
+                                    <div style="font-size:11.5px; font-weight:600; margin-bottom:6px;">مهام هذه المرحلة</div>
+                                    @if (!stage.Tasks.Any())
+                                    {
+                                        <div class="stat-sub">لا توجد مهام في هذه المرحلة بعد</div>
+                                    }
+                                    else
+                                    {
+                                        <div style="display:grid; gap:6px;">
+                                            @foreach (var t in stage.Tasks.OrderBy(t => t.Title))
+                                            {
+                                                var taskTagClass = t.Status == ProjectTaskStatus.Completed ? "tag-success"
+                                                    : (t.Status == ProjectTaskStatus.PendingReview ? "tag-warning"
+                                                    : (t.Status == ProjectTaskStatus.Blocked ? "tag-danger" : ""));
+                                                <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
+                                                    <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; color:inherit; text-decoration:underline;">@t.Title</a>
+                                                    <div style="display:flex; align-items:center; gap:8px;">
+                                                        <span class="stat-sub">الوزن: @t.Weight.ToString("N0")%</span>
+                                                        @if (t.ProjectAssignmentId == null)
+                                                        {
+                                                            <span class="tag tag-warning">غير مرتبطة بتكليف</span>
+                                                        }
+                                                        <span class="tag @taskTagClass">@(t.Status == ProjectTaskStatus.PendingReview ? "قيد المراجعة" : t.CompletionPercentage.ToString("N0") + "%")</span>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
                                     }
                                 </div>
                             </div>
