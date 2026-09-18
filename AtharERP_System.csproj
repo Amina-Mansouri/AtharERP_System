@@ -30,6 +30,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Include="..\..\..\Downloads\ARCHITECTURE.md" Link="athar-handoff\ARCHITECTURE.md" />
+	  <None Include="..\..\..\Downloads\CONVENTIONS.md" Link="athar-handoff\CONVENTIONS.md" />
+	  <None Include="..\..\..\Downloads\KNOWN-GAPS.md" Link="athar-handoff\KNOWN-GAPS.md" />
+	  <None Include="..\..\..\Downloads\README.md" Link="athar-handoff\README.md" />
+	  <None Include="..\..\..\Downloads\SCREENS.md" Link="athar-handoff\SCREENS.md" />
 	  <None Include="..\..\..\Downloads\Tajawal-Black.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Black.woff2" />
 	  <None Include="..\..\..\Downloads\Tajawal-Bold.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Bold.woff2" />
 	  <None Include="..\..\..\Downloads\Tajawal-Medium.woff2" Link="wwwroot\fonts\tajawal\Tajawal-Medium.woff2" />
