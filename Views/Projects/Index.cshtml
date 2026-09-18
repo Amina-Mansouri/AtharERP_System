@@ -9,6 +9,7 @@
     var scope = ViewBag.Scope as ProjectScope?;
     var canCreate = await PermissionService.HasPermissionAsync(User, "Projects.Create");
     var canViewClient = ViewBag.CanViewClient as bool? ?? false;
+    var canViewCosts = await PermissionService.HasPermissionAsync(User, "Finance.Costs.View");
 
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
@@ -191,7 +192,7 @@
                     <div class="cell">@(project.Client?.Name ?? "-")</div>
                 }
                 <div class="cell">@(project.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == project.Type.Value.ToString()).Label : "-")</div>
-                @if (canViewClient)
+                @if (canViewCosts)
                 {
                     <div class="cell cell-num">@(project.Budget?.ToString("N0") ?? "-")</div>
                 }

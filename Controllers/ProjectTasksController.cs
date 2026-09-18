@@ -164,6 +164,7 @@ namespace AtharERP_System.Controllers
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.CanManage = canManage;
+            ViewBag.CanManageFinancials = await _permissionService.HasPermissionAsync(User, "Finance.Costs.Edit");
             ViewBag.CanEditDates = canManage || await CanEditDatesAsync(task);
             ViewBag.Proposals = await _context.DesignProposals
     .Include(p => p.PreparedBy)
@@ -202,10 +203,12 @@ int id,
                 return NotFound();
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+            var canManageFinancials = await _permissionService.HasPermissionAsync(User, "Finance.Costs.Edit");
             var canEditDates = canManage || await CanEditDatesAsync(task);
 
             if (!canManage && !canEditDates)
                 return Forbid();
+
             if (await IsProjectLockedAsync(task.ProjectId))
             {
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن تعديل مهامه حالياً";
@@ -235,6 +238,10 @@ int id,
                 task.Priority = model.Priority;
                 task.IsUrgent = model.IsUrgent;
                 task.Weight = model.Weight;
+            }
+
+            if (canManageFinancials)
+            {
                 task.BonusAmount = model.BonusAmount;
                 task.PenaltyAmount = model.PenaltyAmount;
             }

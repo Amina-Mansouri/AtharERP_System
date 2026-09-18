@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "تعديل المهمة";
     var canManage = ViewBag.CanManage as bool? ?? false;
+    var canManageFinancials = ViewBag.CanManageFinancials as bool? ?? false;
     var canEditDates = ViewBag.CanEditDates as bool? ?? false;
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectTaskStatus>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
@@ -115,14 +116,22 @@
                                 <label style="font-size:11px; color:#8a83a0;">الوزن (% من المرحلة)</label>
                                 <input type="number" step="0.01" min="0" max="100" name="Weight" value="@Model.Weight" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                             </div>
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">مبلغ المكافأة</label>
-                                <input type="number" step="0.01" min="0" name="BonusAmount" value="@Model.BonusAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">مبلغ الغرامة</label>
-                                <input type="number" step="0.01" min="0" name="PenaltyAmount" value="@Model.PenaltyAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
+                            @if (canManageFinancials)
+                            {
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">مبلغ المكافأة</label>
+                                    <input type="number" step="0.01" min="0" name="BonusAmount" value="@Model.BonusAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">مبلغ الغرامة</label>
+                                    <input type="number" step="0.01" min="0" name="PenaltyAmount" value="@Model.PenaltyAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                            }
+                            else
+                            {
+                                <input type="hidden" name="BonusAmount" value="@Model.BonusAmount" />
+                                <input type="hidden" name="PenaltyAmount" value="@Model.PenaltyAmount" />
+                            }
                         </div>
                     }
                     else

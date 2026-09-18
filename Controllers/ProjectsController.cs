@@ -152,7 +152,7 @@ namespace AtharERP_System.Controllers
             await LoadDropdownsAsync();
             ViewBag.LastProjectCode = await _context.Projects.OrderByDescending(p => p.Id).Select(p => p.Code).FirstOrDefaultAsync();
             ViewBag.CanEdit = true;
-            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View");
+            ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Finance.Costs.View");
             ViewBag.Engineers = new List<ApplicationUser>();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = new List<ProjectDocument>();
@@ -493,14 +493,13 @@ namespace AtharERP_System.Controllers
 
         private async Task<bool> CanViewCostsAsync(Project project)
         {
-            if (!await _permissionService.HasPermissionAsync(User, "Projects.Assignments.View"))
+            if (!await _permissionService.HasPermissionAsync(User, "Finance.Costs.View"))
                 return false;
             return await CanAccessProjectAsync(project);
         }
         private async Task<bool> CanViewClientAsync()
         {
-            return await _permissionService.HasPermissionAsync(User, "Projects.ViewAll")
-                || await _permissionService.HasPermissionAsync(User, "PR.Clients");
+            return await _permissionService.HasPermissionAsync(User, "PR.Clients");
         }
 
         private async Task LoadDropdownsAsync(int? excludeProjectId = null)
