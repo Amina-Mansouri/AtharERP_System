@@ -101,7 +101,7 @@ namespace AtharERP_System.Controllers
                 .Include(p => p.Timelines)
                 .Include(p => p.Stages).ThenInclude(s => s.AssignedEngineer)
 
-                .Include(p => p.Stages).ThenInclude(s => s.Steps)
+            
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Engineers).ThenInclude(e => e.User)
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Subtasks)
                 .Include(p => p.Tasks).ThenInclude(t => t.Assignees).ThenInclude(a => a.User)

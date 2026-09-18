@@ -23,7 +23,6 @@ namespace AtharERP_System.Data
         public DbSet<Client> Clients { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<ProjectStage> ProjectStages { get; set; } = null!;
-        public DbSet<ProjectStep> ProjectSteps { get; set; } = null!;
         public DbSet<ProjectTask> ProjectTasks { get; set; } = null!;
         public DbSet<TaskAssignee> TaskAssignees { get; set; } = null!;
         public DbSet<TaskTodo> TaskTodos { get; set; } = null!;
@@ -151,19 +150,6 @@ namespace AtharERP_System.Data
             builder.Entity<ProjectStage>()
                 .HasIndex(s => new { s.ProjectId, s.Sequence });
              
-
-            // ========== خطوات المرحلة (ProjectStep) ==========
-            builder.Entity<ProjectStep>()
-                .HasOne(st => st.Stage)
-                .WithMany(s => s.Steps)
-                .HasForeignKey(st => st.StageId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ProjectStep>()
-                .HasOne(st => st.CompletedBy)
-                .WithMany()
-                .HasForeignKey(st => st.CompletedById)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // ========== مهام المشروع (ProjectTask) ==========
             builder.Entity<ProjectTask>()
