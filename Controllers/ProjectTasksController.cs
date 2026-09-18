@@ -59,6 +59,28 @@ namespace AtharERP_System.Controllers
                 .FirstOrDefaultAsync();
             return stageEngineerId == CurrentUserId;
         }
+
+        private async Task<bool> IsTaskWorkerAsync(ProjectTask task)
+        {
+            if (task.Assignees.Any(a => a.UserId == CurrentUserId))
+                return true;
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
+                    return true;
+            }
+            var stageEngineerId = await _context.ProjectStages
+                .Where(s => s.Id == task.StageId)
+                .Select(s => s.AssignedEngineerId)
+                .FirstOrDefaultAsync();
+            return stageEngineerId == CurrentUserId;
+        }
+
+        private async Task<bool> IsProjectLockedAsync(int projectId)
+        {
+            var status = await _context.Projects.Where(p => p.Id == projectId).Select(p => p.Status).FirstOrDefaultAsync();
+            return status == ProjectStatus.OnHold || status == ProjectStatus.Cancelled;
+        }
         // ============================================
         // مهامي (كل المهام المكلَّف بها المستخدم الحالي عبر أي مشروع)
         // ============================================
@@ -184,7 +206,11 @@ int id,
 
             if (!canManage && !canEditDates)
                 return Forbid();
-
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن تعديل مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id });
+            }
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -215,6 +241,17 @@ int id,
 
             if (canEditDates)
             {
+                var stageForDates = await _context.ProjectStages.FindAsync(task.StageId);
+                if (stageForDates?.PlannedStartDate != null && stageForDates.PlannedEndDate != null)
+                {
+                    if ((model.PlannedStartDate.HasValue && model.PlannedStartDate < stageForDates.PlannedStartDate) ||
+                        (model.PlannedEndDate.HasValue && model.PlannedEndDate > stageForDates.PlannedEndDate))
+                    {
+                        TempData["Error"] = $"تواريخ المهمة يجب أن تكون ضمن نطاق المرحلة ({stageForDates.PlannedStartDate:yyyy-MM-dd} إلى {stageForDates.PlannedEndDate:yyyy-MM-dd})";
+                        return this.RedirectKeepingTab("Edit", new { id });
+                    }
+                }
+
                 task.PlannedStartDate = model.PlannedStartDate;
                 task.PlannedEndDate = model.PlannedEndDate;
                 task.ActualDeliveryDate = model.ActualDeliveryDate;
@@ -294,6 +331,12 @@ int id,
             if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
                 return Forbid();
 
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id });
+            }
+
             task.Status = task.Status == ProjectTaskStatus.Blocked
                 ? (task.CompletionPercentage >= 100 ? ProjectTaskStatus.PendingReview : task.CompletionPercentage > 0 ? ProjectTaskStatus.InProgress : ProjectTaskStatus.NotStarted)
                 : ProjectTaskStatus.Blocked;
@@ -368,8 +411,14 @@ int id,
             if (task == null)
                 return NotFound();
 
-            if (!await CanExecuteAsync(task))
+            if (!await IsTaskWorkerAsync(task))
                 return Forbid();
+
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
+            }
 
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
@@ -406,8 +455,14 @@ int id,
             if (task == null)
                 return NotFound();
 
-            if (!await CanExecuteAsync(task))
+            if (!await IsTaskWorkerAsync(task))
                 return Forbid();
+
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
+            }
 
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
@@ -436,8 +491,14 @@ int id,
             if (task == null)
                 return NotFound();
 
-            if (!await CanExecuteAsync(task))
+            if (!await IsTaskWorkerAsync(task))
                 return Forbid();
+
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
+            }
 
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
@@ -548,7 +609,11 @@ int id,
 
             if (!await CanEditDatesAsync(task))
                 return Forbid();
-
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
             if (task.Status != ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "المهمة ليست قيد المراجعة";
@@ -584,7 +649,11 @@ int id,
 
             if (!await CanEditDatesAsync(task))
                 return Forbid();
-
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
             if (task.Status != ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "المهمة ليست قيد المراجعة";
