@@ -98,7 +98,8 @@
 
 <div style="display:flex; gap:20px; align-items:stretch; flex-wrap:wrap; margin-bottom:16px;">
     <div style="flex:1 1 460px; background:var(--sys-surface); border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px 18px;">
-        <div style="font-size:11.5px; font-weight:600; color:var(--sys-text-light); margin-bottom:4px;">توزيع حالة المراحل حسب نوعها (كل المشاريع)</div>
+        <div style="font-size:11.5px; font-weight:600; color:var(--sys-text-light); margin-bottom:2px;">توزيع حالة المراحل حسب نوعها (عدا الجديدة والموقوفة مؤقتًا والملغاة)</div>
+        <div style="font-size:10.5px; color:var(--sys-text-light); margin-bottom:8px;">إجمالي المشاريع النشطة <b style="color:var(--sys-text); font-variant-numeric:tabular-nums;">@ViewBag.ActiveProjectsForStageChart</b> من أصل <b style="color:var(--sys-text); font-variant-numeric:tabular-nums;">@totalProjects</b> الإجمالي الكلي</div>
         @await Html.PartialAsync("_StageStatusColumnChart", ViewBag.StageStatusRows as List<(string StageName, int New, int InProgress, int ClientReview, int Completed, int Delayed)>)
     </div>
     <div style="flex:0 0 240px; display:flex;">

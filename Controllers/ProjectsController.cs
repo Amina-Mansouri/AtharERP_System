@@ -80,9 +80,13 @@ namespace AtharERP_System.Controllers
             ViewBag.Priority = priority;
             ViewBag.CanViewClient = await CanViewClientAsync();
 
-            var visibleProjectIds = await baseQuery.Select(p => p.Id).ToListAsync();
+            var activeProjectIds = await baseQuery
+     .Where(p => p.Status != ProjectStatus.New && p.Status != ProjectStatus.OnHold && p.Status != ProjectStatus.Cancelled)
+     .Select(p => p.Id)
+     .ToListAsync();
+            ViewBag.ActiveProjectsForStageChart = activeProjectIds.Count;
             var stageStatusGroups = await _context.ProjectStages
-                .Where(s => visibleProjectIds.Contains(s.ProjectId))
+                .Where(s => activeProjectIds.Contains(s.ProjectId))
                 .GroupBy(s => s.Name)
                 .Select(g => new
                 {
