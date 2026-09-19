@@ -163,6 +163,18 @@ List<int>? taskIds)
                 return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
             }
 
+            if (!model.PlannedStartDate.HasValue || !model.PlannedEndDate.HasValue)
+            {
+                TempData["Error"] = "يجب تحديد تاريخ بداية ونهاية للتكليف";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
+            }
+
+            if (engineerIds == null || !engineerIds.Any(u => !string.IsNullOrEmpty(u)))
+            {
+                TempData["Error"] = "يجب اختيار مهندس واحد على الأقل عند إنشاء التكليف";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
+            }
+
             if (targetStage?.PlannedStartDate != null && targetStage.PlannedEndDate != null)
             {
                 if ((model.PlannedStartDate.HasValue && model.PlannedStartDate < targetStage.PlannedStartDate) ||
@@ -173,7 +185,7 @@ List<int>? taskIds)
                 }
             }
 
-            model.Status = AssignmentStatus.Pending;
+            model.Status = AssignmentStatus.InProgress;
             model.CreatedAt = DateTime.UtcNow;
 
             _context.ProjectAssignments.Add(model);

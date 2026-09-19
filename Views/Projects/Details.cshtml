@@ -477,7 +477,7 @@ else
                                     {
                                         <span class="tag tag-warning">100% — توجد مهام محظورة</span>
                                     }
-                                    @if (stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked || (t.ProjectAssignment != null && (t.ProjectAssignment.Status == AssignmentStatus.Pending || t.ProjectAssignment.Status == AssignmentStatus.Cancelled))))
+                                    @if (stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked || (t.ProjectAssignment != null && t.ProjectAssignment.Status == AssignmentStatus.Cancelled)))
                                     {
                                         <span class="tag tag-warning">⚠ توجد مهام محظورة أو تابعة لتكليف متوقف</span>
                                     }
@@ -514,7 +514,14 @@ else
                                                     : (t.Status == ProjectTaskStatus.PendingReview ? "tag-warning"
                                                     : (t.Status == ProjectTaskStatus.Blocked ? "tag-danger" : ""));
                                                 <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
-                                                    <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; color:inherit; text-decoration:underline;">@t.Title</a>
+                                                    @if (t.ProjectAssignment != null && !t.ProjectAssignment.Engineers.Any())
+                                                    {
+                                                        <span style="font-size:11.5px; color:#8a83a0;" title="لا يمكن الدخول — التكليف بلا مهندسين بعد">@t.Title</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; color:inherit; text-decoration:underline;">@t.Title</a>
+                                                    }
                                                     <div style="display:flex; align-items:center; gap:8px;">
                                                         <span class="stat-sub">الوزن: @t.Weight.ToString("N0")%</span>
                                                         @if (t.ProjectAssignmentId == null)
@@ -741,7 +748,7 @@ else
                                     }
                                 </select>
                                 <input type="text" name="CostType" placeholder="نوع التكليف" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
-                                <select name="engineerIds" multiple style="height:60px; border:1px solid #e4e2ec; border-radius:8px; font-size:11px;">
+                                <select name="engineerIds" multiple required style="height:60px; border:1px solid #e4e2ec; border-radius:8px; font-size:11px;">
                                     @foreach (var eng in engineers)
                                     {
                                         <option value="@eng.Id">@eng.FullName</option>
@@ -752,11 +759,11 @@ else
                             <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
                                 <div>
                                     <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
-                                    <input type="date" name="PlannedStartDate" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                    <input type="date" name="PlannedStartDate" required  style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
                                 </div>
                                 <div>
                                     <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
-                                    <input type="date" name="PlannedEndDate" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                    <input type="date" name="PlannedEndDate" required  style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
                                 </div>
                             </div>
                             @{

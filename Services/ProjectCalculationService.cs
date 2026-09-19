@@ -20,7 +20,7 @@ namespace AtharERP_System.Services
         private static bool IsTaskFrozen(ProjectTask t)
         {
             return t.Status == ProjectTaskStatus.Blocked
-                || (t.ProjectAssignment != null && (t.ProjectAssignment.Status == AssignmentStatus.Pending || t.ProjectAssignment.Status == AssignmentStatus.Cancelled));
+                || (t.ProjectAssignment != null && t.ProjectAssignment.Status == AssignmentStatus.Cancelled);
         }
 
         public async Task RecalculateStageAsync(int stageId)

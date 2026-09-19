@@ -148,7 +148,7 @@ namespace AtharERP_System.Controllers
                 .Where(a => a.Id == task.ProjectAssignmentId.Value)
                 .Select(a => a.Status)
                 .FirstOrDefaultAsync();
-            return status == AssignmentStatus.Pending || status == AssignmentStatus.Cancelled;
+            return status == AssignmentStatus.Cancelled;
         }
     }
 }

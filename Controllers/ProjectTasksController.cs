@@ -88,7 +88,7 @@ namespace AtharERP_System.Controllers
                 .Where(a => a.Id == task.ProjectAssignmentId.Value)
                 .Select(a => a.Status)
                 .FirstOrDefaultAsync();
-            return status == AssignmentStatus.Pending || status == AssignmentStatus.Cancelled;
+            return status == AssignmentStatus.Cancelled;
         }
 
         // ============================================
@@ -119,7 +119,7 @@ namespace AtharERP_System.Controllers
         private static bool IsTaskFrozen(ProjectTask t)
         {
             return t.Status == ProjectTaskStatus.Blocked
-                || (t.ProjectAssignment != null && (t.ProjectAssignment.Status == AssignmentStatus.Pending || t.ProjectAssignment.Status == AssignmentStatus.Cancelled));
+               || (t.ProjectAssignment != null && t.ProjectAssignment.Status == AssignmentStatus.Cancelled);
         }
 
         // ============================================
