@@ -518,10 +518,11 @@ else
                                                         var taskAssignment = t.ProjectAssignmentId.HasValue
                                                             ? stage.Assignments.FirstOrDefault(a => a.Id == t.ProjectAssignmentId.Value)
                                                             : null;
+                                                        var taskHasNoEngineer = taskAssignment == null || !taskAssignment.Engineers.Any();
                                                     }
-                                                    @if (taskAssignment != null && !taskAssignment.Engineers.Any())
+                                                    @if (taskHasNoEngineer)
                                                     {
-                                                        <span style="font-size:11.5px; color:#8a83a0;" title="لا يمكن الدخول — التكليف بلا مهندسين بعد">@t.Title</span>
+                                                        <span style="font-size:11.5px; color:#8a83a0;" title="لا يمكن الدخول — لا يوجد مهندس مرتبط بعد">@t.Title</span>
                                                     }
                                                     else
                                                     {
