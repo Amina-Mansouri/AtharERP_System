@@ -386,7 +386,7 @@ List<int>? taskIds)
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditDates(int id, int? taskId, [Bind("PlannedStartDate,PlannedEndDate")] ProjectAssignment model)
+        public async Task<IActionResult> EditDates(int id, int? taskId, [Bind("CostType,PlannedStartDate,PlannedEndDate")] ProjectAssignment model)
         {
             if (!User.IsInRole("مدير النظام"))
                 return Forbid();
@@ -410,16 +410,29 @@ List<int>? taskIds)
                 }
             }
 
+            var outOfRangeTask = assignment.Tasks.FirstOrDefault(t =>
+                t.PlannedStartDate.HasValue && t.PlannedEndDate.HasValue &&
+                ((model.PlannedStartDate.HasValue && t.PlannedStartDate < model.PlannedStartDate) ||
+                 (model.PlannedEndDate.HasValue && t.PlannedEndDate > model.PlannedEndDate)));
+            if (outOfRangeTask != null)
+            {
+                TempData["Error"] = $"لا يمكن حفظ هذا التعديل — مهمة \"{outOfRangeTask.Title}\" لها تاريخ محدَّد مسبقًا يقع خارج النطاق الجديد";
+                return taskId.HasValue
+                    ? this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId.Value })
+                    : this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
+            }
+
+            assignment.CostType = model.CostType;
             assignment.PlannedStartDate = model.PlannedStartDate;
             assignment.PlannedEndDate = model.PlannedEndDate;
-            foreach (var t in assignment.Tasks)
+            foreach (var t in assignment.Tasks.Where(t => !t.PlannedStartDate.HasValue && !t.PlannedEndDate.HasValue))
             {
                 t.PlannedStartDate = model.PlannedStartDate;
                 t.PlannedEndDate = model.PlannedEndDate;
             }
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "تم تحديث تواريخ التكليف بنجاح";
+            TempData["Success"] = "تم تحديث بيانات التكليف بنجاح";
             return taskId.HasValue
                 ? this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId.Value })
                 : this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });

@@ -79,6 +79,18 @@ namespace AtharERP_System.Controllers
             var status = await _context.Projects.Where(p => p.Id == projectId).Select(p => p.Status).FirstOrDefaultAsync();
             return status == ProjectStatus.OnHold || status == ProjectStatus.Cancelled;
         }
+
+        private async Task<bool> IsAssignmentLockedAsync(ProjectTask task)
+        {
+            if (!task.ProjectAssignmentId.HasValue)
+                return false;
+            var status = await _context.ProjectAssignments
+                .Where(a => a.Id == task.ProjectAssignmentId.Value)
+                .Select(a => a.Status)
+                .FirstOrDefaultAsync();
+            return status == AssignmentStatus.Pending || status == AssignmentStatus.Cancelled;
+        }
+
         // ============================================
         // مهامي (كل المهام المكلَّف بها المستخدم الحالي عبر أي مشروع)
         // ============================================
@@ -104,6 +116,12 @@ namespace AtharERP_System.Controllers
             return View(tasks);
         }
 
+        private static bool IsTaskFrozen(ProjectTask t)
+        {
+            return t.Status == ProjectTaskStatus.Blocked
+                || (t.ProjectAssignment != null && (t.ProjectAssignment.Status == AssignmentStatus.Pending || t.ProjectAssignment.Status == AssignmentStatus.Cancelled));
+        }
+
         // ============================================
         // إنشاء مهمة داخل مرحلة
         // ============================================
@@ -113,7 +131,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Create(
         [Bind("StageId,ProjectAssignmentId,Title,Description,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,Weight")] ProjectTask model)
         {
-            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == model.StageId);
+            var stage = await _context.ProjectStages.Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment).FirstOrDefaultAsync(s => s.Id == model.StageId);
             if (stage == null)
                 return NotFound();
 
@@ -123,7 +141,7 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
             }
 
-            var otherTasksWeightTotal = stage.Tasks.Sum(t => t.Weight);
+            var otherTasksWeightTotal = stage.Tasks.Where(t => !IsTaskFrozen(t)).Sum(t => t.Weight);
             if (otherTasksWeightTotal + model.Weight > stage.Weight)
             {
                 TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
@@ -215,6 +233,11 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن تعديل مهامه حالياً";
                 return this.RedirectKeepingTab("Edit", new { id });
             }
+            if (await IsAssignmentLockedAsync(task))
+            {
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id });
+            }
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -226,8 +249,9 @@ namespace AtharERP_System.Controllers
 
             if (canManage)
             {
-                var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == task.StageId);
-                var otherTasksWeightTotal = stage!.Tasks.Where(t => t.Id != id).Sum(t => t.Weight);
+                var stage = await _context.ProjectStages.Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment).FirstOrDefaultAsync(s => s.Id == task.StageId);
+                var otherTasksWeightTotal = stage!.Tasks.Where(t => t.Id != id && !IsTaskFrozen(t)).Sum(t => t.Weight);
+               
                 if (otherTasksWeightTotal + model.Weight > stage.Weight)
                 {
                     TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
@@ -386,7 +410,11 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
                 return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
-
+            if (await IsAssignmentLockedAsync(task))
+            {
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
+            }
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "لا يمكن إضافة بند لمهمة مكتملة أو قيد المراجعة";
@@ -430,7 +458,11 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
                 return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
-
+            if (await IsAssignmentLockedAsync(task))
+            {
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
+            }
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";
@@ -466,7 +498,11 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
                 return this.RedirectKeepingTab("Edit", new { id = taskId });
             }
-
+            if (await IsAssignmentLockedAsync(task))
+            {
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return this.RedirectKeepingTab("Edit", new { id = taskId });
+            }
             if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
             {
                 TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";

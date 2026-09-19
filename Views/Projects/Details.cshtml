@@ -477,6 +477,10 @@ else
                                     {
                                         <span class="tag tag-warning">100% — توجد مهام محظورة</span>
                                     }
+                                    @if (stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked || (t.ProjectAssignment != null && (t.ProjectAssignment.Status == AssignmentStatus.Pending || t.ProjectAssignment.Status == AssignmentStatus.Cancelled))))
+                                    {
+                                        <span class="tag tag-warning">⚠ توجد مهام محظورة أو تابعة لتكليف متوقف</span>
+                                    }
                                 </div>
                                 <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
                                 <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
@@ -636,6 +640,10 @@ else
                                     {
                                         <span class="tag tag-danger">مستعجل</span>
                                     }
+                                    @if (a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
+                                    {
+                                        <span class="tag tag-warning">⚠ توجد مهمة محظورة</span>
+                                    }
                                 </div>
                                 <div class="cell">@item.Stage.Name</div>
                                 <div class="cell">
@@ -674,14 +682,14 @@ else
                                                                <div class="cell">
                                     <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
                                 </div>
-                               <div class="cell" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                                <div class="cell" style="display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; gap:4px;">
                                   
                                          @{
                                            var firstTaskForAssignment = a.Tasks.FirstOrDefault();
                                                }
                                           @if (firstTaskForAssignment != null)
                                                     {
-                                              <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@firstTaskForAssignment.Id" class="btn-line" style="height:22px; padding:0 8px; font-size:10px;">دخول</a>
+                                              <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@firstTaskForAssignment.Id" class="btn-line" style="height:22px; padding:0 8px; font-size:10px;">عرض</a>
                                                     }
                                     @if (canManageAssignments && !a.IsTransferredToFinance)
                                     {

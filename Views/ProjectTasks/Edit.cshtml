@@ -70,11 +70,15 @@
                 {
                     var asg = Model.ProjectAssignment;
                     <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:10px; background:#faf9fd;">
-                        <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">بيانات التكليف: @asg.CostType</div>
-                        <form method="post" asp-controller="ProjectAssignments" asp-action="EditDates" style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end;">
+                        <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">بيانات التكليف</div>
+                        <form method="post" asp-controller="ProjectAssignments" asp-action="EditDates" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end;">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@asg.Id" />
                             <input type="hidden" name="taskId" value="@Model.Id" />
+                            <div>
+                                <label style="font-size:10.5px; color:#8a83a0;">بيان التكليف</label>
+                                <input type="text" name="CostType" value="@asg.CostType" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                            </div>
                             <div>
                                 <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
                                 <input type="date" name="PlannedStartDate" value="@(asg.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
@@ -91,7 +95,7 @@
                     </div>
                 }
 
-                <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+                <form method="post" asp-action="Edit" asp-route-id="@Model.Id" id="taskEditForm">
                     @Html.AntiForgeryToken()
                     <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
@@ -151,24 +155,28 @@
                         <input type="hidden" name="Priority" value="@Model.Priority" />
                         <input type="hidden" name="Weight" value="@Model.Weight" />
                     }
-                    @if (canManage || canEditDates)
-                    {
-                        <button type="submit" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
-                    }
                 </form>
 
-                @if (canManage)
-                {
-                    var blockButtonColor = Model.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42";
-                    var blockButtonLabel = Model.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة";
-                    <div style="border-top:1px solid #f1f0f6; margin-top:14px; padding-top:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid #f1f0f6;">
+                    @if (canManage || canEditDates)
+                    {
+                        <button type="submit" form="taskEditForm" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
+                    @if (canManage)
+                    {
+                        var blockButtonColor = Model.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42";
+                        var blockButtonLabel = Model.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة";
                         <form method="post" asp-action="ToggleBlocked" style="display:inline;">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Id" />
-                            <button type="submit" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:11.5px; padding:0 14px; color:@blockButtonColor;">@blockButtonLabel</button>
+                            <button type="submit" style="height:34px; padding:0 18px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:12.5px; font-weight:600; color:@blockButtonColor;">@blockButtonLabel</button>
                         </form>
-                    </div>
-                }
+                    }
+                </div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:12px;">

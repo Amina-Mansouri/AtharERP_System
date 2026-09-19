@@ -57,6 +57,12 @@ namespace AtharERP_System.Controllers
             if (!await CanExecuteTaskAsync(task))
                 return Forbid();
 
+            if (await IsAssignmentLockedAsync(task))
+            {
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن رفع مقترحات له حالياً";
+                return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
+            }
+
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "الرجاء اختيار ملف المقترح";
@@ -132,6 +138,17 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = "تم رفض المقترح";
             return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+        }
+
+        private async Task<bool> IsAssignmentLockedAsync(ProjectTask task)
+        {
+            if (!task.ProjectAssignmentId.HasValue)
+                return false;
+            var status = await _context.ProjectAssignments
+                .Where(a => a.Id == task.ProjectAssignmentId.Value)
+                .Select(a => a.Status)
+                .FirstOrDefaultAsync();
+            return status == AssignmentStatus.Pending || status == AssignmentStatus.Cancelled;
         }
     }
 }

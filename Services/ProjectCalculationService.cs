@@ -17,18 +17,24 @@ namespace AtharERP_System.Services
             _permission = permission;
         }
 
+        private static bool IsTaskFrozen(ProjectTask t)
+        {
+            return t.Status == ProjectTaskStatus.Blocked
+                || (t.ProjectAssignment != null && (t.ProjectAssignment.Status == AssignmentStatus.Pending || t.ProjectAssignment.Status == AssignmentStatus.Cancelled));
+        }
+
         public async Task RecalculateStageAsync(int stageId)
         {
             var stage = await _context.ProjectStages
-                .Include(s => s.Tasks)
+                .Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment)
                 .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null) return;
 
             var wasCompleted = stage.Status == StageStatus.Completed;
 
-            // المهام المحظورة تُستبعد كلياً من الحساب (لا بسط ولا مقام) — لا تعرقل نسبة إنجاز باقي المهام
-            var activeTasks = stage.Tasks.Where(t => t.Status != ProjectTaskStatus.Blocked).ToList();
+            // المهام المحظورة، أو التابعة لتكليف معلَّق/ملغى، تُستبعد كلياً من الحساب — لا تعرقل نسبة إنجاز باقي المهام
+            var activeTasks = stage.Tasks.Where(t => !IsTaskFrozen(t)).ToList(); 
             var totalWeight = activeTasks.Sum(t => t.Weight);
             var completedWeight = activeTasks
                 .Where(t => t.Status == ProjectTaskStatus.Completed)
@@ -56,7 +62,7 @@ namespace AtharERP_System.Services
         public void ApplyAutomaticStageStatus(ProjectStage stage, IEnumerable<ProjectStage> allProjectStages)
         {
             // 100% لكن توجد مهمة محظورة معلَّقة — لا تُعتبر مكتملة فعلياً حتى تُحل
-            if (stage.CompletionPercentage >= 100 && !stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
+            if (stage.CompletionPercentage >= 100 && !stage.Tasks.Any(IsTaskFrozen))
             {
                 stage.Status = StageStatus.Completed;
                 return;
@@ -200,10 +206,14 @@ namespace AtharERP_System.Services
                 .Include(a => a.Tasks)
                 .FirstOrDefaultAsync(a => a.Id == assignmentId);
 
-            if (assignment == null || !assignment.Tasks.Any())
+            if (assignment == null)
                 return;
 
-            var allTasksDone = assignment.Tasks.All(t => t.CompletionPercentage >= 100);
+            var activeTasks = assignment.Tasks.Where(t => t.Status != ProjectTaskStatus.Blocked).ToList();
+            if (!activeTasks.Any())
+                return;
+
+            var allTasksDone = activeTasks.All(t => t.CompletionPercentage >= 100);
 
             if (allTasksDone && assignment.Status != AssignmentStatus.Completed)
             {
@@ -212,7 +222,7 @@ namespace AtharERP_System.Services
             }
         }
 
-       
+
 
         // حساب أيام التأخير/التبكير عند التسليم الفعلي (القسم 5.4/5.5)
         public void UpdateDeliveryMetrics(ProjectTask task)
