@@ -39,6 +39,7 @@
         StageStatus.Completed => "tag-success",
         StageStatus.Delayed => "tag-danger",
         StageStatus.InProgress => "tag-accent",
+        StageStatus.ClientReview => "tag-info",
         _ => ""
     };
 
@@ -754,46 +755,59 @@ else
                 {
                     <div class="stat-sub">لم يتم تحديد تواريخ بدء/انتهاء مخططة للمراحل بعد</div>
                 }
-                else
-                {
-                    var minDate = datedStages.Min(s => s.PlannedStartDate!.Value);
-                    var maxDate = datedStages.Max(s => s.PlannedEndDate!.Value);
-                    var maxActual = timelineStages.Where(s => s.ActualDeliveryDate.HasValue).Select(s => s.ActualDeliveryDate!.Value).DefaultIfEmpty(maxDate).Max();
-                    if (maxActual > maxDate) { maxDate = maxActual; }
-                    var totalDays = Math.Max(1, (maxDate - minDate).Days);
+               else
+{
+    var minDate = datedStages.Min(s => s.PlannedStartDate!.Value);
+    var maxDate = datedStages.Max(s => s.PlannedEndDate!.Value);
+    var maxActual = timelineStages.Where(s => s.ActualDeliveryDate.HasValue).Select(s => s.ActualDeliveryDate!.Value).DefaultIfEmpty(maxDate).Max();
+    if (maxActual > maxDate) { maxDate = maxActual; }
+    var totalDays = Math.Max(1, (maxDate - minDate).Days);
 
-                    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#8a83a0; margin-bottom:8px; padding-right:180px;">
-                        <span>@minDate.ToString("yyyy/MM/dd")</span>
-                        <span>@maxDate.ToString("yyyy/MM/dd")</span>
-                    </div>
-                    <div style="display:grid; gap:10px;">
-                        @foreach (var stage in timelineStages)
-                        {
-                            var barColor = stage.Status == StageStatus.Completed ? "#2f8a57" : (stage.Status == StageStatus.Delayed ? "#c94a42" : (stage.Status == StageStatus.InProgress ? "#7b6bd6" : "#c7c2d9"));
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:170px; flex-shrink:0; font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@stage.Name">@stage.Sequence. @stage.Name</div>
-                                <div style="flex:1; position:relative; height:26px; background:#f7f6fb; border-radius:6px;">
-                                    @if (stage.PlannedStartDate.HasValue && stage.PlannedEndDate.HasValue)
-                                    {
-                                        var leftPct = Math.Max(0, Math.Min(100, (stage.PlannedStartDate.Value - minDate).TotalDays / totalDays * 100));
-                                        var rightPct = Math.Max(0, Math.Min(100, (stage.PlannedEndDate.Value - minDate).TotalDays / totalDays * 100));
-                                        var widthPct = Math.Max(1.5, rightPct - leftPct);
-                                        <div style="position:absolute; right:@(leftPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; width:@(widthPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; top:3px; bottom:3px; background:@barColor; border-radius:5px; display:flex; align-items:center; justify-content:center; overflow:hidden;" title="@stage.PlannedStartDate.Value.ToString("yyyy/MM/dd") - @stage.PlannedEndDate.Value.ToString("yyyy/MM/dd")">
-                                            <span style="font-size:9.5px; color:#fff; font-weight:600; white-space:nowrap; padding:0 6px;">@stage.CompletionPercentage.ToString("N0")%</span>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div style="position:absolute; inset:0; display:flex; align-items:center; padding-right:8px;">
-                                            <span class="stat-sub" style="font-size:10px;">لا توجد تواريخ محددة</span>
-                                        </div>
-                                    }
-                                </div>
-                                <span class="tag @StageTagClass(stage.Status)" style="flex-shrink:0;">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span>
-                            </div>
-                        }
-                    </div>
-                }
+    (string Solid, string Tint) GetStageColors(StageStatus s) => s switch
+    {
+        StageStatus.Completed => ("#2f8a57", "rgba(47,138,87,.16)"),
+        StageStatus.Delayed => ("#c94a42", "rgba(201,74,66,.16)"),
+        StageStatus.InProgress => ("#7b6bd6", "rgba(123,107,214,.16)"),
+        StageStatus.ClientReview => ("#5090b0", "rgba(80,144,176,.16)"),
+        _ => ("#8a83a0", "rgba(138,131,160,.16)")
+    };
+
+    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#8a83a0; margin-bottom:8px; padding-right:180px;">
+        <span>@minDate.ToString("yyyy/MM/dd")</span>
+        <span>@maxDate.ToString("yyyy/MM/dd")</span>
+    </div>
+    <div style="display:grid; gap:10px;">
+        @foreach (var stage in timelineStages)
+        {
+            var (barColor, tint) = GetStageColors(stage.Status);
+            var completionClamped = Math.Max(0m, Math.Min(100m, stage.CompletionPercentage));
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:170px; flex-shrink:0; font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@stage.Name">@stage.Sequence. @stage.Name</div>
+                <div style="flex:1; position:relative; height:30px; background:#f7f6fb; border-radius:6px;">
+                    @if (stage.PlannedStartDate.HasValue && stage.PlannedEndDate.HasValue)
+                    {
+                        var leftPct = Math.Max(0, Math.Min(100, (stage.PlannedStartDate.Value - minDate).TotalDays / totalDays * 100));
+                        var rightPct = Math.Max(0, Math.Min(100, (stage.PlannedEndDate.Value - minDate).TotalDays / totalDays * 100));
+                        var widthPct = Math.Max(6.0, rightPct - leftPct);
+                        <div style="position:absolute; right:@(leftPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; width:@(widthPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))%; top:3px; bottom:3px; background:@tint; border-radius:5px; display:flex; align-items:center; justify-content:space-between; padding:0 4px; gap:3px;">
+                            <div style="position:absolute; top:0; bottom:0; right:0; width:@(completionClamped.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))%; background:@barColor; border-radius:5px 0 0 5px;"></div>
+                            <span style="position:relative; z-index:1; background:rgba(255,255,255,.9); color:@barColor; border-radius:4px; padding:1px 4px; font-size:9px; font-weight:700; white-space:nowrap;">@stage.PlannedStartDate.Value.ToString("yyyy/MM/dd")</span>
+                            <span style="position:relative; z-index:1; background:rgba(255,255,255,.9); color:@barColor; border-radius:4px; padding:1px 4px; font-size:9px; font-weight:700; white-space:nowrap;">@stage.PlannedEndDate.Value.ToString("yyyy/MM/dd")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="position:absolute; inset:0; display:flex; align-items:center; padding-right:8px;">
+                            <span class="stat-sub" style="font-size:10px;">لا توجد تواريخ محددة</span>
+                        </div>
+                    }
+                </div>
+                <span style="font-size:11px; font-weight:700; color:@barColor; flex-shrink:0; width:34px; text-align:center;">@completionClamped.ToString("N0")%</span>
+                <span class="tag @StageTagClass(stage.Status)" style="flex-shrink:0;">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span>
+            </div>
+        }
+    </div>
+}
             </div>
         </div>
 
