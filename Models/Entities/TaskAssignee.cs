@@ -22,9 +22,7 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual ApplicationUser User { get; set; } = null!;
 
-        [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "نسبة المساهمة")]
-        public decimal ContributionPercentage { get; set; } = 100;
+        
 
         [Display(Name = "المسؤولة")]
         public bool IsLead { get; set; }

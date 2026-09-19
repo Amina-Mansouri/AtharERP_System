@@ -24,7 +24,6 @@ namespace AtharERP_System.Data
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<ProjectStage> ProjectStages { get; set; } = null!;
         public DbSet<ProjectTask> ProjectTasks { get; set; } = null!;
-        public DbSet<TaskAssignee> TaskAssignees { get; set; } = null!;
         public DbSet<TaskTodo> TaskTodos { get; set; } = null!;
         public DbSet<TaskDependency> TaskDependencies { get; set; } = null!;
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; } = null!;
@@ -176,26 +175,7 @@ namespace AtharERP_System.Data
                 .HasForeignKey(t => t.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ========== المكلَّفون بالمهمة (TaskAssignee) ==========
-            builder.Entity<TaskAssignee>()
-                .HasOne(ta => ta.Task)
-                .WithMany(t => t.Assignees)
-                .HasForeignKey(ta => ta.TaskId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<TaskAssignee>()
-                .HasOne(ta => ta.User)
-                .WithMany()
-                .HasForeignKey(ta => ta.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<TaskAssignee>()
-                .HasIndex(ta => new { ta.TaskId, ta.UserId })
-                .IsUnique();
-
-            builder.Entity<TaskAssignee>()
-                .Property(ta => ta.IsLead)
-                .HasDefaultValue(false);
+            
             // ========== قائمة مهام To-Do (TaskTodo) ==========
             builder.Entity<TaskTodo>()
                 .HasOne(tt => tt.Task)

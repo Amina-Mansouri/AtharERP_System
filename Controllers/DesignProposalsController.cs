@@ -33,8 +33,7 @@ namespace AtharERP_System.Controllers
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
                 return true;
-            if (task.Assignees.Any(a => a.UserId == CurrentUserId))
-                return true;
+           
             if (task.ProjectAssignmentId.HasValue)
             {
                 if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
@@ -51,7 +50,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(int taskId, string code, string name, int revision, IFormFile file)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 

@@ -34,8 +34,7 @@ namespace AtharERP_System.Controllers
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
                 return true;
-            if (task.Assignees.Any(a => a.UserId == CurrentUserId))
-                return true;
+           
             if (task.ProjectAssignmentId.HasValue)
             {
                 if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
@@ -62,8 +61,7 @@ namespace AtharERP_System.Controllers
 
         private async Task<bool> IsTaskWorkerAsync(ProjectTask task)
         {
-            if (task.Assignees.Any(a => a.UserId == CurrentUserId))
-                return true;
+          
             if (task.ProjectAssignmentId.HasValue)
             {
                 if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
@@ -85,16 +83,22 @@ namespace AtharERP_System.Controllers
         // مهامي (كل المهام المكلَّف بها المستخدم الحالي عبر أي مشروع)
         // ============================================
         [Authorize]
+      
         public async Task<IActionResult> MyTasks()
         {
+            var myAssignmentIds = await _context.AssignmentEngineers
+                .Where(e => e.UserId == CurrentUserId)
+                .Select(e => e.ProjectAssignmentId)
+                .ToListAsync();
+
             var tasks = await _context.ProjectTasks
                 .Include(t => t.Project)
                 .Include(t => t.Stage)
-                .Include(t => t.Assignees).ThenInclude(a => a.User)
                 .Include(t => t.Todos)
-                .Where(t => t.Assignees.Any(a => a.UserId == CurrentUserId))
+                .Where(t => (t.ProjectAssignmentId.HasValue && myAssignmentIds.Contains(t.ProjectAssignmentId.Value))
+                         || (t.Stage != null && t.Stage.AssignedEngineerId == CurrentUserId))
                 .OrderBy(t => t.Status)
-                               .ThenBy(t => t.PlannedEndDate)
+                .ThenBy(t => t.PlannedEndDate)
                 .ToListAsync();
 
             return View(tasks);
@@ -149,7 +153,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var task = await _context.ProjectTasks
-     .Include(t => t.Assignees).ThenInclude(a => a.User)
+ 
      .Include(t => t.Todos)
      .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
      .Include(t => t.Stage).ThenInclude(s => s.Project)
@@ -196,7 +200,7 @@ namespace AtharERP_System.Controllers
     int id,
     [Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,Weight")] ProjectTask model)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Todos).Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
@@ -361,66 +365,16 @@ namespace AtharERP_System.Controllers
             return this.RedirectKeepingTab("Edit", new { id });
         }
 
+     
         // ============================================
-        // المكلَّفون بالمهمة (TaskAssignee) - إدارة فقط
-        // ============================================
-        [RequirePermission("Projects.Tasks.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddAssignee(int taskId, string userId, decimal contributionPercentage = 100)
-        {
-            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null)
-                return NotFound();
-
-            var exists = await _context.TaskAssignees.AnyAsync(a => a.TaskId == taskId && a.UserId == userId);
-            if (!exists)
-            {
-                _context.TaskAssignees.Add(new TaskAssignee
-                {
-                    TaskId = taskId,
-                    UserId = userId,
-                    ContributionPercentage = contributionPercentage,
-                    AssignedAt = DateTime.UtcNow
-                });
-                await _context.SaveChangesAsync();
-
-               
-                await _notify.NotifyAsync(userId, $"تم تكليفك بمهمة: {task.Title}", NotificationEventType.TaskAssigned, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
-                TempData["Success"] = "تمت إضافة المكلَّف بنجاح";
-            }
-            else
-            {
-                TempData["Error"] = "هذا المهندس مكلَّف بالفعل بهذه المهمة";
-            }
-
-            return this.RedirectKeepingTab("Edit", new { id = taskId });
-        }
-
-        [RequirePermission("Projects.Tasks.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveAssignee(int id, int taskId)
-        {
-            var assignee = await _context.TaskAssignees.FindAsync(id);
-            if (assignee != null)
-            {
-                _context.TaskAssignees.Remove(assignee);
-                await _context.SaveChangesAsync();
-            }
-
-            return this.RedirectKeepingTab("Edit", new { id = taskId });
-        }
-
-        // ============================================
-        // قائمة To-Do - مسموح للمدير أو للمكلَّف بالمهمة نفسها فقط
+        // قائمة To-Do - مسموح للمكلَّف بالمهمة نفسها فقط
         // ============================================
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddTodo(int taskId, string item)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
@@ -464,7 +418,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleTodo(int id, int taskId)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
@@ -500,7 +454,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveTodo(int id, int taskId)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
@@ -599,16 +553,14 @@ namespace AtharERP_System.Controllers
         // ============================================
         private async Task<List<string>> GetTaskWorkerIdsAsync(ProjectTask task)
         {
-            var ids = task.Assignees.Select(a => a.UserId).ToList();
-            if (task.ProjectAssignmentId.HasValue)
-            {
-                var engineerIds = await _context.AssignmentEngineers
-                    .Where(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value)
-                    .Select(e => e.UserId)
-                    .ToListAsync();
-                ids.AddRange(engineerIds);
-            }
-            return ids.Distinct().ToList();
+            if (!task.ProjectAssignmentId.HasValue)
+                return new List<string>();
+
+            return await _context.AssignmentEngineers
+                .Where(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value)
+                .Select(e => e.UserId)
+                .Distinct()
+                .ToListAsync();
         }
 
         [Authorize]
@@ -616,7 +568,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
@@ -656,7 +608,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Assignees).Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 

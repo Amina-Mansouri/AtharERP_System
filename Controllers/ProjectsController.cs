@@ -127,7 +127,7 @@ namespace AtharERP_System.Controllers
             
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Engineers).ThenInclude(e => e.User)
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Subtasks)
-                .Include(p => p.Tasks).ThenInclude(t => t.Assignees).ThenInclude(a => a.User)
+                .Include(p => p.Tasks)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
@@ -141,9 +141,8 @@ namespace AtharERP_System.Controllers
             {
                 var childIds = project.ChildProjects.Select(c => c.Id).ToList();
                 var aggregatedTasks = await _context.ProjectTasks
-                    .Include(t => t.Assignees).ThenInclude(a => a.User)
-                    .Where(t => childIds.Contains(t.ProjectId))
-                    .ToListAsync();
+               .Where(t => childIds.Contains(t.ProjectId))
+               .ToListAsync();
 
                 ViewBag.AggregatedSubProjectTasks = aggregatedTasks;
                 ViewBag.AggregatedActualCost = project.ActualCost + await _context.Projects

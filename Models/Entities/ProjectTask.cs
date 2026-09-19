@@ -99,7 +99,7 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
 
-        public virtual ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
+      
         public virtual ICollection<TaskTodo> Todos { get; set; } = new List<TaskTodo>();
         public virtual ICollection<TaskDependency> Dependencies { get; set; } = new List<TaskDependency>();
         public virtual ICollection<TaskDependency> DependentTasks { get; set; } = new List<TaskDependency>();
