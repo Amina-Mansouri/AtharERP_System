@@ -514,7 +514,12 @@ else
                                                     : (t.Status == ProjectTaskStatus.PendingReview ? "tag-warning"
                                                     : (t.Status == ProjectTaskStatus.Blocked ? "tag-danger" : ""));
                                                 <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#fff;">
-                                                    @if (t.ProjectAssignment != null && !t.ProjectAssignment.Engineers.Any())
+                                                    @{
+                                                        var taskAssignment = t.ProjectAssignmentId.HasValue
+                                                            ? stage.Assignments.FirstOrDefault(a => a.Id == t.ProjectAssignmentId.Value)
+                                                            : null;
+                                                    }
+                                                    @if (taskAssignment != null && !taskAssignment.Engineers.Any())
                                                     {
                                                         <span style="font-size:11.5px; color:#8a83a0;" title="لا يمكن الدخول — التكليف بلا مهندسين بعد">@t.Title</span>
                                                     }
