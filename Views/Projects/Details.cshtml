@@ -436,45 +436,7 @@ else
         </div>
 
         <div class="tab-pane fade" id="pane-stages">
-            @{
-                var stagesForCircles = Model.Stages.OrderBy(s => s.Sequence).ToList();
-            }
-            @if (stagesForCircles.Any())
-            {
-                <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
-                    <div style="font-size:13.5px; font-weight:600; margin-bottom:12px;">إحصائيات التكليفات لكل مرحلة</div>
-                    <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                        @foreach (var stage in stagesForCircles)
-                        {
-                            var stageAssignments = stage.Assignments.ToList();
-                            var totalAssignments = stageAssignments.Count;
-                            var completedAssignments = stageAssignments.Count(a => a.Status == AssignmentStatus.Completed);
-                            var ratio = totalAssignments > 0 ? (decimal)completedAssignments / totalAssignments : 0m;
-                            const int circleR = 30;
-                            var circleCircumference = 2 * Math.PI * circleR;
-                            var circleDash = ratio * (decimal)circleCircumference;
-                            var circleGap = (decimal)circleCircumference - circleDash;
-                            var circleDashArray = circleDash.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " " + circleGap.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
-                            var engineerNames = stageAssignments.SelectMany(a => a.Engineers.Select(e => e.User?.FullName)).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
-                            <div style="display:flex; flex-direction:column; align-items:center; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; min-width:150px; max-width:170px;">
-                                <div style="position:relative; width:64px; height:64px;">
-                                    <svg width="64" height="64" viewBox="0 0 84 84" style="transform:rotate(-90deg); position:absolute; inset:0;">
-                                        <circle cx="42" cy="42" r="@circleR" fill="none" stroke="#f1f0f6" stroke-width="9" />
-                                        @if (totalAssignments > 0)
-                                        {
-                                            <circle cx="42" cy="42" r="@circleR" fill="none" stroke="#7b6bd6" stroke-width="9" stroke-linecap="round" stroke-dasharray="@circleDashArray" />
-                                        }
-                                    </svg>
-                                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#3a3450;">@completedAssignments/@totalAssignments</div>
-                                </div>
-                                <div style="font-size:11.5px; font-weight:600; text-align:center; margin-top:8px;">@stage.Name</div>
-                                <div style="font-size:9.5px; color:#8a83a0; margin-top:2px; text-align:center;">@totalAssignments تكليف · @completedAssignments مكتمل</div>
-                                <div style="font-size:9.5px; color:#5a5370; margin-top:5px; text-align:center; line-height:1.6;">@(engineerNames.Any() ? string.Join("، ", engineerNames) : "لا يوجد مكلَّفون بعد")</div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
+         
             <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); margin-bottom:12px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 10px; border-bottom:1px solid #f1f0f6;">
                     <div style="font-size:13.5px; font-weight:600;">مراحل المشروع</div>
