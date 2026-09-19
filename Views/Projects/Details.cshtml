@@ -674,7 +674,15 @@ else
                                                                <div class="cell">
                                     <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
                                 </div>
-                                                               <div class="cell" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                               <div class="cell" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                                  
+                                         @{
+                                           var firstTaskForAssignment = a.Tasks.FirstOrDefault();
+                                               }
+                                          @if (firstTaskForAssignment != null)
+                                                    {
+                                              <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@firstTaskForAssignment.Id" class="btn-line" style="height:22px; padding:0 8px; font-size:10px;">دخول</a>
+                                                    }
                                     @if (canManageAssignments && !a.IsTransferredToFinance)
                                     {
                                         @if (a.Status != AssignmentStatus.Completed)
