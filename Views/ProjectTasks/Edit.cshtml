@@ -4,7 +4,6 @@
 @{
     ViewData["Title"] = "تعديل المهمة";
     var canManage = ViewBag.CanManage as bool? ?? false;
-    var canManageFinancials = ViewBag.CanManageFinancials as bool? ?? false;
     var canEditDates = ViewBag.CanEditDates as bool? ?? false;
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectTaskStatus>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
@@ -68,6 +67,33 @@
                 }
 
                 <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+                    @{
+                        var isSysAdmin = User.IsInRole("مدير النظام");
+                    }
+                    @if (Model.ProjectAssignment != null)
+                    {
+                        var asg = Model.ProjectAssignment;
+                        <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:10px; background:#faf9fd;">
+                            <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">بيانات التكليف: @asg.CostType</div>
+                            <form method="post" asp-controller="ProjectAssignments" asp-action="EditDates" style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@asg.Id" />
+                                <input type="hidden" name="taskId" value="@Model.Id" />
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
+                                    <input type="date" name="PlannedStartDate" value="@(asg.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
+                                    <input type="date" name="PlannedEndDate" value="@(asg.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                @if (isSysAdmin)
+                                {
+                                    <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ</button>
+                                }
+                            </form>
+                        </div>
+                    }
                     @Html.AntiForgeryToken()
                     <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
@@ -91,50 +117,35 @@
                     </div>
 
                     <div>
-                        <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
-                        <div style="height:32px; display:flex; align-items:center; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px; background:#f7f6fb; color:#5a5370;">@(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "—")</div>
-                    </div>
-                    <div>
-                        <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
-                        <div style="height:32px; display:flex; align-items:center; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px; background:#f7f6fb; color:#5a5370;">@(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "—")</div>
-                        <div style="font-size:9.5px; color:#8a83a0; margin-top:2px;">تُحدَّد هذه التواريخ عند إنشاء التكليف ولا يمكن تعديلها من هنا</div>
-                    </div>
-                    <div>
-                        <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
-                        <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                    </div>
-
+                        <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:8px; background:#faf9fd;">
+                            <div style="font-size:11px; font-weight:700; color:#5a5370; margin-bottom:8px;">تواريخ هذه المهمة (ضمن نطاق تاريخ التكليف)</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
+                                    <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
+                                    <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
+                                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                            </div>
+                        </div>
                     <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
                         <input type="checkbox" class="chk-gold" name="IsUrgent" value="true" disabled="@(!canManage)" checked="@Model.IsUrgent" />
                         <input type="hidden" name="IsUrgent" value="false" />
                         <label style="font-size:11.5px;">عاجلة</label>
                     </div>
-
-                    @if (canManage)
-                    {
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
-                            <div>
+                        @if (canManage)
+                        {
+                            <div style="margin-bottom:8px;">
                                 <label style="font-size:11px; color:#8a83a0;">الوزن (% من المرحلة)</label>
                                 <input type="number" step="0.01" min="0" max="100" name="Weight" value="@Model.Weight" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                             </div>
-                            @if (canManageFinancials)
-                            {
-                                <div>
-                                    <label style="font-size:11px; color:#8a83a0;">مبلغ المكافأة</label>
-                                    <input type="number" step="0.01" min="0" name="BonusAmount" value="@Model.BonusAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                                </div>
-                                <div>
-                                    <label style="font-size:11px; color:#8a83a0;">مبلغ الغرامة</label>
-                                    <input type="number" step="0.01" min="0" name="PenaltyAmount" value="@Model.PenaltyAmount" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                                </div>
-                            }
-                            else
-                            {
-                                <input type="hidden" name="BonusAmount" value="@Model.BonusAmount" />
-                                <input type="hidden" name="PenaltyAmount" value="@Model.PenaltyAmount" />
-                            }
-                        </div>
-                    }
+                        }
                     else
                     {
                         <input type="hidden" name="Title" value="@Model.Title" />

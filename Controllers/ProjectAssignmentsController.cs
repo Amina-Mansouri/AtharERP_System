@@ -384,7 +384,47 @@ List<int>? taskIds)
             return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
 
-    
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDates(int id, int? taskId, [Bind("PlannedStartDate,PlannedEndDate")] ProjectAssignment model)
+        {
+            if (!User.IsInRole("مدير النظام"))
+                return Forbid();
+
+            var assignment = await _context.ProjectAssignments
+                .Include(a => a.Stage)
+                .Include(a => a.Tasks)
+                .FirstOrDefaultAsync(a => a.Id == id);
+            if (assignment == null)
+                return NotFound();
+
+            if (assignment.Stage?.PlannedStartDate != null && assignment.Stage.PlannedEndDate != null)
+            {
+                if ((model.PlannedStartDate.HasValue && model.PlannedStartDate < assignment.Stage.PlannedStartDate) ||
+                    (model.PlannedEndDate.HasValue && model.PlannedEndDate > assignment.Stage.PlannedEndDate))
+                {
+                    TempData["Error"] = $"تواريخ التكليف يجب أن تكون ضمن نطاق المرحلة ({assignment.Stage.PlannedStartDate:yyyy-MM-dd} إلى {assignment.Stage.PlannedEndDate:yyyy-MM-dd})";
+                    return taskId.HasValue
+                        ? this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId.Value })
+                        : this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
+                }
+            }
+
+            assignment.PlannedStartDate = model.PlannedStartDate;
+            assignment.PlannedEndDate = model.PlannedEndDate;
+            foreach (var t in assignment.Tasks)
+            {
+                t.PlannedStartDate = model.PlannedStartDate;
+                t.PlannedEndDate = model.PlannedEndDate;
+            }
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم تحديث تواريخ التكليف بنجاح";
+            return taskId.HasValue
+                ? this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId.Value })
+                : this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
+        }
+
         private async Task EnsureTeamMembershipAsync(int projectId, string userId)
         {
             var exists = await _context.ProjectTeamMembers.AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId);

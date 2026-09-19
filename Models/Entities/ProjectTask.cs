@@ -81,15 +81,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوزن (% من المرحلة)")]
         public decimal Weight { get; set; }
 
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "مبلغ المكافأة")]
-        public decimal BonusAmount { get; set; }
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "مبلغ الغرامة")]
-        public decimal PenaltyAmount { get; set; }
-
         [Display(Name = "تعليق آخر مراجعة")]
         public string? ReviewComment { get; set; }
 

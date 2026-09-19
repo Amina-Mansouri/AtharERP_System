@@ -107,7 +107,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-[Bind("StageId,ProjectAssignmentId,Title,Description,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,Weight,BonusAmount,PenaltyAmount")] ProjectTask model)
+        [Bind("StageId,ProjectAssignmentId,Title,Description,PlannedStartDate,PlannedEndDate,Priority,IsUrgent,Weight")] ProjectTask model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == model.StageId);
             if (stage == null)
@@ -164,7 +164,6 @@ namespace AtharERP_System.Controllers
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.CanManage = canManage;
-            ViewBag.CanManageFinancials = await _permissionService.HasPermissionAsync(User, "Finance.Costs.Edit");
             ViewBag.CanEditDates = canManage || await CanEditDatesAsync(task);
             ViewBag.Proposals = await _context.DesignProposals
     .Include(p => p.PreparedBy)
@@ -191,19 +190,17 @@ namespace AtharERP_System.Controllers
             return View(task);
         }
 
-        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-int id,
-[Bind("Title,Description,ActualDeliveryDate,Priority,IsUrgent,Weight,BonusAmount,PenaltyAmount")] ProjectTask model)
+    int id,
+    [Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,Weight")] ProjectTask model)
         {
             var task = await _context.ProjectTasks.Include(t => t.Todos).Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
-            var canManageFinancials = await _permissionService.HasPermissionAsync(User, "Finance.Costs.Edit");
             var canEditDates = canManage || await CanEditDatesAsync(task);
 
             if (!canManage && !canEditDates)
@@ -240,14 +237,36 @@ int id,
                 task.Weight = model.Weight;
             }
 
-            if (canManageFinancials)
-            {
-                task.BonusAmount = model.BonusAmount;
-                task.PenaltyAmount = model.PenaltyAmount;
-            }
-
             if (canEditDates)
             {
+                var assignmentForDates = task.ProjectAssignmentId.HasValue
+                    ? await _context.ProjectAssignments.FindAsync(task.ProjectAssignmentId.Value)
+                    : null;
+
+                DateTime? rangeStart = assignmentForDates?.PlannedStartDate;
+                DateTime? rangeEnd = assignmentForDates?.PlannedEndDate;
+                var rangeSource = "التكليف";
+
+                if (rangeStart == null || rangeEnd == null)
+                {
+                    var stageForDates = await _context.ProjectStages.FindAsync(task.StageId);
+                    rangeStart = stageForDates?.PlannedStartDate;
+                    rangeEnd = stageForDates?.PlannedEndDate;
+                    rangeSource = "المرحلة";
+                }
+
+                if (rangeStart != null && rangeEnd != null)
+                {
+                    if ((model.PlannedStartDate.HasValue && model.PlannedStartDate < rangeStart) ||
+                        (model.PlannedEndDate.HasValue && model.PlannedEndDate > rangeEnd))
+                    {
+                        TempData["Error"] = $"تواريخ المهمة يجب أن تكون ضمن نطاق {rangeSource} ({rangeStart:yyyy-MM-dd} إلى {rangeEnd:yyyy-MM-dd})";
+                        return this.RedirectKeepingTab("Edit", new { id });
+                    }
+                }
+
+                task.PlannedStartDate = model.PlannedStartDate;
+                task.PlannedEndDate = model.PlannedEndDate;
                 task.ActualDeliveryDate = model.ActualDeliveryDate;
 
                 _calc.UpdateDeliveryMetrics(task);
