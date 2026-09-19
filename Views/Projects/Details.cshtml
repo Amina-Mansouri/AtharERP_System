@@ -97,7 +97,7 @@
 {
    var stagesForCircles = Model.Stages.OrderBy(s => s.Sequence).ToList();
    
-    <div style="display:flex; gap:16px; align-items:stretch; flex-wrap:wrap; margin-bottom:14px;">
+    <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:14px;">
         <div class="stat-strip" style="flex-direction:column; padding:2px 0; flex:1 1 260px; margin-bottom:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--sys-row-line);">
                 <span class="kicker">الحالة</span><span class="stat-value" style="font-size:13px;">@projectStatusLabels.FirstOrDefault(x => x.Value == Model.Status.ToString()).Label</span>
@@ -128,7 +128,7 @@
         {
             <div style="flex:2 1 420px; background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
                 <div style="font-size:13.5px; font-weight:600; margin-bottom:12px;">إحصائيات التكليفات لكل مرحلة</div>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;">
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; max-height:240px; overflow-y:auto; padding-left:4px;">
                     @foreach (var stage in stagesForCircles)
                     {
                         var stageAssignments = stage.Assignments.ToList();
