@@ -763,6 +763,11 @@ else
                     if (maxActual > maxDate) { maxDate = maxActual; }
                     var totalDays = Math.Max(1, (maxDate - minDate).Days);
 
+                    var today = DateTime.UtcNow.Date;
+                    var todayInRange = today >= minDate && today <= maxDate;
+                    var todayPct = Math.Max(0, Math.Min(100, (today - minDate).TotalDays / totalDays * 100));
+                    var todayPctStr = todayPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
                     (string Solid, string Tint) GetStageColors(StageStatus s) => s switch
                     {
                         StageStatus.Completed => ("#2f8a57", "rgba(47,138,87,.16)"),
@@ -772,11 +777,18 @@ else
                         _ => ("#8a83a0", "rgba(138,131,160,.16)")
                     };
 
-                    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#8a83a0; margin-bottom:8px; padding-right:180px;">
-                        <span>@minDate.ToString("yyyy/MM/dd")</span>
-                        <span>@maxDate.ToString("yyyy/MM/dd")</span>
+                    <div style="display:flex; gap:0; margin-bottom:8px;">
+                        <div style="width:180px; flex-shrink:0;"></div>
+                        <div style="flex:1; position:relative; height:16px;">
+                            <span style="position:absolute; right:0; font-size:10.5px; color:#8a83a0;">@minDate.ToString("yyyy/MM/dd")</span>
+                            <span style="position:absolute; left:0; font-size:10.5px; color:#8a83a0;">@maxDate.ToString("yyyy/MM/dd")</span>
+                            @if (todayInRange)
+                            {
+                                <span style="position:absolute; right:@todayPctStr%; transform:translateX(50%); font-size:9.5px; font-weight:700; color:#c9700f; white-space:nowrap;">اليوم @today.ToString("MM/dd")</span>
+                            }
+                        </div>
                     </div>
-                    <div style="display:grid; gap:10px;">
+                    <div style="display:grid; gap:32px; margin-top:26px;">
                         @foreach (var stage in timelineStages)
                         {
                             var (barColor, tint) = GetStageColors(stage.Status);
@@ -784,23 +796,37 @@ else
                             var completionStr = completionClamped.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <div style="width:170px; flex-shrink:0; font-size:11.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@stage.Name">@stage.Sequence. @stage.Name</div>
-                                <div style="flex:1; position:relative; height:30px; background:#f7f6fb; border-radius:6px;">
+                                <div style="flex:1; position:relative;">
                                     @if (stage.PlannedStartDate.HasValue && stage.PlannedEndDate.HasValue)
                                     {
                                         var leftPct = Math.Max(0, Math.Min(100, (stage.PlannedStartDate.Value - minDate).TotalDays / totalDays * 100));
                                         var rightPct = Math.Max(0, Math.Min(100, (stage.PlannedEndDate.Value - minDate).TotalDays / totalDays * 100));
                                         var widthPct = Math.Max(6.0, rightPct - leftPct);
+                                        var endRightPct = leftPct + widthPct;
                                         var leftPctStr = leftPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
                                         var widthPctStr = widthPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
-                                        <div style="position:absolute; right:@leftPctStr%; width:@widthPctStr%; top:3px; bottom:3px; background:@tint; border-radius:5px; display:flex; align-items:center; justify-content:space-between; padding:0 4px; gap:3px;">
-                                            <div style="position:absolute; top:0; bottom:0; right:0; width:@completionStr%; background:@barColor; border-radius:5px 0 0 5px;"></div>
-                                            <span style="position:relative; z-index:1; background:rgba(255,255,255,.9); color:@barColor; border-radius:4px; padding:1px 4px; font-size:9px; font-weight:700; white-space:nowrap;">@stage.PlannedStartDate.Value.ToString("yyyy/MM/dd")</span>
-                                            <span style="position:relative; z-index:1; background:rgba(255,255,255,.9); color:@barColor; border-radius:4px; padding:1px 4px; font-size:9px; font-weight:700; white-space:nowrap;">@stage.PlannedEndDate.Value.ToString("yyyy/MM/dd")</span>
+                                        var endRightPctStr = endRightPct.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                                        <div style="position:absolute; right:@leftPctStr%; bottom:100%; transform:translateX(50%); display:flex; flex-direction:column; align-items:center; margin-bottom:1px; z-index:2;">
+                                            <span style="font-size:9.5px; font-weight:700; color:@barColor; white-space:nowrap; line-height:1.3;">@stage.PlannedStartDate.Value.ToString("yyyy/MM/dd")</span>
+                                            <span style="width:1px; height:9px; background:@barColor; opacity:.45;"></span>
                                         </div>
+                                        <div style="position:absolute; right:@endRightPctStr%; bottom:100%; transform:translateX(50%); display:flex; flex-direction:column; align-items:center; margin-bottom:1px; z-index:2;">
+                                            <span style="font-size:9.5px; font-weight:700; color:@barColor; white-space:nowrap; line-height:1.3;">@stage.PlannedEndDate.Value.ToString("yyyy/MM/dd")</span>
+                                            <span style="width:1px; height:9px; background:@barColor; opacity:.45;"></span>
+                                        </div>
+                                        <div style="position:relative; height:26px; background:#f7f6fb; border-radius:6px;">
+                                            <div style="position:absolute; right:@leftPctStr%; width:@widthPctStr%; top:3px; bottom:3px; background:@tint; border-radius:5px; overflow:hidden;">
+                                                <div style="position:absolute; top:0; bottom:0; right:0; width:@completionStr%; background:@barColor; border-radius:5px 0 0 5px;"></div>
+                                            </div>
+                                        </div>
+                                        @if (todayInRange)
+                                        {
+                                            <div style="position:absolute; right:@todayPctStr%; top:-22px; bottom:0; width:0; border-right:1px dashed #c9700f; opacity:.7; z-index:1;"></div>
+                                        }
                                     }
                                     else
                                     {
-                                        <div style="position:absolute; inset:0; display:flex; align-items:center; padding-right:8px;">
+                                        <div style="position:relative; height:26px; background:#f7f6fb; border-radius:6px; display:flex; align-items:center; padding-right:8px;">
                                             <span class="stat-sub" style="font-size:10px;">لا توجد تواريخ محددة</span>
                                         </div>
                                     }
