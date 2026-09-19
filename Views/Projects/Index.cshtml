@@ -95,13 +95,13 @@
         ("أخرى (جديد/ملغى)", otherProjectsCount, "#ecebf2")
     };
 }
-@await Html.PartialAsync("_StatIndividualCircles", projectSlices)
-<div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; margin-bottom:16px;">
+
+<div style="display:flex; gap:20px; align-items:stretch; flex-wrap:wrap; margin-bottom:16px;">
     <div style="flex:1 1 460px; background:var(--sys-surface); border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:16px 18px;">
         <div style="font-size:11.5px; font-weight:600; color:var(--sys-text-light); margin-bottom:4px;">توزيع حالة المراحل حسب نوعها (كل المشاريع)</div>
         @await Html.PartialAsync("_StageStatusColumnChart", ViewBag.StageStatusRows as List<(string StageName, int New, int InProgress, int ClientReview, int Completed, int Delayed)>)
     </div>
-    <div style="flex:0 0 240px;">
+    <div style="flex:0 0 240px; display:flex;">
         @await Html.PartialAsync("_StatIndividualCircles", projectSlices)
     </div>
 </div>
