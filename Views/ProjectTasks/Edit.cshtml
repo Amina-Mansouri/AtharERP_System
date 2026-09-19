@@ -5,6 +5,7 @@
     ViewData["Title"] = "تعديل المهمة";
     var canManage = ViewBag.CanManage as bool? ?? false;
     var canEditDates = ViewBag.CanEditDates as bool? ?? false;
+    var isSysAdmin = User.IsInRole("مدير النظام");
     var statusLabels = EnumDisplayHelper.GetDisplayList<ProjectTaskStatus>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
     var proposals = ViewBag.Proposals as List<DesignProposal> ?? new List<DesignProposal>();
@@ -12,7 +13,6 @@
     string ProposalTagClass(ProposalStatus s) => s == ProposalStatus.Approved ? "tag-success" : (s == ProposalStatus.Rejected ? "tag-danger" : "tag-warning");
     string ProposalLabel(ProposalStatus s) => s == ProposalStatus.Approved ? "معتمد" : (s == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد");
 }
-
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
     <div>
@@ -66,34 +66,32 @@
                     </div>
                 }
 
+                @if (Model.ProjectAssignment != null)
+                {
+                    var asg = Model.ProjectAssignment;
+                    <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:10px; background:#faf9fd;">
+                        <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">بيانات التكليف: @asg.CostType</div>
+                        <form method="post" asp-controller="ProjectAssignments" asp-action="EditDates" style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@asg.Id" />
+                            <input type="hidden" name="taskId" value="@Model.Id" />
+                            <div>
+                                <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
+                                <input type="date" name="PlannedStartDate" value="@(asg.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                            </div>
+                            <div>
+                                <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
+                                <input type="date" name="PlannedEndDate" value="@(asg.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                            </div>
+                            @if (isSysAdmin)
+                            {
+                                <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ</button>
+                            }
+                        </form>
+                    </div>
+                }
+
                 <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
-                    @{
-                        var isSysAdmin = User.IsInRole("مدير النظام");
-                    }
-                    @if (Model.ProjectAssignment != null)
-                    {
-                        var asg = Model.ProjectAssignment;
-                        <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:10px; background:#faf9fd;">
-                            <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">بيانات التكليف: @asg.CostType</div>
-                            <form method="post" asp-controller="ProjectAssignments" asp-action="EditDates" style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@asg.Id" />
-                                <input type="hidden" name="taskId" value="@Model.Id" />
-                                <div>
-                                    <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
-                                    <input type="date" name="PlannedStartDate" value="@(asg.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
-                                </div>
-                                <div>
-                                    <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
-                                    <input type="date" name="PlannedEndDate" value="@(asg.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
-                                </div>
-                                @if (isSysAdmin)
-                                {
-                                    <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ</button>
-                                }
-                            </form>
-                        </div>
-                    }
                     @Html.AntiForgeryToken()
                     <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
@@ -116,36 +114,37 @@
                         <textarea name="Description" rows="2" disabled="@(!canManage)" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
                     </div>
 
-           
-                        <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:8px; background:#faf9fd;">
-                            <div style="font-size:11px; font-weight:700; color:#5a5370; margin-bottom:8px;">تواريخ هذه المهمة (ضمن نطاق تاريخ التكليف)</div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-                                <div>
-                                    <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
-                                    <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                                </div>
-                                <div>
-                                    <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
-                                    <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                                </div>
-                                <div>
-                                    <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
-                                    <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                                </div>
+                    <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:8px; background:#faf9fd;">
+                        <div style="font-size:11px; font-weight:700; color:#5a5370; margin-bottom:8px;">تواريخ هذه المهمة (ضمن نطاق تاريخ التكليف)</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                            <div>
+                                <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
+                                <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                            </div>
+                            <div>
+                                <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
+                                <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                            </div>
+                            <div>
+                                <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
+                                <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                             </div>
                         </div>
+                    </div>
+
                     <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
                         <input type="checkbox" class="chk-gold" name="IsUrgent" value="true" disabled="@(!canManage)" checked="@Model.IsUrgent" />
                         <input type="hidden" name="IsUrgent" value="false" />
                         <label style="font-size:11.5px;">عاجلة</label>
                     </div>
-                        @if (canManage)
-                        {
-                            <div style="margin-bottom:8px;">
-                                <label style="font-size:11px; color:#8a83a0;">الوزن (% من المرحلة)</label>
-                                <input type="number" step="0.01" min="0" max="100" name="Weight" value="@Model.Weight" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
-                        }
+
+                    @if (canManage)
+                    {
+                        <div style="margin-bottom:8px;">
+                            <label style="font-size:11px; color:#8a83a0;">الوزن (% من المرحلة)</label>
+                            <input type="number" step="0.01" min="0" max="100" name="Weight" value="@Model.Weight" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                        </div>
+                    }
                     else
                     {
                         <input type="hidden" name="Title" value="@Model.Title" />
@@ -172,64 +171,59 @@
                 }
             </div>
 
-            }
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:12px;">
-            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المهندسات معك (نفس التكليف)</div>
-                @if (Model.ProjectAssignment == null || !Model.ProjectAssignment.Engineers.Any())
-                {
-                    <div class="stat-sub">لا يوجد آخرون، أو المهمة غير مرتبطة بتكليف بعد</div>
-                }
-                else
-                {
-                    @foreach (var eng in Model.ProjectAssignment.Engineers)
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+                    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المهندسات معك (نفس التكليف)</div>
+                    @if (Model.ProjectAssignment == null || !Model.ProjectAssignment.Engineers.Any())
                     {
-                        <div style="font-size:11.5px; margin-bottom:4px;">• @eng.User.FullName</div>
+                        <div class="stat-sub">لا يوجد آخرون، أو المهمة غير مرتبطة بتكليف بعد</div>
                     }
-                }
-            </div>
-
-            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">قائمة To-Do (تقود نسبة الإنجاز والحالة تلقائياً)</div>
-                @if (!Model.Todos.Any())
-                {
-                    <div class="stat-sub" style="margin-bottom:10px;">لا توجد بنود بعد</div>
-                }
-                else
-                {
-                    <div style="display:grid; gap:6px; margin-bottom:10px;">
-                        @foreach (var todo in Model.Todos)
+                    else
+                    {
+                        @foreach (var eng in Model.ProjectAssignment.Engineers)
                         {
-                            <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px;">
-                                <form method="post" asp-action="ToggleTodo" style="display:flex; align-items:center; gap:8px; flex:1;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@todo.Id" />
-                                    <input type="hidden" name="taskId" value="@Model.Id" />
-                                    <input type="checkbox" class="chk-gold" onchange="this.form.submit()" checked="@todo.IsCompleted" />
-                                    <span style="font-size:11.5px; @(todo.IsCompleted ? "text-decoration:line-through; color:#8a83a0;" : "")">@todo.Item</span>
-                                </form>
-                                <form method="post" asp-action="RemoveTodo" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@todo.Id" />
-                                    <input type="hidden" name="taskId" value="@Model.Id" />
-                                    <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer;">حذف</button>
-                                </form>
-                            </div>
+                            <div style="font-size:11.5px; margin-bottom:4px;">• @eng.User.FullName</div>
                         }
-                    </div>
-                }
-                <form method="post" asp-action="AddTodo" style="display:flex; gap:8px;">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="taskId" value="@Model.Id" />
-                    <input type="text" name="item" placeholder="بند جديد" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                    <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; padding:0 14px;">+ إضافة بند</button>
-                </form>
+                    }
+                </div>
+
+                <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+                    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">قائمة To-Do (تقود نسبة الإنجاز والحالة تلقائياً)</div>
+                    @if (!Model.Todos.Any())
+                    {
+                        <div class="stat-sub" style="margin-bottom:10px;">لا توجد بنود بعد</div>
+                    }
+                    else
+                    {
+                        <div style="display:grid; gap:6px; margin-bottom:10px;">
+                            @foreach (var todo in Model.Todos)
+                            {
+                                <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px;">
+                                    <form method="post" asp-action="ToggleTodo" style="display:flex; align-items:center; gap:8px; flex:1;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@todo.Id" />
+                                        <input type="hidden" name="taskId" value="@Model.Id" />
+                                        <input type="checkbox" class="chk-gold" onchange="this.form.submit()" checked="@todo.IsCompleted" />
+                                        <span style="font-size:11.5px; @(todo.IsCompleted ? "text-decoration:line-through; color:#8a83a0;" : "")">@todo.Item</span>
+                                    </form>
+                                    <form method="post" asp-action="RemoveTodo" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@todo.Id" />
+                                        <input type="hidden" name="taskId" value="@Model.Id" />
+                                        <button type="submit" style="border:none; background:none; color:#c94a42; font-size:10px; cursor:pointer;">حذف</button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <form method="post" asp-action="AddTodo" style="display:flex; gap:8px;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="taskId" value="@Model.Id" />
+                        <input type="text" name="item" placeholder="بند جديد" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                        <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; padding:0 14px;">+ إضافة بند</button>
+                    </form>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
         </div>
     </div>
 
