@@ -681,6 +681,16 @@ else
                                 </select>
                                 <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; font-weight:600;">+ إضافة</button>
                             </div>
+                            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
+                                    <input type="date" name="PlannedStartDate" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
+                                    <input type="date" name="PlannedEndDate" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                            </div>
                             @{
                                 var unassignedTasks = Model.Tasks.Where(t => t.ProjectAssignmentId == null).ToList();
                             }

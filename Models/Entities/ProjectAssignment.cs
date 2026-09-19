@@ -38,7 +38,13 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "عاجل")]
         public bool IsUrgent { get; set; }
 
-       
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ البداية")]
+        public DateTime? PlannedStartDate { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ النهاية")]
+        public DateTime? PlannedEndDate { get; set; }
 
         [Display(Name = "مرحّل إلى المالية")]
         public bool IsTransferredToFinance { get; set; }

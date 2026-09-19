@@ -196,7 +196,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
 int id,
-[Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,Weight,BonusAmount,PenaltyAmount")] ProjectTask model)
+[Bind("Title,Description,ActualDeliveryDate,Priority,IsUrgent,Weight,BonusAmount,PenaltyAmount")] ProjectTask model)
         {
             var task = await _context.ProjectTasks.Include(t => t.Todos).Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
@@ -248,19 +248,6 @@ int id,
 
             if (canEditDates)
             {
-                var stageForDates = await _context.ProjectStages.FindAsync(task.StageId);
-                if (stageForDates?.PlannedStartDate != null && stageForDates.PlannedEndDate != null)
-                {
-                    if ((model.PlannedStartDate.HasValue && model.PlannedStartDate < stageForDates.PlannedStartDate) ||
-                        (model.PlannedEndDate.HasValue && model.PlannedEndDate > stageForDates.PlannedEndDate))
-                    {
-                        TempData["Error"] = $"تواريخ المهمة يجب أن تكون ضمن نطاق المرحلة ({stageForDates.PlannedStartDate:yyyy-MM-dd} إلى {stageForDates.PlannedEndDate:yyyy-MM-dd})";
-                        return this.RedirectKeepingTab("Edit", new { id });
-                    }
-                }
-
-                task.PlannedStartDate = model.PlannedStartDate;
-                task.PlannedEndDate = model.PlannedEndDate;
                 task.ActualDeliveryDate = model.ActualDeliveryDate;
 
                 _calc.UpdateDeliveryMetrics(task);

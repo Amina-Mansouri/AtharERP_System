@@ -138,16 +138,18 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-       [Bind("ProjectId,StageId,CostType,Description,IsUrgent")] ProjectAssignment model,
-    List<string>? engineerIds,
-    List<int>? taskIds)
+[Bind("ProjectId,StageId,CostType,Description,IsUrgent,PlannedStartDate,PlannedEndDate")] ProjectAssignment model,
+List<string>? engineerIds,
+List<int>? taskIds)
         {
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
                 return NotFound();
+
+            ProjectStage? targetStage = null;
             if (model.StageId.HasValue)
             {
-                var targetStage = await _context.ProjectStages.FindAsync(model.StageId.Value);
+                targetStage = await _context.ProjectStages.FindAsync(model.StageId.Value);
                 if (targetStage != null && targetStage.Status == StageStatus.New)
                 {
                     TempData["Error"] = "لا يمكن إضافة تكليف على هذه المرحلة قبل بدء دورها (تحتاج تاريخ بدء، واكتمال كل المراحل السابقة لها بالترتيب)";
@@ -159,6 +161,16 @@ namespace AtharERP_System.Controllers
             {
                 TempData["Error"] = "يجب اختيار مهمة واحدة على الأقل عند إنشاء التكليف";
                 return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
+            }
+
+            if (targetStage?.PlannedStartDate != null && targetStage.PlannedEndDate != null)
+            {
+                if ((model.PlannedStartDate.HasValue && model.PlannedStartDate < targetStage.PlannedStartDate) ||
+                    (model.PlannedEndDate.HasValue && model.PlannedEndDate > targetStage.PlannedEndDate))
+                {
+                    TempData["Error"] = $"تواريخ التكليف يجب أن تكون ضمن نطاق المرحلة ({targetStage.PlannedStartDate:yyyy-MM-dd} إلى {targetStage.PlannedEndDate:yyyy-MM-dd})";
+                    return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
+                }
             }
 
             model.Status = AssignmentStatus.Pending;
@@ -190,9 +202,10 @@ namespace AtharERP_System.Controllers
                 foreach (var t in tasksToLink)
                 {
                     t.ProjectAssignmentId = model.Id;
+                    t.PlannedStartDate = model.PlannedStartDate;
+                    t.PlannedEndDate = model.PlannedEndDate;
                 }
                 await _context.SaveChangesAsync();
-               
             }
 
             // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)
