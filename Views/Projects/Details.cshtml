@@ -344,16 +344,16 @@ else
                             <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
                             <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                         </div>
-                        <div>
+                                                <div>
                             <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
-                            <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
                                 <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">مشروع فرعي</option>
                             </select>
                         </div>
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">ملكية المشروع</label>
-                            <select name="Type" id="typeSelect" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="Type" id="typeSelect" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="">--</option>
                                 @foreach (var t in typeLabels)
                                 {
@@ -364,7 +364,7 @@ else
                         </div>
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
-                            <select name="ProjectCategoryId" id="categorySelect" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="ProjectCategoryId" id="categorySelect" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="">-- غير محدد --</option>
                                 @foreach (var pc in projectCategories)
                                 {
