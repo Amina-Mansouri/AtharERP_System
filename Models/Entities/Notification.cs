@@ -25,6 +25,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "مقروء")]
         public bool IsRead { get; set; }
 
+        [Display(Name = "تاريخ ووقت القراءة")]
+        public DateTime? ReadAt { get; set; }
+
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

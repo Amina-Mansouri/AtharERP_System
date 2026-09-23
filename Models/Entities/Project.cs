@@ -44,8 +44,16 @@ namespace AtharERP_System.Models.Entities
         public ProjectScope Scope { get; set; } = ProjectScope.Main;
 
         // التصنيف القطاعي الجديد (بند P5) — منفصل تماماً عن Scope
-        [Display(Name = "نوع المشروع")]
+        [Display(Name = "ملكية المشروع")]
         public ProjectType? Type { get; set; }
+
+        // تصنيف إداري جديد (فئة المشروع + وزنها) يُستخدم لاحقاً في معادلة KPI
+        [Display(Name = "نوع المشروع")]
+        public int? ProjectCategoryId { get; set; }
+
+        [ForeignKey("ProjectCategoryId")]
+        [ValidateNever]
+        public virtual ProjectCategory? ProjectCategory { get; set; }
 
         [Display(Name = "الحالة")]
         public ProjectStatus Status { get; set; } = ProjectStatus.New;

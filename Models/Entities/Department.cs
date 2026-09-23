@@ -27,6 +27,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نشط")]
         public bool IsActive { get; set; } = true;
 
+        [Display(Name = "ختم الإدارة")]
+        public string? StampImagePath { get; set; }
+
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

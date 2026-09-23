@@ -34,6 +34,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "صورة العقد")]
         public string? ContractImagePath { get; set; }
 
+        [Display(Name = "التوقيع الإلكتروني")]
+        public string? SignatureImagePath { get; set; }
+
         [Display(Name = "القسم")]
         public int? DepartmentId { get; set; }
 

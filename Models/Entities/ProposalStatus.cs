@@ -10,7 +10,13 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "معتمد")]
         Approved = 2,
 
-        [Display(Name = "مرفوض")]
-        Rejected = 3
+        [Display(Name = "معتمد مع تعديل")]
+        ApprovedWithModification = 3,
+
+        [Display(Name = "إعادة تقديم")]
+        Resubmission = 4,
+
+        [Display(Name = "إعادة تصميم")]
+        Redesign = 5
     }
 }

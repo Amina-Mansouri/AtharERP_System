@@ -6,7 +6,6 @@ namespace AtharERP_System.Models.Entities
 {
     // المقترح التصميمي (وثيقة ١٣-٨ · Z4) — يمكن تسليم أكثر من نسخة حتى الاعتماد،
     // والمرفوض يبقى محفوظاً بسبب رفضه ولا يُحذف.
-    // ملاحظة: ClientReply و RejectReason محجوزان لمرحلة اعتماد العميل مستقبلاً، غير مستخدمين حالياً.
     public class DesignProposal
     {
         public int Id { get; set; }
@@ -17,13 +16,6 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("ProjectId")]
         [ValidateNever]
         public virtual Project Project { get; set; } = null!;
-
-        [Required]
-        public int ProjectTaskId { get; set; }
-
-        [ForeignKey("ProjectTaskId")]
-        [ValidateNever]
-        public virtual ProjectTask ProjectTask { get; set; } = null!;
 
         [Required]
         [StringLength(50)]
@@ -51,36 +43,25 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ التسليم")]
         public DateTime? SubmittedDate { get; set; }
 
-        [Required]
-        [StringLength(255)]
-        [Display(Name = "اسم الملف")]
-        public string FileName { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(500)]
-        [Display(Name = "مسار الملف")]
-        public string FilePath { get; set; } = string.Empty;
-
-        [StringLength(50)]
-        [Display(Name = "نوع الملف")]
-        public string? FileType { get; set; }
-
-        [Display(Name = "حجم الملف")]
-        public long FileSize { get; set; }
-
-        [Display(Name = "ردّ العميل")]
-        public string? ClientReply { get; set; }
-
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; } = ProposalStatus.Submitted;
 
-        [Display(Name = "تعليق المدير")]
-        public string? ManagerComment { get; set; }
-
-        [Display(Name = "سبب الرفض")]
-        public string? RejectReason { get; set; }
-
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [StringLength(500)]
+        [Display(Name = "مسار الملف")]
+        public string? FilePath { get; set; }
+
+        // التكليف الذي يتبعه هذا المقترح — يُختار عند الرفع، والمرحلة تُقرأ منه تلقائياً
+        // (ProjectAssignment.Stage) في نموذج المراجعة، لا إدخال يدوي ولا FK مباشر لمرحلة
+        [Display(Name = "التكليف")]
+        public int? ProjectAssignmentId { get; set; }
+
+        [ForeignKey("ProjectAssignmentId")]
+        [ValidateNever]
+        public virtual ProjectAssignment? ProjectAssignment { get; set; }
+
+        public virtual ICollection<ProposalReview> Reviews { get; set; } = new List<ProposalReview>();
     }
 }
