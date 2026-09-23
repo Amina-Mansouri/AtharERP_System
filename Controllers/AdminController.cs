@@ -123,6 +123,7 @@ namespace AtharERP_System.Controllers
      [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,JobRankId,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
     IFormFile? profilePhoto,
     IFormFile? contractImage,
+    IFormFile? signatureImage,
     string role)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -188,6 +189,18 @@ namespace AtharERP_System.Controllers
                     user.ProfilePhotoPath = photoResult.FilePath;
                 else
                     ModelState.AddModelError(string.Empty, photoResult.ErrorMessage ?? "فشل رفع الصورة");
+            }
+
+            if (signatureImage != null && signatureImage.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(user.SignatureImagePath))
+                    _fileUpload.DeleteFile(user.SignatureImagePath);
+
+                var signatureResult = await _fileUpload.SaveFileAsync(signatureImage, $"signatures/{user.Id}");
+                if (signatureResult.Success)
+                    user.SignatureImagePath = signatureResult.FilePath;
+                else
+                    ModelState.AddModelError(string.Empty, signatureResult.ErrorMessage ?? "فشل رفع صورة التوقيع");
             }
 
             // تجديد حقيقي (تغيّر التواريخ): أرشفة العقد القديم كاملاً بدل حذفه (سجل العقود)
@@ -767,7 +780,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description")] Department model)
+        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description")] Department model, IFormFile? stampImage)
         {
             if (!ModelState.IsValid)
             {
@@ -781,6 +794,16 @@ namespace AtharERP_System.Controllers
             _context.Departments.Add(model);
             await _context.SaveChangesAsync();
 
+            if (stampImage != null && stampImage.Length > 0)
+            {
+                var stampResult = await _fileUpload.SaveFileAsync(stampImage, $"departments/{model.Id}");
+                if (stampResult.Success)
+                {
+                    model.StampImagePath = stampResult.FilePath;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة قسم", "Department", model.Id.ToString(), $"إنشاء قسم {model.Name}");
             TempData["Success"] = $"تم إنشاء القسم {model.Name} بنجاح";
             return RedirectToAction("Departments");
@@ -789,7 +812,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive")] Department model)
+        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive")] Department model, IFormFile? stampImage)
         {
             var department = await _context.Departments.FindAsync(id);
             if (department == null)
@@ -810,6 +833,16 @@ namespace AtharERP_System.Controllers
             department.ParentDepartmentId = model.ParentDepartmentId;
             department.Description = model.Description;
             department.IsActive = model.IsActive;
+
+            if (stampImage != null && stampImage.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(department.StampImagePath))
+                    _fileUpload.DeleteFile(department.StampImagePath);
+
+                var stampResult = await _fileUpload.SaveFileAsync(stampImage, $"departments/{department.Id}");
+                if (stampResult.Success)
+                    department.StampImagePath = stampResult.FilePath;
+            }
 
             await _context.SaveChangesAsync();
 

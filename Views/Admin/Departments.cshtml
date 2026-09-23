@@ -108,7 +108,7 @@
 
                 <div style="display:flex; gap:8px; margin-top:13px; padding-top:12px; border-top:1px solid #f1f0f6;">
                     <button type="button" class="btn-line" style="flex:1;"
-                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower())'>
+                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower(), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.StampImagePath)))'>
                         تعديل
                     </button>
                     <form method="post" asp-action="DeleteDepartment" asp-route-id="@selected.Id" onsubmit="return confirm('حذف هذا العنصر؟')" style="flex:1;">
@@ -124,7 +124,7 @@
 <div class="modal fade" id="deptModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" id="deptForm">
+            <form method="post" id="deptForm" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="dept-id" />
                 <div class="modal-header">
@@ -155,6 +155,11 @@
                         <input type="hidden" name="IsActive" value="false" />
                         <label for="dept-isActive" style="font-size:11.5px;">نشطة</label>
                     </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">ختم الإدارة (اختياري)</div>
+                        <div id="dept-current-stamp"></div>
+                        <input type="file" name="stampImage" accept="image/*" style="width:100%; font-size:11.5px;" />
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn-line btn-line-accent">حفظ</button>
@@ -166,7 +171,7 @@
 
 @section Scripts {
     <script>
-        function openDeptModal(id, name, parentId, description, isActive) {
+        function openDeptModal(id, name, parentId, description, isActive, stampPath) {
             const form = document.getElementById('deptForm');
             const isEdit = id !== undefined && id !== null;
             form.action = isEdit ? '@Url.Action("EditDepartment")' : '@Url.Action("CreateDepartment")';
@@ -179,6 +184,8 @@
             if (isEdit) {
                 document.getElementById('dept-isActive').checked = !!isActive;
             }
+            var stampDiv = document.getElementById('dept-current-stamp');
+            stampDiv.innerHTML = stampPath ? ('<img src="' + stampPath + '" style="max-width:80px; max-height:80px; display:block; margin-bottom:5px;" />') : '';
             new bootstrap.Modal(document.getElementById('deptModal')).show();
         }
     </script>

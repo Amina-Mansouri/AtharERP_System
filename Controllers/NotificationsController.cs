@@ -1,6 +1,8 @@
 ﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
+using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -12,12 +14,15 @@ namespace AtharERP_System.Controllers
     public class NotificationsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailSender _emailSender;
 
-        public NotificationsController(AppDbContext context)
+        public NotificationsController(AppDbContext context, UserManager<ApplicationUser> userManager, IEmailSender emailSender)
         {
             _context = context;
+            _userManager = userManager;
+            _emailSender = emailSender;
         }
-
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         public async Task<IActionResult> Index(string? filter, string? eventType, string? period, int page = 1)
@@ -82,18 +87,49 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRead(int id, string? returnFilter, string? returnEventType, string? returnPeriod)
         {
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == CurrentUserId);
+            var notification = await _context.Notifications
+                .Include(n => n.User)
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == CurrentUserId);
 
             if (notification != null && !notification.IsRead)
             {
                 notification.IsRead = true;
+                notification.ReadAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+
+                await SendReadReceiptAsync(notification);
             }
 
             if (notification?.Link != null)
                 return Redirect(notification.Link);
 
             return RedirectToAction("Index", new { filter = returnFilter, eventType = returnEventType, period = returnPeriod });
+        }
+
+        // تقرير استلام: يُرسل بريدياً لصاحب الإشعار ولكل مدراء النظام عند أول قراءة للإشعار
+        private async Task SendReadReceiptAsync(Notification notification)
+        {
+            var readAtText = notification.ReadAt?.ToString("yyyy-MM-dd HH:mm");
+            var body = $"تم استلام وقراءة الإشعار التالي بتاريخ {readAtText}:<br/>«{notification.Message}»<br/>بواسطة: {notification.User?.FullName}";
+
+            var recipients = new List<string>();
+            if (!string.IsNullOrEmpty(notification.User?.Email))
+                recipients.Add(notification.User.Email);
+
+            var admins = await _userManager.GetUsersInRoleAsync("مدير النظام");
+            recipients.AddRange(admins.Where(a => !string.IsNullOrEmpty(a.Email)).Select(a => a.Email!));
+
+            foreach (var email in recipients.Distinct())
+            {
+                try
+                {
+                    await _emailSender.SendEmailAsync(email, "تقرير استلام إشعار", body);
+                }
+                catch
+                {
+                    // فشل إرسال البريد لا يجب أن يوقف تعليم الإشعار كمقروء
+                }
+            }
         }
 
         [HttpPost]
