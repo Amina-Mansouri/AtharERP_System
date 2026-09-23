@@ -6,7 +6,7 @@ using QuestPDF.Infrastructure;
 
 namespace AtharERP_System.Services
 {
-    // توليد ملف PDF لنموذج مراجعة موحّد — يخدم مراجعة المهام ومراجعة المقترحات التصميمية معاً
+    // توليد ملف PDF لنموذج مراجعة موحّد — يخدم مراجعة المستندات المرتبطة بالمهام
     public class ProposalReviewPdfService
     {
         private readonly IWebHostEnvironment _environment;
@@ -19,6 +19,8 @@ namespace AtharERP_System.Services
         public byte[] Generate(ProposalReview review, Project project, Project? subProject, string? stageName, string itemName, int? revisionNumber)
         {
             var statusLabel = GetDisplayName(review.Status);
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "athar-logo-header.webp");
+            var hasLogo = File.Exists(logoPath);
 
             return Document.Create(container =>
             {
@@ -29,7 +31,14 @@ namespace AtharERP_System.Services
                     page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(11));
                     page.ContentFromRightToLeft();
 
-                    page.Header().AlignCenter().Text("نموذج مراجعة").FontSize(18).Bold();
+                    page.Header().Column(header =>
+                    {
+                        if (hasLogo)
+                            header.Item().AlignCenter().Height(60).Image(logoPath).FitArea();
+
+                        header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a")
+                            .PaddingBottom(6).AlignCenter().Text("نموذج مراجعة").FontSize(18).Bold().FontColor("#221837");
+                    });
 
                     page.Content().PaddingTop(15).Column(col =>
                     {
@@ -47,26 +56,26 @@ namespace AtharERP_System.Services
                             row.RelativeItem().Text($"اسم المبنى: {subProject?.Name ?? "-"}");
                         });
 
-                        col.Item().Text($"نوع المشروع: {(project.Type.HasValue ? GetDisplayName(project.Type.Value) : "-")}");
-
-                        col.Item().Row(row =>
-                        {
-                            row.RelativeItem().Text($"البند: {itemName}");
-                            row.RelativeItem().Text($"رقم المراجعة/النسخة: {(revisionNumber.HasValue ? revisionNumber.Value.ToString() : "-")}");
-                        });
+                        col.Item().Text($"نوع المشروع: {project.ProjectCategory?.DisplayName ?? "-"}");
 
                         col.Item().Row(row =>
                         {
                             row.RelativeItem().Text($"التاريخ: {review.ReviewDate:yyyy-MM-dd}");
-                            row.RelativeItem().Text($"المرحلة: {stageName ?? "-"}");
+                            row.RelativeItem().Text($"رقم المراجعة: {review.ReviewNumber}");
                         });
 
-                        col.Item().Text($"التخصص: {review.Discipline ?? "-"}");
+                        col.Item().Row(row =>
+                        {
+                            row.RelativeItem().Text($"المرحلة: {stageName ?? "-"}");
+                            row.RelativeItem().Text($"التخصص: {review.Discipline ?? "-"}");
+                        });
 
-                        col.Item().PaddingTop(10).Text("الحالة").Bold();
+                        col.Item().Text($"المستند: {itemName} — رمز: {revisionNumber?.ToString() ?? "-"}");
+
+                        col.Item().PaddingTop(10).Text("الحالة").Bold().FontColor("#221837");
                         col.Item().Text($"☑ {statusLabel}");
 
-                        col.Item().PaddingTop(10).Text("الملاحظات:").Bold();
+                        col.Item().PaddingTop(10).Text("الملاحظات:").Bold().FontColor("#221837");
                         col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(60)
                             .Text(string.IsNullOrWhiteSpace(review.Notes) ? "-" : review.Notes);
 
@@ -99,6 +108,8 @@ namespace AtharERP_System.Services
                             });
                         });
                     });
+
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }

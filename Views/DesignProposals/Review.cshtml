@@ -1,0 +1,98 @@
+﻿@using AtharERP_System.Models.Entities
+@{
+    var proposal = ViewBag.Proposal as DesignProposal;
+    var reviewerName = ViewBag.ReviewerName as string;
+    var reviewerPosition = ViewBag.ReviewerPosition as string;
+    var reviewerSignaturePath = ViewBag.ReviewerSignaturePath as string;
+    var supervisorName = ViewBag.SupervisorName as string;
+    var supervisorPosition = ViewBag.SupervisorPosition as string;
+    var supervisorSignaturePath = ViewBag.SupervisorSignaturePath as string;
+    var suggestedReviewNumber = ViewBag.SuggestedReviewNumber as int? ?? 1;
+    var projectId = ViewBag.ProjectId as int?;
+    var stageId = ViewBag.StageId as int?;
+    var taskFilter = ViewBag.TaskFilter as string;
+    ViewData["Title"] = "مراجعة المستند";
+}
+
+<h1 class="athar-page-title">مراجعة المستند: @proposal?.Name (@proposal?.Code)</h1>
+<div class="stat-sub mb-2">المهمة: @proposal?.ProjectTask?.Title — المرحلة: @(proposal?.ProjectTask?.Stage?.Name ?? "-")</div>
+
+<div class="athar-card mt-3">
+    <form method="post" asp-action="Review" asp-route-id="@proposal?.Id">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="projectId" value="@projectId" />
+        <input type="hidden" name="stageId" value="@stageId" />
+        <input type="hidden" name="taskFilter" value="@taskFilter" />
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">رقم المراجعة</label>
+                <input type="number" name="reviewNumber" class="form-control" value="@suggestedReviewNumber" required />
+                <div class="stat-sub">مقترح تلقائيًا بناءً على آخر رقم لهذا التكليف — يمكن تعديله</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">التخصص</label>
+                <input type="text" name="discipline" class="form-control" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">الحالة</label>
+            <div class="d-flex gap-3 flex-wrap">
+                <label><input type="radio" name="status" value="Approved" required /> معتمد</label>
+                <label><input type="radio" name="status" value="ApprovedWithModification" /> معتمد مع تعديل</label>
+                <label><input type="radio" name="status" value="Resubmission" /> إعادة تقديم</label>
+                <label><input type="radio" name="status" value="Redesign" /> إعادة تصميم</label>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">الملاحظات</label>
+            <textarea name="notes" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-label">المراجع (أنتِ)</div>
+                <div class="athar-card" style="padding:10px;">
+                    <div style="font-size:12.5px; font-weight:600;">@reviewerName</div>
+                    <div class="stat-sub">@(reviewerPosition ?? "-")</div>
+                    @if (!string.IsNullOrEmpty(reviewerSignaturePath))
+                    {
+                        <img src="@reviewerSignaturePath" style="max-width:120px; max-height:50px; margin-top:6px;" />
+                    }
+                    else
+                    {
+                        <div class="stat-sub" style="margin-top:6px; color:#c9700f;">لا يوجد توقيع محفوظ في حسابك — أضيفيه من بيانات الموظف</div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="form-label">المشرف المباشر (مسؤول المرحلة)</div>
+                <div class="athar-card" style="padding:10px;">
+                    @if (string.IsNullOrEmpty(supervisorName))
+                    {
+                        <div class="stat-sub" style="color:#c9700f;">لا يوجد مسؤول محدَّد لهذه المرحلة</div>
+                    }
+                    else
+                    {
+                        <div style="font-size:12.5px; font-weight:600;">@supervisorName</div>
+                        <div class="stat-sub">@(supervisorPosition ?? "-")</div>
+                        if (!string.IsNullOrEmpty(supervisorSignaturePath))
+                        {
+                            <img src="@supervisorSignaturePath" style="max-width:120px; max-height:50px; margin-top:6px;" />
+                        }
+                        else
+                        {
+                            <div class="stat-sub" style="margin-top:6px; color:#c9700f;">لا يوجد توقيع محفوظ لهذا المستخدم</div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn athar-btn">إرسال المراجعة</button>
+        <a asp-controller="ProjectAssignments" asp-action="Overview" asp-route-projectId="@projectId" asp-route-stageId="@stageId" asp-route-taskFilter="@taskFilter" class="btn athar-btn-outline">إلغاء</a>
+    </form>
+</div>

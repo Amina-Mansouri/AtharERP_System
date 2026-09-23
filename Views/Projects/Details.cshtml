@@ -183,7 +183,7 @@
 
         <form method="post" asp-action="Create">
             @Html.AntiForgeryToken()
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
                     <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
@@ -205,6 +205,18 @@
                         }
                     </select>
                     <input type="hidden" id="typeHidden" name="Type" disabled />
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                    <select name="ProjectCategoryId" id="categorySelect" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                        <option value="">-- غير محدد --</option>
+                        @foreach (var pc in projectCategories)
+                        {
+                            <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
+                        }
+                    </select>
+                    <input type="hidden" id="categoryHidden" name="ProjectCategoryId" disabled />
+                    <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
                 </div>
             </div>
 
@@ -249,7 +261,7 @@
                         <option value="">-- لا يوجد --</option>
                         @foreach (var p in parentProjects)
                         {
-                            <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-last-sub="@(lastSubProjectByParent.ContainsKey(p.Id) ? lastSubProjectByParent[p.Id] : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                            <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-category="@(p.ProjectCategoryId?.ToString() ?? "")" data-last-sub="@(lastSubProjectByParent.ContainsKey(p.Id) ? lastSubProjectByParent[p.Id] : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
                         }
                     </select>
                     <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
@@ -260,17 +272,6 @@
                         @foreach (var pr in priorityLabels)
                         {
                             <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
-                        }
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
-                    
-                   <select name="ProjectCategoryId" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                        <option value="">-- غير محدد --</option>
-                        @foreach (var pc in projectCategories)
-                        {
-                            <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
                         }
                     </select>
                     <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
@@ -338,21 +339,21 @@ else
 
                 <form method="post" asp-action="Edit" asp-route-id="@Model.Id" id="projectDataForm">
                     @Html.AntiForgeryToken()
-                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
-                            <input type="text" name="Name" value="@Model.Name" required disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                            <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                         </div>
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
-                            <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
                                 <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">مشروع فرعي</option>
                             </select>
                         </div>
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">ملكية المشروع</label>
-                            <select name="Type" id="typeSelect" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="Type" id="typeSelect" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="">--</option>
                                 @foreach (var t in typeLabels)
                                 {
@@ -360,6 +361,18 @@ else
                                 }
                             </select>
                             <input type="hidden" id="typeHidden" name="Type" disabled />
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                            <select name="ProjectCategoryId" id="categorySelect" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                <option value="">-- غير محدد --</option>
+                                @foreach (var pc in projectCategories)
+                                {
+                                    <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
+                                }
+                            </select>
+                            <input type="hidden" id="categoryHidden" name="ProjectCategoryId" disabled />
+                            <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
                         </div>
                     </div>
 
@@ -389,30 +402,21 @@ else
                         }
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">المشروع الرئيسي (فرعي فقط)</label>
-                            <select name="ParentProjectId" id="parentProjectSelect" onchange="toggleParentDependentFields()" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="ParentProjectId" id="parentProjectSelect" onchange="toggleParentDependentFields()" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="">-- لا يوجد --</option>
                                 @foreach (var p in parentProjects)
                                 {
-                                    <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                                    <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-category="@(p.ProjectCategoryId?.ToString() ?? "")" data-last-sub="@(lastSubProjectByParent.ContainsKey(p.Id) ? lastSubProjectByParent[p.Id] : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
                                 }
                             </select>
+                            <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
                         </div>
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
-                            <select name="Priority" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <select name="Priority" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 @foreach (var pr in priorityLabels)
                                 {
                                     <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
-                                }
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
-                            <select name="ProjectCategoryId" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                                <option value="">-- غير محدد --</option>
-                                @foreach (var pc in projectCategories)
-                                {
-                                    <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
                                 }
                             </select>
                             <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
@@ -1058,10 +1062,27 @@ else
                 }
             }
 
+            var categorySelect = document.getElementById('categorySelect');
+            var categoryHidden = document.getElementById('categoryHidden');
+            if (categorySelect) {
+                categorySelect.disabled = hasParent || scopeSelect.disabled;
+                categoryHidden.disabled = !hasParent;
+                if (hasParent) {
+                    categorySelect.value = opt.getAttribute('data-category') || '';
+                    categoryHidden.value = opt.getAttribute('data-category') || '';
+                }
+            }
+
             var lastSubHint = document.getElementById('lastSubProjectHint');
             if (lastSubHint) {
-                var lastSub = hasParent ? (opt.getAttribute('data-last-sub') || '') : '';
-                lastSubHint.textContent = lastSub ? ('تذكير: آخر مشروع فرعي أُضيف تحت هذا المشروع الرئيسي — ' + lastSub) : '';
+                if (!hasParent) {
+                    lastSubHint.textContent = '';
+                } else {
+                    var lastSub = opt.getAttribute('data-last-sub') || '';
+                    lastSubHint.textContent = lastSub
+                        ? ('تذكير: آخر مشروع فرعي أُضيف تحت هذا المشروع الرئيسي — ' + lastSub)
+                        : 'هذا أول مشروع فرعي يُضاف تحت هذا المشروع الرئيسي';
+                }
             }
         }
         toggleParentDependentFields();

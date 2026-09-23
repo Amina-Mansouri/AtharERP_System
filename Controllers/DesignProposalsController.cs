@@ -15,19 +15,22 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly NotificationService _notify;
         private readonly ProposalReviewPdfService _pdfService;
+        private readonly ProjectCalculationService _calc;
 
         public DesignProposalsController(
             AppDbContext context,
             FileUploadService fileUpload,
             PermissionService permissionService,
             NotificationService notify,
-            ProposalReviewPdfService pdfService)
+            ProposalReviewPdfService pdfService,
+            ProjectCalculationService calc)
         {
             _context = context;
             _fileUpload = fileUpload;
             _permissionService = permissionService;
             _notify = notify;
             _pdfService = pdfService;
+            _calc = calc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -36,7 +39,7 @@ namespace AtharERP_System.Controllers
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
                 return true;
-           
+
             if (task.ProjectAssignmentId.HasValue)
             {
                 if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
@@ -49,11 +52,23 @@ namespace AtharERP_System.Controllers
             return stageEngineerId == CurrentUserId;
         }
 
+        private async Task<List<string>> GetTaskWorkerIdsAsync(ProjectTask task)
+        {
+            if (!task.ProjectAssignmentId.HasValue)
+                return new List<string>();
+
+            return await _context.AssignmentEngineers
+                .Where(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value)
+                .Select(e => e.UserId)
+                .Distinct()
+                .ToListAsync();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(int taskId, string code, string name, int revision, IFormFile file)
+        public async Task<IActionResult> Upload(int taskId, IFormFile file, DocumentClassification classification, FileCategory fileCategory)
         {
-            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+            var task = await _context.ProjectTasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
                 return NotFound();
 
@@ -62,13 +77,13 @@ namespace AtharERP_System.Controllers
 
             if (await IsAssignmentLockedAsync(task))
             {
-                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن رفع مقترحات له حالياً";
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن رفع مستندات له حالياً";
                 return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
             }
 
             if (file == null || file.Length == 0)
             {
-                TempData["Error"] = "الرجاء اختيار ملف المقترح";
+                TempData["Error"] = "الرجاء اختيار ملف";
                 return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
             }
 
@@ -79,13 +94,28 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
             }
 
+            // رقم المستند: تسلسلي عام لكل مستندات المشروع
+            var globalDocNumber = await _context.DesignProposals.Where(d => d.ProjectId == task.ProjectId).CountAsync() + 1;
+
+            // رقم تسلسلي داخل التكليف
+            var seqInAssignment = task.ProjectAssignmentId.HasValue
+                ? await _context.DesignProposals.Where(d => d.ProjectTask.ProjectAssignmentId == task.ProjectAssignmentId.Value).CountAsync() + 1
+                : 1;
+
+            // رقم الإصدار: عدد مرات إرسال ملف لنفس البند
+            var version = await _context.DesignProposals.Where(d => d.ProjectTaskId == taskId).CountAsync() + 1;
+
+            var code = $"{task.Project.Code}-{globalDocNumber:D3}-{classification}-{fileCategory}-{seqInAssignment:D2}-{version:D2}";
+
             var proposal = new DesignProposal
             {
                 ProjectId = task.ProjectId,
                 ProjectTaskId = task.Id,
                 Code = code,
-                Name = name,
-                Revision = revision < 1 ? 1 : revision,
+                Name = task.Title,
+                Revision = version,
+                Classification = classification,
+                FileCategory = fileCategory,
                 PreparedById = CurrentUserId,
                 SubmittedDate = DateTime.UtcNow,
                 FileName = file.FileName,
@@ -97,7 +127,15 @@ namespace AtharERP_System.Controllers
             _context.DesignProposals.Add(proposal);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "تم رفع المقترح، بانتظار اعتماد المدير";
+            if (task.Status == ProjectTaskStatus.Completed)
+            {
+                task.Status = ProjectTaskStatus.PendingReview;
+                await _context.SaveChangesAsync();
+                if (task.StageId.HasValue)
+                    await _calc.RecalculateStageAsync(task.StageId.Value);
+            }
+
+            TempData["Success"] = "تم رفع المستند، بانتظار الاعتماد";
             return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
         }
 
@@ -108,13 +146,37 @@ namespace AtharERP_System.Controllers
             var proposal = await _context.DesignProposals
                 .Include(p => p.ProjectTask).ThenInclude(t => t.Stage)
                 .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposal == null)
                 return NotFound();
 
+            var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+
+            ApplicationUser? supervisor = null;
+            var supervisorId = proposal.ProjectTask.Stage?.AssignedEngineerId;
+            if (!string.IsNullOrEmpty(supervisorId))
+                supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
+
+            var assignmentId = proposal.ProjectTask.ProjectAssignmentId;
+            int lastReviewNumber = 0;
+            if (assignmentId.HasValue)
+            {
+                lastReviewNumber = await _context.ProposalReviews
+                    .Where(r => r.DesignProposal != null && r.DesignProposal.ProjectTask.ProjectAssignmentId == assignmentId.Value)
+                    .Select(r => (int?)r.ReviewNumber)
+                    .MaxAsync() ?? 0;
+            }
+
             ViewBag.Proposal = proposal;
-            ViewBag.CurrentUserName = User.FindFirstValue(ClaimTypes.Name) ?? "";
+            ViewBag.ReviewerName = reviewer?.FullName;
+            ViewBag.ReviewerPosition = reviewer?.JobRankRef?.NameAr;
+            ViewBag.ReviewerSignaturePath = reviewer?.SignatureImagePath;
+            ViewBag.SupervisorName = supervisor?.FullName;
+            ViewBag.SupervisorPosition = supervisor?.JobRankRef?.NameAr;
+            ViewBag.SupervisorSignaturePath = supervisor?.SignatureImagePath;
+            ViewBag.SuggestedReviewNumber = lastReviewNumber + 1;
             ViewBag.ProjectId = projectId;
             ViewBag.StageId = stageId;
             ViewBag.TaskFilter = taskFilter;
@@ -127,14 +189,9 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Review(
             int id,
             ProposalStatus status,
-            string reviewerName,
-            string? reviewerPosition,
-            IFormFile? reviewerSignature,
-            string? supervisorName,
-            string? supervisorPosition,
-            IFormFile? supervisorSignature,
             string? notes,
             string? discipline,
+            int reviewNumber,
             int? projectId,
             int? stageId,
             string? taskFilter)
@@ -142,50 +199,94 @@ namespace AtharERP_System.Controllers
             var proposal = await _context.DesignProposals
                 .Include(p => p.ProjectTask).ThenInclude(t => t.Stage)
                 .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
+                .Include(p => p.PreparedBy)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (proposal == null)
                 return NotFound();
 
+            var task = proposal.ProjectTask;
+
+            var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+
+            ApplicationUser? supervisor = null;
+            var supervisorId = task.Stage?.AssignedEngineerId;
+            if (!string.IsNullOrEmpty(supervisorId))
+                supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
+
             proposal.Status = status;
-            await _context.SaveChangesAsync();
 
             var review = new ProposalReview
             {
                 DesignProposalId = proposal.Id,
                 Status = status,
-                ReviewerName = reviewerName,
-                ReviewerPosition = reviewerPosition,
-                SupervisorName = supervisorName,
-                SupervisorPosition = supervisorPosition,
+                ReviewerName = reviewer?.FullName ?? "",
+                ReviewerPosition = reviewer?.JobRankRef?.NameAr,
+                ReviewerSignaturePath = reviewer?.SignatureImagePath,
+                SupervisorName = supervisor?.FullName,
+                SupervisorPosition = supervisor?.JobRankRef?.NameAr,
+                SupervisorSignaturePath = supervisor?.SignatureImagePath,
                 Notes = notes,
                 Discipline = discipline,
+                ReviewNumber = reviewNumber,
                 ReviewDate = DateTime.UtcNow,
                 ReviewedById = CurrentUserId,
                 CreatedAt = DateTime.UtcNow
             };
-
-            if (reviewerSignature != null && reviewerSignature.Length > 0)
-            {
-                var sigResult = await _fileUpload.SaveFileAsync(reviewerSignature, $"reviews/proposal-{proposal.Id}");
-                if (sigResult.Success)
-                    review.ReviewerSignaturePath = sigResult.FilePath;
-            }
-
-            if (supervisorSignature != null && supervisorSignature.Length > 0)
-            {
-                var sigResult = await _fileUpload.SaveFileAsync(supervisorSignature, $"reviews/proposal-{proposal.Id}");
-                if (sigResult.Success)
-                    review.SupervisorSignaturePath = sigResult.FilePath;
-            }
-
             _context.ProposalReviews.Add(review);
             await _context.SaveChangesAsync();
+
+            var allDocs = await _context.DesignProposals.Where(d => d.ProjectTaskId == task.Id).ToListAsync();
+            bool allApproved = allDocs.Any() && allDocs.All(d => d.Status == ProposalStatus.Approved || d.Status == ProposalStatus.ApprovedWithModification);
+
+            if (task.Status != ProjectTaskStatus.Blocked)
+            {
+                var previousStatus = task.Status;
+                task.Status = allApproved ? ProjectTaskStatus.Completed : ProjectTaskStatus.PendingReview;
+
+                if (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign)
+                    task.RejectionCount++;
+
+                await _context.SaveChangesAsync();
+
+                if (task.StageId.HasValue)
+                    await _calc.RecalculateStageAsync(task.StageId.Value);
+
+                if (previousStatus != task.Status)
+                {
+                    var workerIds = await GetTaskWorkerIdsAsync(task);
+                    var message = allApproved
+                        ? $"تم اعتماد جميع مستندات مهمتك \"{task.Title}\""
+                        : (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign
+                            ? $"تحتاج مستنداً معدَّلاً لمهمتك \"{task.Title}\""
+                            : $"تم اعتماد مستند من مهمتك \"{task.Title}\" — بانتظار بقية المستندات");
+
+                    foreach (var workerId in workerIds)
+                    {
+                        await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}",
+                            requiresAction: status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign,
+                            entityType: "ProjectTask", entityId: task.Id);
+                    }
+                }
+            }
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                var assignment = await _context.ProjectAssignments.FirstOrDefaultAsync(a => a.Id == task.ProjectAssignmentId.Value);
+                if (assignment != null && assignment.Status != AssignmentStatus.Cancelled)
+                {
+                    var assignmentTasks = await _context.ProjectTasks.Where(t => t.ProjectAssignmentId == assignment.Id).ToListAsync();
+                    bool allTasksCompleted = assignmentTasks.Any() && assignmentTasks.All(t => t.Status == ProjectTaskStatus.Completed);
+                    assignment.Status = allTasksCompleted ? AssignmentStatus.Completed : AssignmentStatus.InProgress;
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
             var mainProject = subProject != null && proposal.Project.ParentProject != null ? proposal.Project.ParentProject : proposal.Project;
 
-            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, proposal.ProjectTask.Stage?.Name, proposal.Name, proposal.Revision);
+            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Revision);
             var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
             if (pdfResult.Success)
             {
@@ -193,17 +294,18 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            var message = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification
-                ? $"تم اعتماد مقترحك \"{proposal.Name}\""
-                : $"تم رفض مقترحك \"{proposal.Name}\" — تحتاج مراجعة";
+            var notifyMessage = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification
+                ? $"تم اعتماد مستندك \"{proposal.Name}\""
+                : $"تم رفض مستندك \"{proposal.Name}\" — تحتاج مراجعة";
 
-            await _notify.NotifyAsync(proposal.PreparedById, message,
+            await _notify.NotifyAsync(proposal.PreparedById, notifyMessage,
                 NotificationEventType.TaskStatusChanged, review.PdfFilePath ?? $"/ProjectTasks/Edit/{proposal.ProjectTaskId}",
                 entityType: "DesignProposal", entityId: proposal.Id);
 
             TempData["Success"] = "تم إرسال المراجعة بنجاح";
             return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
         }
+
         private async Task<bool> IsAssignmentLockedAsync(ProjectTask task)
         {
             if (!task.ProjectAssignmentId.HasValue)

@@ -67,6 +67,12 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "حجم الملف")]
         public long FileSize { get; set; }
 
+        [Display(Name = "تصنيف المستند")]
+        public DocumentClassification Classification { get; set; }
+
+        [Display(Name = "نوع الملف")]
+        public FileCategory FileCategory { get; set; }
+
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; } = ProposalStatus.Submitted;
 

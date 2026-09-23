@@ -27,6 +27,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; }
 
+        [Display(Name = "رقم المراجعة")]
+        public int ReviewNumber { get; set; }
+
         [Required]
         [StringLength(255)]
         [Display(Name = "اسم المراجع")]
