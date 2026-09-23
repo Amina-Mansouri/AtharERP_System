@@ -186,7 +186,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-                     [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite")] Project model)
+                     [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite,ProjectCategoryId")] Project model)
         {
             if (model.PlannedEndDate.HasValue && model.PlannedStartDate.HasValue && model.PlannedEndDate < model.PlannedStartDate)
             {
@@ -263,8 +263,8 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-             [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite")] Project model)
-        {
+           [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite,ProjectCategoryId")] Project model)
+        { 
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
                 return NotFound();
@@ -315,6 +315,7 @@ namespace AtharERP_System.Controllers
             project.ParentProjectId = model.ParentProjectId;
             project.Scope = model.Scope;
             project.Type = model.Type;
+            project.ProjectCategoryId = model.ProjectCategoryId;
             project.PlannedStartDate = model.PlannedStartDate;
             project.PlannedEndDate = model.PlannedEndDate;
             project.ActualDeliveryDate = model.ActualDeliveryDate;
@@ -534,6 +535,14 @@ namespace AtharERP_System.Controllers
             ViewBag.ParentProjects = await parentQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.Clients = await _context.Clients.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
             ViewBag.CanViewClient = await CanViewClientAsync();
+            ViewBag.ProjectCategories = await _context.ProjectCategories.Where(c => c.IsActive).OrderBy(c => c.Classification).ThenBy(c => c.Tier).ToListAsync();
+
+            // تذكير فقط: آخر مشروع فرعي أُضيف تحت كل مشروع رئيسي (لا يؤثر على الترقيم الفعلي)
+            ViewBag.LastSubProjectByParent = await _context.Projects
+                .Where(p => p.Scope == ProjectScope.Sub && p.ParentProjectId != null)
+                .GroupBy(p => p.ParentProjectId!.Value)
+                .Select(g => new { ParentId = g.Key, Last = g.OrderByDescending(x => x.Id).First() })
+                .ToDictionaryAsync(x => x.ParentId, x => x.Last.Code + " - " + x.Last.Name);
         }
 
         private async Task<string> GenerateProjectCodeAsync()

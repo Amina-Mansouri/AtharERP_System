@@ -17,6 +17,8 @@
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
     var clients = ViewBag.Clients as List<Client> ?? new List<Client>();
     var parentProjects = ViewBag.ParentProjects as List<Project> ?? new List<Project>();
+    var projectCategories = ViewBag.ProjectCategories as List<ProjectCategory> ?? new List<ProjectCategory>();
+    var lastSubProjectByParent = ViewBag.LastSubProjectByParent as Dictionary<int, string> ?? new Dictionary<int, string>();
     var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
 
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
@@ -194,7 +196,7 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                    <label style="font-size:11px; color:#8a83a0;">ملكية المشروع</label>
                     <select name="Type" id="typeSelect" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="">--</option>
                         @foreach (var t in typeLabels)
@@ -247,9 +249,10 @@
                         <option value="">-- لا يوجد --</option>
                         @foreach (var p in parentProjects)
                         {
-                            <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                            <option value="@p.Id" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-last-sub="@(lastSubProjectByParent.ContainsKey(p.Id) ? lastSubProjectByParent[p.Id] : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
                         }
                     </select>
+                    <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
@@ -257,6 +260,16 @@
                         @foreach (var pr in priorityLabels)
                         {
                             <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                    <select name="ProjectCategoryId" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                        <option value="">-- غير محدد --</option>
+                        @foreach (var pc in projectCategories)
+                        {
+                            <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
                         }
                     </select>
                 </div>
@@ -336,7 +349,7 @@ else
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                            <label style="font-size:11px; color:#8a83a0;">ملكية المشروع</label>
                             <select name="Type" id="typeSelect" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="">--</option>
                                 @foreach (var t in typeLabels)
@@ -388,6 +401,16 @@ else
                                 @foreach (var pr in priorityLabels)
                                 {
                                     <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                            <select name="ProjectCategoryId" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                <option value="">-- غير محدد --</option>
+                                @foreach (var pc in projectCategories)
+                                {
+                                    <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
                                 }
                             </select>
                         </div>
@@ -1030,6 +1053,12 @@ else
                     clientSelect.value = opt.getAttribute('data-client') || '';
                     clientHidden.value = opt.getAttribute('data-client') || '';
                 }
+            }
+
+            var lastSubHint = document.getElementById('lastSubProjectHint');
+            if (lastSubHint) {
+                var lastSub = hasParent ? (opt.getAttribute('data-last-sub') || '') : '';
+                lastSubHint.textContent = lastSub ? ('تذكير: آخر مشروع فرعي أُضيف تحت هذا المشروع الرئيسي — ' + lastSub) : '';
             }
         }
         toggleParentDependentFields();
