@@ -247,8 +247,9 @@ namespace AtharERP_System.Controllers
                 await _userManager.AddToRoleAsync(user, role);
             }
 
-            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة نوع مشروع", "ProjectCategory", model.Id.ToString(), $"إنشاء نوع مشروع {model.DisplayName}");
-            TempData["Success"] = $"تم إنشاء نوع المشروع {model.DisplayName} بنجاح";
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل بيانات موظف", "ApplicationUser", user.Id, $"تعديل بيانات {user.FullName}");
+            TempData["Success"] = "تم تحديث بيانات الموظف بنجاح";
+            return this.RedirectKeepingTab("UserDetails", new { id });
         }
 
         [HttpPost]
