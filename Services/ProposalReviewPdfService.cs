@@ -19,7 +19,7 @@ namespace AtharERP_System.Services
         public byte[] Generate(ProposalReview review, Project project, Project? subProject, string? stageName, string itemName, int? revisionNumber)
         {
             var statusLabel = GetDisplayName(review.Status);
-            var logoPath = Path.Combine(_environment.WebRootPath, "images", "athar-logo-header.webp");
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
 
             return Document.Create(container =>
