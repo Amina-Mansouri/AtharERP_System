@@ -178,7 +178,7 @@ else
                                                 }
                                             </div>
                                         }
-                                                                             @if (t.Status == ProjectTaskStatus.PendingReview && assignmentCanReview)
+                                        @if (t.Status == ProjectTaskStatus.PendingReview && assignmentCanReview)
                                         {
                                             <div style="margin-top:8px;">
                                                 <a asp-controller="ProjectTasks" asp-action="ReviewTask" asp-route-id="@t.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-taskFilter="@taskFilter"
