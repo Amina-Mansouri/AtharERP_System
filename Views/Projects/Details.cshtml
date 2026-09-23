@@ -265,13 +265,15 @@
                 </div>
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
-                    <select name="ProjectCategoryId" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                    
+                   <select name="ProjectCategoryId" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                         <option value="">-- غير محدد --</option>
                         @foreach (var pc in projectCategories)
                         {
                             <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
                         }
                     </select>
+                    <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
                 </div>
             </div>
 
@@ -413,6 +415,7 @@ else
                                     <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
                                 }
                             </select>
+                            <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
                         </div>
                     </div>
 

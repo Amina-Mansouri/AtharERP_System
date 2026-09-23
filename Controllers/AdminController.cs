@@ -850,6 +850,83 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = "تم حذف القسم بنجاح";
             return RedirectToAction("Departments");
         }
+
+        // ============================================
+        // إدارة أنواع المشاريع (ProjectCategory) — تُستخدم لاحقاً في معادلة KPI
+        // ============================================
+
+        [HttpGet]
+        public async Task<IActionResult> ProjectCategories()
+        {
+            var categories = await _context.ProjectCategories
+                .Include(c => c.Projects)
+                .OrderBy(c => c.Classification).ThenBy(c => c.Tier)
+                .ToListAsync();
+
+            return View(categories);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateProjectCategory([Bind("Classification,Tier,Weight")] ProjectCategory model)
+        {
+            model.IsActive = true;
+            model.CreatedAt = DateTime.UtcNow;
+
+            _context.ProjectCategories.Add(model);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة نوع مشروع", "ProjectCategory", model.Id.ToString(), $"إنشاء نوع مشروع {model.DisplayName}");
+            TempData["Success"] = $"تم إنشاء نوع المشروع {model.DisplayName} بنجاح";
+            return RedirectToAction("ProjectCategories");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProjectCategory(int id, [Bind("Classification,Tier,Weight,IsActive")] ProjectCategory model)
+        {
+            var category = await _context.ProjectCategories.FindAsync(id);
+            if (category == null)
+                return NotFound();
+
+            category.Classification = model.Classification;
+            category.Tier = model.Tier;
+            category.Weight = model.Weight;
+            category.IsActive = model.IsActive;
+
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل نوع مشروع", "ProjectCategory", id.ToString(), $"تعديل نوع مشروع {category.DisplayName}");
+            TempData["Success"] = $"تم تحديث نوع المشروع {category.DisplayName} بنجاح";
+            return RedirectToAction("ProjectCategories");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteProjectCategory(int id)
+        {
+            var category = await _context.ProjectCategories
+                .Include(c => c.Projects)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (category == null)
+                return NotFound();
+
+            if (category.Projects.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف نوع المشروع لوجود مشاريع مرتبطة به";
+                return RedirectToAction("ProjectCategories");
+            }
+
+            var deletedName = category.DisplayName;
+            _context.ProjectCategories.Remove(category);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف نوع مشروع", "ProjectCategory", id.ToString(), $"حذف نوع مشروع {deletedName}");
+            TempData["Success"] = "تم حذف نوع المشروع بنجاح";
+            return RedirectToAction("ProjectCategories");
+        }
+
         // ============================================
         // إدارة المسارات والرتب (CareerTrack / JobRank)
         // ============================================

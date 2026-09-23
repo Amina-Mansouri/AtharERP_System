@@ -1,0 +1,132 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ProjectCategory>
+@{
+    ViewData["Title"] = "أنواع المشاريع";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">إعدادات المشاريع</span>
+        <h1>أنواع المشاريع</h1>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-line btn-line-accent" onclick="openCategoryModal()">+ نوع مشروع</button>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="athar-card mt-3">
+    @if (!Model.Any())
+    {
+        <p class="mb-0">لا توجد أنواع مشاريع بعد</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>التصنيف</th>
+                    <th>الفئة</th>
+                    <th>الوزن</th>
+                    <th>الحالة</th>
+                    <th>عدد المشاريع المرتبطة</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td>@c.Classification</td>
+                        <td>@c.Tier</td>
+                        <td>@c.Weight</td>
+                        <td>
+                            @if (c.IsActive)
+                            {
+                                <span class="tag tag-accent">نشطة</span>
+                            }
+                            else
+                            {
+                                <span class="tag" style="color:#c94a42;">معطّلة</span>
+                            }
+                        </td>
+                        <td>@c.Projects.Count</td>
+                        <td>
+                            <button type="button" class="btn-line"
+                                    onclick='openCategoryModal(@c.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.Classification)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.Tier)), @c.Weight, @c.IsActive.ToString().ToLower())'>
+                                تعديل
+                            </button>
+                            <form method="post" asp-action="DeleteProjectCategory" asp-route-id="@c.Id" style="display:inline;" onsubmit="return confirm('هل أنت متأكدة من حذف هذا النوع؟');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-line" style="color:#c94a42;">حذف</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="categoryForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="category-modal-title">نوع مشروع جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">التصنيف (مثال: سكني، تجاري)</div>
+                        <input type="text" name="Classification" id="category-classification" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الفئة (مثال: VIP، عادي)</div>
+                        <input type="text" name="Tier" id="category-tier" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوزن</div>
+                        <input type="number" step="0.01" name="Weight" id="category-weight" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div id="category-active-wrapper" style="display:none; align-items:center; gap:8px;">
+                        <input type="checkbox" name="IsActive" id="category-isActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label for="category-isActive" style="font-size:11.5px;">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCategoryModal(id, classification, tier, weight, isActive) {
+            const form = document.getElementById('categoryForm');
+            const isEdit = id !== undefined && id !== null;
+            form.action = isEdit ? '@Url.Action("EditProjectCategory")/' + id : '@Url.Action("CreateProjectCategory")';
+            document.getElementById('category-classification').value = classification ?? '';
+            document.getElementById('category-tier').value = tier ?? '';
+            document.getElementById('category-weight').value = weight ?? '';
+            document.getElementById('category-modal-title').textContent = isEdit ? 'تعديل نوع المشروع' : 'نوع مشروع جديد';
+            document.getElementById('category-active-wrapper').style.display = isEdit ? 'flex' : 'none';
+            if (isEdit) {
+                document.getElementById('category-isActive').checked = !!isActive;
+            }
+            new bootstrap.Modal(document.getElementById('categoryModal')).show();
+        }
+    </script>
+}
