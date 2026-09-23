@@ -344,7 +344,7 @@ else
                             <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
                             <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                         </div>
-                                                <div>
+                        <div>
                             <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
                             <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
                                 <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
