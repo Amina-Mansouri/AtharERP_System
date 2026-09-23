@@ -18,6 +18,13 @@ namespace AtharERP_System.Models.Entities
         public virtual Project Project { get; set; } = null!;
 
         [Required]
+        public int ProjectTaskId { get; set; }
+
+        [ForeignKey("ProjectTaskId")]
+        [ValidateNever]
+        public virtual ProjectTask ProjectTask { get; set; } = null!;
+
+        [Required]
         [StringLength(50)]
         [Display(Name = "الرمز")]
         public string Code { get; set; } = string.Empty;
@@ -43,24 +50,28 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ التسليم")]
         public DateTime? SubmittedDate { get; set; }
 
+        [Required]
+        [StringLength(255)]
+        [Display(Name = "اسم الملف")]
+        public string FileName { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(500)]
+        [Display(Name = "مسار الملف")]
+        public string FilePath { get; set; } = string.Empty;
+
+        [StringLength(50)]
+        [Display(Name = "نوع الملف")]
+        public string? FileType { get; set; }
+
+        [Display(Name = "حجم الملف")]
+        public long FileSize { get; set; }
+
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; } = ProposalStatus.Submitted;
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        [StringLength(500)]
-        [Display(Name = "مسار الملف")]
-        public string? FilePath { get; set; }
-
-        // التكليف الذي يتبعه هذا المقترح — يُختار عند الرفع، والمرحلة تُقرأ منه تلقائياً
-        // (ProjectAssignment.Stage) في نموذج المراجعة، لا إدخال يدوي ولا FK مباشر لمرحلة
-        [Display(Name = "التكليف")]
-        public int? ProjectAssignmentId { get; set; }
-
-        [ForeignKey("ProjectAssignmentId")]
-        [ValidateNever]
-        public virtual ProjectAssignment? ProjectAssignment { get; set; }
 
         public virtual ICollection<ProposalReview> Reviews { get; set; } = new List<ProposalReview>();
     }

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // قاعدة البيانات PostgreSQL
@@ -51,6 +53,7 @@ builder.Services.AddScoped<SiteCalculationService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<FileUploadService>();
+builder.Services.AddScoped<ProposalReviewPdfService>();
 builder.Services.AddHostedService<ContractLifecycleHostedService>();
 builder.Services.AddHostedService<ProjectDelayMonitorHostedService>();
 

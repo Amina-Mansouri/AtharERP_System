@@ -62,6 +62,26 @@ namespace AtharERP_System.Services
             };
         }
 
+        // لحفظ ملفات مولَّدة داخل النظام (مثل PDF عبر QuestPDF) وليست مرفوعة من المستخدم مباشرة
+        public async Task<FileUploadResult> SaveGeneratedFileAsync(byte[] bytes, string subfolder, string extension)
+        {
+            var uploadsRoot = Path.Combine(_environment.WebRootPath, "uploads", subfolder);
+            Directory.CreateDirectory(uploadsRoot);
+
+            var safeFileName = $"{Guid.NewGuid()}{extension}";
+            var fullPath = Path.Combine(uploadsRoot, safeFileName);
+
+            await File.WriteAllBytesAsync(fullPath, bytes);
+
+            return new FileUploadResult
+            {
+                Success = true,
+                FilePath = $"/uploads/{subfolder}/{safeFileName}",
+                FileType = extension.TrimStart('.'),
+                FileSize = bytes.LongLength
+            };
+        }
+
         public void DeleteFile(string relativePath)
         {
             var fullPath = Path.Combine(_environment.WebRootPath, relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));

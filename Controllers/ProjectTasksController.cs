@@ -15,17 +15,23 @@ namespace AtharERP_System.Controllers
         private readonly ProjectCalculationService _calc;
         private readonly NotificationService _notify;
         private readonly PermissionService _permissionService;
+        private readonly FileUploadService _fileUpload;
+        private readonly ProposalReviewPdfService _pdfService;
 
         public ProjectTasksController(
             AppDbContext context,
             ProjectCalculationService calc,
             NotificationService notify,
-            PermissionService permissionService)
+            PermissionService permissionService,
+            FileUploadService fileUpload,
+            ProposalReviewPdfService pdfService)
         {
             _context = context;
             _calc = calc;
             _notify = notify;
             _permissionService = permissionService;
+            _fileUpload = fileUpload;
+            _pdfService = pdfService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -600,51 +606,52 @@ namespace AtharERP_System.Controllers
         }
 
         [Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
+        [HttpGet]
+        public async Task<IActionResult> ReviewTask(int id, int? projectId, int? stageId, string? taskFilter)
         {
-            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks
+                .Include(t => t.Project).ThenInclude(p => p.ParentProject)
+                .Include(t => t.Stage)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (task == null)
                 return NotFound();
 
             if (!await CanEditDatesAsync(task))
                 return Forbid();
-            if (await IsProjectLockedAsync(task.ProjectId))
-            {
-                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
-                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
-            }
-            if (task.Status != ProjectTaskStatus.PendingReview)
-            {
-                TempData["Error"] = "المهمة ليست قيد المراجعة";
-                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
-            }
 
-            task.Status = ProjectTaskStatus.Completed;
-            task.ReviewComment = comment;
-            await _context.SaveChangesAsync();
-            await _calc.RecalculateStageAsync(task.StageId!.Value);
-
-            var workerIds = await GetTaskWorkerIdsAsync(task);
-            var message = string.IsNullOrWhiteSpace(comment)
-                ? $"تم اعتماد مهمتك \"{task.Title}\""
-                : $"تم اعتماد مهمتك \"{task.Title}\" — {comment}";
-            foreach (var workerId in workerIds)
-            {
-                await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
-            }
-
-            TempData["Success"] = "تم اعتماد المهمة";
-            return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            ViewBag.Task = task;
+            ViewBag.CurrentUserName = User.FindFirstValue(ClaimTypes.Name) ?? "";
+            ViewBag.ProjectId = projectId;
+            ViewBag.StageId = stageId;
+            ViewBag.TaskFilter = taskFilter;
+            return View();
         }
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RejectTask(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
+        public async Task<IActionResult> ReviewTask(
+            int id,
+            ProposalStatus status,
+            string reviewerName,
+            string? reviewerPosition,
+            IFormFile? reviewerSignature,
+            string? supervisorName,
+            string? supervisorPosition,
+            IFormFile? supervisorSignature,
+            string? notes,
+            string? discipline,
+            int? projectId,
+            int? stageId,
+            string? taskFilter)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks
+                .Include(t => t.Todos)
+                .Include(t => t.Project).ThenInclude(p => p.ParentProject)
+                .Include(t => t.Stage)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (task == null)
                 return NotFound();
 
@@ -661,31 +668,97 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
             }
 
-            foreach (var todo in task.Todos)
-            {
-                todo.IsCompleted = false;
-                todo.CompletedAt = null;
-            }
-
-            task.CompletionPercentage = 0;
-            task.Status = ProjectTaskStatus.InProgress;
-            task.ReviewComment = comment;
-            task.ActualDeliveryDate = null;
-            task.RejectionCount++;
-            _calc.UpdateDeliveryMetrics(task);
-            await _context.SaveChangesAsync();
-            await _calc.RecalculateStageAsync(task.StageId!.Value);
-
+            bool isApprovalOutcome = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification;
             var workerIds = await GetTaskWorkerIdsAsync(task);
-            var message = string.IsNullOrWhiteSpace(comment)
-                ? $"تم رفض مهمتك \"{task.Title}\" — تحتاج مراجعة"
-                : $"تم رفض مهمتك \"{task.Title}\" — {comment}";
-            foreach (var workerId in workerIds)
+
+            if (isApprovalOutcome)
             {
-                await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
+                task.Status = ProjectTaskStatus.Completed;
+                task.ReviewComment = notes;
+                await _context.SaveChangesAsync();
+                await _calc.RecalculateStageAsync(task.StageId!.Value);
+
+                var message = string.IsNullOrWhiteSpace(notes)
+                    ? $"تم اعتماد مهمتك \"{task.Title}\""
+                    : $"تم اعتماد مهمتك \"{task.Title}\" — {notes}";
+                foreach (var workerId in workerIds)
+                {
+                    await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", entityType: "ProjectTask", entityId: task.Id);
+                }
+
+                TempData["Success"] = "تم اعتماد المهمة";
+            }
+            else
+            {
+                foreach (var todo in task.Todos)
+                {
+                    todo.IsCompleted = false;
+                    todo.CompletedAt = null;
+                }
+
+                task.CompletionPercentage = 0;
+                task.Status = ProjectTaskStatus.InProgress;
+                task.ReviewComment = notes;
+                task.ActualDeliveryDate = null;
+                task.RejectionCount++;
+                _calc.UpdateDeliveryMetrics(task);
+                await _context.SaveChangesAsync();
+                await _calc.RecalculateStageAsync(task.StageId!.Value);
+
+                var message = string.IsNullOrWhiteSpace(notes)
+                    ? $"تم رفض مهمتك \"{task.Title}\" — تحتاج مراجعة"
+                    : $"تم رفض مهمتك \"{task.Title}\" — {notes}";
+                foreach (var workerId in workerIds)
+                {
+                    await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
+                }
+
+                TempData["Success"] = "تم رفض المهمة وإعادتها قيد التنفيذ";
             }
 
-            TempData["Success"] = "تم رفض المهمة وإعادتها قيد التنفيذ";
+            var review = new ProposalReview
+            {
+                ProjectTaskId = task.Id,
+                Status = status,
+                ReviewerName = reviewerName,
+                ReviewerPosition = reviewerPosition,
+                SupervisorName = supervisorName,
+                SupervisorPosition = supervisorPosition,
+                Notes = notes,
+                Discipline = discipline,
+                ReviewDate = DateTime.UtcNow,
+                ReviewedById = CurrentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            if (reviewerSignature != null && reviewerSignature.Length > 0)
+            {
+                var sigResult = await _fileUpload.SaveFileAsync(reviewerSignature, $"reviews/task-{task.Id}");
+                if (sigResult.Success)
+                    review.ReviewerSignaturePath = sigResult.FilePath;
+            }
+
+            if (supervisorSignature != null && supervisorSignature.Length > 0)
+            {
+                var sigResult = await _fileUpload.SaveFileAsync(supervisorSignature, $"reviews/task-{task.Id}");
+                if (sigResult.Success)
+                    review.SupervisorSignaturePath = sigResult.FilePath;
+            }
+
+            _context.ProposalReviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            var subProject = task.Project.Scope == ProjectScope.Sub ? task.Project : null;
+            var mainProject = subProject != null && task.Project.ParentProject != null ? task.Project.ParentProject : task.Project;
+
+            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, task.Title, null);
+            var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"reviews/task-{task.Id}", ".pdf");
+            if (pdfResult.Success)
+            {
+                review.PdfFilePath = pdfResult.FilePath;
+                await _context.SaveChangesAsync();
+            }
+
             return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
         }
     }

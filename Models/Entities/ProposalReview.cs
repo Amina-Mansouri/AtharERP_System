@@ -4,17 +4,25 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AtharERP_System.Models.Entities
 {
-    // سجل مراجعة واحد لمقترح تصميمي: نتيجة الاعتماد/الرفض بتوقيعين إلكترونيين وملف PDF مولَّد
+    // سجل مراجعة واحد — إمّا لمهمة (ProjectTaskId) أو لمقترح تصميمي (DesignProposalId)، يُملأ أحدهما فقط.
+    // نتيجة الاعتماد/الرفض بتوقيعين إلكترونيين وملف PDF مولَّد.
     public class ProposalReview
     {
         public int Id { get; set; }
 
-        [Required]
-        public int DesignProposalId { get; set; }
+        [Display(Name = "المهمة")]
+        public int? ProjectTaskId { get; set; }
+
+        [ForeignKey("ProjectTaskId")]
+        [ValidateNever]
+        public virtual ProjectTask? ProjectTask { get; set; }
+
+        [Display(Name = "المقترح التصميمي")]
+        public int? DesignProposalId { get; set; }
 
         [ForeignKey("DesignProposalId")]
         [ValidateNever]
-        public virtual DesignProposal DesignProposal { get; set; } = null!;
+        public virtual DesignProposal? DesignProposal { get; set; }
 
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; }

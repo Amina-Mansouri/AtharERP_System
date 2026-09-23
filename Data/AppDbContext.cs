@@ -22,6 +22,7 @@ namespace AtharERP_System.Data
         // Module 02: إدارة المشاريع
         public DbSet<Client> Clients { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
+        public DbSet<ProjectCategory> ProjectCategories { get; set; } = null!;
         public DbSet<ProjectStage> ProjectStages { get; set; } = null!;
         public DbSet<ProjectTask> ProjectTasks { get; set; } = null!;
         public DbSet<TaskTodo> TaskTodos { get; set; } = null!;
@@ -54,6 +55,7 @@ namespace AtharERP_System.Data
         public DbSet<StageTemplate> StageTemplates { get; set; } = null!;
         public DbSet<StageTemplateTask> StageTemplateTasks { get; set; } = null!;
         public DbSet<DesignProposal> DesignProposals { get; set; } = null!;
+        public DbSet<ProposalReview> ProposalReviews { get; set; } = null!;
         public DbSet<FinancialClaim> FinancialClaims { get; set; } = null!;
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
         public DbSet<Custody> Custodies { get; set; } = null!;
@@ -523,6 +525,31 @@ namespace AtharERP_System.Data
                 .HasForeignKey(p => p.ProjectTaskId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // ========== سجل مراجعات المهام والمقترحات (ProposalReview) ==========
+            builder.Entity<ProposalReview>()
+                .HasOne(r => r.ProjectTask)
+                .WithMany()
+                .HasForeignKey(r => r.ProjectTaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProposalReview>()
+                .HasOne(r => r.DesignProposal)
+                .WithMany(p => p.Reviews)
+                .HasForeignKey(r => r.DesignProposalId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProposalReview>()
+                .HasOne(r => r.ReviewedBy)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== نوع المشروع الإداري (ProjectCategory) ==========
+            builder.Entity<Project>()
+                .HasOne(p => p.ProjectCategory)
+                .WithMany(c => c.Projects)
+                .HasForeignKey(p => p.ProjectCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
             // ========== المطالبات المالية (FinancialClaim) ==========
             builder.Entity<FinancialClaim>()
                 .HasOne(c => c.Project)

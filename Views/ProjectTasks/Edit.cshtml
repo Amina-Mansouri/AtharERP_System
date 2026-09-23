@@ -10,8 +10,15 @@
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
     var proposals = ViewBag.Proposals as List<DesignProposal> ?? new List<DesignProposal>();
 
-    string ProposalTagClass(ProposalStatus s) => s == ProposalStatus.Approved ? "tag-success" : (s == ProposalStatus.Rejected ? "tag-danger" : "tag-warning");
-    string ProposalLabel(ProposalStatus s) => s == ProposalStatus.Approved ? "معتمد" : (s == ProposalStatus.Rejected ? "مرفوض" : "بانتظار الاعتماد");
+    string ProposalTagClass(ProposalStatus s) => (s == ProposalStatus.Approved || s == ProposalStatus.ApprovedWithModification) ? "tag-success" : ((s == ProposalStatus.Resubmission || s == ProposalStatus.Redesign) ? "tag-danger" : "tag-warning");
+    string ProposalLabel(ProposalStatus s) => s switch
+    {
+        ProposalStatus.Approved => "معتمد",
+        ProposalStatus.ApprovedWithModification => "معتمد مع تعديل",
+        ProposalStatus.Resubmission => "إعادة تقديم",
+        ProposalStatus.Redesign => "إعادة تصميم",
+        _ => "بانتظار الاعتماد"
+    };
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
@@ -255,10 +262,6 @@
                                 <span class="tag @pTagClass">@pLabel</span>
                             </div>
                             <div class="stat-sub" style="margin-top:2px;">@p.SubmittedDate?.ToString("yyyy-MM-dd")</div>
-                            @if (!string.IsNullOrWhiteSpace(p.ManagerComment))
-                            {
-                                <div style="font-size:11px; color:#5a5370; margin-top:4px;">تعليق المدير: @p.ManagerComment</div>
-                            }
                         </div>
                     }
                 </div>

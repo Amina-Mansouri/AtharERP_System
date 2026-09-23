@@ -14,17 +14,20 @@ namespace AtharERP_System.Controllers
         private readonly FileUploadService _fileUpload;
         private readonly PermissionService _permissionService;
         private readonly NotificationService _notify;
+        private readonly ProposalReviewPdfService _pdfService;
 
         public DesignProposalsController(
             AppDbContext context,
             FileUploadService fileUpload,
             PermissionService permissionService,
-            NotificationService notify)
+            NotificationService notify,
+            ProposalReviewPdfService pdfService)
         {
             _context = context;
             _fileUpload = fileUpload;
             _permissionService = permissionService;
             _notify = notify;
+            _pdfService = pdfService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -99,47 +102,108 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Projects.Tasks.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Approve(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
+        [HttpGet]
+        public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
         {
-            var proposal = await _context.DesignProposals.FirstOrDefaultAsync(p => p.Id == id);
+            var proposal = await _context.DesignProposals
+                .Include(p => p.ProjectTask).ThenInclude(t => t.Stage)
+                .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (proposal == null)
                 return NotFound();
 
-            proposal.Status = ProposalStatus.Approved;
-            proposal.ManagerComment = comment;
-            await _context.SaveChangesAsync();
-
-            await _notify.NotifyAsync(proposal.PreparedById,
-                string.IsNullOrWhiteSpace(comment) ? $"تم اعتماد مقترحك \"{proposal.Name}\"" : $"تم اعتماد مقترحك \"{proposal.Name}\" — {comment}",
-                NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{proposal.ProjectTaskId}", entityType: "DesignProposal", entityId: proposal.Id);
-
-            TempData["Success"] = "تم اعتماد المقترح";
-            return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            ViewBag.Proposal = proposal;
+            ViewBag.CurrentUserName = User.FindFirstValue(ClaimTypes.Name) ?? "";
+            ViewBag.ProjectId = projectId;
+            ViewBag.StageId = stageId;
+            ViewBag.TaskFilter = taskFilter;
+            return View();
         }
 
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Reject(int id, string? comment, int? projectId, int? stageId, string? taskFilter)
+        public async Task<IActionResult> Review(
+            int id,
+            ProposalStatus status,
+            string reviewerName,
+            string? reviewerPosition,
+            IFormFile? reviewerSignature,
+            string? supervisorName,
+            string? supervisorPosition,
+            IFormFile? supervisorSignature,
+            string? notes,
+            string? discipline,
+            int? projectId,
+            int? stageId,
+            string? taskFilter)
         {
-            var proposal = await _context.DesignProposals.FirstOrDefaultAsync(p => p.Id == id);
+            var proposal = await _context.DesignProposals
+                .Include(p => p.ProjectTask).ThenInclude(t => t.Stage)
+                .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (proposal == null)
                 return NotFound();
 
-            proposal.Status = ProposalStatus.Rejected;
-            proposal.ManagerComment = comment;
+            proposal.Status = status;
             await _context.SaveChangesAsync();
 
-            await _notify.NotifyAsync(proposal.PreparedById,
-                string.IsNullOrWhiteSpace(comment) ? $"تم رفض مقترحك \"{proposal.Name}\"" : $"تم رفض مقترحك \"{proposal.Name}\" — {comment}",
-                NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{proposal.ProjectTaskId}", entityType: "DesignProposal", entityId: proposal.Id);
+            var review = new ProposalReview
+            {
+                DesignProposalId = proposal.Id,
+                Status = status,
+                ReviewerName = reviewerName,
+                ReviewerPosition = reviewerPosition,
+                SupervisorName = supervisorName,
+                SupervisorPosition = supervisorPosition,
+                Notes = notes,
+                Discipline = discipline,
+                ReviewDate = DateTime.UtcNow,
+                ReviewedById = CurrentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
 
-            TempData["Success"] = "تم رفض المقترح";
+            if (reviewerSignature != null && reviewerSignature.Length > 0)
+            {
+                var sigResult = await _fileUpload.SaveFileAsync(reviewerSignature, $"reviews/proposal-{proposal.Id}");
+                if (sigResult.Success)
+                    review.ReviewerSignaturePath = sigResult.FilePath;
+            }
+
+            if (supervisorSignature != null && supervisorSignature.Length > 0)
+            {
+                var sigResult = await _fileUpload.SaveFileAsync(supervisorSignature, $"reviews/proposal-{proposal.Id}");
+                if (sigResult.Success)
+                    review.SupervisorSignaturePath = sigResult.FilePath;
+            }
+
+            _context.ProposalReviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
+            var mainProject = subProject != null && proposal.Project.ParentProject != null ? proposal.Project.ParentProject : proposal.Project;
+
+            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, proposal.ProjectTask.Stage?.Name, proposal.Name, proposal.Revision);
+            var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
+            if (pdfResult.Success)
+            {
+                review.PdfFilePath = pdfResult.FilePath;
+                await _context.SaveChangesAsync();
+            }
+
+            var message = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification
+                ? $"تم اعتماد مقترحك \"{proposal.Name}\""
+                : $"تم رفض مقترحك \"{proposal.Name}\" — تحتاج مراجعة";
+
+            await _notify.NotifyAsync(proposal.PreparedById, message,
+                NotificationEventType.TaskStatusChanged, review.PdfFilePath ?? $"/ProjectTasks/Edit/{proposal.ProjectTaskId}",
+                entityType: "DesignProposal", entityId: proposal.Id);
+
+            TempData["Success"] = "تم إرسال المراجعة بنجاح";
             return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
         }
-
         private async Task<bool> IsAssignmentLockedAsync(ProjectTask task)
         {
             if (!task.ProjectAssignmentId.HasValue)
