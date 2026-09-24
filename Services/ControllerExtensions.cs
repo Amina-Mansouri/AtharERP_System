@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace AtharERP_System.Services
 {
-    // يحافظ على التبويب الحالي (?tab=pane-x) عند إعادة التوجيه لصفحة فيها تبويبات
+    // يحافظ على التبويب الحالي (?tab=pane-x) وسياق "شاشتي الشخصية" (?personal=true) عند إعادة التوجيه لصفحة فيها تبويبات
     public static class ControllerExtensions
     {
         public static IActionResult RedirectKeepingTab(this Controller controller, string actionName, object? routeValues = null)
@@ -12,6 +12,9 @@ namespace AtharERP_System.Services
             var tab = controller.Request.Query["tab"].FirstOrDefault();
             if (!string.IsNullOrEmpty(tab))
                 values["tab"] = tab;
+            var personal = controller.Request.Query["personal"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(personal))
+                values["personal"] = personal;
             return controller.RedirectToAction(actionName, values);
         }
 
@@ -21,6 +24,9 @@ namespace AtharERP_System.Services
             var tab = controller.Request.Query["tab"].FirstOrDefault();
             if (!string.IsNullOrEmpty(tab))
                 values["tab"] = tab;
+            var personal = controller.Request.Query["personal"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(personal))
+                values["personal"] = personal;
             return controller.RedirectToAction(actionName, controllerName, values);
         }
     }

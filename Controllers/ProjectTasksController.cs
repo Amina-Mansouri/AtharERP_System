@@ -168,8 +168,9 @@ namespace AtharERP_System.Controllers
         // ============================================
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, bool personal = false)
         {
+           
             var task = await _context.ProjectTasks
  
      .Include(t => t.Todos)

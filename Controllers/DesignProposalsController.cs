@@ -78,20 +78,20 @@ namespace AtharERP_System.Controllers
             if (await IsAssignmentLockedAsync(task))
             {
                 TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن رفع مستندات له حالياً";
-                return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
             }
 
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "الرجاء اختيار ملف";
-                return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
             }
 
             var result = await _fileUpload.SaveFileAsync(file, $"proposals/{task.ProjectId}");
             if (!result.Success)
             {
                 TempData["Error"] = result.ErrorMessage;
-                return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
+                return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
             }
 
             // رقم المستند: تسلسلي عام لكل مستندات المشروع
@@ -136,7 +136,7 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = "تم رفع المستند، بانتظار الاعتماد";
-            return RedirectToAction("Edit", "ProjectTasks", new { id = taskId });
+            return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
         }
 
         [RequirePermission("Projects.Tasks.Manage")]

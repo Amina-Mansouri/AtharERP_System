@@ -45,7 +45,7 @@
                             <td><span class="badge athar-status-badge athar-status-@t.Status">@StatusLabel(t.Status)</span></td>
                             <td>@t.CompletionPercentage.ToString("N0")%</td>
                             <td>@(t.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                            <td><a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm athar-btn-outline">فتح</a></td>
+                            <td><a asp-action="Edit" asp-route-id="@t.Id" asp-route-personal="true" class="btn btn-sm athar-btn-outline">فتح</a></td>
                         </tr>
                     }
                 </tbody>
