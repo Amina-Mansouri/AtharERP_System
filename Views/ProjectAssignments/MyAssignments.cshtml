@@ -43,7 +43,7 @@ else
                 <div style="display:grid; gap:6px;">
                     @foreach (var t in a.Tasks)
                     {
-                        <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px; text-decoration:none; color:inherit; font-size:11.5px;">
+                        <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" asp-route-personal="true" style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px; text-decoration:none; color:inherit; font-size:11.5px;">
                             <span>@t.Title</span>
                             <span class="tag @(t.CompletionPercentage >= 100 ? "tag-success" : "")">@t.CompletionPercentage.ToString("N0")%</span>
                         </a>

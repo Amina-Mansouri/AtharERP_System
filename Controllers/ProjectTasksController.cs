@@ -210,7 +210,7 @@ namespace AtharERP_System.Controllers
                     .ToListAsync();
             }
 
-            return View(task);
+            return View((personal || !canManage) ? "MyTaskEdit" : "Edit", task);
         }
 
         [HttpPost]
