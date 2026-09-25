@@ -66,18 +66,20 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(int taskId, IFormFile file, DocumentClassification classification, FileCategory fileCategory, int? assignmentId)
+        public async Task<IActionResult> Upload(int todoId, IFormFile file, DocumentClassification classification, FileCategory fileCategory, int? assignmentId)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null)
+            var todo = await _context.TaskTodos.Include(t => t.Task).ThenInclude(task => task.Project).FirstOrDefaultAsync(t => t.Id == todoId);
+            if (todo == null)
                 return NotFound();
+
+            var task = todo.Task;
 
             if (!await CanExecuteTaskAsync(task))
                 return Forbid();
 
             IActionResult BackToTask() => assignmentId.HasValue
                 ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
-                : this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
+                : this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = task.Id });
 
             if (await IsAssignmentLockedAsync(task))
             {
@@ -98,25 +100,22 @@ namespace AtharERP_System.Controllers
                 return BackToTask();
             }
 
-            // رقم المستند: تسلسلي عام لكل مستندات المشروع
             var globalDocNumber = await _context.DesignProposals.Where(d => d.ProjectId == task.ProjectId).CountAsync() + 1;
 
-            // رقم تسلسلي داخل التكليف
             var seqInAssignment = task.ProjectAssignmentId.HasValue
-                ? await _context.DesignProposals.Where(d => d.ProjectTask.ProjectAssignmentId == task.ProjectAssignmentId.Value).CountAsync() + 1
+                ? await _context.DesignProposals.Where(d => d.TaskTodo.Task.ProjectAssignmentId == task.ProjectAssignmentId.Value).CountAsync() + 1
                 : 1;
 
-            // رقم الإصدار: عدد مرات إرسال ملف لنفس البند
-            var version = await _context.DesignProposals.Where(d => d.ProjectTaskId == taskId).CountAsync() + 1;
+            var version = await _context.DesignProposals.Where(d => d.TaskTodoId == todoId).CountAsync() + 1;
 
             var code = $"{task.Project.Code}-{globalDocNumber:D3}-{classification}-{fileCategory}-{seqInAssignment:D2}-{version:D2}";
 
             var proposal = new DesignProposal
             {
                 ProjectId = task.ProjectId,
-                ProjectTaskId = task.Id,
+                TaskTodoId = todo.Id,
                 Code = code,
-                Name = task.Title,
+                Name = todo.Item,
                 Revision = version,
                 Classification = classification,
                 FileCategory = fileCategory,
@@ -131,17 +130,12 @@ namespace AtharERP_System.Controllers
             _context.DesignProposals.Add(proposal);
             await _context.SaveChangesAsync();
 
-            if (task.Status == ProjectTaskStatus.Completed)
-            {
-                task.Status = ProjectTaskStatus.PendingReview;
-                await _context.SaveChangesAsync();
-                if (task.StageId.HasValue)
-                    await _calc.RecalculateStageAsync(task.StageId.Value);
-            }
+            await RecomputeCascadeAsync(todo);
 
             TempData["Success"] = "تم رفع المستند، بانتظار الاعتماد";
             return BackToTask();
         }
+
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpGet]
         public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
@@ -190,17 +184,17 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Review(
-            int id,
-            ProposalStatus status,
-            string? notes,
-            string? discipline,
-            int reviewNumber,
-            int? projectId,
-            int? stageId,
-            string? taskFilter)
+     int id,
+     ProposalStatus status,
+     string? notes,
+     string? discipline,
+     int reviewNumber,
+     int? projectId,
+     int? stageId,
+     string? taskFilter)
         {
             var proposal = await _context.DesignProposals
-                .Include(p => p.ProjectTask).ThenInclude(t => t.Stage)
+                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
                 .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
                 .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
                 .Include(p => p.PreparedBy)
@@ -209,7 +203,8 @@ namespace AtharERP_System.Controllers
             if (proposal == null)
                 return NotFound();
 
-            var task = proposal.ProjectTask;
+            var todo = proposal.TaskTodo;
+            var task = todo.Task;
 
             var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
@@ -240,49 +235,26 @@ namespace AtharERP_System.Controllers
             _context.ProposalReviews.Add(review);
             await _context.SaveChangesAsync();
 
-            var allDocs = await _context.DesignProposals.Where(d => d.ProjectTaskId == task.Id).ToListAsync();
-            bool allApproved = allDocs.Any() && allDocs.All(d => d.Status == ProposalStatus.Approved);
+            if (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign)
+                task.RejectionCount++;
 
-            if (task.Status != ProjectTaskStatus.Blocked)
+            var previousTaskStatus = task.Status;
+            await RecomputeCascadeAsync(todo);
+
+            if (previousTaskStatus != task.Status)
             {
-                var previousStatus = task.Status;
-                task.Status = allApproved ? ProjectTaskStatus.Completed : ProjectTaskStatus.PendingReview;
+                var workerIds = await GetTaskWorkerIdsAsync(task);
+                var message = task.Status == ProjectTaskStatus.Completed
+                    ? $"تم اعتماد جميع بنود مهمتك \"{task.Title}\""
+                    : (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign
+                        ? $"تحتاج مستنداً معدَّلاً لبند من مهمتك \"{task.Title}\""
+                        : $"تم اعتماد بند من مهمتك \"{task.Title}\" — بانتظار بقية البنود");
 
-                if (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign)
-                    task.RejectionCount++;
-
-                await _context.SaveChangesAsync();
-
-                if (task.StageId.HasValue)
-                    await _calc.RecalculateStageAsync(task.StageId.Value);
-
-                if (previousStatus != task.Status)
+                foreach (var workerId in workerIds)
                 {
-                    var workerIds = await GetTaskWorkerIdsAsync(task);
-                    var message = allApproved
-                        ? $"تم اعتماد جميع مستندات مهمتك \"{task.Title}\""
-                        : (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign
-                            ? $"تحتاج مستنداً معدَّلاً لمهمتك \"{task.Title}\""
-                            : $"تم اعتماد مستند من مهمتك \"{task.Title}\" — بانتظار بقية المستندات");
-
-                    foreach (var workerId in workerIds)
-                    {
-                        await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}",
-                            requiresAction: status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign,
-                            entityType: "ProjectTask", entityId: task.Id);
-                    }
-                }
-            }
-
-            if (task.ProjectAssignmentId.HasValue)
-            {
-                var assignment = await _context.ProjectAssignments.FirstOrDefaultAsync(a => a.Id == task.ProjectAssignmentId.Value);
-                if (assignment != null && assignment.Status != AssignmentStatus.Cancelled)
-                {
-                    var assignmentTasks = await _context.ProjectTasks.Where(t => t.ProjectAssignmentId == assignment.Id).ToListAsync();
-                    bool allTasksCompleted = assignmentTasks.Any() && assignmentTasks.All(t => t.Status == ProjectTaskStatus.Completed);
-                    assignment.Status = allTasksCompleted ? AssignmentStatus.Completed : AssignmentStatus.InProgress;
-                    await _context.SaveChangesAsync();
+                    await _notify.NotifyAsync(workerId, message, NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}",
+                        requiresAction: status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign,
+                        entityType: "ProjectTask", entityId: task.Id);
                 }
             }
 
@@ -302,11 +274,56 @@ namespace AtharERP_System.Controllers
                 : $"تم رفض مستندك \"{proposal.Name}\" — تحتاج مراجعة";
 
             await _notify.NotifyAsync(proposal.PreparedById, notifyMessage,
-                NotificationEventType.TaskStatusChanged, review.PdfFilePath ?? $"/ProjectTasks/Edit/{proposal.ProjectTaskId}",
+                NotificationEventType.TaskStatusChanged, review.PdfFilePath ?? $"/ProjectTasks/Edit/{task.Id}",
                 entityType: "DesignProposal", entityId: proposal.Id);
 
             TempData["Success"] = "تم إرسال المراجعة بنجاح";
             return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+        }
+
+        // حساب متسلسل: حالة البند من مستنداته ← حالة المهمة من بنودها ← حالة التكليف من مهامه
+        private async Task RecomputeCascadeAsync(TaskTodo todo)
+        {
+            var docs = await _context.DesignProposals.Where(d => d.TaskTodoId == todo.Id).ToListAsync();
+            var todoApproved = docs.Any() && docs.All(d => d.Status == ProposalStatus.Approved);
+            todo.IsCompleted = todoApproved;
+            todo.CompletedAt = todoApproved ? (todo.CompletedAt ?? DateTime.UtcNow) : null;
+            await _context.SaveChangesAsync();
+
+            await _calc.RecalculateTaskCompletionAsync(todo.TaskId);
+
+            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == todo.TaskId);
+            if (task == null) return;
+
+            if (task.Status != ProjectTaskStatus.Blocked)
+            {
+                var allTodosApproved = task.Todos.Any() && task.Todos.All(t => t.IsCompleted);
+                if (allTodosApproved && task.Status != ProjectTaskStatus.Completed)
+                {
+                    task.Status = ProjectTaskStatus.Completed;
+                    await _context.SaveChangesAsync();
+                }
+                else if (!allTodosApproved && task.Status == ProjectTaskStatus.Completed)
+                {
+                    task.Status = ProjectTaskStatus.PendingReview;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            if (task.StageId.HasValue)
+                await _calc.RecalculateStageAsync(task.StageId.Value);
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                var assignment = await _context.ProjectAssignments.FirstOrDefaultAsync(a => a.Id == task.ProjectAssignmentId.Value);
+                if (assignment != null && assignment.Status != AssignmentStatus.Cancelled)
+                {
+                    var assignmentTasks = await _context.ProjectTasks.Where(t => t.ProjectAssignmentId == assignment.Id).ToListAsync();
+                    bool allTasksCompleted = assignmentTasks.Any() && assignmentTasks.All(t => t.Status == ProjectTaskStatus.Completed);
+                    assignment.Status = allTasksCompleted ? AssignmentStatus.Completed : AssignmentStatus.InProgress;
+                    await _context.SaveChangesAsync();
+                }
+            }
         }
 
         private async Task<bool> IsAssignmentLockedAsync(ProjectTask task)

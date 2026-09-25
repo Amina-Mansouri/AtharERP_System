@@ -189,10 +189,10 @@ namespace AtharERP_System.Controllers
             ViewBag.CanManage = canManage;
             ViewBag.CanEditDates = canManage || await CanEditDatesAsync(task);
             ViewBag.Proposals = await _context.DesignProposals
-    .Include(p => p.PreparedBy)
-    .Where(p => p.ProjectTaskId == id)
-    .OrderByDescending(p => p.CreatedAt)
-    .ToListAsync();
+.Include(p => p.PreparedBy)
+.Where(p => p.TaskTodo.TaskId == id)
+.OrderByDescending(p => p.CreatedAt)
+.ToListAsync();
 
             if (canManage)
             {
@@ -390,65 +390,14 @@ namespace AtharERP_System.Controllers
             return this.RedirectKeepingTab("Edit", new { id });
         }
 
-        // ============================================
-        // تأكيد إرسال البند للمراجعة - يتطلب مستنداً واحداً على الأقل، وللمكلَّف بالمهمة فقط
-        // ============================================
-        [Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitForReview(int id, int? assignmentId)
-        {
-            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
-            if (task == null)
-                return NotFound();
-
-            if (!await CanExecuteAsync(task))
-                return Forbid();
-
-            IActionResult BackToTask() => assignmentId.HasValue
-                ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
-                : this.RedirectKeepingTab("Edit", new { id });
-
-            if (await IsProjectLockedAsync(task.ProjectId))
-            {
-                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
-                return BackToTask();
-            }
-
-            if (await IsAssignmentLockedAsync(task))
-            {
-                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن إرسال بنوده للمراجعة حالياً";
-                return BackToTask();
-            }
-
-            if (task.Status != ProjectTaskStatus.NotStarted && task.Status != ProjectTaskStatus.InProgress)
-            {
-                TempData["Error"] = "لا يمكن إرسال هذا البند للمراجعة في حالته الحالية";
-                return BackToTask();
-            }
-
-            var hasDocument = await _context.DesignProposals.AnyAsync(p => p.ProjectTaskId == id);
-            if (!hasDocument)
-            {
-                TempData["Error"] = "يجب رفع مستند واحد على الأقل قبل إرسال البند للمراجعة";
-                return BackToTask();
-            }
-
-            task.Status = ProjectTaskStatus.PendingReview;
-            await _context.SaveChangesAsync();
-            if (task.StageId.HasValue)
-                await _calc.RecalculateStageAsync(task.StageId.Value);
-
-            TempData["Success"] = "تم إرسال البند للمراجعة";
-            return BackToTask();
-        }
+       
         // ============================================
         // قائمة To-Do - مسموح للمكلَّف بالمهمة نفسها فقط
         // ============================================
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddTodo(int taskId, string item)
+        public async Task<IActionResult> AddTodo(int taskId, string item, int? assignmentId)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
@@ -457,26 +406,25 @@ namespace AtharERP_System.Controllers
             if (!await IsTaskWorkerAsync(task))
                 return Forbid();
 
+            IActionResult BackToTask() => assignmentId.HasValue
+                ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
+                : this.RedirectKeepingTab("Edit", new { id = taskId });
+
             if (await IsProjectLockedAsync(task.ProjectId))
             {
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
+                return BackToTask();
             }
             if (await IsAssignmentLockedAsync(task))
             {
                 TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
-            }
-            if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
-            {
-                TempData["Error"] = "لا يمكن إضافة بند لمهمة مكتملة أو قيد المراجعة";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
+                return BackToTask();
             }
 
             if (task.PlannedStartDate == null || task.PlannedEndDate == null)
             {
                 TempData["Error"] = "لا يمكن إضافة بند قبل تحديد تاريخ البداية والنهاية للمهمة";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
+                return BackToTask();
             }
 
             if (!string.IsNullOrWhiteSpace(item))
@@ -490,7 +438,7 @@ namespace AtharERP_System.Controllers
                 }
             }
 
-            return this.RedirectKeepingTab("Edit", new { id = taskId });
+            return BackToTask();
         }
 
         [Authorize]
@@ -536,7 +484,7 @@ namespace AtharERP_System.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveTodo(int id, int taskId)
+        public async Task<IActionResult> RemoveTodo(int id, int taskId, int? assignmentId)
         {
             var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
@@ -545,20 +493,19 @@ namespace AtharERP_System.Controllers
             if (!await IsTaskWorkerAsync(task))
                 return Forbid();
 
+            IActionResult BackToTask() => assignmentId.HasValue
+                ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
+                : this.RedirectKeepingTab("Edit", new { id = taskId });
+
             if (await IsProjectLockedAsync(task.ProjectId))
             {
                 TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
+                return BackToTask();
             }
             if (await IsAssignmentLockedAsync(task))
             {
                 TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
-            }
-            if (task.Status == ProjectTaskStatus.Completed || task.Status == ProjectTaskStatus.PendingReview)
-            {
-                TempData["Error"] = "لا يمكن تعديل بنود مهمة مكتملة أو قيد المراجعة";
-                return this.RedirectKeepingTab("Edit", new { id = taskId });
+                return BackToTask();
             }
 
             var todo = await _context.TaskTodos.FindAsync(id);
@@ -569,7 +516,7 @@ namespace AtharERP_System.Controllers
                 await _calc.RecalculateTaskCompletionAsync(taskId);
             }
 
-            return this.RedirectKeepingTab("Edit", new { id = taskId });
+            return BackToTask();
         }
 
         // ============================================

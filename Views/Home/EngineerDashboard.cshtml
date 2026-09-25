@@ -107,11 +107,22 @@
             @foreach (var t in openTasks)
             {
                 var doneTodos = t.Todos.Count(x => x.IsCompleted);
-                <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" asp-route-personal="true" style="display:grid; grid-template-columns:minmax(0,1fr) 60px 84px; gap:9px; align-items:center; padding:9px 16px; border-bottom:1px solid #f6f5fa; text-decoration:none; color:inherit;">
-                    <div style="font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@t.Title</div>
-                    <div class="cell-num" style="font-size:10.5px; color:#8a83a0;">@doneTodos/@t.Todos.Count</div>
-                    <div class="cell-num" style="font-size:10.5px; @(t.PlannedEndDate.HasValue && t.PlannedEndDate.Value.Date < DateTime.UtcNow.Date ? "color:#c94a42;" : "color:#8a83a0;")">@(t.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
-                </a>
+                @if (t.ProjectAssignmentId.HasValue)
+                {
+                    <a asp-controller="ProjectAssignments" asp-action="ManageTasks" asp-route-id="@t.ProjectAssignmentId" asp-route-personal="true" style="display:grid; grid-template-columns:minmax(0,1fr) 60px 84px; gap:9px; align-items:center; padding:9px 16px; border-bottom:1px solid #f6f5fa; text-decoration:none; color:inherit;">
+                        <div style="font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@t.Title</div>
+                        <div class="cell-num" style="font-size:10.5px; color:#8a83a0;">@doneTodos/@t.Todos.Count</div>
+                        <div class="cell-num" style="font-size:10.5px; @(t.PlannedEndDate.HasValue && t.PlannedEndDate.Value.Date < DateTime.UtcNow.Date ? "color:#c94a42;" : "color:#8a83a0;")">@(t.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" asp-route-personal="true" style="display:grid; grid-template-columns:minmax(0,1fr) 60px 84px; gap:9px; align-items:center; padding:9px 16px; border-bottom:1px solid #f6f5fa; text-decoration:none; color:inherit;">
+                        <div style="font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@t.Title</div>
+                        <div class="cell-num" style="font-size:10.5px; color:#8a83a0;">@doneTodos/@t.Todos.Count</div>
+                        <div class="cell-num" style="font-size:10.5px; @(t.PlannedEndDate.HasValue && t.PlannedEndDate.Value.Date < DateTime.UtcNow.Date ? "color:#c94a42;" : "color:#8a83a0;")">@(t.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                    </a>
+                }
             }
         }
     </div>

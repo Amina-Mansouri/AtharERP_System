@@ -8,23 +8,6 @@
     var totalTasks = Model.Tasks.Count;
     var completedTasks = Model.Tasks.Count(t => t.Status == ProjectTaskStatus.Completed);
     var progressPct = totalTasks > 0 ? Math.Round((decimal)completedTasks / totalTasks * 100, 0) : 0;
-
-    string TaskStatusLabel(ProjectTaskStatus s) => s switch
-    {
-        ProjectTaskStatus.NotStarted => "لم يبدأ",
-        ProjectTaskStatus.InProgress => "قيد التنفيذ",
-        ProjectTaskStatus.PendingReview => "قيد المراجعة",
-        ProjectTaskStatus.Completed => "مكتمل",
-        ProjectTaskStatus.Blocked => "محظور",
-        _ => s.ToString()
-    };
-    string TaskStatusClass(ProjectTaskStatus s) => s switch
-    {
-        ProjectTaskStatus.Completed => "tag-success",
-        ProjectTaskStatus.Blocked => "tag-danger",
-        ProjectTaskStatus.PendingReview => "tag-accent",
-        _ => "tag-warning"
-    };
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
@@ -38,7 +21,7 @@
 <div class="stat-strip stat-strip-text">
     <div class="stat-item"><span class="kicker">حالة التكليف</span><span class="stat-value">@statusLabels.FirstOrDefault(x => x.Value == Model.Status.ToString()).Label</span></div>
     <div class="stat-item"><span class="kicker">نسبة الإنجاز</span><span class="stat-value">@progressPct%</span></div>
-    <div class="stat-item"><span class="kicker">البنود المكتملة</span><span class="stat-value">@completedTasks / @totalTasks</span></div>
+    <div class="stat-item"><span class="kicker">المهام المكتملة</span><span class="stat-value">@completedTasks / @totalTasks</span></div>
     @if (Model.Status == AssignmentStatus.Completed)
     {
         var lastDelivery = Model.Tasks.Where(t => t.ActualDeliveryDate.HasValue).Select(t => t.ActualDeliveryDate!.Value).DefaultIfEmpty().Max();
@@ -83,70 +66,109 @@
 </div>
 
 <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
-    <div style="padding:14px 18px; border-bottom:1px solid #f1f0f6;">
-        <div style="font-size:13.5px; font-weight:700;">بنود التكليف (@Model.Tasks.Count)</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #f1f0f6; flex-wrap:wrap; gap:8px;">
+        <div style="font-size:13.5px; font-weight:700;">بنود المهمة</div>
+        @if (Model.Tasks.Any())
+        {
+            <select id="taskFilterSelect" onchange="filterTodosByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
+                @foreach (var t in Model.Tasks)
+                {
+                    <option value="@t.Id">@t.Title</option>
+                }
+            </select>
+        }
     </div>
-    <div style="padding:4px 18px 14px;">
-        <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 60px; gap:8px; padding:8px 0; font-size:10.5px; color:#8a83a0; font-weight:600; border-bottom:1px solid #f1f0f6;">
-            <div>عنوان البند</div><div>التصنيف</div><div>نوع الملف</div><div>رفع مستند</div><div>الحالة</div><div>تأكيد</div>
-        </div>
 
+    <div style="padding:4px 18px 14px;">
         @if (!Model.Tasks.Any())
         {
-            <div style="padding:16px 0; text-align:center; color:#8a83a0; font-size:12px;">لا توجد بنود بعد</div>
+            <div style="padding:16px 0; text-align:center; color:#8a83a0; font-size:12px;">لا توجد مهام مرتبطة بهذا التكليف بعد</div>
         }
         else
         {
             @foreach (var t in Model.Tasks)
             {
-                var hasDoc = t.DesignProposals.Any();
-                var canSubmit = hasDoc && (t.Status == ProjectTaskStatus.NotStarted || t.Status == ProjectTaskStatus.InProgress);
-                var isConfirmed = t.Status == ProjectTaskStatus.PendingReview || t.Status == ProjectTaskStatus.Completed;
-                <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 60px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #f6f5fa;">
-                    <div style="font-size:12px; font-weight:500;">@t.Title</div>
+                <div data-task-group="@t.Id" hidden>
+                    <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 40px; gap:8px; padding:8px 0; font-size:10.5px; color:#8a83a0; font-weight:600; border-bottom:1px solid #f1f0f6;">
+                        <div>نص البند</div><div>التصنيف</div><div>نوع الملف</div><div>رفع مستند</div><div>الحالة</div><div></div>
+                    </div>
 
-                    <form method="post" asp-controller="DesignProposals" asp-action="Upload" enctype="multipart/form-data" style="display:contents;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="taskId" value="@t.Id" />
-                        <input type="hidden" name="assignmentId" value="@Model.Id" />
-                        <select name="classification" required style="height:30px; border:1px solid #e4e2ec; border-radius:7px; font-size:10.5px;">
-                            <option value="">--</option>
-                            <option value="AA">AA</option><option value="IN">IN</option><option value="SE">SE</option><option value="ME">ME</option><option value="EE">EE</option>
-                        </select>
-                        <select name="fileCategory" required style="height:30px; border:1px solid #e4e2ec; border-radius:7px; font-size:10.5px;">
-                            <option value="">--</option>
-                            <option value="DG">DG</option><option value="PH">PH</option><option value="RE">RE</option><option value="REQ">REQ</option>
-                        </select>
-                        <div style="display:flex; gap:4px; align-items:center;">
-                            <input type="file" name="file" required style="font-size:10px; max-width:110px;" />
-                            <button type="submit" style="height:28px; padding:0 8px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; white-space:nowrap;">رفع</button>
-                        </div>
-                    </form>
-
-                    <div><span class="tag @TaskStatusClass(t.Status)">@TaskStatusLabel(t.Status)</span></div>
-
-                    @if (isConfirmed)
+                    @if (!t.Todos.Any())
                     {
-                        <div style="text-align:center; color:#2f8a57; font-size:16px;" title="أُرسل للمراجعة">✔</div>
+                        <div style="padding:16px 0; text-align:center; color:#8a83a0; font-size:12px;">لا توجد بنود لهذه المهمة بعد</div>
                     }
                     else
                     {
-                        <form method="post" asp-controller="ProjectTasks" asp-action="SubmitForReview" style="display:contents;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@t.Id" />
-                            <input type="hidden" name="assignmentId" value="@Model.Id" />
-                            <button type="submit" disabled="@(!canSubmit)" title="@(hasDoc ? "تأكيد الإرسال للمراجعة" : "ارفعي مستنداً أولاً قبل التأكيد")" style="width:24px; height:24px; border:1px solid #d9d5ee; border-radius:5px; background:@(canSubmit ? "#fff" : "#f3f1fb"); cursor:@(canSubmit ? "pointer" : "not-allowed"); margin:auto; display:block;"></button>
-                        </form>
+                        @foreach (var todo in t.Todos)
+                        {
+                            var docs = todo.DesignProposals;
+                            string statusLabel = !docs.Any() ? "بانتظار الرفع" : (docs.All(d => d.Status == ProposalStatus.Approved) ? "مكتمل" : "قيد المراجعة");
+                            string statusClass = !docs.Any() ? "tag-warning" : (docs.All(d => d.Status == ProposalStatus.Approved) ? "tag-success" : "tag-accent");
+                            <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 40px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #f6f5fa;">
+                                <div style="font-size:12px; font-weight:500;">@todo.Item</div>
+
+                                <form method="post" asp-controller="DesignProposals" asp-action="Upload" enctype="multipart/form-data" style="display:contents;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="todoId" value="@todo.Id" />
+                                    <input type="hidden" name="assignmentId" value="@Model.Id" />
+                                    <select name="classification" required style="height:30px; border:1px solid #e4e2ec; border-radius:7px; font-size:10.5px;">
+                                        <option value="">--</option>
+                                        <option value="AA">AA</option>
+                                        <option value="IN">IN</option>
+                                        <option value="SE">SE</option>
+                                        <option value="ME">ME</option>
+                                        <option value="EE">EE</option>
+                                    </select>
+                                    <select name="fileCategory" required style="height:30px; border:1px solid #e4e2ec; border-radius:7px; font-size:10.5px;">
+                                        <option value="">--</option>
+                                        <option value="DG">DG</option>
+                                        <option value="PH">PH</option>
+                                        <option value="RE">RE</option>
+                                        <option value="REQ">REQ</option>
+                                    </select>
+                                    <div style="display:flex; gap:4px; align-items:center;">
+                                        <input type="file" name="file" required style="font-size:10px; max-width:110px;" />
+                                        <button type="submit" style="height:28px; padding:0 8px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; white-space:nowrap;">رفع</button>
+                                    </div>
+                                </form>
+
+                                <div><span class="tag @statusClass">@statusLabel</span></div>
+
+                                <form method="post" asp-controller="ProjectTasks" asp-action="RemoveTodo" style="display:contents;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@todo.Id" />
+                                    <input type="hidden" name="taskId" value="@t.Id" />
+                                    <input type="hidden" name="assignmentId" value="@Model.Id" />
+                                    <button type="submit" style="border:none; background:none; color:#c94a42; font-size:14px; cursor:pointer;">×</button>
+                                </form>
+                            </div>
+                        }
                     }
+
+                    <form method="post" asp-controller="ProjectTasks" asp-action="AddTodo" style="display:flex; gap:8px; margin-top:12px;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="taskId" value="@t.Id" />
+                        <input type="hidden" name="assignmentId" value="@Model.Id" />
+                        <input type="text" name="item" placeholder="نص البند" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                        <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; font-weight:600; padding:0 14px;">+ إضافة بند</button>
+                    </form>
                 </div>
             }
         }
-
-        <form method="post" asp-controller="ProjectAssignments" asp-action="AddTask" style="display:flex; gap:8px; margin-top:12px;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="assignmentId" value="@Model.Id" />
-            <input type="text" name="title" placeholder="عنوان بند جديد" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-            <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; font-weight:600; padding:0 14px;">+ إضافة بند</button>
-        </form>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/tab-persist.js" asp-append-version="true"></script>
+    <script>
+        function filterTodosByTask() {
+            var sel = document.getElementById('taskFilterSelect');
+            if (!sel) return;
+            var val = sel.value;
+            document.querySelectorAll('[data-task-group]').forEach(function (el) {
+                el.hidden = el.getAttribute('data-task-group') !== val;
+            });
+        }
+        filterTodosByTask();
+    </script>
+}

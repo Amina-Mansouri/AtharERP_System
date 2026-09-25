@@ -103,7 +103,7 @@ namespace AtharERP_System.Models.Entities
         public virtual ICollection<TaskTodo> Todos { get; set; } = new List<TaskTodo>();
         public virtual ICollection<TaskDependency> Dependencies { get; set; } = new List<TaskDependency>();
         public virtual ICollection<TaskDependency> DependentTasks { get; set; } = new List<TaskDependency>();
-     
+        public virtual ICollection<DesignProposal> DesignProposals { get; set; } = new List<DesignProposal>();
 
     }
 }

@@ -9,7 +9,7 @@
 }
 
 <h1 class="athar-page-title">مراجعة المقترح: @proposal?.Name</h1>
-<div class="stat-sub mb-2">المهمة: @proposal?.ProjectTask?.Title — المرحلة: @(proposal?.ProjectTask?.Stage?.Name ?? "-")</div>
+<div class="stat-sub mb-2">المهمة: @proposal?.TaskTodo?.Task?.Title — المرحلة: @(proposal?.TaskTodo?.Task?.Stage?.Name ?? "-")</div>
 
 <div class="athar-card mt-3">
     <form method="post" asp-action="Review" asp-route-id="@proposal?.Id" enctype="multipart/form-data" id="reviewForm">

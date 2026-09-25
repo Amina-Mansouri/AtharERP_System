@@ -75,10 +75,10 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; } = ProposalStatus.Submitted;
-        [Display(Name = "تاريخ الإكمال")]
-        public DateTime? CompletedAt { get; set; }
 
-        public virtual ICollection<DesignProposal> DesignProposals { get; set; } = new List<DesignProposal>();
+        [Display(Name = "تاريخ الإنشاء")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public virtual ICollection<ProposalReview> Reviews { get; set; } = new List<ProposalReview>();
     }
 }
-

@@ -474,7 +474,7 @@ List<int>? taskIds)
             var assignment = await _context.ProjectAssignments
                 .Include(a => a.Stage).ThenInclude(s => s!.Project)
                 .Include(a => a.Engineers).ThenInclude(e => e.User)
-                .Include(a => a.Tasks).ThenInclude(t => t.DesignProposals)
+                .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (assignment == null)
@@ -490,41 +490,6 @@ List<int>? taskIds)
             return View(assignment);
         }
 
-        [Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddTask(int assignmentId, string title)
-        {
-            var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
-            if (assignment == null)
-                return NotFound();
 
-            var isWorker = await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == assignmentId && e.UserId == CurrentUserId);
-            var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.Edit");
-            if (!isWorker && !canManage)
-                return Forbid();
-
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                _context.ProjectTasks.Add(new ProjectTask
-                {
-                    ProjectId = assignment.ProjectId,
-                    StageId = assignment.StageId!.Value,
-                    ProjectAssignmentId = assignment.Id,
-                    Title = title.Trim(),
-                    Weight = 0,
-                    Status = ProjectTaskStatus.NotStarted,
-                    Priority = TaskPriority.Medium,
-                    PlannedStartDate = assignment.PlannedStartDate,
-                    PlannedEndDate = assignment.PlannedEndDate,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedById = CurrentUserId
-                });
-                await _context.SaveChangesAsync();
-                await _calc.RecalculateStageAsync(assignment.StageId!.Value);
-            }
-
-            return this.RedirectKeepingTab("ManageTasks", new { id = assignmentId });
-        }
     }
 }

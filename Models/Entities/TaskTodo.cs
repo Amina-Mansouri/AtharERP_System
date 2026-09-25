@@ -25,5 +25,7 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "تاريخ الإكمال")]
         public DateTime? CompletedAt { get; set; }
+
+        public virtual ICollection<DesignProposal> DesignProposals { get; set; } = new List<DesignProposal>();
     }
 }
