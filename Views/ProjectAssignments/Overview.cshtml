@@ -3,18 +3,19 @@
 @using AtharERP_System.Models.Entities
 @model List<ProjectAssignment>
 @{
-    ViewData["Title"] = "تتبّع تكليفات المشاريع";
+    ViewData["Title"] = "مراجعة التكليفات";
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var stages = ViewBag.Stages as List<ProjectStage> ?? new List<ProjectStage>();
     var selectedProjectId = ViewBag.ProjectId as int?;
     var selectedStageId = ViewBag.StageId as int?;
     var taskFilter = ViewBag.TaskFilter as string ?? "all";
+    var docFilter = ViewBag.DocFilter as string ?? "all";
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
 }
 
 <div style="margin-bottom:14px;">
     <div style="font-size:11px; color:#8a83a0; font-weight:500;">المشاريع</div>
-    <div style="font-size:19px; font-weight:600; margin-top:2px;">تتبّع تكليفات المشاريع</div>
+    <div style="font-size:19px; font-weight:600; margin-top:2px;">مراجعة التكليفات</div>
 </div>
 
 <form method="get" class="filter-bar">
@@ -36,7 +37,9 @@
         </select>
     }
     <input type="hidden" name="taskFilter" value="@taskFilter" />
+    <input type="hidden" name="docFilter" value="@docFilter" />
 </form>
+
 
 @if (!selectedProjectId.HasValue)
 {
@@ -89,8 +92,33 @@ else
             var tabStyle = isActive
                 ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
                 : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
-            <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, taskFilter = tab.Key })" style="text-decoration:none; font-size:11.5px; padding:6px 14px; border-radius:8px; border:1px solid; @tabStyle">@tab.Label</a>
+            <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, taskFilter = tab.Key, docFilter = docFilter })" style="text-decoration:none; font-size:11.5px; padding:6px 14px; border-radius:8px; border:1px solid; @tabStyle">@tab.Label</a>
         }
+    </div>
+
+    <div style="margin-bottom:12px;">
+        <div style="font-size:10.5px; color:#8a83a0; margin-bottom:6px;">تصفية سجل المراجعة حسب حالة المستند:</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            @{
+                var docTabs = new (string Key, string Label)[]
+                {
+                    ("all", "الكل"),
+                    ("Submitted", "بانتظار الاعتماد"),
+                    ("Approved", "معتمد"),
+                    ("ApprovedWithModification", "معتمد مع تعديل"),
+                    ("Resubmission", "إعادة تقديم"),
+                    ("Redesign", "إعادة تصميم")
+                };
+            }
+            @foreach (var dtab in docTabs)
+            {
+                var isDocActive = docFilter == dtab.Key;
+                var dtabStyle = isDocActive
+                    ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
+                    : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
+                <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, taskFilter = taskFilter, docFilter = dtab.Key })" style="text-decoration:none; font-size:11px; padding:5px 12px; border-radius:8px; border:1px solid; @dtabStyle">@dtab.Label</a>
+            }
+        </div>
     </div>
 
     <div style="display:grid; gap:12px;">
@@ -120,7 +148,8 @@ else
                 }
 
                 var assignmentCanReview = a.Stage?.AssignedEngineerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value || canReview;
-                var allProposals = a.Tasks.SelectMany(t => t.Todos.SelectMany(td => td.DesignProposals.Select(p => new { Task = t, Proposal = p }))).OrderByDescending(x => x.Proposal.CreatedAt).ToList();
+                var allProposalsFull = a.Tasks.SelectMany(t => t.Todos.SelectMany(td => td.DesignProposals.Select(p => new { Task = t, Todo = td, Proposal = p }))).OrderByDescending(x => x.Proposal.CreatedAt).ToList();
+                var allProposals = docFilter == "all" ? allProposalsFull : allProposalsFull.Where(x => x.Proposal.Status.ToString() == docFilter).ToList();
 
                 <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px; align-items:start;">
                     <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
@@ -185,44 +214,72 @@ else
                         }
                     </div>
 
-                    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                        <div style="font-size:13px; font-weight:600; margin-bottom:8px;">مستندات التكليف (مقترحات التصميم)</div>
+                    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); overflow:hidden;">
+                        <div style="font-size:13px; font-weight:600; padding:14px 16px 8px;">سجل المراجعة (@allProposals.Count من @allProposalsFull.Count مستند)</div>
                         @if (!allProposals.Any())
                         {
-                            <div class="stat-sub">لا توجد مستندات مرفوعة بعد</div>
+                            <div class="stat-sub" style="padding:0 16px 14px;">لا توجد مستندات مطابقة</div>
                         }
                         else
                         {
-                            <div style="display:grid; gap:8px;">
-                                @foreach (var item in allProposals)
-                                {
-                                    var proposal = item.Proposal;
-                                    var propTagClass = (proposal.Status == ProposalStatus.Approved || proposal.Status == ProposalStatus.ApprovedWithModification) ? "tag-success" : ((proposal.Status == ProposalStatus.Resubmission || proposal.Status == ProposalStatus.Redesign) ? "tag-danger" : "tag-warning");
-                                    var propLabel = proposal.Status switch
+                            <table style="width:100%; border-collapse:collapse;">
+                                <thead>
+                                    <tr style="background:#faf9fd;">
+                                        <th style="text-align:right; padding:7px 12px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">المستند</th>
+                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">
+                                            <span title="التأخير يُحسب من تاريخ المهمة نفسها فقط — لا من تاريخ التكليف أو المرحلة" style="border-bottom:1px dotted #8a83a0; cursor:help;">المهمة ⓘ</span>
+                                        </th>
+                                        <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">الإصدار</th>
+                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">رفعه</th>
+                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">التاريخ</th>
+                                        <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">الحالة</th>
+                                        <th style="text-align:center; padding:7px 12px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in allProposals)
                                     {
-                                        ProposalStatus.Approved => "معتمد",
-                                        ProposalStatus.ApprovedWithModification => "معتمد مع تعديل",
-                                        ProposalStatus.Resubmission => "إعادة تقديم",
-                                        ProposalStatus.Redesign => "إعادة تصميم",
-                                        _ => "بانتظار الاعتماد"
-                                    };
-                                    <div style="border:1px solid #ecebf2; border-radius:8px; padding:8px 10px; background:#faf9fd;">
-                                        <div class="stat-sub" style="margin-bottom:3px;">للمهمة: @item.Task.Title</div>
-                                        <div style="display:flex; align-items:center; justify-content:space-between;">
-                                            <a href="@proposal.FilePath" target="_blank" style="font-size:11px; font-weight:600; color:inherit; text-decoration:underline;">@proposal.Code — @proposal.Name (نسخة @proposal.Revision)</a>
-                                            <span class="tag @propTagClass">@propLabel</span>
-                                        </div>
-                                        <div class="stat-sub" style="margin-top:2px;">@proposal.PreparedBy.FullName — @proposal.SubmittedDate?.ToString("yyyy/MM/dd")</div>
-                                        @if (proposal.Status == ProposalStatus.Submitted && assignmentCanReview)
+                                        var proposal = item.Proposal;
+                                        var propTagClass = (proposal.Status == ProposalStatus.Approved || proposal.Status == ProposalStatus.ApprovedWithModification) ? "tag-success" : ((proposal.Status == ProposalStatus.Resubmission || proposal.Status == ProposalStatus.Redesign) ? "tag-danger" : "tag-warning");
+                                        var propLabel = proposal.Status switch
                                         {
-                                            <div style="margin-top:6px;">
-                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-taskFilter="@taskFilter"
-                                                   style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة</a>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </div>
+                                            ProposalStatus.Approved => "معتمد",
+                                            ProposalStatus.ApprovedWithModification => "معتمد مع تعديل",
+                                            ProposalStatus.Resubmission => "إعادة تقديم",
+                                            ProposalStatus.Redesign => "إعادة تصميم",
+                                            _ => "بانتظار الاعتماد"
+                                        };
+                                        <tr style="border-bottom:1px solid #f6f5fa;">
+                                            <td style="padding:9px 12px; font-size:11px;">
+                                                <a href="@proposal.FilePath" target="_blank" style="color:#7b6bd6; font-weight:600; text-decoration:underline;">📄 @proposal.Code</a>
+                                            </td>
+                                            <td style="padding:9px 10px; font-size:11px;">
+                                                <details>
+                                                    <summary style="cursor:pointer; display:inline; @(item.Task.DelayDays > 0 ? "color:#c94a42;" : "")">@item.Task.Title</summary>
+                                                    <div style="margin-top:3px; margin-right:14px; font-size:10px; color:#8a83a0;">↳ البند: @item.Todo.Item</div>
+                                                </details>
+                                                @if (item.Task.DelayDays > 0)
+                                                {
+                                                    <span title="متأخرة عن تاريخ نهاية المهمة نفسها بمقدار @(item.Task.DelayDays) يوم" style="display:inline-block; margin-right:6px; background:#fdecea; color:#c94a42; border:1px solid #f3cfc9; border-radius:5px; padding:1px 6px; font-size:9px; font-weight:600; cursor:help;">⚠ متأخرة @(item.Task.DelayDays) يوم</span>
+                                                }
+                                            </td>
+                                            <td style="padding:9px 10px; font-size:11px; text-align:center; color:#8a83a0;">@proposal.Revision</td>
+                                            <td style="padding:9px 10px; font-size:10.5px;">@proposal.PreparedBy.FullName</td>
+                                            <td style="padding:9px 10px; font-size:10.5px; color:#8a83a0; white-space:nowrap;">@proposal.SubmittedDate?.ToString("yyyy/MM/dd")</td>
+                                            <td style="padding:9px 10px; text-align:center;">
+                                                <span class="tag @propTagClass">@propLabel</span>
+                                            </td>
+                                            <td style="padding:9px 12px; text-align:center;">
+                                                @if (proposal.Status == ProposalStatus.Submitted && assignmentCanReview)
+                                                {
+                                                    <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-taskFilter="@taskFilter"
+                                                       style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة</a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         }
                     </div>
                 </div>
