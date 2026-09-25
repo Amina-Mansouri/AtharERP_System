@@ -518,11 +518,10 @@ namespace AtharERP_System.Data
                 .HasForeignKey(p => p.PreparedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-
             builder.Entity<DesignProposal>()
-                .HasOne(p => p.ProjectTask)
+                .HasOne(p => p.TaskTodo)
                 .WithMany(t => t.DesignProposals)
-                .HasForeignKey(p => p.ProjectTaskId)
+                .HasForeignKey(p => p.TaskTodoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ========== سجل مراجعات المهام والمقترحات (ProposalReview) ==========

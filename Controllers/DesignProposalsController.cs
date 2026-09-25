@@ -66,7 +66,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(int taskId, IFormFile file, DocumentClassification classification, FileCategory fileCategory)
+        public async Task<IActionResult> Upload(int taskId, IFormFile file, DocumentClassification classification, FileCategory fileCategory, int? assignmentId)
         {
             var task = await _context.ProjectTasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
             if (task == null)
@@ -75,23 +75,27 @@ namespace AtharERP_System.Controllers
             if (!await CanExecuteTaskAsync(task))
                 return Forbid();
 
+            IActionResult BackToTask() => assignmentId.HasValue
+                ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
+                : this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
+
             if (await IsAssignmentLockedAsync(task))
             {
                 TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن رفع مستندات له حالياً";
-                return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
+                return BackToTask();
             }
 
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "الرجاء اختيار ملف";
-                return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
+                return BackToTask();
             }
 
             var result = await _fileUpload.SaveFileAsync(file, $"proposals/{task.ProjectId}");
             if (!result.Success)
             {
                 TempData["Error"] = result.ErrorMessage;
-                return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
+                return BackToTask();
             }
 
             // رقم المستند: تسلسلي عام لكل مستندات المشروع
@@ -136,9 +140,8 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = "تم رفع المستند، بانتظار الاعتماد";
-            return this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = taskId });
+            return BackToTask();
         }
-
         [RequirePermission("Projects.Tasks.Manage")]
         [HttpGet]
         public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
@@ -238,7 +241,7 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
 
             var allDocs = await _context.DesignProposals.Where(d => d.ProjectTaskId == task.Id).ToListAsync();
-            bool allApproved = allDocs.Any() && allDocs.All(d => d.Status == ProposalStatus.Approved || d.Status == ProposalStatus.ApprovedWithModification);
+            bool allApproved = allDocs.Any() && allDocs.All(d => d.Status == ProposalStatus.Approved);
 
             if (task.Status != ProjectTaskStatus.Blocked)
             {

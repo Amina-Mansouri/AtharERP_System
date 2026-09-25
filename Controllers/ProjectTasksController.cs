@@ -390,7 +390,58 @@ namespace AtharERP_System.Controllers
             return this.RedirectKeepingTab("Edit", new { id });
         }
 
-     
+        // ============================================
+        // تأكيد إرسال البند للمراجعة - يتطلب مستنداً واحداً على الأقل، وللمكلَّف بالمهمة فقط
+        // ============================================
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitForReview(int id, int? assignmentId)
+        {
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
+            if (task == null)
+                return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
+
+            IActionResult BackToTask() => assignmentId.HasValue
+                ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
+                : this.RedirectKeepingTab("Edit", new { id });
+
+            if (await IsProjectLockedAsync(task.ProjectId))
+            {
+                TempData["Error"] = "المشروع متوقف أو ملغى — لا يمكن التعامل مع مهامه حالياً";
+                return BackToTask();
+            }
+
+            if (await IsAssignmentLockedAsync(task))
+            {
+                TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن إرسال بنوده للمراجعة حالياً";
+                return BackToTask();
+            }
+
+            if (task.Status != ProjectTaskStatus.NotStarted && task.Status != ProjectTaskStatus.InProgress)
+            {
+                TempData["Error"] = "لا يمكن إرسال هذا البند للمراجعة في حالته الحالية";
+                return BackToTask();
+            }
+
+            var hasDocument = await _context.DesignProposals.AnyAsync(p => p.ProjectTaskId == id);
+            if (!hasDocument)
+            {
+                TempData["Error"] = "يجب رفع مستند واحد على الأقل قبل إرسال البند للمراجعة";
+                return BackToTask();
+            }
+
+            task.Status = ProjectTaskStatus.PendingReview;
+            await _context.SaveChangesAsync();
+            if (task.StageId.HasValue)
+                await _calc.RecalculateStageAsync(task.StageId.Value);
+
+            TempData["Success"] = "تم إرسال البند للمراجعة";
+            return BackToTask();
+        }
         // ============================================
         // قائمة To-Do - مسموح للمكلَّف بالمهمة نفسها فقط
         // ============================================

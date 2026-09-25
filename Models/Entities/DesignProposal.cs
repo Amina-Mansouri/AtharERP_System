@@ -18,11 +18,11 @@ namespace AtharERP_System.Models.Entities
         public virtual Project Project { get; set; } = null!;
 
         [Required]
-        public int ProjectTaskId { get; set; }
+        public int TaskTodoId { get; set; }
 
-        [ForeignKey("ProjectTaskId")]
+        [ForeignKey("TaskTodoId")]
         [ValidateNever]
-        public virtual ProjectTask ProjectTask { get; set; } = null!;
+        public virtual TaskTodo TaskTodo { get; set; } = null!;
 
         [Required]
         [StringLength(50)]
@@ -75,10 +75,10 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "الحالة")]
         public ProposalStatus Status { get; set; } = ProposalStatus.Submitted;
+        [Display(Name = "تاريخ الإكمال")]
+        public DateTime? CompletedAt { get; set; }
 
-        [Display(Name = "تاريخ الإنشاء")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public virtual ICollection<ProposalReview> Reviews { get; set; } = new List<ProposalReview>();
+        public virtual ICollection<DesignProposal> DesignProposals { get; set; } = new List<DesignProposal>();
     }
 }
+
