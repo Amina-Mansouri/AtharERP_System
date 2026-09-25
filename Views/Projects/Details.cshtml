@@ -678,7 +678,7 @@ else
                             var a = item.Assignment;
                             <div class="data-table-row" data-stage="@item.Stage.Id">
                                 <div class="cell">
-                                    @a.CostType
+                                    @a.AssignmentType
                                     @if (a.IsUrgent)
                                     {
                                         <span class="tag tag-danger">مستعجل</span>
@@ -783,7 +783,7 @@ else
                                         <option value="@stage.Id">@stage.Name</option>
                                     }
                                 </select>
-                                <input type="text" name="CostType" placeholder="نوع التكليف" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                <input type="text" name="AssignmentType" placeholder="نوع التكليف" required style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
                                 <select name="engineerIds" multiple required style="height:60px; border:1px solid #e4e2ec; border-radius:8px; font-size:11px;">
                                     @foreach (var eng in engineers)
                                     {

@@ -85,7 +85,7 @@
                     var pct = a.Tasks.Any() ? a.Tasks.Average(t => t.CompletionPercentage) : 0;
                     <div class="data-table-row">
                         <div class="cell cell-num">@a.Stage?.Project?.Code</div>
-                        <div class="cell">@a.CostType</div>
+                        <div class="cell">@a.AssignmentType</div>
                         <div class="cell">@a.Stage?.Name</div>
                         <div class="cell cell-num">@pct.ToString("N0")%</div>
                         <div class="cell cell-num">-</div>

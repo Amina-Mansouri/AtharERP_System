@@ -11,11 +11,34 @@
     var projectId = ViewBag.ProjectId as int?;
     var stageId = ViewBag.StageId as int?;
     var taskFilter = ViewBag.TaskFilter as string;
+    var mainProject = ViewBag.MainProject as Project;
+    var subProject = ViewBag.SubProject as Project;
+    var projectCategoryLabel = ViewBag.ProjectCategoryLabel as string ?? "-";
+    var reviewDate = (DateTime)ViewBag.ReviewDate;
     ViewData["Title"] = "مراجعة المستند";
 }
 
 <h1 class="athar-page-title">مراجعة المستند: @proposal?.Name (@proposal?.Code)</h1>
 <div class="stat-sub mb-2">المهمة: @proposal?.TaskTodo?.Task?.Title — المرحلة: @(proposal?.TaskTodo?.Task?.Stage?.Name ?? "-")</div>
+
+<div class="athar-card mt-3">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="form-label mb-0">بيانات التقرير</div>
+       
+    </div>
+    <div class="row">
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">كود المشروع</div><div style="font-weight:600;">@(mainProject?.Code ?? "-")</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">اسم المشروع</div><div style="font-weight:600;">@(mainProject?.Name ?? "-")</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">رقم المبنى</div><div style="font-weight:600;">@(subProject?.Code ?? "-")</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">اسم المبنى</div><div style="font-weight:600;">@(subProject?.Name ?? "-")</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">نوع المشروع</div><div style="font-weight:600;">@projectCategoryLabel</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">المرحلة</div><div style="font-weight:600;">@(proposal?.TaskTodo?.Task?.Stage?.Name ?? "-")</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">التاريخ</div><div style="font-weight:600;">@reviewDate.ToString("yyyy-MM-dd")</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">المستند</div><div style="font-weight:600;">@proposal?.Name (@proposal?.Code)</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">رقم المراجعة</div><div style="font-weight:600;">@suggestedReviewNumber</div></div>
+    </div>
+</div>
+
 <div class="athar-card mt-3">
     <form method="post" asp-action="Review" asp-route-id="@proposal?.Id">
         @Html.AntiForgeryToken()
@@ -24,11 +47,7 @@
         <input type="hidden" name="taskFilter" value="@taskFilter" />
 
         <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">رقم المراجعة</label>
-                <input type="number" name="reviewNumber" class="form-control" value="@suggestedReviewNumber" required />
-                <div class="stat-sub">مقترح تلقائيًا بناءً على آخر رقم لهذا التكليف — يمكن تعديله</div>
-            </div>
+         
             <div class="col-md-4 mb-3">
                 <label class="form-label">التخصص</label>
                 <input type="text" name="discipline" class="form-control" />

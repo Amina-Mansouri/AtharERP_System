@@ -140,7 +140,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-[Bind("ProjectId,StageId,CostType,Description,IsUrgent,PlannedStartDate,PlannedEndDate")] ProjectAssignment model,
+[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate")] ProjectAssignment model,
 List<string>? engineerIds,
 List<int>? taskIds)
         {
@@ -204,7 +204,7 @@ List<int>? taskIds)
 
                 foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
                 {
-                    await _notify.NotifyAsync(uid, $"تم تكليفك بتكليف: {model.CostType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: model.Id);
+                    await _notify.NotifyAsync(uid, $"تم تكليفك بتكليف: {model.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: model.Id);
                 }
             }
 
@@ -243,7 +243,7 @@ List<int>? taskIds)
                 await _context.SaveChangesAsync();
             }
 
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.CostType}");
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.AssignmentType}");
 
             TempData["Success"] = "تمت إضافة التكليف بنجاح — سعّري مهامه من شاشة المهام";
             return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
@@ -265,7 +265,7 @@ List<int>? taskIds)
                 var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
                 if (assignment != null)
                 {
-                    await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.CostType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
+                    await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
                 }
             }
             return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
@@ -332,13 +332,13 @@ List<int>? taskIds)
             }
 
             var projectId = assignment.ProjectId;
-            var costType = assignment.CostType;
+            var assignmentType = assignment.AssignmentType;
             var linkedTasksCount = await _context.ProjectTasks.CountAsync(t => t.ProjectAssignmentId == id);
 
             _context.ProjectAssignments.Remove(assignment);
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectAssignment), id.ToString(), $"حذف تكليف: {costType}");
+            await _audit.LogAsync(CurrentUserId, "Delete", nameof(ProjectAssignment), id.ToString(), $"حذف تكليف: {assignmentType}");
 
             TempData["Success"] = linkedTasksCount > 0
                 ? $"تم حذف التكليف، وتم حذف {linkedTasksCount} مهمة مرتبطة به تلقائيًا"
@@ -400,7 +400,7 @@ List<int>? taskIds)
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditDates(int id, int? taskId, [Bind("CostType,PlannedStartDate,PlannedEndDate")] ProjectAssignment model)
+        public async Task<IActionResult> EditDates(int id, int? taskId, [Bind("AssignmentType,PlannedStartDate,PlannedEndDate")] ProjectAssignment model)
         {
             if (!User.IsInRole("مدير النظام"))
                 return Forbid();
@@ -436,7 +436,7 @@ List<int>? taskIds)
                     : this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
             }
 
-            assignment.CostType = model.CostType;
+            assignment.AssignmentType = model.AssignmentType;
             assignment.PlannedStartDate = model.PlannedStartDate;
             assignment.PlannedEndDate = model.PlannedEndDate;
             foreach (var t in assignment.Tasks.Where(t => !t.PlannedStartDate.HasValue && !t.PlannedEndDate.HasValue))

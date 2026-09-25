@@ -24,10 +24,11 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("StageId")]
         public virtual ProjectStage? Stage { get; set; }
 
-        [Required(ErrorMessage = "نوع التكلفة مطلوب")]
+        // الاسم السابق كان CostType — يتعارض مع FinancialRecord.CostType (نوع تكلفة مالية حقيقي)، بينما هذا الحقل يصف نوع/تخصص التكليف نفسه لا تكلفته
+        [Required(ErrorMessage = "نوع التكليف مطلوب")]
         [StringLength(100)]
-        [Display(Name = "نوع التكلفة")]
-        public string CostType { get; set; } = string.Empty;
+        [Display(Name = "نوع التكليف")]
+        public string AssignmentType { get; set; } = string.Empty;
 
         [Display(Name = "الوصف")]
         public string? Description { get; set; }

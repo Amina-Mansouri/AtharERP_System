@@ -166,6 +166,12 @@ namespace AtharERP_System.Controllers
                     .MaxAsync() ?? 0;
             }
 
+            // "رقم/اسم المبنى" = المشروع الفرعي؛ إذا كان مشروع المقترح نفسه فرعياً، فالمشروع الرئيسي هو والده (مطابق لمنطق توليد الـ PDF في Review POST)
+            var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
+            var mainProject = subProject != null && proposal.Project.ParentProject != null
+                ? proposal.Project.ParentProject
+                : proposal.Project;
+
             ViewBag.Proposal = proposal;
             ViewBag.ReviewerName = reviewer?.FullName;
             ViewBag.ReviewerPosition = reviewer?.JobRankRef?.NameAr;
@@ -177,6 +183,10 @@ namespace AtharERP_System.Controllers
             ViewBag.ProjectId = projectId;
             ViewBag.StageId = stageId;
             ViewBag.TaskFilter = taskFilter;
+            ViewBag.MainProject = mainProject;
+            ViewBag.SubProject = subProject;
+            ViewBag.ProjectCategoryLabel = mainProject.ProjectCategory?.DisplayName ?? "-";
+            ViewBag.ReviewDate = DateTime.UtcNow;
             return View();
         }
 

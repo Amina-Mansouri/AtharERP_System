@@ -89,7 +89,7 @@
                             <input type="hidden" name="taskId" value="@Model.Id" />
                             <div>
                                 <label style="font-size:10.5px; color:#8a83a0;">بيان التكليف</label>
-                                <input type="text" name="CostType" value="@asg.CostType" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                                <input type="text" name="AssignmentType" value="@asg.AssignmentType" disabled="@(!isSysAdmin)" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
                             </div>
                             <div>
                                 <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
@@ -236,8 +236,7 @@
                         var pLabel = ProposalLabel(p.Status);
                         <div style="border:1px solid #f1f0f6; border-radius:8px; padding:8px 12px;">
                             <div style="display:flex; align-items:center; justify-content:space-between;">
-                                <a href="@p.FilePath" target="_blank" style="font-size:11.5px; font-weight:600;">@p.Code — @p.Name (نسخة @p.Revision)</a>
-                                <span class="tag @pTagClass">@pLabel</span>
+                                <a href="@p.FilePath" target="_blank" download="@($"{p.Code}.{p.FileType}")" style="font-size:11.5px; font-weight:600;">@p.Code — @p.Name (v@p.Revision)</a>                                <span class="tag @pTagClass">@pLabel</span>
                             </div>
                             <div class="stat-sub" style="margin-top:2px;">@p.SubmittedDate?.ToString("yyyy-MM-dd")</div>
                         </div>
