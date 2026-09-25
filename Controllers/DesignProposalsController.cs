@@ -198,7 +198,6 @@ namespace AtharERP_System.Controllers
      ProposalStatus status,
      string? notes,
      string? discipline,
-     int reviewNumber,
      int? projectId,
      int? stageId,
      string? taskFilter)
@@ -215,6 +214,18 @@ namespace AtharERP_System.Controllers
 
             var todo = proposal.TaskTodo;
             var task = todo.Task;
+
+            // رقم المراجعة يُحسب هنا دائماً من الخادم، ولا يُستقبَل من المستخدم إطلاقاً
+            var reviewAssignmentId = task.ProjectAssignmentId;
+            int reviewNumber = 1;
+            if (reviewAssignmentId.HasValue)
+            {
+                var lastReviewNumberAtSubmit = await _context.ProposalReviews
+                    .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodo.Task.ProjectAssignmentId == reviewAssignmentId.Value)
+                    .Select(r => (int?)r.ReviewNumber)
+                    .MaxAsync() ?? 0;
+                reviewNumber = lastReviewNumberAtSubmit + 1;
+            }
 
             var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
