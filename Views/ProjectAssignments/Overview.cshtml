@@ -1,4 +1,4 @@
-﻿@inject PermissionService PermissionService﻿
+﻿@inject PermissionService PermissionService
 @using AtharERP_System.Services
 @using AtharERP_System.Models.Entities
 @model List<ProjectAssignment>
@@ -8,9 +8,42 @@
     var stages = ViewBag.Stages as List<ProjectStage> ?? new List<ProjectStage>();
     var selectedProjectId = ViewBag.ProjectId as int?;
     var selectedStageId = ViewBag.StageId as int?;
-    var taskFilter = ViewBag.TaskFilter as string ?? "all";
     var docFilter = ViewBag.DocFilter as string ?? "all";
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
+
+    var docTabs = new (string Key, string Label)[]
+    {
+        ("all", "الكل"),
+        ("Submitted", "بانتظار الاعتماد"),
+        ("Approved", "معتمد"),
+        ("ApprovedWithModification", "معتمد مع تعديل"),
+        ("Resubmission", "إعادة تقديم"),
+        ("Redesign", "إعادة تصميم")
+    };
+
+    var totalAssignmentsCount = 0;
+    var reworkCountInScope = 0;
+    var avgCompletionInScope = 0m;
+    List<(string Label, int Value, string Color)>? assignmentSlices = null;
+    if (selectedProjectId.HasValue)
+    {
+        totalAssignmentsCount = (int)ViewBag.TotalAssignments;
+        var pendingAssignmentsCount = (int)ViewBag.PendingAssignments;
+        var inProgressAssignmentsCount = (int)ViewBag.InProgressAssignments;
+        var overdueAssignmentsCount = (int)ViewBag.OverdueAssignments;
+        var completedAssignmentsCount = (int)ViewBag.CompletedAssignments;
+        var otherAssignmentsCount = totalAssignmentsCount - pendingAssignmentsCount - inProgressAssignmentsCount - overdueAssignmentsCount - completedAssignmentsCount;
+        assignmentSlices = new List<(string Label, int Value, string Color)>
+        {
+            ("معلقة", pendingAssignmentsCount, "#8a83a0"),
+            ("قيد التنفيذ", inProgressAssignmentsCount, "#7b6bd6"),
+            ("متأخرة", overdueAssignmentsCount, "#c94a42"),
+            ("مكتملة", completedAssignmentsCount, "#2f8a57"),
+            ("ملغاة", otherAssignmentsCount, "#ecebf2")
+        };
+        reworkCountInScope = (int)ViewBag.ReworkCount;
+        avgCompletionInScope = (decimal)ViewBag.AvgCompletionInScope;
+    }
 }
 
 <div style="margin-bottom:14px;">
@@ -18,28 +51,53 @@
     <div style="font-size:19px; font-weight:600; margin-top:2px;">مراجعة التكليفات</div>
 </div>
 
-<form method="get" class="filter-bar">
-    <select name="projectId" class="filter-chip" onchange="this.form.submit()">
-        <option value="">-- اختر مشروعاً --</option>
-        @foreach (var p in projects)
+<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:12px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+    <form method="get" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع</label>
+            <select name="projectId" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
+                <option value="">-- اختر مشروعاً --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(selectedProjectId == p.Id)">@p.Code - @p.Name</option>
+                }
+            </select>
+        </div>
+        @if (selectedProjectId.HasValue)
         {
-            <option value="@p.Id" selected="@(selectedProjectId == p.Id)">@p.Code - @p.Name</option>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المرحلة</label>
+                <select name="stageId" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:150px; background:#fff;">
+                    <option value="">كل المراحل</option>
+                    @foreach (var s in stages)
+                    {
+                        <option value="@s.Id" selected="@(selectedStageId == s.Id)">@s.Name</option>
+                    }
+                </select>
+            </div>
         }
-    </select>
+        <input type="hidden" name="docFilter" value="@docFilter" />
+    </form>
+
     @if (selectedProjectId.HasValue)
     {
-        <select name="stageId" class="filter-chip" onchange="this.form.submit()">
-            <option value="">كل المراحل</option>
-            @foreach (var s in stages)
+        <div style="width:1px; align-self:stretch; background:#f1f0f6;"></div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            @foreach (var dtab in docTabs)
             {
-                <option value="@s.Id" selected="@(selectedStageId == s.Id)">@s.Name</option>
+                var isDocActive = docFilter == dtab.Key;
+                var dtabStyle = isDocActive
+                    ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
+                    : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
+                <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, docFilter = dtab.Key })" style="text-decoration:none; font-size:11px; padding:5px 12px; border-radius:8px; border:1px solid; @dtabStyle">@dtab.Label</a>
             }
-        </select>
+        </div>
+        <div style="width:1px; align-self:stretch; background:#f1f0f6;"></div>
+        <div style="display:inline-block;">
+            @await Html.PartialAsync("_StatDonutChart", assignmentSlices)
+        </div>
     }
-    <input type="hidden" name="taskFilter" value="@taskFilter" />
-    <input type="hidden" name="docFilter" value="@docFilter" />
-</form>
-
+</div>
 
 @if (!selectedProjectId.HasValue)
 {
@@ -47,78 +105,10 @@
 }
 else
 {
-    var totalAssignmentsCount = (int)ViewBag.TotalAssignments;
-    var pendingAssignmentsCount = (int)ViewBag.PendingAssignments;
-    var inProgressAssignmentsCount = (int)ViewBag.InProgressAssignments;
-    var overdueAssignmentsCount = (int)ViewBag.OverdueAssignments;
-    var completedAssignmentsCount = (int)ViewBag.CompletedAssignments;
-    var otherAssignmentsCount = totalAssignmentsCount - pendingAssignmentsCount - inProgressAssignmentsCount - overdueAssignmentsCount - completedAssignmentsCount;
-    var assignmentSlices = new List<(string Label, int Value, string Color)>
-    {
-        ("معلقة", pendingAssignmentsCount, "#8a83a0"),
-        ("قيد التنفيذ", inProgressAssignmentsCount, "#7b6bd6"),
-        ("متأخرة", overdueAssignmentsCount, "#c94a42"),
-        ("مكتملة", completedAssignmentsCount, "#2f8a57"),
-        ("ملغاة", otherAssignmentsCount, "#ecebf2")
-    };
-    var reworkCountInScope = (int)ViewBag.ReworkCount;
-    var avgCompletionInScope = (decimal)ViewBag.AvgCompletionInScope;
-
-    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-        <div style="display:inline-block;">
-            @await Html.PartialAsync("_StatDonutChart", assignmentSlices)
-        </div>
-    </div>
-
     <div class="stat-strip stat-strip-text">
         <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@totalAssignmentsCount</span></div>
         <div class="stat-item"><span class="kicker">متوسط نسبة الإنجاز @(selectedStageId.HasValue ? "(المرحلة)" : "(المشروع)")</span><span class="stat-value">@avgCompletionInScope.ToString("N1")%</span></div>
         <div class="stat-item"><span class="kicker">معدل إعادة العمل @(selectedStageId.HasValue ? "(المرحلة)" : "(المشروع)")</span><span class="stat-value" style="color:#c9700f;">@reworkCountInScope</span></div>
-    </div>
-
-    <div style="display:flex; gap:6px; margin-bottom:12px;">
-        @{
-            var tabs = new (string Key, string Label)[]
-            {
-                ("all", "كل البنود"),
-                ("completed", "المكتملة"),
-                ("pending", "قيد المراجعة"),
-                ("delayed", "المتأخرة")
-            };
-        }
-        @foreach (var tab in tabs)
-        {
-            var isActive = taskFilter == tab.Key;
-            var tabStyle = isActive
-                ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
-                : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
-            <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, taskFilter = tab.Key, docFilter = docFilter })" style="text-decoration:none; font-size:11.5px; padding:6px 14px; border-radius:8px; border:1px solid; @tabStyle">@tab.Label</a>
-        }
-    </div>
-
-    <div style="margin-bottom:12px;">
-        <div style="font-size:10.5px; color:#8a83a0; margin-bottom:6px;">تصفية سجل المراجعة حسب حالة المستند:</div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            @{
-                var docTabs = new (string Key, string Label)[]
-                {
-                    ("all", "الكل"),
-                    ("Submitted", "بانتظار الاعتماد"),
-                    ("Approved", "معتمد"),
-                    ("ApprovedWithModification", "معتمد مع تعديل"),
-                    ("Resubmission", "إعادة تقديم"),
-                    ("Redesign", "إعادة تصميم")
-                };
-            }
-            @foreach (var dtab in docTabs)
-            {
-                var isDocActive = docFilter == dtab.Key;
-                var dtabStyle = isDocActive
-                    ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
-                    : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
-                <a href="@Url.Action("Overview", new { projectId = selectedProjectId, stageId = selectedStageId, taskFilter = taskFilter, docFilter = dtab.Key })" style="text-decoration:none; font-size:11px; padding:5px 12px; border-radius:8px; border:1px solid; @dtabStyle">@dtab.Label</a>
-            }
-        </div>
     </div>
 
     <div style="display:grid; gap:12px;">
@@ -131,157 +121,107 @@ else
             var canReview = await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             @foreach (var a in Model)
             {
-                IEnumerable<ProjectTask> filteredTasks = taskFilter switch
-                {
-                    "completed" => a.Tasks.Where(t => t.Status == ProjectTaskStatus.Completed),
-                    "pending" => a.Tasks.Where(t => t.Status == ProjectTaskStatus.PendingReview),
-                    "delayed" => a.Tasks.Where(t => t.DelayDays > 0),
-                    _ => a.Tasks
-                };
-                var tasksToShow = filteredTasks.ToList();
-                var totalTasks = a.Tasks.Count;
-                var doneTasks = a.Tasks.Count(t => t.Status == ProjectTaskStatus.Completed);
-
-                if (taskFilter != "all" && !tasksToShow.Any())
-                {
-                    continue;
-                }
-
                 var assignmentCanReview = a.Stage?.AssignedEngineerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value || canReview;
                 var allProposalsFull = a.Tasks.SelectMany(t => t.Todos.SelectMany(td => td.DesignProposals.Select(p => new { Task = t, Todo = td, Proposal = p }))).OrderByDescending(x => x.Proposal.CreatedAt).ToList();
                 var allProposals = docFilter == "all" ? allProposalsFull : allProposalsFull.Where(x => x.Proposal.Status.ToString() == docFilter).ToList();
 
-                <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px; align-items:start;">
-                    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); overflow:hidden;">
+                    <div style="padding:14px 16px; border-bottom:1px solid #f1f0f6;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
                             <div style="font-size:13px; font-weight:600;">
                                 @a.CostType
                                 @if (a.IsUrgent)
                                 {
                                     <span class="tag tag-danger">مستعجل</span>
                                 }
+                                <span class="stat-sub" style="margin-right:6px;">— المرحلة: @(a.Stage?.Name ?? "-")</span>
                             </div>
                             <span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
                         </div>
-                        <div class="stat-sub" style="margin-bottom:6px;">المرحلة: @(a.Stage?.Name ?? "-")</div>
-                        <div style="margin-bottom:8px;">
-                            @if (!a.Engineers.Any())
-                            {
-                                <span class="stat-sub">لا يوجد مهندسون</span>
-                            }
-                            else
-                            {
-                                @foreach (var eng in a.Engineers)
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                @if (!a.Engineers.Any())
                                 {
-                                    <div style="font-size:11px;">• @eng.User.FullName</div>
+                                    <span class="stat-sub">لا يوجد مهندسون</span>
                                 }
-                            }
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                            <div class="stat-sub">مهام هذا التكليف: @doneTasks / @totalTasks مكتملة</div>
-                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a>
-                        </div>
-
-                        @if (!tasksToShow.Any())
-                        {
-                            <div class="stat-sub">لا توجد مهام مطابقة لهذا التصنيف</div>
-                        }
-                        else
-                        {
-                            <div style="display:grid; gap:6px;">
-                                @foreach (var t in tasksToShow)
+                                else
                                 {
-                                    var taskTagClass = t.Status == ProjectTaskStatus.Completed ? "tag-success" : (t.Status == ProjectTaskStatus.PendingReview ? "tag-warning" : "");
-                                    <div style="border:1px solid #ecebf2; border-radius:8px; padding:6px 10px; background:#faf9fd;">
-                                        <div style="display:flex; align-items:center; justify-content:space-between;">
-                                            <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11.5px; font-weight:600; color:inherit; text-decoration:underline;">@t.Title</a>
-                                            <span class="tag @taskTagClass">@(t.Status == ProjectTaskStatus.PendingReview ? "قيد المراجعة" : t.CompletionPercentage.ToString("N0") + "%")</span>
-                                        </div>
-                                        @if (t.Todos.Any())
-                                        {
-                                            <div style="display:grid; gap:3px; margin-top:6px;">
-                                                @foreach (var todo in t.Todos)
-                                                {
-                                                    var todoStyle = todo.IsCompleted ? "color:#8a83a0; text-decoration:line-through;" : "color:#3a3450;";
-                                                    <div style="font-size:10.5px; @todoStyle">@(todo.IsCompleted ? "✓" : "○") @todo.Item</div>
-                                                }
-                                            </div>
-                                        }
-                                       
-                                    </div>
+                                    @foreach (var eng in a.Engineers)
+                                    {
+                                        <span class="stat-sub">• @eng.User.FullName</span>
+                                    }
                                 }
                             </div>
-                        }
+                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a>
+                        </div>
                     </div>
 
-                    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); overflow:hidden;">
-                        <div style="font-size:13px; font-weight:600; padding:14px 16px 8px;">سجل المراجعة (@allProposals.Count من @allProposalsFull.Count مستند)</div>
-                        @if (!allProposals.Any())
-                        {
-                            <div class="stat-sub" style="padding:0 16px 14px;">لا توجد مستندات مطابقة</div>
-                        }
-                        else
-                        {
-                            <table style="width:100%; border-collapse:collapse;">
-                                <thead>
-                                    <tr style="background:#faf9fd;">
-                                        <th style="text-align:right; padding:7px 12px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">المستند</th>
-                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">
-                                            <span title="التأخير يُحسب من تاريخ المهمة نفسها فقط — لا من تاريخ التكليف أو المرحلة" style="border-bottom:1px dotted #8a83a0; cursor:help;">المهمة ⓘ</span>
-                                        </th>
-                                        <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">الإصدار</th>
-                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">رفعه</th>
-                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">التاريخ</th>
-                                        <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">الحالة</th>
-                                        <th style="text-align:center; padding:7px 12px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">إجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in allProposals)
-                                    {
-                                        var proposal = item.Proposal;
-                                        var propTagClass = (proposal.Status == ProposalStatus.Approved || proposal.Status == ProposalStatus.ApprovedWithModification) ? "tag-success" : ((proposal.Status == ProposalStatus.Resubmission || proposal.Status == ProposalStatus.Redesign) ? "tag-danger" : "tag-warning");
-                                        var propLabel = proposal.Status switch
-                                        {
-                                            ProposalStatus.Approved => "معتمد",
-                                            ProposalStatus.ApprovedWithModification => "معتمد مع تعديل",
-                                            ProposalStatus.Resubmission => "إعادة تقديم",
-                                            ProposalStatus.Redesign => "إعادة تصميم",
-                                            _ => "بانتظار الاعتماد"
-                                        };
-                                        <tr style="border-bottom:1px solid #f6f5fa;">
-                                            <td style="padding:9px 12px; font-size:11px;">
-                                                <a href="@proposal.FilePath" target="_blank" style="color:#7b6bd6; font-weight:600; text-decoration:underline;">📄 @proposal.Code</a>
-                                            </td>
-                                            <td style="padding:9px 10px; font-size:11px;">
-                                                <details>
-                                                    <summary style="cursor:pointer; display:inline; @(item.Task.DelayDays > 0 ? "color:#c94a42;" : "")">@item.Task.Title</summary>
-                                                    <div style="margin-top:3px; margin-right:14px; font-size:10px; color:#8a83a0;">↳ البند: @item.Todo.Item</div>
-                                                </details>
-                                                @if (item.Task.DelayDays > 0)
-                                                {
-                                                    <span title="متأخرة عن تاريخ نهاية المهمة نفسها بمقدار @(item.Task.DelayDays) يوم" style="display:inline-block; margin-right:6px; background:#fdecea; color:#c94a42; border:1px solid #f3cfc9; border-radius:5px; padding:1px 6px; font-size:9px; font-weight:600; cursor:help;">⚠ متأخرة @(item.Task.DelayDays) يوم</span>
-                                                }
-                                            </td>
-                                            <td style="padding:9px 10px; font-size:11px; text-align:center; color:#8a83a0;">@proposal.Revision</td>
-                                            <td style="padding:9px 10px; font-size:10.5px;">@proposal.PreparedBy.FullName</td>
-                                            <td style="padding:9px 10px; font-size:10.5px; color:#8a83a0; white-space:nowrap;">@proposal.SubmittedDate?.ToString("yyyy/MM/dd")</td>
-                                            <td style="padding:9px 10px; text-align:center;">
-                                                <span class="tag @propTagClass">@propLabel</span>
-                                            </td>
-                                            <td style="padding:9px 12px; text-align:center;">
-                                                @if (proposal.Status == ProposalStatus.Submitted && assignmentCanReview)
-                                                {
-                                                    <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-taskFilter="@taskFilter"
-                                                       style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة</a>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        }
+                    <div style="padding:10px 16px 0;">
+                        <div style="font-size:12px; color:#8a83a0;">سجل المراجعة (@allProposals.Count من @allProposalsFull.Count مستند)</div>
                     </div>
+                    @if (!allProposals.Any())
+                    {
+                        <div class="stat-sub" style="padding:8px 16px 16px;">لا توجد مستندات مطابقة</div>
+                    }
+                    else
+                    {
+                        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+                            <thead>
+                                <tr style="background:#faf9fd;">
+                                    <th style="text-align:right; padding:7px 12px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">المستند</th>
+                                    <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">المهمة</th>
+                                    <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">الإصدار</th>
+                                    <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">رفعه</th>
+                                    <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">التاريخ</th>
+                                    <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">الحالة</th>
+                                    <th style="text-align:center; padding:7px 12px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in allProposals)
+                                {
+                                    var proposal = item.Proposal;
+                                    var propTagClass = (proposal.Status == ProposalStatus.Approved || proposal.Status == ProposalStatus.ApprovedWithModification) ? "tag-success" : ((proposal.Status == ProposalStatus.Resubmission || proposal.Status == ProposalStatus.Redesign) ? "tag-danger" : "tag-warning");
+                                    var propLabel = proposal.Status switch
+                                    {
+                                        ProposalStatus.Approved => "معتمد",
+                                        ProposalStatus.ApprovedWithModification => "معتمد مع تعديل",
+                                        ProposalStatus.Resubmission => "إعادة تقديم",
+                                        ProposalStatus.Redesign => "إعادة تصميم",
+                                        _ => "بانتظار الاعتماد"
+                                    };
+                                    <tr style="border-bottom:1px solid #f6f5fa;">
+                                        <td style="padding:9px 12px; font-size:11px;">
+                                            <a href="@proposal.FilePath" target="_blank" style="color:#7b6bd6; font-weight:600; text-decoration:underline;">📄 @proposal.Code</a>
+                                        </td>
+                                        <td style="padding:9px 10px; font-size:11px;">
+                                            <details>
+                                                <summary style="cursor:pointer; display:inline; @(item.Task.DelayDays > 0 ? "color:#c94a42;" : "")">@item.Task.Title</summary>
+                                                <div style="margin-top:3px; margin-right:14px; font-size:10px; color:#8a83a0;">↳ البند: @item.Todo.Item</div>
+                                            </details>
+                                            @if (item.Task.DelayDays > 0)
+                                            {
+                                                <span title="متأخرة عن تاريخ نهاية المهمة نفسها بمقدار @(item.Task.DelayDays) يوم" style="display:inline-block; margin-right:6px; background:#fdecea; color:#c94a42; border:1px solid #f3cfc9; border-radius:5px; padding:1px 6px; font-size:9px; font-weight:600; cursor:help;">⚠ متأخرة @(item.Task.DelayDays) يوم</span>
+                                            }
+                                        </td>
+                                        <td style="padding:9px 10px; font-size:11px; text-align:center; color:#8a83a0;">@proposal.Revision</td>
+                                        <td style="padding:9px 10px; font-size:10.5px;">@proposal.PreparedBy.FullName</td>
+                                        <td style="padding:9px 10px; font-size:10.5px; color:#8a83a0; white-space:nowrap;">@proposal.SubmittedDate?.ToString("yyyy/MM/dd")</td>
+                                        <td style="padding:9px 10px; text-align:center;">
+                                            <span class="tag @propTagClass">@propLabel</span>
+                                        </td>
+                                        <td style="padding:9px 12px; text-align:center;">
+                                            @if (proposal.Status == ProposalStatus.Submitted && assignmentCanReview)
+                                            {
+                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId"
+                                                   style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
                 </div>
             }
         }
