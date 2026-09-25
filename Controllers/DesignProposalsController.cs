@@ -141,7 +141,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
         {
             var proposal = await _context.DesignProposals
-                .Include(p => p.ProjectTask).ThenInclude(t => t.Stage)
+                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
                 .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
                 .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -152,16 +152,16 @@ namespace AtharERP_System.Controllers
             var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
             ApplicationUser? supervisor = null;
-            var supervisorId = proposal.ProjectTask.Stage?.AssignedEngineerId;
+            var supervisorId = proposal.TaskTodo.Task.Stage?.AssignedEngineerId;
             if (!string.IsNullOrEmpty(supervisorId))
                 supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
 
-            var assignmentId = proposal.ProjectTask.ProjectAssignmentId;
+            var assignmentId = proposal.TaskTodo.Task.ProjectAssignmentId;
             int lastReviewNumber = 0;
             if (assignmentId.HasValue)
             {
                 lastReviewNumber = await _context.ProposalReviews
-                    .Where(r => r.DesignProposal != null && r.DesignProposal.ProjectTask.ProjectAssignmentId == assignmentId.Value)
+                    .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodo.Task.ProjectAssignmentId == assignmentId.Value)
                     .Select(r => (int?)r.ReviewNumber)
                     .MaxAsync() ?? 0;
             }

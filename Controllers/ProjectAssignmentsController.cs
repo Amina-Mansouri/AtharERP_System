@@ -83,7 +83,7 @@ namespace AtharERP_System.Controllers
 .Include(a => a.Stage)
 .Include(a => a.Engineers).ThenInclude(e => e.User)
 .Include(a => a.Tasks).ThenInclude(t => t.Todos)
-.Include(a => a.Tasks).ThenInclude(t => t.DesignProposals).ThenInclude(p => p.PreparedBy)
+.Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(p => p.PreparedBy)
 .Where(a => a.ProjectId == projectId.Value);
 
             if (stageId.HasValue)
