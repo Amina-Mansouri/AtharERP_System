@@ -156,15 +156,10 @@ namespace AtharERP_System.Controllers
             if (!string.IsNullOrEmpty(supervisorId))
                 supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
 
-            var assignmentId = proposal.TaskTodo.Task.ProjectAssignmentId;
-            int lastReviewNumber = 0;
-            if (assignmentId.HasValue)
-            {
-                lastReviewNumber = await _context.ProposalReviews
-                    .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodo.Task.ProjectAssignmentId == assignmentId.Value)
-                    .Select(r => (int?)r.ReviewNumber)
-                    .MaxAsync() ?? 0;
-            }
+            var lastReviewNumber = await _context.ProposalReviews
+     .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodoId == proposal.TaskTodoId)
+     .Select(r => (int?)r.ReviewNumber)
+     .MaxAsync() ?? 0;
 
             // "رقم/اسم المبنى" = المشروع الفرعي؛ إذا كان مشروع المقترح نفسه فرعياً، فالمشروع الرئيسي هو والده (مطابق لمنطق توليد الـ PDF في Review POST)
             var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
@@ -215,17 +210,12 @@ namespace AtharERP_System.Controllers
             var todo = proposal.TaskTodo;
             var task = todo.Task;
 
-            // رقم المراجعة يُحسب هنا دائماً من الخادم، ولا يُستقبَل من المستخدم إطلاقاً
-            var reviewAssignmentId = task.ProjectAssignmentId;
-            int reviewNumber = 1;
-            if (reviewAssignmentId.HasValue)
-            {
-                var lastReviewNumberAtSubmit = await _context.ProposalReviews
-                    .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodo.Task.ProjectAssignmentId == reviewAssignmentId.Value)
-                    .Select(r => (int?)r.ReviewNumber)
-                    .MaxAsync() ?? 0;
-                reviewNumber = lastReviewNumberAtSubmit + 1;
-            }
+            // رقم المراجعة يُحسب هنا دائماً من الخادم لكل بند بذاته، ولا يُستقبَل من المستخدم إطلاقاً
+            var lastReviewNumberAtSubmit = await _context.ProposalReviews
+                .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodoId == proposal.TaskTodoId)
+                .Select(r => (int?)r.ReviewNumber)
+                .MaxAsync() ?? 0;
+            var reviewNumber = lastReviewNumberAtSubmit + 1;
 
             var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 

@@ -34,8 +34,8 @@
         <div class="col-md-3 col-6 mb-2"><div class="stat-sub">نوع المشروع</div><div style="font-weight:600;">@projectCategoryLabel</div></div>
         <div class="col-md-3 col-6 mb-2"><div class="stat-sub">المرحلة</div><div style="font-weight:600;">@(proposal?.TaskTodo?.Task?.Stage?.Name ?? "-")</div></div>
         <div class="col-md-3 col-6 mb-2"><div class="stat-sub">التاريخ</div><div style="font-weight:600;">@reviewDate.ToString("yyyy-MM-dd")</div></div>
-        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">المستند</div><div style="font-weight:600;">@proposal?.Name (@proposal?.Code)</div></div>
-        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">رقم المراجعة</div><div style="font-weight:600;">@suggestedReviewNumber</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">المستند</div><div style="font-weight:600;">@proposal?.Name</div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="stat-sub">رقم مرجعي</div><div style="font-weight:600;">@proposal?.Code</div></div>
     </div>
 </div>
 
