@@ -298,19 +298,37 @@ namespace AtharERP_System.Controllers
             var docs = await _context.DesignProposals.Where(d => d.TaskTodoId == todo.Id).ToListAsync();
             var latestDoc = docs.OrderByDescending(d => d.Revision).FirstOrDefault();
             var todoApproved = latestDoc != null && latestDoc.Status == ProposalStatus.Approved;
-          
             todo.IsCompleted = todoApproved;
             todo.CompletedAt = todoApproved ? (todo.CompletedAt ?? DateTime.UtcNow) : null;
             await _context.SaveChangesAsync();
 
             await _calc.RecalculateTaskCompletionAsync(todo.TaskId);
 
-            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == todo.TaskId);
+            var task = await _context.ProjectTasks
+                .Include(t => t.Todos).ThenInclude(t2 => t2.DesignProposals)
+                .FirstOrDefaultAsync(t => t.Id == todo.TaskId);
             if (task == null) return;
 
             if (task.Status != ProjectTaskStatus.Blocked)
             {
-                var allTodosApproved = task.Todos.Any() && task.Todos.All(t => t.IsCompleted);
+                // إعادة مزامنة كل بنود المهمة حياً من آخر مستند لكل بند، بدل الثقة بالقيمة المخزَّنة (تصحح تلقائياً أي بند شقيق كانت بياناته قديمة)
+                bool allTodosApproved = task.Todos.Any();
+                foreach (var sibling in task.Todos)
+                {
+                    var siblingLatestDoc = sibling.DesignProposals.OrderByDescending(d => d.Revision).FirstOrDefault();
+                    var siblingApproved = siblingLatestDoc != null && siblingLatestDoc.Status == ProposalStatus.Approved;
+
+                    if (sibling.IsCompleted != siblingApproved)
+                    {
+                        sibling.IsCompleted = siblingApproved;
+                        sibling.CompletedAt = siblingApproved ? (sibling.CompletedAt ?? DateTime.UtcNow) : null;
+                    }
+
+                    if (!siblingApproved)
+                        allTodosApproved = false;
+                }
+                await _context.SaveChangesAsync();
+
                 if (allTodosApproved && task.Status != ProjectTaskStatus.Completed)
                 {
                     task.Status = ProjectTaskStatus.Completed;
