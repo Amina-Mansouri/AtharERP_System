@@ -102,8 +102,10 @@
                         @foreach (var todo in t.Todos)
                         {
                             var docs = todo.DesignProposals;
-                            string statusLabel = !docs.Any() ? "بانتظار الرفع" : (docs.All(d => d.Status == ProposalStatus.Approved) ? "مكتمل" : "قيد المراجعة");
-                            string statusClass = !docs.Any() ? "tag-warning" : (docs.All(d => d.Status == ProposalStatus.Approved) ? "tag-success" : "tag-accent");
+                            var latestDoc = docs.OrderByDescending(d => d.Revision).FirstOrDefault();
+                            bool isTodoApproved = latestDoc != null && latestDoc.Status == ProposalStatus.Approved;
+                            string statusLabel = !docs.Any() ? "بانتظار الرفع" : (isTodoApproved ? "مكتمل" : "قيد المراجعة");
+                            string statusClass = !docs.Any() ? "tag-warning" : (isTodoApproved ? "tag-success" : "tag-accent");
                             <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 40px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #f6f5fa;">
                                 <div style="font-size:12px; font-weight:500;">@todo.Item</div>
 
