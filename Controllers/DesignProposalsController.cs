@@ -272,7 +272,7 @@ namespace AtharERP_System.Controllers
             var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
             var mainProject = subProject != null && proposal.Project.ParentProject != null ? proposal.Project.ParentProject : proposal.Project;
 
-            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Revision);
+            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code);
             var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
             if (pdfResult.Success)
             {
@@ -296,7 +296,9 @@ namespace AtharERP_System.Controllers
         private async Task RecomputeCascadeAsync(TaskTodo todo)
         {
             var docs = await _context.DesignProposals.Where(d => d.TaskTodoId == todo.Id).ToListAsync();
-            var todoApproved = docs.Any() && docs.All(d => d.Status == ProposalStatus.Approved);
+            var latestDoc = docs.OrderByDescending(d => d.Revision).FirstOrDefault();
+            var todoApproved = latestDoc != null && latestDoc.Status == ProposalStatus.Approved;
+          
             todo.IsCompleted = todoApproved;
             todo.CompletedAt = todoApproved ? (todo.CompletedAt ?? DateTime.UtcNow) : null;
             await _context.SaveChangesAsync();

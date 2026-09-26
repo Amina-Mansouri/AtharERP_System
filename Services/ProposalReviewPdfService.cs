@@ -16,7 +16,7 @@ namespace AtharERP_System.Services
             _environment = environment;
         }
 
-        public byte[] Generate(ProposalReview review, Project project, Project? subProject, string? stageName, string itemName, int? revisionNumber)
+        public byte[] Generate(ProposalReview review, Project project, Project? subProject, string? stageName, string itemName, string? documentCode)
         {
             var statusLabel = GetDisplayName(review.Status);
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
@@ -70,7 +70,8 @@ namespace AtharERP_System.Services
                             row.RelativeItem().Text($"التخصص: {review.Discipline ?? "-"}");
                         });
 
-                        col.Item().Text($"المستند: {itemName} — رمز: {revisionNumber?.ToString() ?? "-"}");
+                        col.Item().Text($"المستند: {itemName}");
+                        col.Item().Text($"رقم مرجعي: {documentCode ?? "-"}");
 
                         col.Item().PaddingTop(10).Text("الحالة").Bold().FontColor("#221837");
                         col.Item().Text($"☑ {statusLabel}");
