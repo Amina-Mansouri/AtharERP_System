@@ -158,5 +158,73 @@ namespace AtharERP_System.Controllers
 
             return RedirectToAction("SaleTable", new { projectId });
         }
+
+        // ============================================
+        // المصروفات — عامة أو مرتبطة بموقع محدد
+        // ============================================
+        [RequirePermission("Finance.Costs.View")]
+        public async Task<IActionResult> Expenses(int? projectId)
+        {
+            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.ProjectId = projectId;
+
+            if (!projectId.HasValue)
+                return View(new List<ProjectExpense>());
+
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+                return Forbid();
+
+            var expenses = await _context.ProjectExpenses
+                .Include(e => e.ExpenseCategory)
+                .Include(e => e.Site)
+                .Where(e => e.ProjectId == projectId.Value)
+                .OrderByDescending(e => e.Date)
+                .ToListAsync();
+
+            ViewBag.Project = project;
+            ViewBag.Categories = await _context.ExpenseCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
+            ViewBag.Sites = await _context.Sites.Where(s => s.ProjectId == projectId.Value).OrderBy(s => s.Name).ToListAsync();
+
+            return View(expenses);
+        }
+
+        [RequirePermission("Finance.Costs.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateExpense([Bind("ProjectId,ExpenseCategoryId,SiteId,Amount,Date,Description")] ProjectExpense model)
+        {
+            if (!await _permissionService.CanAccessProjectAsync(User, model.ProjectId))
+                return Forbid();
+
+            model.CreatedAt = DateTime.UtcNow;
+            _context.ProjectExpenses.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم تسجيل المصروف بنجاح";
+            return RedirectToAction("Expenses", new { projectId = model.ProjectId });
+        }
+
+        [RequirePermission("Finance.Costs.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteExpense(int id, int projectId)
+        {
+            var expense = await _context.ProjectExpenses.FindAsync(id);
+            if (expense == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
+            _context.ProjectExpenses.Remove(expense);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم حذف المصروف بنجاح";
+            return RedirectToAction("Expenses", new { projectId });
+        }
     }
 }
