@@ -22,5 +22,9 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("UserId")]
         [ValidateNever]
         public virtual ApplicationUser User { get; set; } = null!;
+
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "نسبة مساهمة")]
+        public decimal? ContributionPercentage { get; set; }
     }
 }

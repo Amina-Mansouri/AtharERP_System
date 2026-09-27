@@ -31,5 +31,9 @@ namespace AtharERP_System.Models.Entities
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "الراتب الأساسي")]
         public decimal? BaseSalary { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "سعر الساعة")]
+        public decimal? HourlyRate { get; set; }
     }
 }

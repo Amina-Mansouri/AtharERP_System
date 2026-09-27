@@ -60,6 +60,9 @@ namespace AtharERP_System.Data
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
         public DbSet<Custody> Custodies { get; set; } = null!;
         public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;
+        public DbSet<ClientRedesignRequest> ClientRedesignRequests { get; set; } = null!;
+        public DbSet<ExpenseCategory> ExpenseCategories { get; set; } = null!;
+        public DbSet<ProjectExpense> ProjectExpenses { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

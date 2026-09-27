@@ -133,7 +133,7 @@ namespace AtharERP_System.Controllers
                 Name = template.Name,
                 Weight = weight,
                 Area = area,
-                PricePerMeter = pricePerMeter,
+             
                 Discipline = discipline,
                 KpiWeight = kpiWeight,
                 AssignedEngineerId = string.IsNullOrEmpty(assignedEngineerId) ? null : assignedEngineerId,
@@ -218,7 +218,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-                     [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,PricePerMeter,Discipline,KpiWeight")] ProjectStage model)
+                     [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,Discipline,KpiWeight")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
@@ -244,7 +244,7 @@ namespace AtharERP_System.Controllers
             stage.ActualDeliveryDate = model.ActualDeliveryDate;
             stage.WorkDocumentation = model.WorkDocumentation;
             stage.Area = model.Area;
-            stage.PricePerMeter = model.PricePerMeter;
+            
             stage.Discipline = model.Discipline;
             stage.KpiWeight = model.KpiWeight;
 

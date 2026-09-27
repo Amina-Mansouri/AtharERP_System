@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace AtharERP_System.Models.Entities
 {
-    // المطالبة المالية (وثيقة ١٣-٨ · Z5) — لا تُرسَل للمالية قبل اعتماد الإدارة الفنية
-    // ثم اعتماد العميل (تحقّق في الـController عند بناء الشاشة، لا في الكيان).
+    // صف "جدول البيع النهائي / المطالبة" — يُنشأ عند ترحيل التكليف إلى المالية
     public class FinancialClaim
     {
         public int Id { get; set; }
@@ -18,6 +17,13 @@ namespace AtharERP_System.Models.Entities
         public virtual Project Project { get; set; } = null!;
 
         [Required]
+        public int ProjectAssignmentId { get; set; }
+
+        [ForeignKey("ProjectAssignmentId")]
+        [ValidateNever]
+        public virtual ProjectAssignment ProjectAssignment { get; set; } = null!;
+
+        [Required]
         [StringLength(50)]
         [Display(Name = "الرمز")]
         public string Code { get; set; } = string.Empty;
@@ -26,23 +32,49 @@ namespace AtharERP_System.Models.Entities
         public string? Description { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "القيمة")]
+        [Display(Name = "المساحة (م²)")]
+        public decimal? Area { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "سعر متر البيع")]
+        public decimal? SalePricePerMeter { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "قيمة البيع")]
         public decimal Value { get; set; }
 
-        [Display(Name = "اعتماد الإدارة الفنية")]
-        public DateTime? TechnicalApprovedAt { get; set; }
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "النسبة اليدوية الأولى")]
+        public decimal? SaleMarkupPercent1 { get; set; }
 
-        [Display(Name = "اعتماد العميل")]
-        public DateTime? ClientApprovedAt { get; set; }
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "النسبة اليدوية الثانية")]
+        public decimal? SaleMarkupPercent2 { get; set; }
 
-        [Display(Name = "الحالة")]
-        public ClaimStatus Status { get; set; } = ClaimStatus.Pending;
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "نسبة زيادة إعادة التصميم")]
+        public decimal? RedesignIncreasePercentage { get; set; }
+
+        // محسوبة = تراكمية عبر النسب الثلاث — للقراءة فقط
+        [NotMapped]
+        [Display(Name = "قيمة البيع بعد النسبة")]
+        public decimal ValueAfterPercentage =>
+            Value
+            * (1 + (SaleMarkupPercent1 ?? 0) / 100)
+            * (1 + (SaleMarkupPercent2 ?? 0) / 100)
+            * (1 + (RedesignIncreasePercentage ?? 0) / 100);
 
         [Display(Name = "مرحّلة إلى المالية")]
         public bool IsTransferredToFinance { get; set; }
 
         [Display(Name = "تاريخ الترحيل")]
         public DateTime? TransferredToFinanceAt { get; set; }
+
+        [Display(Name = "تم التحصيل")]
+        public bool IsClientSettled { get; set; }
+
+        [Display(Name = "تاريخ التحصيل")]
+        public DateTime? ClientSettledAt { get; set; }
 
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -40,5 +40,9 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "ملاحظات")]
         public string? Notes { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "الأجر المتفق عليه")]
+        public decimal? Amount { get; set; }
     }
 }

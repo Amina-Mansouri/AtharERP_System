@@ -52,17 +52,11 @@
                 <input type="number" step="0.01" min="0" name="KpiWeight" class="form-control" value="@Model.KpiWeight" />
             </div>
             <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">المساحة (م²)</label>
-                    <input type="number" step="0.01" min="0" name="Area" class="form-control" value="@Model.Area" />
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">سعر المتر</label>
-                    <input type="number" step="0.01" min="0" name="PricePerMeter" class="form-control" value="@Model.PricePerMeter" />
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">قيمة المرحلة </label>
-                    <input type="text" class="form-control" value="@Model.StageValue.ToString("N2")" disabled />
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">المساحة (م²)</label>
+                        <input type="number" step="0.01" min="0" name="Area" class="form-control" value="@Model.Area" />
+                    </div>
                 </div>
             </div>
         </div>

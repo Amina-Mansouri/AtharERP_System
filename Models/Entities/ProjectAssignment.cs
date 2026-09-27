@@ -30,6 +30,18 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نوع التكليف")]
         public string AssignmentType { get; set; } = string.Empty;
 
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "المساحة (م²)")]
+        public decimal? Area { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "سعر متر التكليف")]
+        public decimal? PricePerMeter { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "سعر متر البيع")]
+        public decimal? SalePricePerMeter { get; set; }
+
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
 
@@ -56,6 +68,13 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [NotMapped]
+        [Display(Name = "قيمة التكليف")]
+        public decimal AssignmentValue => (Area ?? 0) * (PricePerMeter ?? 0);
+
+        [NotMapped]
+        [Display(Name = "قيمة البيع")]
+        public decimal AssignmentSaleValue => (Area ?? 0) * (SalePricePerMeter ?? 0);
         public virtual ICollection<ProjectAssignmentSubtask> Subtasks { get; set; } = new List<ProjectAssignmentSubtask>();
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 

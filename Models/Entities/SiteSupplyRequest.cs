@@ -43,6 +43,14 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوحدة")]
         public string Unit { get; set; } = string.Empty;
 
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "سعر الوحدة")]
+        public decimal? UnitPrice { get; set; }
+
+        [NotMapped]
+        [Display(Name = "الإجمالي")]
+        public decimal TotalCost => Quantity * (UnitPrice ?? 0);
+
         [Display(Name = "ملاحظات")]
         public string? Notes { get; set; }
 

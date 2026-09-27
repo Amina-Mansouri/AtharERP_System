@@ -104,7 +104,7 @@ namespace AtharERP_System.Services
 
             var wasDelayed = project.Status == ProjectStatus.Delayed;
 
-            project.Budget = project.Stages.Sum(s => s.StageValue);
+            project.ActualCost = project.Stages.Sum(s => s.ActualCost);
             var totalWeight = project.Stages.Sum(s => s.Weight);
             var weightedSum = project.Stages.Sum(s => s.Weight * s.CompletionPercentage);
 

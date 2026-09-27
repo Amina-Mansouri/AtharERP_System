@@ -43,17 +43,20 @@ namespace AtharERP_System.Models.Entities
         public decimal ActualCost { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "قيمة البيع")]
+        public decimal SaleValue { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "المساحة (م²)")]
         public decimal? Area { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "سعر المتر")]
-        public decimal? PricePerMeter { get; set; }
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "النسبة اليدوية الأولى")]
+        public decimal? SaleMarkupPercent1 { get; set; }
 
-        // محسوبة = المساحة × سعر المتر (بند L1) — للقراءة فقط
-        [NotMapped]
-        [Display(Name = "قيمة المرحلة")]
-        public decimal StageValue => (Area ?? 0) * (PricePerMeter ?? 0);
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "النسبة اليدوية الثانية")]
+        public decimal? SaleMarkupPercent2 { get; set; }
 
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "نسبة الإنجاز")]

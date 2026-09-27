@@ -508,9 +508,9 @@ else
                                         ▾ @stage.Name
                                     </a>
                                     <span class="stat-sub">(@stage.Tasks.Count مهمة)</span>
-                                    @if (stage.ActualCost > stage.StageValue)
+                                    @if (stage.ActualCost > stage.SaleValue)
                                     {
-                                        <span class="tag tag-danger">تجاوز السقف</span>
+                                        <span class="tag tag-danger">خسارة في المرحلة</span>
                                     }
                                     @if (stage.CompletionPercentage >= 100 && stage.Status != StageStatus.Completed && stage.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
                                     {

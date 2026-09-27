@@ -86,7 +86,7 @@ namespace AtharERP_System.Models.Entities
         // محسوب من مجموع StageValue للمراحل — للقراءة فقط، لا يُقبل في [Bind] ولا يُعرض كحقل إدخال (بند L2)
         [NotMapped]
         [Display(Name = "إجمالي تكلفة المشروع")]
-        public decimal TotalCost => Stages?.Sum(s => s.StageValue) ?? 0;
+        public decimal TotalCost => Stages?.Sum(s => s.ActualCost) ?? 0;
 
         [Display(Name = "الأولوية")]
         public Priority Priority { get; set; } = Priority.Normal;
