@@ -406,18 +406,36 @@ namespace AtharERP_System.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<decimal> CalculateProjectNetProfitAsync(int projectId)
+        public class ProjectNetProfitResult
         {
-            var totalSales = await _context.FinancialClaims
-                .Where(c => c.ProjectId == projectId)
-                .SumAsync(c => c.Value
-                    * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
-                    * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
-                    * (1 + (c.RedesignIncreasePercentage ?? 0) / 100));
+            public decimal AccruedNetProfit { get; set; }   // صافي متوقَّع/مستحق — كل المُرحَّل بصرف النظر عن التحصيل
+            public decimal RealizedNetProfit { get; set; }  // صافي محقَّق — فقط ما تحصَّل/صُرف فعلياً
+        }
 
-            var totalTaskCosts = await _context.FinancialRecords
+        public async Task<ProjectNetProfitResult> CalculateProjectNetProfitAsync(int projectId)
+        {
+            var claims = await _context.FinancialClaims
+                .Where(c => c.ProjectId == projectId)
+                .ToListAsync();
+
+            var records = await _context.FinancialRecords
                 .Where(r => r.ProjectId == projectId)
-                .SumAsync(r => r.Value * (1 + (r.ContributionPercentage ?? 0) / 100));
+                .ToListAsync();
+
+            decimal ClaimValueAfter(FinancialClaim c) =>
+                c.Value
+                * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
+                * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
+                * (1 + (c.RedesignIncreasePercentage ?? 0) / 100);
+
+            decimal RecordValueAfter(FinancialRecord r) =>
+                r.Value * (1 + (r.ContributionPercentage ?? 0) / 100);
+
+            var totalSalesAccrued = claims.Sum(ClaimValueAfter);
+            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(ClaimValueAfter);
+
+            var totalTaskCostsAccrued = records.Sum(RecordValueAfter);
+            var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(RecordValueAfter);
 
             var totalGeneralExpenses = await _context.ProjectExpenses
                 .Where(e => e.ProjectId == projectId && e.SiteId == null)
@@ -425,7 +443,11 @@ namespace AtharERP_System.Services
 
             var siteCosts = await _siteCalc.CalculateProjectSiteCostsAsync(projectId);
 
-            return totalSales - (totalTaskCosts + totalGeneralExpenses + siteCosts);
+            return new ProjectNetProfitResult
+            {
+                AccruedNetProfit = totalSalesAccrued - (totalTaskCostsAccrued + totalGeneralExpenses + siteCosts),
+                RealizedNetProfit = totalSalesRealized - (totalTaskCostsRealized + totalGeneralExpenses + siteCosts)
+            };
         }
     }
 }
