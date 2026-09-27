@@ -281,53 +281,153 @@
                 </div>
             </div>
 
-            <div style="margin-bottom:8px;">
-                <label style="font-size:11px; color:#8a83a0;">رمز المشروع (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
-                <input type="text" name="Code" value="@Model.Code" placeholder="رمز المشروع" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                @{
-                    var lastCode = ViewBag.LastProjectCode as string;
-                }
-                @if (!string.IsNullOrEmpty(lastCode))
-                {
-                    <div class="stat-sub" style="margin-top:3px;">آخر رمز مسجَّل: @lastCode</div>
-                }
-                <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
-            </div>
-            <div style="margin-bottom:8px;">
-                <label style="font-size:11px; color:#8a83a0;">الوصف</label>
-                <textarea name="Description" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
-            </div>
-
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-                @if (canViewClient)
-                {
-                    <div>
-                        <label style="font-size:11px; color:#8a83a0;">العميل</label>
-                        <select name="ClientId" id="clientSelect" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                            <option value="">-- اختر العميل --</option>
-                            @foreach (var c in clients)
-                            {
-                                <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name@(string.IsNullOrEmpty(c.CompanyName) ? "" : $" - {c.CompanyName}")</option>
-                            }
-                        </select>
-                        <input type="hidden" id="clientHidden" name="ClientId" disabled />
-                    </div>
-                }
-                else
-                {
-                    <input type="hidden" name="ClientId" value="@Model.ClientId" />
-                }
                 <div>
-                    <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
-                    <select name="Priority" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                        @foreach (var pr in priorityLabels)
-                        {
-                            <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
-                        }
-                    </select>
-                    <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ البدء</label>
+                    <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                </div>
+                <div>
+                    <label style="font-size:11px; color:#8a83a0;">تاريخ التسليم المتفق عليه</label>
+                    <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                 </div>
             </div>
+
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                <input type="checkbox" class="chk-gold" name="AutoTransferToSite" value="true" checked="@Model.AutoTransferToSite" />
+                <input type="hidden" name="AutoTransferToSite" value="false" />
+                <label style="font-size:11.5px;">ترحيل تلقائي إلى إدارة المواقع عند بدء التنفيذ</label>
+            </div>
+
+            <button type="submit" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">إنشاء المشروع</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="tabs" role="tablist">
+        <a class="tab-item active" data-bs-toggle="tab" href="#pane-data">بيانات المشروع</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-stages">مراحل المشروع (@Model.Stages.Count)</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-assignments">التكليفات (@allAssignments.Count)</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">وثائق المشروع (@documents.Count)</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-timeline">الجدول الزمني</a>
+        @if (Model.Scope == ProjectScope.Main)
+        @if (Model.Scope == ProjectScope.Main)
+        {
+            <a class="tab-item" data-bs-toggle="tab" href="#pane-subprojects">المشاريع الفرعية (@Model.ChildProjects.Count)</a>
+        }
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="pane-data">
+            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <div style="font-size:13.5px; font-weight:600;">بيانات المشروع</div>
+                    @if (canEdit)
+                    {
+                      <button type="button" id="projEditBtn" onclick="enableProjectEdit()" class="btn-line btn-line-accent">تعديل</button>
+                    }
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <form method="post" asp-action="Edit" asp-route-id="@Model.Id" id="projectDataForm">
+                    @Html.AntiForgeryToken()
+                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
+                            <input type="text" name="Name" value="@Model.Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
+                            <select name="Scope" id="scopeSelect" onchange="toggleParentDependentFields()" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                <option value="Main" selected="@(Model.Scope == ProjectScope.Main)">مشروع رئيسي</option>
+                                <option value="Sub" selected="@(Model.Scope == ProjectScope.Sub)">مشروع فرعي</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">المشروع الرئيسي (فرعي فقط)</label>
+                            <select name="ParentProjectId" id="parentProjectSelect" onchange="toggleParentDependentFields()" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                <option value="">-- لا يوجد --</option>
+                                @foreach (var p in parentProjects)
+                                {
+                                    <option value="@p.Id" data-code="@p.Code" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-category="@(p.ProjectCategoryId?.ToString() ?? "")" data-last-sub="@(lastSubProjectByParent.ContainsKey(p.Id) ? lastSubProjectByParent[p.Id] : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                                }
+                            </select>
+                            <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">ملكية المشروع</label>
+                            <select name="Type" id="typeSelect" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                <option value="">--</option>
+                                @foreach (var t in typeLabels)
+                                {
+                                    <option value="@t.Value" selected="@(Model.Type.HasValue && Model.Type.Value.ToString() == t.Value)">@t.Label</option>
+                                }
+                            </select>
+                            <input type="hidden" id="typeHidden" name="Type" disabled />
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                            <select name="ProjectCategoryId" id="categorySelect" disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                <option value="">-- غير محدد --</option>
+                                @foreach (var pc in projectCategories)
+                                {
+                                    <option value="@pc.Id" selected="@(Model.ProjectCategoryId == pc.Id)">@pc.DisplayName</option>
+                                }
+                            </select>
+                            <input type="hidden" id="categoryHidden" name="ProjectCategoryId" disabled />
+                            <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:8px;">
+                        <label style="font-size:11px; color:#8a83a0;">الوصف</label>
+                        <textarea name="Description" rows="2" disabled class="proj-editable" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                        @if (canViewClient)
+                        {
+                            <div>
+                                <label style="font-size:11px; color:#8a83a0;">العميل</label>
+                                <select name="ClientId" id="clientSelect" required disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                    <option value="">-- اختر العميل --</option>
+                                    @foreach (var c in clients)
+                                    {
+                                        <option value="@c.Id" selected="@(Model.ClientId == c.Id)">@c.Name@(string.IsNullOrEmpty(c.CompanyName) ? "" : $" - {c.CompanyName}")</option>
+                                    }
+                                </select>
+                                <input type="hidden" id="clientHidden" name="ClientId" disabled />
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" name="ClientId" value="@Model.ClientId" />
+                        }
+                        <div>
+                            <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
+                            <select name="Priority" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                @foreach (var pr in priorityLabels)
+                                {
+                                    <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
+                                }
+                            </select>
+                            <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                        </div>
+                    </div>
 
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
@@ -984,8 +1084,8 @@
                 if (!hasParent) {
                     lastSubHint.textContent = '';
                 } else {
-                    var parentCode = opt.getAttribute('data-code') || '';
                     var lastSub = opt.getAttribute('data-last-sub') || '';
+                    var parentCode = opt.getAttribute('data-code') || '';
                     lastSubHint.textContent = lastSub
                         ? ('تذكير: رمز المشروع الرئيسي هو ' + parentCode + ' — وآخر مشروع فرعي أُضيف تحته كان: ' + lastSub)
                         : ('هذا أول مشروع فرعي يُضاف تحت المشروع الرئيسي (' + parentCode + ') — استخدمي هذا الرمز كأساس لرمز مشروعك الفرعي');
