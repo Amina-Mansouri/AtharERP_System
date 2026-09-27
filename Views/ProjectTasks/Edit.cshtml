@@ -10,6 +10,7 @@
     var priorityLabels = EnumDisplayHelper.GetDisplayList<TaskPriority>();
     var proposals = ViewBag.Proposals as List<DesignProposal> ?? new List<DesignProposal>();
     var isCompleted = Model.Status == ProjectTaskStatus.Completed;
+    var siblingTasks = Model.ProjectAssignment != null ? Model.ProjectAssignment.Tasks.ToList() : new List<ProjectTask> { Model };
 
     string ProposalTagClass(ProposalStatus s) => (s == ProposalStatus.Approved || s == ProposalStatus.ApprovedWithModification) ? "tag-success" : ((s == ProposalStatus.Resubmission || s == ProposalStatus.Redesign) ? "tag-danger" : "tag-warning");
     string ProposalLabel(ProposalStatus s) => s switch
@@ -64,7 +65,6 @@
     <div class="tab-pane fade show active" id="pane-task-data">
         <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px; margin-bottom:12px;">
             <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">بيانات المهمة</div>
 
                 @if (!ViewData.ModelState.IsValid)
                 {
@@ -104,104 +104,111 @@
                                 <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ</button>
                             }
                         </form>
-
-                        @if (asg.Tasks.Count > 1)
-                        {
-                            <div style="margin-top:10px; padding-top:10px; border-top:1px solid #ecebf2;">
-                                <label style="font-size:10.5px; color:#8a83a0;">مهام هذا التكليف</label>
-                                <select onchange="if(this.value) location.href=this.value;" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;">
-                                    @foreach (var t in asg.Tasks)
-                                    {
-                                        <option value="@Url.Action("Edit", new { id = t.Id })" selected="@(t.Id == Model.Id)">@t.Title (وزن @t.Weight.ToString("N0")%)</option>
-                                    }
-                                </select>
-                            </div>
-                        }
                     </div>
                 }
 
-                <form method="post" asp-action="Edit" asp-route-id="@Model.Id" id="taskEditForm">
-                    @Html.AntiForgeryToken()
-                    <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
-                        <div>
-                            <label style="font-size:11px; color:#8a83a0;">العنوان</label>
-                            <input type="text" name="Title" value="@Model.Title" required disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                        </div>
-                        <div>
-                            <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
-                            <select name="Priority" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
-                                @foreach (var pr in priorityLabels)
-                                {
-                                    <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
-                                }
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px; color:#8a83a0;">الوصف</label>
-                        <textarea name="Description" rows="2" disabled="@(!canManage)" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@Model.Description</textarea>
-                    </div>
-
-                    <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:8px; background:#faf9fd;">
-                        <div style="font-size:11px; font-weight:700; color:#5a5370; margin-bottom:8px;">تواريخ هذه المهمة (ضمن نطاق تاريخ التكليف)</div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
-                                <input type="date" name="PlannedStartDate" value="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
-                                <input type="date" name="PlannedEndDate" value="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
-                                <input type="date" name="ActualDeliveryDate" value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-                        <input type="checkbox" class="chk-gold" name="IsUrgent" value="true" disabled="@(!canManage)" checked="@Model.IsUrgent" />
-                        <input type="hidden" name="IsUrgent" value="false" />
-                        <label style="font-size:11.5px;">عاجلة</label>
-                    </div>
-
-                    @if (canManage)
-                    {
-                        <div style="margin-bottom:8px;">
-                            <label style="font-size:11px; color:#8a83a0;">الوزن (% من المرحلة)</label>
-                            <input type="number" step="0.01" min="0" max="100" name="Weight" value="@Model.Weight" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                        </div>
-                    }
-                    else
-                    {
-                        <input type="hidden" name="Title" value="@Model.Title" />
-                        <input type="hidden" name="Priority" value="@Model.Priority" />
-                        <input type="hidden" name="Weight" value="@Model.Weight" />
-                    }
-                </form>
-
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid #f1f0f6;">
-                    @if (canManage || canEditDates)
-                    {
-                        <button type="submit" form="taskEditForm" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ التعديلات</button>
-                    }
-                    else
-                    {
-                        <span></span>
-                    }
-                    @if (canManage)
-                    {
-                        var blockButtonColor = Model.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42";
-                        var blockButtonLabel = Model.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة";
-                        <form method="post" asp-action="ToggleBlocked" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <button type="submit" style="height:34px; padding:0 18px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:12.5px; font-weight:600; color:@blockButtonColor;">@blockButtonLabel</button>
-                        </form>
-                    }
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:10.5px; color:#8a83a0; display:block; margin-bottom:4px;">اختر مهمة لعرض/تعديل بياناتها</label>
+                    <select id="taskSwitcher" onchange="showTaskForm()" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12.5px;">
+                        @foreach (var t in siblingTasks)
+                        {
+                            <option value="@t.Id" selected="@(t.Id == Model.Id)">@t.Title (وزن @t.Weight.ToString("N0")%)</option>
+                        }
+                    </select>
                 </div>
+
+                @foreach (var t in siblingTasks)
+                {
+                    var isCurrent = t.Id == Model.Id;
+                    <div data-task-form="@t.Id" hidden="@(!isCurrent)">
+                        <details open style="margin-top:4px;">
+                            <summary style="cursor:pointer; font-size:13.5px; font-weight:600; padding:4px 0;">بيانات المهمة</summary>
+
+                            <form method="post" asp-action="Edit" asp-route-id="@t.Id" id="taskEditForm-@t.Id" style="margin-top:10px;">
+                                @Html.AntiForgeryToken()
+                                <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
+                                    <div>
+                                        <label style="font-size:11px; color:#8a83a0;">العنوان</label>
+                                        <input type="text" name="Title" value="@t.Title" required disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
+                                        <select name="Priority" disabled="@(!canManage)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                            @foreach (var pr in priorityLabels)
+                                            {
+                                                <option value="@pr.Value" selected="@(t.Priority.ToString() == pr.Value)">@pr.Label</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom:8px;">
+                                    <label style="font-size:11px; color:#8a83a0;">الوصف</label>
+                                    <textarea name="Description" rows="2" disabled="@(!canManage)" style="width:100%; border:1px solid #e4e2ec; border-radius:8px; padding:6px 8px; font-size:12px;">@t.Description</textarea>
+                                </div>
+
+                                <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:8px; background:#faf9fd;">
+                                    <div style="font-size:11px; font-weight:700; color:#5a5370; margin-bottom:8px;">تواريخ هذه المهمة (ضمن نطاق تاريخ التكليف)</div>
+                                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
+                                            <input type="date" name="PlannedStartDate" value="@(t.PlannedStartDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
+                                            <input type="date" name="PlannedEndDate" value="@(t.PlannedEndDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">تسليم فعلي</label>
+                                            <input type="date" name="ActualDeliveryDate" value="@(t.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" disabled="@(!canEditDates)" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                    <input type="checkbox" class="chk-gold" name="IsUrgent" value="true" disabled="@(!canManage)" checked="@t.IsUrgent" />
+                                    <input type="hidden" name="IsUrgent" value="false" />
+                                    <label style="font-size:11.5px;">عاجلة</label>
+                                </div>
+
+                                @if (canManage)
+                                {
+                                    <div style="margin-bottom:8px;">
+                                        <label style="font-size:11px; color:#8a83a0;">الوزن (% من المرحلة)</label>
+                                        <input type="number" step="0.01" min="0" max="100" name="Weight" value="@t.Weight" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <input type="hidden" name="Title" value="@t.Title" />
+                                    <input type="hidden" name="Priority" value="@t.Priority" />
+                                    <input type="hidden" name="Weight" value="@t.Weight" />
+                                }
+                            </form>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid #f1f0f6;">
+                                @if (canManage || canEditDates)
+                                {
+                                    <button type="submit" form="taskEditForm-@t.Id" style="height:34px; padding:0 18px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12.5px; font-weight:600;">حفظ تعديلات المهمة</button>
+                                }
+                                else
+                                {
+                                    <span></span>
+                                }
+                                @if (canManage)
+                                {
+                                    var blockButtonColor = t.Status == ProjectTaskStatus.Blocked ? "#2f8a57" : "#c94a42";
+                                    var blockButtonLabel = t.Status == ProjectTaskStatus.Blocked ? "إلغاء الحظر" : "حظر المهمة";
+                                    <form method="post" asp-action="ToggleBlocked" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <button type="submit" style="height:34px; padding:0 18px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; font-size:12.5px; font-weight:600; color:@blockButtonColor;">@blockButtonLabel</button>
+                                    </form>
+                                }
+                            </div>
+                        </details>
+                    </div>
+                }
             </div>
 
             <div style="display:flex; flex-direction:column; gap:12px;">
@@ -229,14 +236,11 @@
         <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                 <div style="font-size:13.5px; font-weight:600;">مقترحات التصميم المرفوعة</div>
-                @{
-                    var proposalTasks = proposals.Select(p => p.TaskTodo.Task).Where(t => t != null).GroupBy(t => t!.Id).Select(g => g.First()!).ToList();
-                }
-                @if (proposalTasks.Count > 1)
+                @if (Model.ProjectAssignment != null && Model.ProjectAssignment.Tasks.Count > 1)
                 {
                     <select id="proposalTaskFilter" onchange="filterProposalsByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
                         <option value="">كل المهام</option>
-                        @foreach (var t in proposalTasks)
+                        @foreach (var t in Model.ProjectAssignment.Tasks)
                         {
                             <option value="@t.Id" selected="@(t.Id == Model.Id)">@t.Title</option>
                         }
@@ -272,13 +276,22 @@
 @section Scripts {
     <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>
-        function filterProposalsByTask() {
-            var sel = document.getElementById('proposalTaskFilter');
+        function showTaskForm() {
+            var sel = document.getElementById('taskSwitcher');
             if (!sel) return;
             var val = sel.value;
-            document.querySelectorAll('[data-proposal-task]').forEach(function(el) {
-                el.hidden = val !== '' && el.getAttribute('data-proposal-task') !== val;
+            document.querySelectorAll('[data-task-form]').forEach(function (el) {
+                el.hidden = el.getAttribute('data-task-form') !== val;
             });
         }
+
+                function filterProposalsByTask() {
+                    var sel = document.getElementById('proposalTaskFilter');
+                    if (!sel) return;
+                    var val = sel.value;
+                    document.querySelectorAll('[data-proposal-task]').forEach(function(el) {
+                        el.hidden = val !== '' && el.getAttribute('data-proposal-task') !== val;
+                    });
+                }
     </script>
 }
