@@ -1,0 +1,95 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<FinancialRecord>
+@{
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var projectId = ViewBag.ProjectId as int?;
+    var project = ViewBag.Project as Project;
+    var contributions = ViewBag.EngineerContributions as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
+    ViewData["Title"] = "جدول التكاليف";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>جدول التكاليف</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end;">
+        <div style="flex:1; max-width:320px;">
+            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- اختاري مشروعاً --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                }
+            </select>
+        </div>
+    </form>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (projectId.HasValue && project != null)
+{
+    <div class="data-table" style="--cols: 70px 1fr 1fr 1fr 90px 100px 100px 110px 90px 110px 110px">
+        <div class="data-table-head">
+            <div class="cell">رقم المشروع</div>
+            <div class="cell">المشروع</div>
+            <div class="cell">بيان التكليف</div>
+            <div class="cell">المهندسة</div>
+            <div class="cell">مساحة التكليف</div>
+            <div class="cell">سعر متر التكليف</div>
+            <div class="cell">قيمة التكليف</div>
+            <div class="cell">نسبة المهمة من المشروع</div>
+            <div class="cell">نسبة مساهمة</div>
+            <div class="cell">قيمة التكليف بعد النسبة</div>
+            <div class="cell">الحالة</div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مُرحَّلة إلى المالية بعد لهذا المشروع</div></div>
+        }
+        else
+        {
+            @foreach (var r in Model)
+            {
+                var valueAfter = r.Value * (1 + (r.ContributionPercentage ?? 0) / 100);
+                var engineerContribution = contributions.TryGetValue(r.EngineerId, out var c) ? c : 0;
+                <div class="data-table-row">
+                    <div class="cell cell-num">@project.Id</div>
+                    <div class="cell">@project.Name</div>
+                    <div class="cell">@(r.ProjectAssignment?.AssignmentType ?? "-")</div>
+                    <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
+                    <div class="cell cell-num">@(r.Area?.ToString("N1") ?? "-")</div>
+                    <div class="cell cell-num">@(r.PricePerMeter?.ToString("N0") ?? "-")</div>
+                    <div class="cell cell-num">@r.Value.ToString("N0")</div>
+                    <div class="cell cell-num">@engineerContribution.ToString("N1")%</div>
+                    <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
+                    <div class="cell cell-num">@valueAfter.ToString("N0")</div>
+                    <div class="cell">
+                        @if (r.IsCleared)
+                        {
+                            <span class="tag tag-success">تم الصرف (@r.ClearedAt?.ToString("yyyy-MM-dd"))</span>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="MarkRecordCleared" onsubmit="return confirm('تأكيد صرف مستحقات هذه المهندسة عن هذا التكليف؟');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="projectId" value="@projectId" />
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">تسجيل صرف</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}

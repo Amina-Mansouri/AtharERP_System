@@ -226,13 +226,14 @@
 
                 <div class="nav-group">
                     <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
-                        <span>المالية <span class="tag tag-warning">جزئية</span></span>
+                        <span>المالية <span class="tag tag-warning">قيد التنفيذ</span></span>
                         <span class="nav-group-caret">▾</span>
                     </button>
                     <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
                         <span class="nav-item disabled">المطالبات المالية <span class="tag tag-muted">قادمة</span></span>
-                        <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
-                        <span class="nav-item disabled">جدول التكاليف العام <span class="tag tag-muted">قادمة</span></span>
+                       
+                       <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
+                               asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
                         <span class="nav-item disabled">جدول البيع النهائي <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">الرواتب والمصاريف <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">الأرباح والخسائر <span class="tag tag-muted">قادمة</span></span>
