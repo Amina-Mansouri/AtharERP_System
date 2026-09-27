@@ -44,12 +44,13 @@
         }
         else
         {
-            <div class="data-table" style="--cols: 70px minmax(0,1fr) minmax(0,1fr) 110px 90px 130px">
+            <div class="data-table" style="--cols: 70px minmax(0,1fr) minmax(0,1fr) 110px 100px 90px 130px">
                 <div class="data-table-head">
                     <div class="cell">الرمز</div>
                     <div class="cell">بالعربي</div>
                     <div class="cell">بالإنجليزي</div>
                     <div class="cell cell-num">الراتب الأساسي</div>
+                    <div class="cell cell-num">سعر الساعة</div>
                     <div class="cell cell-num">الترتيب</div>
                     <div class="cell"></div>
                 </div>
@@ -60,10 +61,11 @@
                         <div class="cell">@rank.NameAr</div>
                         <div class="cell">@(rank.NameEn ?? "-")</div>
                         <div class="cell cell-num">@(rank.BaseSalary?.ToString("N0") ?? "-")</div>
+                        <div class="cell cell-num">@(rank.HourlyRate?.ToString("N2") ?? "-")</div>
                         <div class="cell cell-num">@rank.DisplayOrder</div>
                         <div class="cell" style="display:flex; gap:6px;">
                             <a href="#" style="font-size:11px;"
-                               onclick='openRankModal(@rank.Id, @rank.CareerTrackId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.Code)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.NameAr)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.NameEn)), @rank.DisplayOrder, @(rank.BaseSalary?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null")); return false;'>
+                               onclick='openRankModal(@rank.Id, @rank.CareerTrackId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.Code)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.NameAr)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(rank.NameEn)), @rank.DisplayOrder, @(rank.BaseSalary?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null"), @(rank.HourlyRate?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null")); return false;'>
                                 تعديل
                             </a>
                             <form method="post" asp-action="DeleteRank" asp-route-id="@rank.Id" onsubmit="return confirm('حذف هذه الرتبة؟')" style="display:inline;">
@@ -143,6 +145,10 @@
                         <input type="number" step="0.01" name="baseSalary" id="rank-baseSalary" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                     </div>
                     <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">سعر الساعة (اختياري)</div>
+                        <input type="number" step="0.01" name="hourlyRate" id="rank-hourlyRate" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
                         <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">ترتيب العرض</div>
                         <input type="number" name="displayOrder" id="rank-displayOrder" value="0" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                     </div>
@@ -170,7 +176,7 @@
             new bootstrap.Modal(document.getElementById('trackModal')).show();
         }
 
-        function openRankModal(id, trackId, code, nameAr, nameEn, displayOrder, baseSalary) {
+        function openRankModal(id, trackId, code, nameAr, nameEn, displayOrder, baseSalary, hourlyRate) {
             const form = document.getElementById('rankForm');
             const isEdit = id !== undefined && id !== null;
             form.action = isEdit ? '@Url.Action("EditRank")' : '@Url.Action("CreateRank")';
@@ -181,6 +187,7 @@
             document.getElementById('rank-nameEn').value = nameEn ?? '';
             document.getElementById('rank-displayOrder').value = displayOrder ?? 0;
             document.getElementById('rank-baseSalary').value = baseSalary ?? '';
+            document.getElementById('rank-hourlyRate').value = hourlyRate ?? '';
             document.getElementById('rank-modal-title').textContent = isEdit ? 'تعديل رتبة' : 'رتبة جديدة';
             new bootstrap.Modal(document.getElementById('rankModal')).show();
         }

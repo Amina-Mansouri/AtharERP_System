@@ -1112,7 +1112,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateRank(int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary)
+        public async Task<IActionResult> CreateRank(int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary, decimal? hourlyRate)
         {
             if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nameAr))
             {
@@ -1127,7 +1127,8 @@ namespace AtharERP_System.Controllers
                 NameAr = nameAr.Trim(),
                 NameEn = nameEn,
                 DisplayOrder = displayOrder,
-                BaseSalary = baseSalary
+                BaseSalary = baseSalary,
+                HourlyRate = hourlyRate
             });
             await _context.SaveChangesAsync();
 
@@ -1138,7 +1139,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditRank(int id, int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary)
+        public async Task<IActionResult> EditRank(int id, int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary, decimal? hourlyRate)
         {
             var rank = await _context.JobRanks.FindAsync(id);
             if (rank == null) return NotFound();
@@ -1155,6 +1156,7 @@ namespace AtharERP_System.Controllers
             rank.NameEn = nameEn;
             rank.DisplayOrder = displayOrder;
             rank.BaseSalary = baseSalary;
+            rank.HourlyRate = hourlyRate;
             await _context.SaveChangesAsync();
 
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل رتبة", "JobRank", id.ToString(), $"تعديل رتبة {rank.NameAr}");
