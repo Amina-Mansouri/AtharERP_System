@@ -218,7 +218,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-                     [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,Discipline,KpiWeight")] ProjectStage model)
+      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,Discipline,KpiWeight,SaleMarkupPercent1,SaleMarkupPercent2")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
@@ -244,11 +244,13 @@ namespace AtharERP_System.Controllers
             stage.ActualDeliveryDate = model.ActualDeliveryDate;
             stage.WorkDocumentation = model.WorkDocumentation;
             stage.Area = model.Area;
-            
+            stage.SaleMarkupPercent1 = model.SaleMarkupPercent1;
+            stage.SaleMarkupPercent2 = model.SaleMarkupPercent2;
             stage.Discipline = model.Discipline;
             stage.KpiWeight = model.KpiWeight;
 
             var allStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
+            await _calc.SyncStageRedesignPercentageAsync(stage.Id);
             foreach (var s in allStages)
             {
                 _calc.ApplyAutomaticStageStatus(s, allStages);
