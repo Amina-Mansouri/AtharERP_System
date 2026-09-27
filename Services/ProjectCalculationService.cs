@@ -9,12 +9,14 @@ namespace AtharERP_System.Services
         private readonly AppDbContext _context;
         private readonly NotificationService _notify;
         private readonly PermissionService _permission;
+        private readonly SiteCalculationService _siteCalc;
 
-        public ProjectCalculationService(AppDbContext context, NotificationService notify, PermissionService permission)
+        public ProjectCalculationService(AppDbContext context, NotificationService notify, PermissionService permission, SiteCalculationService siteCalc)
         {
             _context = context;
             _notify = notify;
             _permission = permission;
+            _siteCalc = siteCalc;
         }
 
         private static bool IsTaskFrozen(ProjectTask t)
@@ -402,6 +404,28 @@ namespace AtharERP_System.Services
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<decimal> CalculateProjectNetProfitAsync(int projectId)
+        {
+            var totalSales = await _context.FinancialClaims
+                .Where(c => c.ProjectId == projectId)
+                .SumAsync(c => c.Value
+                    * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
+                    * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
+                    * (1 + (c.RedesignIncreasePercentage ?? 0) / 100));
+
+            var totalTaskCosts = await _context.FinancialRecords
+                .Where(r => r.ProjectId == projectId)
+                .SumAsync(r => r.Value * (1 + (r.ContributionPercentage ?? 0) / 100));
+
+            var totalGeneralExpenses = await _context.ProjectExpenses
+                .Where(e => e.ProjectId == projectId && e.SiteId == null)
+                .SumAsync(e => e.Amount);
+
+            var siteCosts = await _siteCalc.CalculateProjectSiteCostsAsync(projectId);
+
+            return totalSales - (totalTaskCosts + totalGeneralExpenses + siteCosts);
         }
     }
 }
