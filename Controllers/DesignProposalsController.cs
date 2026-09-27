@@ -308,7 +308,7 @@ namespace AtharERP_System.Controllers
             todo.CompletedAt = todoApproved ? (todo.CompletedAt ?? DateTime.UtcNow) : null;
             await _context.SaveChangesAsync();
 
-            await _calc.RecalculateTaskCompletionAsync(todo.TaskId);
+            await _calc.RecalculateTaskCompletionAsync(todo.TaskId, notifyOnStatusChange: false);
 
             var task = await _context.ProjectTasks
                 .Include(t => t.Todos).ThenInclude(t2 => t2.DesignProposals)

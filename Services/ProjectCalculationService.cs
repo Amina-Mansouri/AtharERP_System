@@ -136,7 +136,7 @@ namespace AtharERP_System.Services
             }
         }
 
-        public async Task RecalculateTaskCompletionAsync(int taskId)
+        public async Task RecalculateTaskCompletionAsync(int taskId, bool notifyOnStatusChange = true)
         {
             var task = await _context.ProjectTasks
                 .Include(t => t.Todos)
@@ -170,7 +170,7 @@ namespace AtharERP_System.Services
 
             await _context.SaveChangesAsync();
 
-            if (task.Status != oldStatus)
+            if (task.Status != oldStatus && notifyOnStatusChange)
             {
                 var recipientIds = await _permission.GetProjectRecipientsAsync(task.ProjectId);
 

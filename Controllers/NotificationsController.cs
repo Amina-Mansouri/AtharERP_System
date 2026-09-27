@@ -106,18 +106,21 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Index", new { filter = returnFilter, eventType = returnEventType, period = returnPeriod });
         }
 
-        // تقرير استلام: يُرسل بريدياً لصاحب الإشعار ولكل مدراء النظام عند أول قراءة للإشعار
+    
+        // تقرير استلام: يُرسل بريدياً لمدير النظام ومسؤول المرحلة المرتبطة بالإشعار فقط (بدون نسخة لصاحب الإشعار نفسه)
         private async Task SendReadReceiptAsync(Notification notification)
         {
             var readAtText = notification.ReadAt?.ToString("yyyy-MM-dd HH:mm");
             var body = $"تم استلام وقراءة الإشعار التالي بتاريخ {readAtText}:<br/>«{notification.Message}»<br/>بواسطة: {notification.User?.FullName}";
 
             var recipients = new List<string>();
-            if (!string.IsNullOrEmpty(notification.User?.Email))
-                recipients.Add(notification.User.Email);
 
             var admins = await _userManager.GetUsersInRoleAsync("مدير النظام");
             recipients.AddRange(admins.Where(a => !string.IsNullOrEmpty(a.Email)).Select(a => a.Email!));
+
+            var supervisorEmail = await GetStageSupervisorEmailAsync(notification);
+            if (!string.IsNullOrEmpty(supervisorEmail))
+                recipients.Add(supervisorEmail);
 
             foreach (var email in recipients.Distinct())
             {
@@ -130,6 +133,50 @@ namespace AtharERP_System.Controllers
                     // فشل إرسال البريد لا يجب أن يوقف تعليم الإشعار كمقروء
                 }
             }
+        }
+
+        // تحديد بريد مسؤول المرحلة (AssignedEngineer) بحسب نوع الكيان المرتبط بالإشعار
+        private async Task<string?> GetStageSupervisorEmailAsync(Notification notification)
+        {
+            if (notification.EntityId == null || string.IsNullOrEmpty(notification.EntityType))
+                return null;
+
+            ProjectStage? stage = null;
+
+            switch (notification.EntityType)
+            {
+                case "ProjectTask":
+                    stage = await _context.ProjectTasks
+                        .Where(t => t.Id == notification.EntityId)
+                        .Select(t => t.Stage)
+                        .FirstOrDefaultAsync();
+                    break;
+
+                case "DesignProposal":
+                    stage = await _context.DesignProposals
+                        .Where(p => p.Id == notification.EntityId)
+                        .Select(p => p.TaskTodo.Task.Stage)
+                        .FirstOrDefaultAsync();
+                    break;
+
+                case "ProjectAssignment":
+                    stage = await _context.ProjectAssignments
+                        .Where(a => a.Id == notification.EntityId)
+                        .Select(a => a.Stage)
+                        .FirstOrDefaultAsync();
+                    break;
+
+                case "ProjectStage":
+                    stage = await _context.ProjectStages
+                        .FirstOrDefaultAsync(s => s.Id == notification.EntityId);
+                    break;
+            }
+
+            if (stage?.AssignedEngineerId == null)
+                return null;
+
+            var supervisor = await _context.Users.FindAsync(stage.AssignedEngineerId);
+            return supervisor?.Email;
         }
 
         [HttpPost]
