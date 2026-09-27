@@ -532,6 +532,10 @@ else
                                     @if (canManageStages)
                                     {
                                         <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px;">تعديل</a>
+                                        @if (stage.Status == StageStatus.Completed)
+                                        {
+                                            <a asp-controller="ClientRedesignRequests" asp-action="Index" asp-route-stageId="@stage.Id" style="font-size:11px;">إعادة تصميم</a>
+                                        }
                                         <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها أيضاً. متابعة؟');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
