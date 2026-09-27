@@ -240,7 +240,8 @@
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")"
                                asp-controller="Finance" asp-action="Expenses">المصروفات</a>
                             <span class="nav-item disabled">الرواتب <span class="tag tag-muted">قادمة</span></span>
-                        <span class="nav-item disabled">الأرباح والخسائر <span class="tag tag-muted">قادمة</span></span>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
+                               asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
                     </div>
                 </div>
 

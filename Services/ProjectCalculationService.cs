@@ -408,6 +408,12 @@ namespace AtharERP_System.Services
 
         public class ProjectNetProfitResult
         {
+            public decimal TotalSalesAccrued { get; set; }
+            public decimal TotalSalesRealized { get; set; }
+            public decimal TotalTaskCostsAccrued { get; set; }
+            public decimal TotalTaskCostsRealized { get; set; }
+            public decimal TotalGeneralExpenses { get; set; }
+            public decimal SiteCosts { get; set; }
             public decimal AccruedNetProfit { get; set; }   // صافي متوقَّع/مستحق — كل المُرحَّل بصرف النظر عن التحصيل
             public decimal RealizedNetProfit { get; set; }  // صافي محقَّق — فقط ما تحصَّل/صُرف فعلياً
         }
@@ -445,9 +451,17 @@ namespace AtharERP_System.Services
 
             return new ProjectNetProfitResult
             {
+                TotalSalesAccrued = totalSalesAccrued,
+                TotalSalesRealized = totalSalesRealized,
+                TotalTaskCostsAccrued = totalTaskCostsAccrued,
+                TotalTaskCostsRealized = totalTaskCostsRealized,
+                TotalGeneralExpenses = totalGeneralExpenses,
+                SiteCosts = siteCosts,
                 AccruedNetProfit = totalSalesAccrued - (totalTaskCostsAccrued + totalGeneralExpenses + siteCosts),
                 RealizedNetProfit = totalSalesRealized - (totalTaskCostsRealized + totalGeneralExpenses + siteCosts)
             };
         }
+
+
     }
 }

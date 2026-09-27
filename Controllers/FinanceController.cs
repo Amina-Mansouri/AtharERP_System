@@ -12,11 +12,12 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly PermissionService _permissionService;
-
-        public FinanceController(AppDbContext context, PermissionService permissionService)
+        private readonly ProjectCalculationService _calc;
+        public FinanceController(AppDbContext context, PermissionService permissionService, ProjectCalculationService calc)
         {
             _context = context;
             _permissionService = permissionService;
+            _calc = calc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -225,6 +226,30 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = "تم حذف المصروف بنجاح";
             return RedirectToAction("Expenses", new { projectId });
+        }
+
+        // ============================================
+        // الأرباح والخسائر
+        // ============================================
+        [RequirePermission("Finance.Reports")]
+        public async Task<IActionResult> Profit(int? projectId)
+        {
+            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.ProjectId = projectId;
+
+            if (!projectId.HasValue)
+                return View();
+
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+                return Forbid();
+
+            ViewBag.Project = project;
+            var result = await _calc.CalculateProjectNetProfitAsync(projectId.Value);
+            return View(result);
         }
     }
 }

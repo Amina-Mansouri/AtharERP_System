@@ -1,0 +1,60 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model ProjectCalculationService.ProjectNetProfitResult
+@{
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var projectId = ViewBag.ProjectId as int?;
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = "الأرباح والخسائر";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>الأرباح والخسائر</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end;">
+        <div style="flex:1; max-width:320px;">
+            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- اختاري مشروعاً --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                }
+            </select>
+        </div>
+    </form>
+</div>
+
+@if (projectId.HasValue && project != null && Model != null)
+{
+    <div class="stat-strip stat-strip-text" style="margin-bottom:16px;">
+        <div class="stat-item"><span class="kicker">إجمالي المبيعات (متوقَّع)</span><span class="stat-value">@Model.TotalSalesAccrued.ToString("N0")</span></div>
+        <div class="stat-item"><span class="kicker">إجمالي المبيعات (محقَّق)</span><span class="stat-value">@Model.TotalSalesRealized.ToString("N0")</span></div>
+        <div class="stat-item"><span class="kicker">تكاليف المهام (متوقَّع)</span><span class="stat-value">@Model.TotalTaskCostsAccrued.ToString("N0")</span></div>
+        <div class="stat-item"><span class="kicker">تكاليف المهام (محقَّق)</span><span class="stat-value">@Model.TotalTaskCostsRealized.ToString("N0")</span></div>
+        <div class="stat-item"><span class="kicker">مصروفات عامة</span><span class="stat-value">@Model.TotalGeneralExpenses.ToString("N0")</span></div>
+        <div class="stat-item"><span class="kicker">تكاليف المواقع</span><span class="stat-value">@Model.SiteCosts.ToString("N0")</span></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="athar-card" style="text-align:center; padding:24px;">
+            <div style="font-size:12px; color:#8a83a0; margin-bottom:6px;">الصافي المتوقَّع/المستحق</div>
+            <div style="font-size:26px; font-weight:700; color:@(Model.AccruedNetProfit >= 0 ? "#2e8b57" : "#c94a42");">
+                @Model.AccruedNetProfit.ToString("N0")
+            </div>
+            <div style="font-size:10.5px; color:#aaa; margin-top:4px;">كل ما رُحِّل للمالية، بصرف النظر عن التحصيل الفعلي</div>
+        </div>
+        <div class="athar-card" style="text-align:center; padding:24px;">
+            <div style="font-size:12px; color:#8a83a0; margin-bottom:6px;">الصافي المحقَّق فعلياً</div>
+            <div style="font-size:26px; font-weight:700; color:@(Model.RealizedNetProfit >= 0 ? "#2e8b57" : "#c94a42");">
+                @Model.RealizedNetProfit.ToString("N0")
+            </div>
+            <div style="font-size:10.5px; color:#aaa; margin-top:4px;">فقط ما تحصَّل من العميل وصُرف للمهندسات فعلياً</div>
+        </div>
+    </div>
+}
