@@ -97,14 +97,16 @@ namespace AtharERP_System.Services
         public async Task RecalculateProjectAsync(int projectId)
         {
             var project = await _context.Projects
-                .Include(p => p.Stages)
-                .FirstOrDefaultAsync(p => p.Id == projectId);
+    .Include(p => p.Stages).ThenInclude(s => s.RedesignRequests)
+    .FirstOrDefaultAsync(p => p.Id == projectId);
+           
 
             if (project == null) return;
 
             var wasDelayed = project.Status == ProjectStatus.Delayed;
 
             project.ActualCost = project.Stages.Sum(s => s.ActualCost);
+            project.Budget = project.Stages.Sum(s => CalculateStageSaleAfterPercentage(s));
             var totalWeight = project.Stages.Sum(s => s.Weight);
             var weightedSum = project.Stages.Sum(s => s.Weight * s.CompletionPercentage);
 
@@ -219,6 +221,7 @@ namespace AtharERP_System.Services
             {
                 assignment.Status = AssignmentStatus.Completed;
                 await _context.SaveChangesAsync();
+                await RecalculateAssignmentFinanceAsync(assignment.Id);
             }
         }
 
@@ -251,6 +254,154 @@ namespace AtharERP_System.Services
                 task.DelayDays = 0;
                 task.EarlyDeliveryDays = 0;
             }
+        }
+
+        private static decimal CalculateStageSaleAfterPercentage(ProjectStage stage)
+        {
+            var redesignPercent = stage.RedesignRequests?.Sum(r => r.IncreasePercentage) ?? 0;
+            return stage.SaleValue
+                * (1 + (stage.SaleMarkupPercent1 ?? 0) / 100)
+                * (1 + (stage.SaleMarkupPercent2 ?? 0) / 100)
+                * (1 + redesignPercent / 100);
+        }
+
+        // نقطة الدخول المركزية لأي تعديل مالي على تكليف: مساحة/سعر/نسبة مساهمة مهندسة
+        public async Task RecalculateAssignmentFinanceAsync(int assignmentId)
+        {
+            var assignment = await _context.ProjectAssignments
+                .Include(a => a.Engineers)
+                .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+            if (assignment == null) return;
+
+            if (assignment.IsTransferredToFinance)
+            {
+                await SyncAssignmentFinancialRecordsAsync(assignment);
+            }
+
+            if (assignment.StageId.HasValue)
+            {
+                await RecalculateStageFinanceAsync(assignment.StageId.Value);
+            }
+
+            if (assignment.Status == AssignmentStatus.Completed && !assignment.IsTransferredToFinance)
+            {
+                await TransferAssignmentToFinanceAsync(assignment);
+            }
+        }
+
+        // يُستدعى أيضاً عند إضافة طلب إعادة تصميم جديد على مرحلة (يزامن كل تكليفاتها المُرحَّلة)
+        public async Task SyncStageRedesignPercentageAsync(int stageId)
+        {
+            var assignments = await _context.ProjectAssignments
+                .Include(a => a.Engineers)
+                .Where(a => a.StageId == stageId && a.IsTransferredToFinance)
+                .ToListAsync();
+
+            foreach (var assignment in assignments)
+            {
+                await SyncAssignmentFinancialRecordsAsync(assignment);
+            }
+
+            await RecalculateStageFinanceAsync(stageId);
+        }
+
+        private async Task RecalculateStageFinanceAsync(int stageId)
+        {
+            var stage = await _context.ProjectStages
+                .Include(s => s.Assignments)
+                .FirstOrDefaultAsync(s => s.Id == stageId);
+
+            if (stage == null) return;
+
+            stage.ActualCost = stage.Assignments.Sum(a => a.AssignmentValue);
+            stage.SaleValue = stage.Assignments.Sum(a => a.AssignmentSaleValue);
+            await _context.SaveChangesAsync();
+
+            await RecalculateProjectAsync(stage.ProjectId);
+        }
+
+        private async Task TransferAssignmentToFinanceAsync(ProjectAssignment assignment)
+        {
+            if (!assignment.Engineers.Any())
+                return; // لا يمكن الترحيل بلا مهندسة واحدة على الأقل
+
+            var stage = assignment.StageId.HasValue
+                ? await _context.ProjectStages.Include(s => s.RedesignRequests)
+                    .FirstOrDefaultAsync(s => s.Id == assignment.StageId.Value)
+                : null;
+
+            var redesignPercent = stage?.RedesignRequests.Sum(r => r.IncreasePercentage) ?? 0;
+
+            foreach (var engineer in assignment.Engineers)
+            {
+                _context.FinancialRecords.Add(new FinancialRecord
+                {
+                    ProjectId = assignment.ProjectId,
+                    ProjectAssignmentId = assignment.Id,
+                    EngineerId = engineer.UserId,
+                    Area = assignment.Area,
+                    PricePerMeter = assignment.PricePerMeter,
+                    Value = assignment.AssignmentValue,
+                    ContributionPercentage = engineer.ContributionPercentage
+                });
+            }
+
+            _context.FinancialClaims.Add(new FinancialClaim
+            {
+                ProjectId = assignment.ProjectId,
+                ProjectAssignmentId = assignment.Id,
+                Code = $"CLM-{assignment.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                Area = assignment.Area,
+                SalePricePerMeter = assignment.SalePricePerMeter,
+                Value = assignment.AssignmentSaleValue,
+                SaleMarkupPercent1 = stage?.SaleMarkupPercent1,
+                SaleMarkupPercent2 = stage?.SaleMarkupPercent2,
+                RedesignIncreasePercentage = redesignPercent,
+                IsTransferredToFinance = true,
+                TransferredToFinanceAt = DateTime.UtcNow
+            });
+
+            assignment.IsTransferredToFinance = true;
+            assignment.TransferredToFinanceAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task SyncAssignmentFinancialRecordsAsync(ProjectAssignment assignment)
+        {
+            var records = await _context.FinancialRecords
+                .Where(r => r.ProjectAssignmentId == assignment.Id && !r.IsCleared)
+                .ToListAsync();
+
+            foreach (var record in records)
+            {
+                var engineer = assignment.Engineers.FirstOrDefault(e => e.UserId == record.EngineerId);
+                record.Area = assignment.Area;
+                record.PricePerMeter = assignment.PricePerMeter;
+                record.Value = assignment.AssignmentValue;
+                record.ContributionPercentage = engineer?.ContributionPercentage;
+            }
+
+            var claim = await _context.FinancialClaims
+                .FirstOrDefaultAsync(c => c.ProjectAssignmentId == assignment.Id && !c.IsClientSettled);
+
+            if (claim != null)
+            {
+                var stage = assignment.StageId.HasValue
+                    ? await _context.ProjectStages.Include(s => s.RedesignRequests)
+                        .FirstOrDefaultAsync(s => s.Id == assignment.StageId.Value)
+                    : null;
+
+                claim.Area = assignment.Area;
+                claim.SalePricePerMeter = assignment.SalePricePerMeter;
+                claim.Value = assignment.AssignmentSaleValue;
+                claim.SaleMarkupPercent1 = stage?.SaleMarkupPercent1;
+                claim.SaleMarkupPercent2 = stage?.SaleMarkupPercent2;
+                claim.RedesignIncreasePercentage = stage?.RedesignRequests.Sum(r => r.IncreasePercentage) ?? 0;
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

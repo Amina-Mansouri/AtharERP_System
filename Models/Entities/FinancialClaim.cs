@@ -79,13 +79,12 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [Required]
         [Display(Name = "أُنشئت بواسطة")]
         [ValidateNever]
-        public string CreatedById { get; set; } = string.Empty;
+        public string? CreatedById { get; set; }
 
         [ForeignKey("CreatedById")]
         [ValidateNever]
-        public virtual ApplicationUser CreatedBy { get; set; } = null!;
+        public virtual ApplicationUser? CreatedBy { get; set; }
     }
 }

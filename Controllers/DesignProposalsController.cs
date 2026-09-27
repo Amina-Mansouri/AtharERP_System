@@ -359,6 +359,7 @@ namespace AtharERP_System.Controllers
                     bool allTasksCompleted = assignmentTasks.Any() && assignmentTasks.All(t => t.Status == ProjectTaskStatus.Completed);
                     assignment.Status = allTasksCompleted ? AssignmentStatus.Completed : AssignmentStatus.InProgress;
                     await _context.SaveChangesAsync();
+                    await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
                 }
             }
         }

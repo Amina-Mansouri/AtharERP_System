@@ -280,6 +280,15 @@ List<int>? taskIds)
             var link = await _context.AssignmentEngineers.FindAsync(id);
             if (link != null)
             {
+                var remainingCount = await _context.AssignmentEngineers
+                    .CountAsync(e => e.ProjectAssignmentId == link.ProjectAssignmentId);
+
+                if (remainingCount <= 1)
+                {
+                    TempData["Error"] = "لا يمكن حذف آخر مهندسة في التكليف";
+                    return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+                }
+
                 _context.AssignmentEngineers.Remove(link);
                 await _context.SaveChangesAsync();
             }

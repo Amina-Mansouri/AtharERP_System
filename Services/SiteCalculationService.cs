@@ -50,5 +50,33 @@ namespace AtharERP_System.Services
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<decimal> CalculateSiteCostAsync(int siteId)
+        {
+            var maintenanceCost = await _context.SiteMaintenances
+                .Where(m => m.SiteId == siteId).SumAsync(m => m.Cost ?? 0);
+            var contractorCost = await _context.SiteContractors
+                .Where(c => c.SiteId == siteId).SumAsync(c => c.Amount ?? 0);
+            var supplyCost = await _context.SiteSupplyRequests
+                .Where(s => s.SiteId == siteId).SumAsync(s => s.Quantity * (s.UnitPrice ?? 0));
+
+            return maintenanceCost + contractorCost + supplyCost;
+        }
+
+        public async Task<decimal> CalculateProjectSiteCostsAsync(int projectId)
+        {
+            var siteIds = await _context.Sites.Where(s => s.ProjectId == projectId).Select(s => s.Id).ToListAsync();
+            decimal structuredCost = 0;
+            foreach (var siteId in siteIds)
+            {
+                structuredCost += await CalculateSiteCostAsync(siteId);
+            }
+
+            var manualSiteExpenses = await _context.ProjectExpenses
+               .Where(e => siteIds.Contains(e.SiteId ?? 0))
+               .SumAsync(e => e.Amount);
+
+            return structuredCost + manualSiteExpenses;
+        }
     }
 }

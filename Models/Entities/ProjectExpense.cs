@@ -15,6 +15,13 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual Project Project { get; set; } = null!;
 
+        [Display(Name = "الموقع")]
+        public int? SiteId { get; set; }
+
+        [ForeignKey("SiteId")]
+        [ValidateNever]
+        public virtual Site? Site { get; set; }
+
         [Required]
         public int ExpenseCategoryId { get; set; }
 

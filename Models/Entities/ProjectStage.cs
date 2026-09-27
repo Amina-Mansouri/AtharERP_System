@@ -85,8 +85,10 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "توثيق العمل الدوري")]
         public string? WorkDocumentation { get; set; }
 
-      
+        public virtual ICollection<ClientRedesignRequest> RedesignRequests { get; set; } = new List<ClientRedesignRequest>();
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+
         public virtual ICollection<ProjectAssignment> Assignments { get; set; } = new List<ProjectAssignment>();
+
     }
 }
