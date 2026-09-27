@@ -6,6 +6,7 @@
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var selectedProjectId = ViewBag.ProjectId as int?;
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
+    var disciplineLabels = EnumDisplayHelper.GetDisplayList<DocumentClassification>();
 
     string StageTagClass(StageStatus s) => s switch
     {
@@ -62,11 +63,13 @@ else
         <div class="stat-item"><span class="kicker">نسبة الإنجاز الحالية</span><span class="stat-value">@(((decimal)ViewBag.WeightedCompletion).ToString("N1"))%</span></div>
     </div>
 
-    <div class="data-table" style="--cols: 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 84px">
+    <div class="data-table" style="--cols: 30px minmax(0,1.2fr) 56px 90px 70px 128px 84px 104px 92px 84px">
         <div class="data-table-head">
             <div class="cell">ت</div>
             <div class="cell">المرحلة</div>
             <div class="cell">الوزن</div>
+            <div class="cell">التخصص</div>
+            <div class="cell">وزن KPI</div>
             <div class="cell">المهندس المسؤول</div>
             <div class="cell">التكليفات</div>
             <div class="cell">نسبة الإنجاز</div>
@@ -85,6 +88,8 @@ else
                     <div class="cell cell-num">@stage.Sequence</div>
                     <div class="cell">@stage.Name</div>
                     <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
+                    <div class="cell">@(stage.Discipline.HasValue ? disciplineLabels.FirstOrDefault(x => x.Value == stage.Discipline.Value.ToString()).Label : "-")</div>
+                    <div class="cell cell-num">@(stage.KpiWeight?.ToString("N0") + "%" ?? "-")</div>
                     <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
                     <div class="cell cell-num">@stage.Assignments.Count</div>
                     <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>

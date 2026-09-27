@@ -33,6 +33,7 @@
     var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
     var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
+    var disciplineLabels = EnumDisplayHelper.GetDisplayList<DocumentClassification>();
     var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
     var weightSum = Model.Stages.Sum(s => s.Weight);
 
@@ -479,11 +480,13 @@ else
                     <span class="tag @(weightSum == 100 ? "tag-success" : "tag-warning")">مجموع الأوزان @weightSum.ToString("N0")%@(weightSum == 100 ? " ✓" : "")</span>
                 </div>
 
-                <div class="data-table" style="--cols: 30px minmax(0,1.4fr) 56px 128px 84px 104px 92px 84px">
+                <div class="data-table" style="--cols: 30px minmax(0,1.2fr) 56px 90px 70px 128px 84px 104px 92px 84px">
                     <div class="data-table-head">
                         <div class="cell">ت</div>
                         <div class="cell">المرحلة</div>
                         <div class="cell">الوزن</div>
+                        <div class="cell">التخصص</div>
+                        <div class="cell">وزن KPI</div>
                         <div class="cell">المهندس المسؤول</div>
                         <div class="cell">التكليفات</div>
                         <div class="cell">نسبة الإنجاز</div>
@@ -519,6 +522,8 @@ else
                                     }
                                 </div>
                                 <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
+                                <div class="cell">@(stage.Discipline.HasValue ? disciplineLabels.FirstOrDefault(x => x.Value == stage.Discipline.Value.ToString()).Label : "-")</div>
+                                <div class="cell cell-num">@(stage.KpiWeight?.ToString("N0") + "%" ?? "-")</div>
                                 <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
                                 <div class="cell cell-num">@stage.Assignments.Count</div>
                                 <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
@@ -620,6 +625,16 @@ else
                                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
                                                 <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" value="@(isFailedTemplate ? failedArea : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                                                 <input type="number" step="0.01" min="0" name="pricePerMeter" placeholder="سعر المتر" value="@(isFailedTemplate ? failedPricePerMeter : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                            </div>
+                                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                <select name="discipline" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                    <option value="">-- التخصص --</option>
+                                                    @foreach (var d in disciplineLabels)
+                                                    {
+                                                        <option value="@d.Value">@d.Label</option>
+                                                    }
+                                                </select>
+                                                <input type="number" step="0.01" min="0" name="kpiWeight" placeholder="وزن KPI" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                                             </div>
                                             <div style="margin-bottom:6px;">
                                                 <select name="assignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
