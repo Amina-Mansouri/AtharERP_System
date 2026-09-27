@@ -87,6 +87,12 @@ namespace AtharERP_System.Controllers
                 return BackToTask();
             }
 
+            if (todo.IsCompleted)
+            {
+                TempData["Error"] = "هذا البند مكتمل بالفعل — لا يمكن رفع مستند جديد له";
+                return BackToTask();
+            }
+
             if (file == null || file.Length == 0)
             {
                 TempData["Error"] = "الرجاء اختيار ملف";

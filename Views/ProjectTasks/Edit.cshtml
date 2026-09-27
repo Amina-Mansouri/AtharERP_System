@@ -56,7 +56,7 @@
 }
 
 <div class="tabs" role="tablist">
-    <a class="tab-item active" data-bs-toggle="tab" href="#pane-task-data">بيانات المهمة</a>
+    <a class="tab-item active" data-bs-toggle="tab" href="#pane-task-data">بيانات التكليف</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-task-proposals">مقترحات التصميم (@proposals.Count)</a>
 </div>
 
@@ -104,6 +104,19 @@
                                 <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ</button>
                             }
                         </form>
+
+                        @if (asg.Tasks.Count > 1)
+                        {
+                            <div style="margin-top:10px; padding-top:10px; border-top:1px solid #ecebf2;">
+                                <label style="font-size:10.5px; color:#8a83a0;">مهام هذا التكليف</label>
+                                <select onchange="if(this.value) location.href=this.value;" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;">
+                                    @foreach (var t in asg.Tasks)
+                                    {
+                                        <option value="@Url.Action("Edit", new { id = t.Id })" selected="@(t.Id == Model.Id)">@t.Title (وزن @t.Weight.ToString("N0")%)</option>
+                                    }
+                                </select>
+                            </div>
+                        }
                     </div>
                 }
 
@@ -193,7 +206,7 @@
 
             <div style="display:flex; flex-direction:column; gap:12px;">
                 <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المهندسات معك (نفس التكليف)</div>
+                    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المهندسون المكلفون</div>
                     @if (Model.ProjectAssignment == null || !Model.ProjectAssignment.Engineers.Any())
                     {
                         <div class="stat-sub">لا يوجد آخرون، أو المهمة غير مرتبطة بتكليف بعد</div>
@@ -214,13 +227,21 @@
 
     <div class="tab-pane fade" id="pane-task-proposals">
         <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-            <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مقترحات التصميم المرفوعة لهذه المهمة</div>
-
-            <div style="background:#f3f1fb; border:1px solid #e1defa; border-radius:10px; padding:10px 14px; margin-bottom:12px; display:flex; gap:8px; align-items:flex-start;">
-                <div style="font-size:14px; line-height:1;">🔒</div>
-                <div style="font-size:11px; line-height:1.7; color:#4a4360;">
-                    حالة المهمة تُحسب تلقائياً من نتيجة مراجعة مستنداتها ولا تُحدَّد يدوياً — <span style="color:#ff9130; font-weight:600;">بانتظار الاعتماد</span> بعد الرفع، ولا تصبح المهمة <span style="color:#2f8a57; font-weight:600;">مكتملة</span> إلا بعد اعتماد مستنداتها كلها.
-                </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                <div style="font-size:13.5px; font-weight:600;">مقترحات التصميم المرفوعة</div>
+                @{
+                    var proposalTasks = proposals.Select(p => p.TaskTodo.Task).Where(t => t != null).GroupBy(t => t!.Id).Select(g => g.First()!).ToList();
+                }
+                @if (proposalTasks.Count > 1)
+                {
+                    <select id="proposalTaskFilter" onchange="filterProposalsByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
+                        <option value="">كل المهام</option>
+                        @foreach (var t in proposalTasks)
+                        {
+                            <option value="@t.Id" selected="@(t.Id == Model.Id)">@t.Title</option>
+                        }
+                    </select>
+                }
             </div>
 
             @if (!proposals.Any())
@@ -234,11 +255,12 @@
                     {
                         var pTagClass = ProposalTagClass(p.Status);
                         var pLabel = ProposalLabel(p.Status);
-                        <div style="border:1px solid #f1f0f6; border-radius:8px; padding:8px 12px;">
+                        <div data-proposal-task="@p.TaskTodo.TaskId" style="border:1px solid #f1f0f6; border-radius:8px; padding:8px 12px;">
                             <div style="display:flex; align-items:center; justify-content:space-between;">
-                                <a href="@p.FilePath" target="_blank" download="@($"{p.Code}.{p.FileType}")" style="font-size:11.5px; font-weight:600;">@p.Code — @p.Name (v@p.Revision)</a>                                <span class="tag @pTagClass">@pLabel</span>
+                                <a href="@p.FilePath" target="_blank" download="@($"{p.Code}.{p.FileType}")" style="font-size:11.5px; font-weight:600;">@p.Code — @p.Name (v@p.Revision)</a>
+                                <span class="tag @pTagClass">@pLabel</span>
                             </div>
-                            <div class="stat-sub" style="margin-top:2px;">@p.SubmittedDate?.ToString("yyyy-MM-dd")</div>
+                            <div class="stat-sub" style="margin-top:2px;">@p.TaskTodo.Task.Title — @p.SubmittedDate?.ToString("yyyy-MM-dd")</div>
                         </div>
                     }
                 </div>
@@ -249,4 +271,14 @@
 
 @section Scripts {
     <script src="~/js/tab-persist.js" asp-append-version="true"></script>
+    <script>
+        function filterProposalsByTask() {
+            var sel = document.getElementById('proposalTaskFilter');
+            if (!sel) return;
+            var val = sel.value;
+            document.querySelectorAll('[data-proposal-task]').forEach(function(el) {
+                el.hidden = val !== '' && el.getAttribute('data-proposal-task') !== val;
+            });
+        }
+    </script>
 }

@@ -170,14 +170,15 @@ namespace AtharERP_System.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id, bool personal = false)
         {
-           
+
             var task = await _context.ProjectTasks
- 
-     .Include(t => t.Todos)
-     .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
-     .Include(t => t.Stage).ThenInclude(s => s.Project)
-     .Include(t => t.ProjectAssignment).ThenInclude(a => a!.Engineers).ThenInclude(e => e.User)
-     .FirstOrDefaultAsync(t => t.Id == id);
+
+.Include(t => t.Todos)
+.Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
+.Include(t => t.Stage).ThenInclude(s => s.Project)
+.Include(t => t.ProjectAssignment).ThenInclude(a => a!.Engineers).ThenInclude(e => e.User)
+.Include(t => t.ProjectAssignment).ThenInclude(a => a!.Tasks)
+.FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
                 return NotFound();
@@ -188,11 +189,19 @@ namespace AtharERP_System.Controllers
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.CanManage = canManage;
             ViewBag.CanEditDates = canManage || await CanEditDatesAsync(task);
-            ViewBag.Proposals = await _context.DesignProposals
-.Include(p => p.PreparedBy)
-.Where(p => p.TaskTodo.TaskId == id)
-.OrderByDescending(p => p.CreatedAt)
-.ToListAsync();
+            ViewBag.Proposals = task.ProjectAssignmentId.HasValue
+                ? await _context.DesignProposals
+                    .Include(p => p.PreparedBy)
+                    .Include(p => p.TaskTodo).ThenInclude(td => td.Task)
+                    .Where(p => p.TaskTodo.Task.ProjectAssignmentId == task.ProjectAssignmentId.Value)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync()
+                : await _context.DesignProposals
+                    .Include(p => p.PreparedBy)
+                    .Include(p => p.TaskTodo).ThenInclude(td => td.Task)
+                    .Where(p => p.TaskTodo.TaskId == id)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync();
 
             if (canManage)
             {
@@ -419,6 +428,19 @@ namespace AtharERP_System.Controllers
             {
                 TempData["Error"] = "التكليف معلَّق أو ملغى — لا يمكن التعامل مع مهامه حالياً";
                 return BackToTask();
+            }
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                var assignmentStatus = await _context.ProjectAssignments
+                    .Where(a => a.Id == task.ProjectAssignmentId.Value)
+                    .Select(a => a.Status)
+                    .FirstOrDefaultAsync();
+                if (assignmentStatus == AssignmentStatus.Completed)
+                {
+                    TempData["Error"] = "التكليف مكتمل بالفعل — لا يمكن إضافة بنود جديدة له";
+                    return BackToTask();
+                }
             }
 
             if (task.PlannedStartDate == null || task.PlannedEndDate == null)
