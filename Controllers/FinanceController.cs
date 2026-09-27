@@ -107,5 +107,56 @@ namespace AtharERP_System.Controllers
 
             return RedirectToAction("CostTable", new { projectId });
         }
+
+        // ============================================
+        // جدول البيع النهائي / المطالبة — خارجي، لمطالبات الزبائن
+        // ============================================
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> SaleTable(int? projectId)
+        {
+            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.ProjectId = projectId;
+
+            if (!projectId.HasValue)
+                return View(new List<FinancialClaim>());
+
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+                return Forbid();
+
+            var claims = await _context.FinancialClaims
+                .Include(c => c.ProjectAssignment)
+                .Where(c => c.ProjectId == projectId.Value)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            ViewBag.Project = project;
+            return View(claims);
+        }
+
+        [RequirePermission("Finance.Claims.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkClaimSettled(int id, int projectId)
+        {
+            var claim = await _context.FinancialClaims.FindAsync(id);
+            if (claim == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
+            if (!claim.IsClientSettled)
+            {
+                claim.IsClientSettled = true;
+                claim.ClientSettledAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("SaleTable", new { projectId });
+        }
     }
 }

@@ -1,0 +1,96 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<FinancialClaim>
+@{
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var projectId = ViewBag.ProjectId as int?;
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = "جدول البيع النهائي";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>جدول البيع النهائي / المطالبة</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end;">
+        <div style="flex:1; max-width:320px;">
+            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- اختاري مشروعاً --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                }
+            </select>
+        </div>
+    </form>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (projectId.HasValue && project != null)
+{
+    <div class="data-table" style="--cols: 70px 1fr 1fr 90px 100px 100px 90px 90px 100px 110px 130px">
+        <div class="data-table-head">
+            <div class="cell">رقم المشروع</div>
+            <div class="cell">المشروع</div>
+            <div class="cell">بيان التكليف</div>
+            <div class="cell">مساحة التكليف</div>
+            <div class="cell">سعر متر البيع</div>
+            <div class="cell">قيمة البيع</div>
+            <div class="cell">نسبة يدوية 1</div>
+            <div class="cell">نسبة يدوية 2</div>
+            <div class="cell">نسبة إعادة تصميم</div>
+            <div class="cell">قيمة البيع بعد النسبة</div>
+            <div class="cell">الحالة</div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مُرحَّلة إلى المالية بعد لهذا المشروع</div></div>
+        }
+        else
+        {
+            @foreach (var c in Model)
+            {
+                var valueAfter = c.Value
+                    * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
+                    * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
+                    * (1 + (c.RedesignIncreasePercentage ?? 0) / 100);
+                <div class="data-table-row">
+                    <div class="cell cell-num">@project.Id</div>
+                    <div class="cell">@project.Name</div>
+                    <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
+                    <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
+                    <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                    <div class="cell cell-num">@c.Value.ToString("N0")</div>
+                    <div class="cell cell-num">@(c.SaleMarkupPercent1?.ToString("N1") + "%" ?? "-")</div>
+                    <div class="cell cell-num">@(c.SaleMarkupPercent2?.ToString("N1") + "%" ?? "-")</div>
+                    <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
+                    <div class="cell cell-num">@valueAfter.ToString("N0")</div>
+                    <div class="cell">
+                        @if (c.IsClientSettled)
+                        {
+                            <span class="tag tag-success">تم التحصيل (@c.ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="MarkClaimSettled" onsubmit="return confirm('تأكيد تحصيل هذه المطالبة من العميل؟');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <input type="hidden" name="projectId" value="@projectId" />
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">تسجيل تحصيل</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}

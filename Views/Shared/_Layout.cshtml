@@ -230,11 +230,13 @@
                         <span class="nav-group-caret">▾</span>
                     </button>
                     <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
-                        <span class="nav-item disabled">المطالبات المالية <span class="tag tag-muted">قادمة</span></span>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
+                               asp-controller="Finance" asp-action="SaleTable">المطالبات المالية</a>
                        
                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
                                asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
-                        <span class="nav-item disabled">جدول البيع النهائي <span class="tag tag-muted">قادمة</span></span>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
+                               asp-controller="Finance" asp-action="SaleTable">جدول البيع النهائي</a>
                         <span class="nav-item disabled">الرواتب والمصاريف <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">الأرباح والخسائر <span class="tag tag-muted">قادمة</span></span>
                     </div>
