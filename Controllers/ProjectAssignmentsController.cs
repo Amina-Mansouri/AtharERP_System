@@ -141,7 +141,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate")] ProjectAssignment model,
+[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate,Area,PricePerMeter,SalePricePerMeter")] ProjectAssignment model,
 List<string>? engineerIds,
 List<int>? taskIds)
         {
@@ -295,7 +295,34 @@ List<int>? taskIds)
             return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
 
+        [RequirePermission("Projects.Assignments.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPricing(int id, int projectId, [Bind("Area,PricePerMeter,SalePricePerMeter")] ProjectAssignment model)
+        {
+            var assignment = await _context.ProjectAssignments.FindAsync(id);
+            if (assignment == null)
+                return NotFound();
 
+            var isLocked = await _context.FinancialRecords.AnyAsync(r => r.ProjectAssignmentId == id && r.IsCleared)
+                || await _context.FinancialClaims.AnyAsync(c => c.ProjectAssignmentId == id && c.IsClientSettled);
+
+            if (isLocked)
+            {
+                TempData["Error"] = "لا يمكن تعديل بيانات التسعير بعد تسوية التكليف مالياً (صرف/تحصيل)";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+            }
+
+            assignment.Area = model.Area;
+            assignment.PricePerMeter = model.PricePerMeter;
+            assignment.SalePricePerMeter = model.SalePricePerMeter;
+            await _context.SaveChangesAsync();
+
+            await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
+
+            TempData["Success"] = "تم تحديث بيانات التسعير بنجاح";
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+        }
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]

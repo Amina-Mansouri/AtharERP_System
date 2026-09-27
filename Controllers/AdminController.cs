@@ -959,7 +959,78 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = "تم حذف نوع المشروع بنجاح";
             return RedirectToAction("ProjectCategories");
         }
+        // ============================================
+        // إدارة تصنيفات المصروفات (ExpenseCategory)
+        // ============================================
 
+        [HttpGet]
+        public async Task<IActionResult> ExpenseCategories()
+        {
+            var categories = await _context.ExpenseCategories
+                .Include(c => c.Expenses)
+                .OrderBy(c => c.NameAr)
+                .ToListAsync();
+
+            return View(categories);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateExpenseCategory([Bind("NameAr")] ExpenseCategory model)
+        {
+            model.IsActive = true;
+
+            _context.ExpenseCategories.Add(model);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة تصنيف مصروف", "ExpenseCategory", model.Id.ToString(), $"إنشاء تصنيف {model.NameAr}");
+            TempData["Success"] = $"تم إنشاء تصنيف {model.NameAr} بنجاح";
+            return RedirectToAction("ExpenseCategories");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditExpenseCategory(int id, [Bind("NameAr,IsActive")] ExpenseCategory model)
+        {
+            var category = await _context.ExpenseCategories.FindAsync(id);
+            if (category == null)
+                return NotFound();
+
+            category.NameAr = model.NameAr;
+            category.IsActive = model.IsActive;
+
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل تصنيف مصروف", "ExpenseCategory", id.ToString(), $"تعديل تصنيف {category.NameAr}");
+            TempData["Success"] = $"تم تحديث تصنيف {category.NameAr} بنجاح";
+            return RedirectToAction("ExpenseCategories");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteExpenseCategory(int id)
+        {
+            var category = await _context.ExpenseCategories
+                .Include(c => c.Expenses)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (category == null)
+                return NotFound();
+
+            if (category.Expenses.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف التصنيف لوجود مصروفات مرتبطة به";
+                return RedirectToAction("ExpenseCategories");
+            }
+
+            var deletedName = category.NameAr;
+            _context.ExpenseCategories.Remove(category);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف تصنيف مصروف", "ExpenseCategory", id.ToString(), $"حذف تصنيف {deletedName}");
+            TempData["Success"] = "تم حذف التصنيف بنجاح";
+            return RedirectToAction("ExpenseCategories");
+        }
         // ============================================
         // إدارة المسارات والرتب (CareerTrack / JobRank)
         // ============================================

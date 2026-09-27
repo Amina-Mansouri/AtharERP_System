@@ -680,11 +680,12 @@ else
                     </select>
                 </div>
 
-                <div class="data-table" style="--cols: minmax(0,1.2fr) 100px 170px 90px 150px">
+                <div class="data-table" style="--cols: minmax(0,1.2fr) 100px 170px 140px 90px 150px">
                     <div class="data-table-head">
                         <div class="cell">التكليف</div>
                         <div class="cell">المرحلة</div>
                         <div class="cell">المهندسات</div>
+                        <div class="cell">التسعير</div>
                         <div class="cell">الحالة</div>
                         <div class="cell">إجراءات</div>
                     </div>
@@ -743,7 +744,34 @@ else
                                         </form>
                                     }
                                 </div>
-                                                               <div class="cell">
+                                <div class="cell" style="font-size:10.5px;">
+                                    @{
+                                        var pricingLocked = a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled);
+                                    }
+                                    @if (canManageAssignments && !pricingLocked)
+                                    {
+                                        <form method="post" asp-controller="ProjectAssignments" asp-action="EditPricing" style="display:grid; gap:3px;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@a.Id" />
+                                            <input type="hidden" name="projectId" value="@Model.Id" />
+                                            <input type="number" step="0.01" min="0" name="Area" value="@a.Area" placeholder="مساحة" style="height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
+                                            <input type="number" step="0.01" min="0" name="PricePerMeter" value="@a.PricePerMeter" placeholder="سعر تكليف" style="height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
+                                            <input type="number" step="0.01" min="0" name="SalePricePerMeter" value="@a.SalePricePerMeter" placeholder="سعر بيع" style="height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
+                                            <button type="submit" style="height:20px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:9.5px;">حفظ</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <div>م: @(a.Area?.ToString("N1") ?? "-")</div>
+                                        <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
+                                        <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                                        @if (pricingLocked)
+                                        {
+                                            <span class="tag tag-warning" style="font-size:9px;">مُسوّى — مقفل</span>
+                                        }
+                                    }
+                                </div>
+                                     <div class="cell">
                                     <span class="tag @(a.Status == AssignmentStatus.Completed ? "tag-success" : a.Status == AssignmentStatus.Cancelled ? "tag-danger" : "")">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
                                 </div>
                                 <div class="cell" style="display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; gap:4px;">
@@ -821,6 +849,20 @@ else
                                 <div>
                                     <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
                                     <input type="date" name="PlannedEndDate" required  style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">المساحة (م²)</label>
+                                    <input type="number" step="0.01" min="0" name="Area" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">سعر متر التكليف</label>
+                                    <input type="number" step="0.01" min="0" name="PricePerMeter" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">سعر متر البيع</label>
+                                    <input type="number" step="0.01" min="0" name="SalePricePerMeter" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
                                 </div>
                             </div>
                             @{

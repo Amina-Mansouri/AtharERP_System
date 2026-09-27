@@ -79,5 +79,7 @@ namespace AtharERP_System.Models.Entities
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 
         public virtual ICollection<AssignmentEngineer> Engineers { get; set; } = new List<AssignmentEngineer>();
+        public virtual ICollection<FinancialRecord> FinancialRecords { get; set; } = new List<FinancialRecord>();
+        public virtual ICollection<FinancialClaim> FinancialClaims { get; set; } = new List<FinancialClaim>();
     }
 }
