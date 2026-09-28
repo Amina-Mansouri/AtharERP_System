@@ -97,6 +97,17 @@ namespace AtharERP_System.Data
                 .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
                 .IsUnique();
 
+            // ========== علاقات FinancialRecord/FinancialClaim مع ProjectAssignment ==========
+            builder.Entity<FinancialRecord>()
+            .HasOne(f => f.ProjectAssignment)
+             .WithMany(a => a.FinancialRecords)
+              .HasForeignKey(f => f.ProjectAssignmentId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<FinancialClaim>()
+                .HasOne(c => c.ProjectAssignment)
+                .WithMany(a => a.FinancialClaims)
+                .HasForeignKey(c => c.ProjectAssignmentId);
             // ========== القسم (Department) - علاقة ذاتية ==========
             builder.Entity<Department>()
                 .HasOne(d => d.ParentDepartment)
