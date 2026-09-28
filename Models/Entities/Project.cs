@@ -76,7 +76,7 @@ namespace AtharERP_System.Models.Entities
         public decimal CompletionPercentage { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "الميزانية")]
+        [Display(Name = "الميزانية (سعر البيع)")]
         public decimal? Budget { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
