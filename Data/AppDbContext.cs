@@ -292,11 +292,7 @@ namespace AtharERP_System.Data
                 .HasForeignKey(f => f.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<FinancialRecord>()
-      .HasOne(f => f.ProjectAssignment)
-      .WithMany()
-      .HasForeignKey(f => f.ProjectAssignmentId)
-      .OnDelete(DeleteBehavior.SetNull);
+            
 
             // ========== الإشعارات (Notification) ==========
             // ========== الإشعارات (Notification) ==========
