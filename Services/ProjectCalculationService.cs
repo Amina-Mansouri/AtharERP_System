@@ -450,7 +450,7 @@ namespace AtharERP_System.Services
             if (dateTo.HasValue) expensesQuery = expensesQuery.Where(e => e.Date <= dateTo.Value);
             var totalGeneralExpenses = await expensesQuery.SumAsync(e => e.Amount);
 
-            var siteCosts = await _siteCalc.CalculateProjectSiteCostsAsync(projectId);
+            var siteCosts = await _siteCalc.CalculateProjectSiteCostsAsync(projectId, dateFrom, dateTo);
 
             return new ProjectNetProfitResult
             {
