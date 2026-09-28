@@ -2,12 +2,15 @@
 @using AtharERP_System.Services
 @model ProjectCalculationService.ProjectNetProfitResult
 @{
+    var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
+    var categoryId = ViewBag.CategoryId as int?;
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var projectId = ViewBag.ProjectId as int?;
     var project = ViewBag.Project as Project;
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
     ViewData["Title"] = "الأرباح والخسائر";
 }
-
 <div class="page-head">
     <div>
         <span class="kicker">المالية</span>
@@ -16,8 +19,18 @@
 </div>
 
 <div class="athar-card" style="margin-bottom:12px;">
-    <form method="get" style="display:flex; gap:8px; align-items:end;">
-        <div style="flex:1; max-width:320px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">نوع المشروع</label>
+            <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id" selected="@(categoryId == cat.Id)">@cat.DisplayName</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:220px;">
             <label class="form-label" style="font-size:11px;">المشروع</label>
             <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="">-- اختاري مشروعاً --</option>
@@ -27,8 +40,43 @@
                 }
             </select>
         </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">الربع</label>
+            <select id="quarterSelect" class="form-select form-select-sm" onchange="applyQuarter()">
+                <option value="">-- تحديد يدوي --</option>
+                <option value="1">الربع الأول</option>
+                <option value="2">الربع الثاني</option>
+                <option value="3">الربع الثالث</option>
+                <option value="4">الربع الرابع</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">السنة</label>
+            <input type="number" id="quarterYear" class="form-control form-control-sm" value="@DateTime.UtcNow.Year" style="width:90px;" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" id="dateFromInput" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" id="dateToInput" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
     </form>
 </div>
+
+<script>
+    function applyQuarter() {
+        const q = document.getElementById('quarterSelect').value;
+        if (!q) return;
+        const year = document.getElementById('quarterYear').value || new Date().getFullYear();
+        const starts = { "1": "01-01", "2": "04-01", "3": "07-01", "4": "10-01" };
+        const ends = { "1": "03-31", "2": "06-30", "3": "09-30", "4": "12-31" };
+        document.getElementById('dateFromInput').value = year + "-" + starts[q];
+        document.getElementById('dateToInput').value = year + "-" + ends[q];
+    }
+</script>
 
 @if (projectId.HasValue && project != null && Model != null)
 {

@@ -22,7 +22,7 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        private async Task<List<Project>> GetAccessibleProjectsAsync()
+        private async Task<List<Project>> GetAccessibleProjectsAsync(int? categoryId = null)
         {
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
@@ -34,17 +34,29 @@ namespace AtharERP_System.Controllers
             if (!canViewAll)
                 query = query.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
 
+            if (categoryId.HasValue)
+                query = query.Where(p => p.ProjectCategoryId == categoryId.Value);
+
             return await query.OrderBy(p => p.Name).ToListAsync();
+        }
+
+        private async Task<List<ProjectCategory>> GetActiveCategoriesAsync()
+        {
+            return await _context.ProjectCategories.Where(c => c.IsActive).OrderBy(c => c.Classification).ToListAsync();
         }
 
         // ============================================
         // جدول التكاليف — داخلي، لحساب مستحقات المهندسات
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> CostTable(int? projectId)
+        public async Task<IActionResult> CostTable(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.CategoryId = categoryId;
             ViewBag.ProjectId = projectId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
 
             if (!projectId.HasValue)
                 return View(new List<FinancialRecord>());
@@ -56,14 +68,18 @@ namespace AtharERP_System.Controllers
             if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
                 return Forbid();
 
-            var records = await _context.FinancialRecords
+            var query = _context.FinancialRecords
                 .Include(r => r.ProjectAssignment)
                 .Include(r => r.Engineer)
-                .Where(r => r.ProjectId == projectId.Value)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
+                .Where(r => r.ProjectId == projectId.Value);
 
-            // نسبة المهمة من المشروع لكل مهندسة: مجموع (وزن المهمة % من مرحلتها × وزن المرحلة % من المشروع) عبر كل مهامها المُعدَّة (DesignProposal.PreparedById) في كامل هذا المشروع
+            if (dateFrom.HasValue)
+                query = query.Where(r => r.CreatedAt >= dateFrom.Value);
+            if (dateTo.HasValue)
+                query = query.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+
+            var records = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+
             var allProjectTasks = await _context.ProjectTasks
                 .Include(t => t.Stage)
                 .Include(t => t.Todos).ThenInclude(td => td.DesignProposals)
@@ -113,10 +129,14 @@ namespace AtharERP_System.Controllers
         // جدول البيع النهائي / المطالبة — خارجي، لمطالبات الزبائن
         // ============================================
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> SaleTable(int? projectId)
+        public async Task<IActionResult> SaleTable(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.CategoryId = categoryId;
             ViewBag.ProjectId = projectId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
 
             if (!projectId.HasValue)
                 return View(new List<FinancialClaim>());
@@ -128,11 +148,16 @@ namespace AtharERP_System.Controllers
             if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
                 return Forbid();
 
-            var claims = await _context.FinancialClaims
+            var query = _context.FinancialClaims
                 .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == projectId.Value)
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+                .Where(c => c.ProjectId == projectId.Value);
+
+            if (dateFrom.HasValue)
+                query = query.Where(c => c.CreatedAt >= dateFrom.Value);
+            if (dateTo.HasValue)
+                query = query.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+
+            var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
 
             ViewBag.Project = project;
             return View(claims);
@@ -164,10 +189,14 @@ namespace AtharERP_System.Controllers
         // المصروفات — عامة أو مرتبطة بموقع محدد
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> Expenses(int? projectId)
+        public async Task<IActionResult> Expenses(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.CategoryId = categoryId;
             ViewBag.ProjectId = projectId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
 
             if (!projectId.HasValue)
                 return View(new List<ProjectExpense>());
@@ -179,15 +208,20 @@ namespace AtharERP_System.Controllers
             if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
                 return Forbid();
 
-            var expenses = await _context.ProjectExpenses
+            var query = _context.ProjectExpenses
                 .Include(e => e.ExpenseCategory)
                 .Include(e => e.Site)
-                .Where(e => e.ProjectId == projectId.Value)
-                .OrderByDescending(e => e.Date)
-                .ToListAsync();
+                .Where(e => e.ProjectId == projectId.Value);
+
+            if (dateFrom.HasValue)
+                query = query.Where(e => e.Date >= dateFrom.Value);
+            if (dateTo.HasValue)
+                query = query.Where(e => e.Date <= dateTo.Value);
+
+            var expenses = await query.OrderByDescending(e => e.Date).ToListAsync();
 
             ViewBag.Project = project;
-            ViewBag.Categories = await _context.ExpenseCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
+            ViewBag.ExpenseCategories = await _context.ExpenseCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
             ViewBag.Sites = await _context.Sites.Where(s => s.ProjectId == projectId.Value).OrderBy(s => s.Name).ToListAsync();
 
             return View(expenses);
@@ -232,10 +266,14 @@ namespace AtharERP_System.Controllers
         // الأرباح والخسائر
         // ============================================
         [RequirePermission("Finance.Reports")]
-        public async Task<IActionResult> Profit(int? projectId)
+        public async Task<IActionResult> Profit(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            ViewBag.Projects = await GetAccessibleProjectsAsync();
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.CategoryId = categoryId;
             ViewBag.ProjectId = projectId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
 
             if (!projectId.HasValue)
                 return View();
@@ -248,7 +286,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             ViewBag.Project = project;
-            var result = await _calc.CalculateProjectNetProfitAsync(projectId.Value);
+            var result = await _calc.CalculateProjectNetProfitAsync(projectId.Value, dateFrom, dateTo);
             return View(result);
         }
     }

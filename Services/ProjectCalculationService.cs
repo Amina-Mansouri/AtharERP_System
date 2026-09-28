@@ -418,15 +418,17 @@ namespace AtharERP_System.Services
             public decimal RealizedNetProfit { get; set; }  // صافي محقَّق — فقط ما تحصَّل/صُرف فعلياً
         }
 
-        public async Task<ProjectNetProfitResult> CalculateProjectNetProfitAsync(int projectId)
+        public async Task<ProjectNetProfitResult> CalculateProjectNetProfitAsync(int projectId, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            var claims = await _context.FinancialClaims
-                .Where(c => c.ProjectId == projectId)
-                .ToListAsync();
+            var claimsQuery = _context.FinancialClaims.Where(c => c.ProjectId == projectId);
+            if (dateFrom.HasValue) claimsQuery = claimsQuery.Where(c => c.CreatedAt >= dateFrom.Value);
+            if (dateTo.HasValue) claimsQuery = claimsQuery.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+            var claims = await claimsQuery.ToListAsync();
 
-            var records = await _context.FinancialRecords
-                .Where(r => r.ProjectId == projectId)
-                .ToListAsync();
+            var recordsQuery = _context.FinancialRecords.Where(r => r.ProjectId == projectId);
+            if (dateFrom.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt >= dateFrom.Value);
+            if (dateTo.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+            var records = await recordsQuery.ToListAsync();
 
             decimal ClaimValueAfter(FinancialClaim c) =>
                 c.Value
@@ -443,9 +445,10 @@ namespace AtharERP_System.Services
             var totalTaskCostsAccrued = records.Sum(RecordValueAfter);
             var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(RecordValueAfter);
 
-            var totalGeneralExpenses = await _context.ProjectExpenses
-                .Where(e => e.ProjectId == projectId && e.SiteId == null)
-                .SumAsync(e => e.Amount);
+            var expensesQuery = _context.ProjectExpenses.Where(e => e.ProjectId == projectId && e.SiteId == null);
+            if (dateFrom.HasValue) expensesQuery = expensesQuery.Where(e => e.Date >= dateFrom.Value);
+            if (dateTo.HasValue) expensesQuery = expensesQuery.Where(e => e.Date <= dateTo.Value);
+            var totalGeneralExpenses = await expensesQuery.SumAsync(e => e.Amount);
 
             var siteCosts = await _siteCalc.CalculateProjectSiteCostsAsync(projectId);
 
@@ -461,7 +464,6 @@ namespace AtharERP_System.Services
                 RealizedNetProfit = totalSalesRealized - (totalTaskCostsRealized + totalGeneralExpenses + siteCosts)
             };
         }
-
 
     }
 }
