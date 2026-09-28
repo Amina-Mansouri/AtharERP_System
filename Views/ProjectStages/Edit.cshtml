@@ -51,35 +51,33 @@
                 <label class="form-label">وزن التخصص (KPI)</label>
                 <input type="number" step="0.01" min="0" name="KpiWeight" class="form-control" value="@Model.KpiWeight" />
             </div>
-            <div class="row">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">المساحة (م²)</label>
-                        <input type="number" step="0.01" min="0" name="Area" class="form-control" value="@Model.Area" />
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">التكلفة الفعلية (من التكليفات)</label>
-                        <input type="text" class="form-control" value="@Model.ActualCost.ToString("N2")" disabled />
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">قيمة البيع (من التكليفات)</label>
-                        <input type="text" class="form-control" value="@Model.SaleValue.ToString("N2")" disabled />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">النسبة اليدوية الأولى (%)</label>
-                        <input type="number" step="0.01" name="SaleMarkupPercent1" class="form-control" value="@Model.SaleMarkupPercent1" />
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">النسبة اليدوية الثانية (%)</label>
-                        <input type="number" step="0.01" name="SaleMarkupPercent2" class="form-control" value="@Model.SaleMarkupPercent2" />
-                    </div>
-                </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">المساحة (م²)</label>
+                <input type="number" step="0.01" min="0" name="Area" class="form-control" value="@Model.Area" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">التكلفة الفعلية (من التكليفات)</label>
+                <input type="text" class="form-control" value="@Model.ActualCost.ToString("N2")" disabled />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">قيمة البيع (من التكليفات)</label>
+                <input type="text" class="form-control" value="@Model.SaleValue.ToString("N2")" disabled />
             </div>
         </div>
 
-      
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">النسبة اليدوية الأولى (%)</label>
+                <input type="number" step="0.01" name="SaleMarkupPercent1" class="form-control" value="@Model.SaleMarkupPercent1" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">النسبة اليدوية الثانية (%)</label>
+                <input type="number" step="0.01" name="SaleMarkupPercent2" class="form-control" value="@Model.SaleMarkupPercent2" />
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-md-6 mb-3">
