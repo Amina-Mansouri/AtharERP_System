@@ -423,10 +423,6 @@ namespace AtharERP_System.Controllers
                     await _context.SaveChangesAsync();
                 }
             }
-
-            if (task.StageId.HasValue)
-                await _calc.RecalculateStageAsync(task.StageId.Value);
-
             if (task.ProjectAssignmentId.HasValue)
             {
                 var assignment = await _context.ProjectAssignments.FirstOrDefaultAsync(a => a.Id == task.ProjectAssignmentId.Value);
@@ -439,6 +435,9 @@ namespace AtharERP_System.Controllers
                     await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
                 }
             }
+
+            if (task.StageId.HasValue)
+                await _calc.RecalculateStageAsync(task.StageId.Value);
         }
 
         private async Task<int> ComputeNextReviewNumberAsync(int taskTodoId)

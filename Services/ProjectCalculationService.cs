@@ -29,6 +29,7 @@ namespace AtharERP_System.Services
         {
             var stage = await _context.ProjectStages
                 .Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment)
+                .Include(s => s.Assignments)
                 .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null) return;
@@ -63,19 +64,20 @@ namespace AtharERP_System.Services
         // الحالة التلقائية الكاملة للمرحلة — لا تدخّل يدوي إطلاقاً
         public void ApplyAutomaticStageStatus(ProjectStage stage, IEnumerable<ProjectStage> allProjectStages)
         {
+            var hasActiveRedesign = stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled);
+            if (hasActiveRedesign)
+            {
+                stage.Status = StageStatus.InProgress;
+                return;
+            }
+
             // 100% لكن توجد مهمة محظورة معلَّقة — لا تُعتبر مكتملة فعلياً حتى تُحل
             if (stage.CompletionPercentage >= 100 && !stage.Tasks.Any(IsTaskFrozen))
             {
                 stage.Status = StageStatus.Completed;
                 return;
             }
-
-            if (stage.PlannedEndDate.HasValue && DateTime.UtcNow.Date > stage.PlannedEndDate.Value.Date)
-            {
-                stage.Status = StageStatus.Delayed;
-                return;
-            }
-
+         
             var priorStagesCompleted = allProjectStages
                 .Where(s => s.Id != stage.Id && s.Sequence < stage.Sequence)
                 .All(s => s.Status == StageStatus.Completed);
@@ -116,19 +118,24 @@ namespace AtharERP_System.Services
                 ? Math.Round(weightedSum / totalWeight, 2)
                 : 0;
 
-            // إكمال تلقائي (بند حالة المشروع): تصل نسبة الإنجاز الكلية 100% وليس ملغى أو متوقفاً مؤقتاً
-            if (project.CompletionPercentage >= 100 && project.Status != ProjectStatus.Cancelled && project.Status != ProjectStatus.OnHold)
+            // المشروع مكتمل فقط إذا: وزن كل مراحله المُعرَّفة أغلق 100% من المشروع، وكل مرحلة منها بحالة "مكتملة" فعلياً (لا نسبتها فقط)
+            var isStageWeightFullyAllocated = totalWeight >= 100;
+            var allStagesActuallyCompleted = project.Stages.Any() && project.Stages.All(s => s.Status == StageStatus.Completed);
+
+            if (project.Status != ProjectStatus.Cancelled && project.Status != ProjectStatus.OnHold)
             {
-                project.Status = ProjectStatus.Completed;
-            }
-            else if (project.Status == ProjectStatus.InProgress || project.Status == ProjectStatus.Delayed)
-            {
-                // متأخر: باقي 30 يوماً أو أقل على تاريخ التسليم (أو تجاوزه فعلاً) ونسبة الإنجاز أقل من 70%
-                var daysRemaining = project.PlannedEndDate.HasValue
-                    ? (int?)(project.PlannedEndDate.Value.Date - DateTime.UtcNow.Date).Days
-                    : null;
-                var isAtRisk = daysRemaining.HasValue && daysRemaining.Value <= 30 && project.CompletionPercentage < 70;
-                project.Status = isAtRisk ? ProjectStatus.Delayed : ProjectStatus.InProgress;
+                if (isStageWeightFullyAllocated && allStagesActuallyCompleted)
+                {
+                    project.Status = ProjectStatus.Completed;
+                }
+                else
+                {
+                    var daysRemaining = project.PlannedEndDate.HasValue
+                        ? (int?)(project.PlannedEndDate.Value.Date - DateTime.UtcNow.Date).Days
+                        : null;
+                    var isAtRisk = daysRemaining.HasValue && daysRemaining.Value <= 30 && project.CompletionPercentage < 70;
+                    project.Status = isAtRisk ? ProjectStatus.Delayed : ProjectStatus.InProgress;
+                }
             }
 
             await _context.SaveChangesAsync();

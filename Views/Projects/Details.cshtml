@@ -885,6 +885,15 @@ else
                                     }
                                 </div>
                             }
+                                                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                                <label style="display:flex; align-items:center; gap:4px; font-size:11px;">
+                                    <input type="checkbox" name="IsRedesign" value="true" id="isRedesignCheck" onchange="document.getElementById('redesignTaskTitleWrap').style.display = this.checked ? 'block' : 'none';" />
+                                    تكليف إعادة تصميم (لن يؤثر على وزن/نسبة المرحلة)
+                                </label>
+                            </div>
+                            <div id="redesignTaskTitleWrap" style="display:none;">
+                                <input type="text" name="redesignTaskTitle" placeholder="عنوان مهمة إعادة التصميم" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                            </div>
                         </form>
                     </div>
                 }

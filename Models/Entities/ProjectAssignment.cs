@@ -51,6 +51,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "عاجل")]
         public bool IsUrgent { get; set; }
 
+        [Display(Name = "تكليف إعادة تصميم")]
+        public bool IsRedesign { get; set; }
+
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ البداية")]
         public DateTime? PlannedStartDate { get; set; }

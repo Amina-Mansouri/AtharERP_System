@@ -141,10 +141,11 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate,Area,PricePerMeter,SalePricePerMeter")] ProjectAssignment model,
+[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate,Area,PricePerMeter,SalePricePerMeter,IsRedesign")] ProjectAssignment model,
 List<string>? engineerIds,
-List<int>? taskIds)
-        {
+List<int>? taskIds,
+string? redesignTaskTitle)
+        { 
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
                 return NotFound();
@@ -159,10 +160,15 @@ List<int>? taskIds)
                     return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
                 }
             }
-
-            if (taskIds == null || !taskIds.Any())
+            if (!model.IsRedesign && (taskIds == null || !taskIds.Any()))
             {
                 TempData["Error"] = "يجب اختيار مهمة واحدة على الأقل عند إنشاء التكليف";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
+            }
+
+            if (model.IsRedesign && string.IsNullOrWhiteSpace(redesignTaskTitle))
+            {
+                TempData["Error"] = "يجب كتابة عنوان مهمة إعادة التصميم";
                 return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
             }
 
@@ -209,7 +215,25 @@ List<int>? taskIds)
                 }
             }
 
-            if (taskIds != null && taskIds.Any())
+            if (model.IsRedesign)
+            {
+                _context.ProjectTasks.Add(new ProjectTask
+                {
+                    ProjectId = model.ProjectId,
+                    StageId = model.StageId,
+                    ProjectAssignmentId = model.Id,
+                    Title = redesignTaskTitle!,
+                    Weight = 0,
+                    Status = ProjectTaskStatus.NotStarted,
+                    Priority = TaskPriority.Medium,
+                    PlannedStartDate = model.PlannedStartDate,
+                    PlannedEndDate = model.PlannedEndDate,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = CurrentUserId
+                });
+                await _context.SaveChangesAsync();
+            }
+            else if (taskIds != null && taskIds.Any())
             {
                 var tasksToLink = await _context.ProjectTasks
                     .Where(t => taskIds.Contains(t.Id) && t.StageId == model.StageId && t.ProjectAssignmentId == null)
@@ -222,6 +246,9 @@ List<int>? taskIds)
                 }
                 await _context.SaveChangesAsync();
             }
+
+            if (model.StageId.HasValue)
+                await _calc.RecalculateStageAsync(model.StageId.Value);
 
             // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)
             if (project.Status == ProjectStatus.New)
