@@ -6,7 +6,7 @@
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var selectedProjectId = ViewBag.ProjectId as int?;
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
-    var disciplineLabels = EnumDisplayHelper.GetDisplayList<DocumentClassification>();
+    
 
     string StageTagClass(StageStatus s) => s switch
     {
@@ -88,7 +88,7 @@ else
                     <div class="cell cell-num">@stage.Sequence</div>
                     <div class="cell">@stage.Name</div>
                     <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
-                    <div class="cell">@(stage.Discipline.HasValue ? disciplineLabels.FirstOrDefault(x => x.Value == stage.Discipline.Value.ToString()).Label : "-")</div>
+                    <div class="cell">@(stage.DisciplineDepartment?.Name ?? "-")</div>
                     <div class="cell cell-num">@(stage.KpiWeight?.ToString("N0") + "%" ?? "-")</div>
                     <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
                     <div class="cell cell-num">@stage.Assignments.Count</div>

@@ -47,6 +47,7 @@ namespace AtharERP_System.Controllers
 
             var stages = await _context.ProjectStages
                 .Include(s => s.AssignedEngineer)
+                .Include(s => s.DisciplineDepartment)
                 .Include(s => s.Assignments)
                 .Where(s => s.ProjectId == projectId.Value)
                 .OrderBy(s => s.Sequence)
@@ -79,7 +80,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> ActivateTemplate(
                 int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
                 decimal? area, decimal? pricePerMeter,
-                DocumentClassification? discipline, decimal? kpiWeight,
+                int? disciplineDepartmentId, decimal? kpiWeight,
                 List<int>? selectedTaskIds, string? extraTasks)
         {
             var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
@@ -133,8 +134,8 @@ namespace AtharERP_System.Controllers
                 Name = template.Name,
                 Weight = weight,
                 Area = area,
-             
-                Discipline = discipline,
+
+                DisciplineDepartmentId = disciplineDepartmentId,
                 KpiWeight = kpiWeight,
                 AssignedEngineerId = string.IsNullOrEmpty(assignedEngineerId) ? null : assignedEngineerId,
                 Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
@@ -218,7 +219,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,Discipline,KpiWeight,SaleMarkupPercent1,SaleMarkupPercent2")] ProjectStage model)
+      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,DisciplineDepartmentId,KpiWeight,SaleMarkupPercent1,SaleMarkupPercent2")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
@@ -246,7 +247,7 @@ namespace AtharERP_System.Controllers
             stage.Area = model.Area;
             stage.SaleMarkupPercent1 = model.SaleMarkupPercent1;
             stage.SaleMarkupPercent2 = model.SaleMarkupPercent2;
-            stage.Discipline = model.Discipline;
+            stage.DisciplineDepartmentId = model.DisciplineDepartmentId;
             stage.KpiWeight = model.KpiWeight;
 
             var allStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
@@ -297,9 +298,14 @@ namespace AtharERP_System.Controllers
         private async Task LoadDropdownsAsync(int projectId)
         {
             ViewBag.Engineers = await _userManager.Users
-.Where(u => u.IsActive)
-.OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
-.ToListAsync();
+        .Where(u => u.IsActive)
+         .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+         .ToListAsync();
+
+           ViewBag.Disciplines = await _context.Departments
+           .Where(d => d.ParentDepartment != null && d.ParentDepartment.Name == "الإدارة الفنية" && d.IsActive)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
 
         }
         private async Task EnsureTeamMembershipAsync(int projectId, string userId)

@@ -33,7 +33,7 @@
     var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
     var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
-    var disciplineLabels = EnumDisplayHelper.GetDisplayList<DocumentClassification>();
+
     var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
     var weightSum = Model.Stages.Sum(s => s.Weight);
 
@@ -522,7 +522,7 @@ else
                                     }
                                 </div>
                                 <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
-                                <div class="cell">@(stage.Discipline.HasValue ? disciplineLabels.FirstOrDefault(x => x.Value == stage.Discipline.Value.ToString()).Label : "-")</div>
+                                <div class="cell">@(stage.DisciplineDepartment?.Name ?? "-")</div>
                                 <div class="cell cell-num">@(stage.KpiWeight?.ToString("N0") + "%" ?? "-")</div>
                                 <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
                                 <div class="cell cell-num">@stage.Assignments.Count</div>
@@ -631,11 +631,11 @@ else
                                             
                                             </div>
                                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-                                                <select name="discipline" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                <select name="disciplineDepartmentId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
                                                     <option value="">-- التخصص --</option>
-                                                    @foreach (var d in disciplineLabels)
+                                                    @foreach (var d in (ViewBag.StageDisciplines as List<Department> ?? new List<Department>()))
                                                     {
-                                                        <option value="@d.Value">@d.Label</option>
+                                                        <option value="@d.Id">@d.Name</option>
                                                     }
                                                 </select>
                                                 <input type="number" step="0.01" min="0" name="kpiWeight" placeholder="وزن KPI" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />

@@ -39,11 +39,11 @@
             </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">التخصص</label>
-                <select name="Discipline" class="form-select">
+                <select name="DisciplineDepartmentId" class="form-select">
                     <option value="">-- غير محدد --</option>
-                    @foreach (var d in Enum.GetValues<DocumentClassification>())
+                    @foreach (var d in (ViewBag.Disciplines as List<Department> ?? new List<Department>()))
                     {
-                        <option value="@d" selected="@(Model.Discipline == d)">@d</option>
+                        <option value="@d.Id" selected="@(Model.DisciplineDepartmentId == d.Id)">@d.Name</option>
                     }
                 </select>
             </div>

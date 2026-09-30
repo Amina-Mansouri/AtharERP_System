@@ -28,7 +28,10 @@ namespace AtharERP_System.Models.Entities
         public decimal Weight { get; set; }
 
         [Display(Name = "التخصص")]
-        public DocumentClassification? Discipline { get; set; }
+        public int? DisciplineDepartmentId { get; set; }
+
+        [ForeignKey("DisciplineDepartmentId")]
+        public virtual Department? DisciplineDepartment { get; set; }
 
         // وزن مستقل تماماً عن Weight أعلاه — يُدخَل يدوياً لكل مرحلة، يختلف حسب نوع المشروع، يُستخدم لاحقاً في حساب KPI
         [Column(TypeName = "decimal(5,2)")]
