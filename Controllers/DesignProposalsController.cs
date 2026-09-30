@@ -191,7 +191,70 @@ namespace AtharERP_System.Controllers
             return View();
         }
 
-        [RequirePermission("Projects.Tasks.Manage")]
+        [HttpGet]
+        public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
+        {
+            var proposal = await _context.DesignProposals
+                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
+                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.ProjectAssignment)
+                .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
+                .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (proposal == null)
+                return NotFound();
+
+            var supervisorId = proposal.TaskTodo.Task.Stage?.AssignedEngineerId;
+            var existingReview = await _context.ProposalReviews.FirstOrDefaultAsync(r => r.DesignProposalId == proposal.Id);
+            var isSupervisorPhase = existingReview == null && !string.IsNullOrEmpty(supervisorId);
+
+            if (isSupervisorPhase)
+            {
+                if (CurrentUserId != supervisorId)
+                    return Forbid();
+            }
+            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+            {
+                return Forbid();
+            }
+
+            var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+
+            ApplicationUser? supervisor = null;
+            if (!string.IsNullOrEmpty(supervisorId))
+                supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
+
+            var lastReviewNumber = await _context.ProposalReviews
+     .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodoId == proposal.TaskTodoId)
+     .Select(r => (int?)r.ReviewNumber)
+     .MaxAsync() ?? 0;
+
+            // "رقم/اسم المبنى" = المشروع الفرعي؛ إذا كان مشروع المقترح نفسه فرعياً، فالمشروع الرئيسي هو والده (مطابق لمنطق توليد الـ PDF في Review POST)
+            var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
+            var mainProject = subProject != null && proposal.Project.ParentProject != null
+                ? proposal.Project.ParentProject
+                : proposal.Project;
+
+            ViewBag.Proposal = proposal;
+            ViewBag.ReviewPhase = isSupervisorPhase ? "Supervisor" : "Manager";
+            ViewBag.ReviewerName = reviewer?.FullName;
+            ViewBag.ReviewerPosition = reviewer?.JobRankRef?.NameAr;
+            ViewBag.ReviewerSignaturePath = reviewer?.SignatureImagePath;
+            ViewBag.SupervisorName = supervisor?.FullName;
+            ViewBag.SupervisorPosition = supervisor?.JobRankRef?.NameAr;
+            ViewBag.SupervisorSignaturePath = supervisor?.SignatureImagePath;
+            ViewBag.SuggestedReviewNumber = lastReviewNumber + 1;
+            ViewBag.ProjectId = projectId;
+            ViewBag.StageId = stageId;
+            ViewBag.TaskFilter = taskFilter;
+            ViewBag.MainProject = mainProject;
+            ViewBag.SubProject = subProject;
+            ViewBag.ProjectCategoryLabel = mainProject.ProjectCategory?.DisplayName ?? "-";
+            ViewBag.ReviewDate = DateTime.UtcNow;
+            ViewBag.AssignmentType = proposal.TaskTodo?.Task?.ProjectAssignment?.AssignmentType;
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Review(
@@ -204,6 +267,7 @@ namespace AtharERP_System.Controllers
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
+                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.ProjectAssignment)
                 .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
                 .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
                 .Include(p => p.PreparedBy)
@@ -214,41 +278,92 @@ namespace AtharERP_System.Controllers
 
             var todo = proposal.TaskTodo;
             var task = todo.Task;
-
-            // رقم المراجعة يُحسب هنا دائماً من الخادم لكل بند بذاته، ولا يُستقبَل من المستخدم إطلاقاً
-            var lastReviewNumberAtSubmit = await _context.ProposalReviews
-                .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodoId == proposal.TaskTodoId)
-                .Select(r => (int?)r.ReviewNumber)
-                .MaxAsync() ?? 0;
-            var reviewNumber = lastReviewNumberAtSubmit + 1;
-
-            var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
-
-            ApplicationUser? supervisor = null;
             var supervisorId = task.Stage?.AssignedEngineerId;
-            if (!string.IsNullOrEmpty(supervisorId))
-                supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
+            var hasSupervisor = !string.IsNullOrEmpty(supervisorId);
+
+            var existingReview = await _context.ProposalReviews.FirstOrDefaultAsync(r => r.DesignProposalId == proposal.Id);
+            var isSupervisorPhase = existingReview == null && hasSupervisor;
+
+            if (isSupervisorPhase)
+            {
+                if (CurrentUserId != supervisorId)
+                    return Forbid();
+            }
+            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+            {
+                return Forbid();
+            }
+
+            var actingUser = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+            var isApprovalDecision = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification;
+
+            // الخطوة الأولى (توصية المشرف بالاعتماد): تُحفَظ وتنتقل للمدير للاعتماد النهائي، دون أي تأثير على حالة المستند/المهمة بعد
+            if (isSupervisorPhase && isApprovalDecision)
+            {
+                var pendingReview = new ProposalReview
+                {
+                    DesignProposalId = proposal.Id,
+                    Status = ProposalStatus.Submitted,
+                    ReviewerName = actingUser?.FullName ?? "",
+                    ReviewerPosition = actingUser?.JobRankRef?.NameAr,
+                    ReviewerSignaturePath = actingUser?.SignatureImagePath,
+                    SupervisorName = actingUser?.FullName,
+                    SupervisorPosition = actingUser?.JobRankRef?.NameAr,
+                    SupervisorSignaturePath = actingUser?.SignatureImagePath,
+                    SupervisorStatus = status,
+                    SupervisorReviewedAt = DateTime.UtcNow,
+                    Notes = notes,
+                    Discipline = task.ProjectAssignment?.AssignmentType,
+                    ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId),
+                    ReviewDate = DateTime.UtcNow,
+                    ReviewedById = CurrentUserId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.ProposalReviews.Add(pendingReview);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "تم إرسال توصيتك — بانتظار الاعتماد النهائي من المدير";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
+
+            // قرار نهائي: رفض المشرف في الخطوة الأولى (لا يصل للمدير)، أو اعتماد/رفض المدير في الخطوة الثانية، أو الحالة القديمة بلا مشرف مُعيَّن
+            ProposalReview review;
+            if (existingReview != null)
+            {
+                review = existingReview;
+                review.Status = status;
+                review.ReviewerName = actingUser?.FullName ?? "";
+                review.ReviewerPosition = actingUser?.JobRankRef?.NameAr;
+                review.ReviewerSignaturePath = actingUser?.SignatureImagePath;
+                review.Notes = notes;
+                review.ReviewDate = DateTime.UtcNow;
+                review.ReviewedById = CurrentUserId;
+            }
+            else
+            {
+                review = new ProposalReview
+                {
+                    DesignProposalId = proposal.Id,
+                    Status = status,
+                    ReviewerName = actingUser?.FullName ?? "",
+                    ReviewerPosition = actingUser?.JobRankRef?.NameAr,
+                    ReviewerSignaturePath = actingUser?.SignatureImagePath,
+                    SupervisorName = hasSupervisor ? actingUser?.FullName : null,
+                    SupervisorPosition = hasSupervisor ? actingUser?.JobRankRef?.NameAr : null,
+                    SupervisorSignaturePath = hasSupervisor ? actingUser?.SignatureImagePath : null,
+                    SupervisorStatus = hasSupervisor ? status : (ProposalStatus?)null,
+                    SupervisorReviewedAt = hasSupervisor ? DateTime.UtcNow : (DateTime?)null,
+                    Notes = notes,
+                    Discipline = task.ProjectAssignment?.AssignmentType,
+                    ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId),
+                    ReviewDate = DateTime.UtcNow,
+                    ReviewedById = CurrentUserId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.ProposalReviews.Add(review);
+            }
 
             proposal.Status = status;
-
-            var review = new ProposalReview
-            {
-                DesignProposalId = proposal.Id,
-                Status = status,
-                ReviewerName = reviewer?.FullName ?? "",
-                ReviewerPosition = reviewer?.JobRankRef?.NameAr,
-                ReviewerSignaturePath = reviewer?.SignatureImagePath,
-                SupervisorName = supervisor?.FullName,
-                SupervisorPosition = supervisor?.JobRankRef?.NameAr,
-                SupervisorSignaturePath = supervisor?.SignatureImagePath,
-                Notes = notes,
-                Discipline = task.ProjectAssignment?.AssignmentType,
-                ReviewNumber = reviewNumber,
-                ReviewDate = DateTime.UtcNow,
-                ReviewedById = CurrentUserId,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.ProposalReviews.Add(review);
             await _context.SaveChangesAsync();
 
             if (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign)
@@ -363,6 +478,14 @@ namespace AtharERP_System.Controllers
             }
         }
 
+        private async Task<int> ComputeNextReviewNumberAsync(int taskTodoId)
+        {
+            var last = await _context.ProposalReviews
+                .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodoId == taskTodoId)
+                .Select(r => (int?)r.ReviewNumber)
+                .MaxAsync() ?? 0;
+            return last + 1;
+        }
         private async Task<bool> IsAssignmentLockedAsync(ProjectTask task)
         {
             if (!task.ProjectAssignmentId.HasValue)

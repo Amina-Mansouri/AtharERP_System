@@ -55,6 +55,12 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "توقيع المشرف المباشر")]
         public string? SupervisorSignaturePath { get; set; }
 
+        [Display(Name = "قرار المشرف المباشر")]
+        public ProposalStatus? SupervisorStatus { get; set; }
+
+        [Display(Name = "تاريخ قرار المشرف المباشر")]
+        public DateTime? SupervisorReviewedAt { get; set; }
+
         [Display(Name = "الملاحظات")]
         public string? Notes { get; set; }
 
