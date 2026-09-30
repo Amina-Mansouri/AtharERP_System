@@ -97,7 +97,8 @@ namespace AtharERP_System.Controllers
                 notification.ReadAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
-                await SendReadReceiptAsync(notification);
+                if (notification.EventType == NotificationEventType.TaskAssigned)
+                    await SendReadReceiptAsync(notification);
             }
 
             if (notification?.Link != null)
