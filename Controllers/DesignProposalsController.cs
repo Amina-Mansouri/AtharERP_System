@@ -146,6 +146,7 @@ namespace AtharERP_System.Controllers
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
+               .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.ProjectAssignment)
                 .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
                 .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -186,6 +187,7 @@ namespace AtharERP_System.Controllers
             ViewBag.SubProject = subProject;
             ViewBag.ProjectCategoryLabel = mainProject.ProjectCategory?.DisplayName ?? "-";
             ViewBag.ReviewDate = DateTime.UtcNow;
+            ViewBag.AssignmentType = proposal.TaskTodo?.Task?.ProjectAssignment?.AssignmentType;
             return View();
         }
 
@@ -196,7 +198,6 @@ namespace AtharERP_System.Controllers
      int id,
      ProposalStatus status,
      string? notes,
-     string? discipline,
      int? projectId,
      int? stageId,
      string? taskFilter)
@@ -241,7 +242,7 @@ namespace AtharERP_System.Controllers
                 SupervisorPosition = supervisor?.JobRankRef?.NameAr,
                 SupervisorSignaturePath = supervisor?.SignatureImagePath,
                 Notes = notes,
-                Discipline = discipline,
+                Discipline = task.ProjectAssignment?.AssignmentType,
                 ReviewNumber = reviewNumber,
                 ReviewDate = DateTime.UtcNow,
                 ReviewedById = CurrentUserId,
