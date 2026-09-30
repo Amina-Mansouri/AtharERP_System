@@ -508,6 +508,10 @@ else
                                         ▾ @stage.Name
                                     </a>
                                     <span class="stat-sub">(@stage.Tasks.Count مهمة)</span>
+                                   @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
+                                    {
+                                        <span class="tag tag-accent" title="يوجد تكليف إعادة تصميم قيد التنفيذ على هذه المرحلة">🔁 إعادة تصميم</span>
+                                    }
                                     @if (stage.ActualCost > stage.SaleValue)
                                     {
                                         <span class="tag tag-danger">خسارة في المرحلة</span>

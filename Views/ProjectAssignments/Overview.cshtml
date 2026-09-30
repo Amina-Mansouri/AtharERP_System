@@ -135,6 +135,10 @@ else
                                 {
                                     <span class="tag tag-danger">مستعجل</span>
                                 }
+                                @if (a.IsRedesign)
+                                {
+                                    <span class="tag tag-accent">🔁 إعادة تصميم</span>
+                                }
                                 <span class="stat-sub" style="margin-right:6px;">— المرحلة: @(a.Stage?.Name ?? "-")</span>
                             </div>
                             <span class="tag">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>

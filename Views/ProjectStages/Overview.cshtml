@@ -86,7 +86,13 @@ else
             {
                 <div class="data-table-row">
                     <div class="cell cell-num">@stage.Sequence</div>
-                    <div class="cell">@stage.Name</div>
+                    <div class="cell">
+                        @stage.Name
+                        @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
+                        {
+                            <span class="tag tag-accent" style="font-size:9px;">🔁</span>
+                        }
+                    </div>
                     <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
                     <div class="cell">@(stage.DisciplineDepartment?.Name ?? "-")</div>
                     <div class="cell cell-num">@(stage.KpiWeight?.ToString("N0") + "%" ?? "-")</div>
