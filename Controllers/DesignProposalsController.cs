@@ -106,15 +106,13 @@ namespace AtharERP_System.Controllers
                 return BackToTask();
             }
 
-            var globalDocNumber = await _context.DesignProposals.Where(d => d.ProjectId == task.ProjectId).CountAsync() + 1;
-
             var seqInAssignment = task.ProjectAssignmentId.HasValue
-                ? await _context.DesignProposals.Where(d => d.TaskTodo.Task.ProjectAssignmentId == task.ProjectAssignmentId.Value).CountAsync() + 1
-                : 1;
+     ? await _context.DesignProposals.Where(d => d.TaskTodo.Task.ProjectAssignmentId == task.ProjectAssignmentId.Value).CountAsync() + 1
+     : 1;
 
             var version = await _context.DesignProposals.Where(d => d.TaskTodoId == todoId).CountAsync() + 1;
 
-            var code = $"{task.Project.Code}-{globalDocNumber:D3}-{classification}-{fileCategory}-{seqInAssignment:D2}-{version:D2}";
+            var code = $"{task.Project.Code}-{fileCategory}-{classification}-{seqInAssignment:D2}-{version:D2}";
 
             var proposal = new DesignProposal
             {
