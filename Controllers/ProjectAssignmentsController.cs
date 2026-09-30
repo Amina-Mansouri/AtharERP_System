@@ -141,10 +141,9 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate,Area,PricePerMeter,SalePricePerMeter,IsRedesign")] ProjectAssignment model,
+[Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate,Area,PricePerMeter,SalePricePerMeter")] ProjectAssignment model,
 List<string>? engineerIds,
-List<int>? taskIds,
-string? redesignTaskTitle)
+List<int>? taskIds)
         { 
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
@@ -160,15 +159,9 @@ string? redesignTaskTitle)
                     return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
                 }
             }
-            if (!model.IsRedesign && (taskIds == null || !taskIds.Any()))
+            if (taskIds == null || !taskIds.Any())
             {
                 TempData["Error"] = "يجب اختيار مهمة واحدة على الأقل عند إنشاء التكليف";
-                return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
-            }
-
-            if (model.IsRedesign && string.IsNullOrWhiteSpace(redesignTaskTitle))
-            {
-                TempData["Error"] = "يجب كتابة عنوان مهمة إعادة التصميم";
                 return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
             }
 
@@ -214,26 +207,7 @@ string? redesignTaskTitle)
                     await _notify.NotifyAsync(uid, $"تم تكليفك بتكليف: {model.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: model.Id);
                 }
             }
-
-            if (model.IsRedesign)
-            {
-                _context.ProjectTasks.Add(new ProjectTask
-                {
-                    ProjectId = model.ProjectId,
-                    StageId = model.StageId,
-                    ProjectAssignmentId = model.Id,
-                    Title = redesignTaskTitle!,
-                    Weight = 0,
-                    Status = ProjectTaskStatus.NotStarted,
-                    Priority = TaskPriority.Medium,
-                    PlannedStartDate = model.PlannedStartDate,
-                    PlannedEndDate = model.PlannedEndDate,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedById = CurrentUserId
-                });
-                await _context.SaveChangesAsync();
-            }
-            else if (taskIds != null && taskIds.Any())
+            if (taskIds != null && taskIds.Any())
             {
                 var tasksToLink = await _context.ProjectTasks
                     .Where(t => taskIds.Contains(t.Id) && t.StageId == model.StageId && t.ProjectAssignmentId == null)
