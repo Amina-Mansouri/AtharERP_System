@@ -153,6 +153,13 @@ namespace AtharERP_System.Controllers
             if (proposal == null)
                 return NotFound();
 
+
+            if (proposal.Status != ProposalStatus.Submitted)
+            {
+                TempData["Error"] = "تم اتخاذ قرار نهائي على هذا المستند مسبقاً";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
+
             var supervisorId = proposal.TaskTodo.Task.Stage?.AssignedEngineerId;
             var existingReview = await _context.ProposalReviews.FirstOrDefaultAsync(r => r.DesignProposalId == proposal.Id);
             var isSupervisorPhase = existingReview == null && !string.IsNullOrEmpty(supervisorId);
@@ -224,6 +231,13 @@ namespace AtharERP_System.Controllers
 
             if (proposal == null)
                 return NotFound();
+
+
+            if (proposal.Status != ProposalStatus.Submitted)
+            {
+                TempData["Error"] = "تم اتخاذ قرار نهائي على هذا المستند مسبقاً";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
 
             var todo = proposal.TaskTodo;
             var task = todo.Task;
