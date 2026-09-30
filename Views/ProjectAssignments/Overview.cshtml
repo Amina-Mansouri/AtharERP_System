@@ -119,9 +119,10 @@ else
         else
         {
             var canReview = await PermissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value;
             @foreach (var a in Model)
             {
-                var assignmentCanReview = a.Stage?.AssignedEngineerId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value || canReview;
+                var isStageSupervisor = a.Stage?.AssignedEngineerId == currentUserId;
                 var allProposalsFull = a.Tasks.SelectMany(t => t.Todos.SelectMany(td => td.DesignProposals.Select(p => new { Task = t, Todo = td, Proposal = p }))).OrderByDescending(x => x.Proposal.CreatedAt).ToList();
                 var allProposals = docFilter == "all" ? allProposalsFull : allProposalsFull.Where(x => x.Proposal.Status.ToString() == docFilter).ToList();
 
@@ -211,10 +212,23 @@ else
                                             <span class="tag @propTagClass">@propLabel</span>
                                         </td>
                                         <td style="padding:9px 12px; text-align:center;">
-                                            @if (proposal.Status == ProposalStatus.Submitted && assignmentCanReview)
+                                            @{
+                                                var proposalReview = proposal.Reviews.FirstOrDefault();
+                                                var awaitingSupervisor = a.Stage?.AssignedEngineerId != null && proposalReview == null;
+                                                var awaitingManager = proposalReview != null
+                                                    ? proposalReview.Status == ProposalStatus.Submitted
+                                                        && (proposalReview.SupervisorStatus == ProposalStatus.Approved || proposalReview.SupervisorStatus == ProposalStatus.ApprovedWithModification)
+                                                    : a.Stage?.AssignedEngineerId == null;
+                                            }
+                                            @if (proposal.Status == ProposalStatus.Submitted && awaitingSupervisor && isStageSupervisor)
                                             {
                                                 <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId"
-                                                   style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة</a>
+                                                   style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة المشرف</a>
+                                            }
+                                            else if (proposal.Status == ProposalStatus.Submitted && awaitingManager && canReview)
+                                            {
+                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId"
+                                                   style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">الاعتماد النهائي</a>
                                             }
                                             @{
                                                 var latestReviewPdf = proposal.Reviews.OrderByDescending(r => r.CreatedAt).FirstOrDefault()?.PdfFilePath;

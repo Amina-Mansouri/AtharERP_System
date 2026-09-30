@@ -16,12 +16,16 @@
     var projectCategoryLabel = ViewBag.ProjectCategoryLabel as string ?? "-";
     var reviewDate = (DateTime)ViewBag.ReviewDate;
     var assignmentType = ViewBag.AssignmentType as string;
+    var reviewPhase = ViewBag.ReviewPhase as string ?? "Manager";
     ViewData["Title"] = "مراجعة المستند";
 }
 
-<h1 class="athar-page-title">مراجعة المستند: @proposal?.Name (@proposal?.Code)</h1>
+<h1 class="athar-page-title">@(reviewPhase == "Supervisor" ? "مراجعة المشرف" : "الاعتماد النهائي"): @proposal?.Name (@proposal?.Code)</h1>
 <div class="stat-sub mb-2">المهمة: @proposal?.TaskTodo?.Task?.Title — المرحلة: @(proposal?.TaskTodo?.Task?.Stage?.Name ?? "-")</div>
-
+@if (reviewPhase == "Supervisor")
+{
+    <div class="stat-sub mb-2" style="color:#c9700f;">قرارك هنا توصية أولى — إن اعتمدتِ سيُرسَل المستند للمدير للاعتماد النهائي، وإن رفضتِه سيعود للمهندسة مباشرة دون وصوله للمدير.</div>
+}
 <div class="athar-card mt-3">
     <div class="d-flex align-items-center justify-content-between mb-2">
         <div class="form-label mb-0">بيانات التقرير</div>
@@ -104,7 +108,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn athar-btn">إرسال المراجعة</button>
+        <button type="submit" class="btn athar-btn">@(reviewPhase == "Supervisor" ? "إرسال التوصية" : "إرسال الاعتماد النهائي")</button>
         <a asp-controller="ProjectAssignments" asp-action="Overview" asp-route-projectId="@projectId" asp-route-stageId="@stageId" asp-route-taskFilter="@taskFilter" class="btn athar-btn-outline">إلغاء</a>
     </form>
 </div>

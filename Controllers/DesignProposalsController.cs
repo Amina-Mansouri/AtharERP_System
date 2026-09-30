@@ -140,57 +140,6 @@ namespace AtharERP_System.Controllers
             return BackToTask();
         }
 
-        [RequirePermission("Projects.Tasks.Manage")]
-        [HttpGet]
-        public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
-        {
-            var proposal = await _context.DesignProposals
-                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
-               .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.ProjectAssignment)
-                .Include(p => p.Project).ThenInclude(pr => pr.ParentProject)
-                .Include(p => p.Project).ThenInclude(pr => pr.ProjectCategory)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (proposal == null)
-                return NotFound();
-
-            var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
-
-            ApplicationUser? supervisor = null;
-            var supervisorId = proposal.TaskTodo.Task.Stage?.AssignedEngineerId;
-            if (!string.IsNullOrEmpty(supervisorId))
-                supervisor = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == supervisorId);
-
-            var lastReviewNumber = await _context.ProposalReviews
-     .Where(r => r.DesignProposal != null && r.DesignProposal.TaskTodoId == proposal.TaskTodoId)
-     .Select(r => (int?)r.ReviewNumber)
-     .MaxAsync() ?? 0;
-
-            // "رقم/اسم المبنى" = المشروع الفرعي؛ إذا كان مشروع المقترح نفسه فرعياً، فالمشروع الرئيسي هو والده (مطابق لمنطق توليد الـ PDF في Review POST)
-            var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
-            var mainProject = subProject != null && proposal.Project.ParentProject != null
-                ? proposal.Project.ParentProject
-                : proposal.Project;
-
-            ViewBag.Proposal = proposal;
-            ViewBag.ReviewerName = reviewer?.FullName;
-            ViewBag.ReviewerPosition = reviewer?.JobRankRef?.NameAr;
-            ViewBag.ReviewerSignaturePath = reviewer?.SignatureImagePath;
-            ViewBag.SupervisorName = supervisor?.FullName;
-            ViewBag.SupervisorPosition = supervisor?.JobRankRef?.NameAr;
-            ViewBag.SupervisorSignaturePath = supervisor?.SignatureImagePath;
-            ViewBag.SuggestedReviewNumber = lastReviewNumber + 1;
-            ViewBag.ProjectId = projectId;
-            ViewBag.StageId = stageId;
-            ViewBag.TaskFilter = taskFilter;
-            ViewBag.MainProject = mainProject;
-            ViewBag.SubProject = subProject;
-            ViewBag.ProjectCategoryLabel = mainProject.ProjectCategory?.DisplayName ?? "-";
-            ViewBag.ReviewDate = DateTime.UtcNow;
-            ViewBag.AssignmentType = proposal.TaskTodo?.Task?.ProjectAssignment?.AssignmentType;
-            return View();
-        }
-
         [HttpGet]
         public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
         {
