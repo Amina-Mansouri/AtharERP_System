@@ -1072,6 +1072,10 @@ else
                                                         }
                                                         <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11.5px; text-decoration:underline; color:inherit;">@stage.Name</a>
                                                         <span class="tag">@stage.Tasks.Count مهمة</span>
+                                                        @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
+                                                        {
+                                                            <span class="tag tag-accent" style="font-size:9px;">🔁</span>
+                                                        }
                                                     </div>
                                                     @if (hasTasks)
                                                     {

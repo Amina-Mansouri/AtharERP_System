@@ -119,6 +119,7 @@ namespace AtharERP_System.Controllers
                 .Include(p => p.Client)
                 .Include(p => p.ParentProject)
                 .Include(p => p.ChildProjects).ThenInclude(c => c.Stages).ThenInclude(s => s.Tasks)
+                .Include(p => p.ChildProjects).ThenInclude(c => c.Stages).ThenInclude(s => s.Assignments)
                 .Include(p => p.CreatedBy)
                 .Include(p => p.TeamMembers).ThenInclude(tm => tm.User)
                 .Include(p => p.Timelines)
