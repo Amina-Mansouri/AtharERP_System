@@ -47,10 +47,10 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نسبة مساهمة")]
         public decimal? ContributionPercentage { get; set; }
 
-        // محسوبة = القيمة بعد تطبيق نسبة المساهمة — للقراءة فقط
+
         [NotMapped]
         [Display(Name = "قيمة التكليف بعد النسبة")]
-        public decimal ValueAfterPercentage => Value * (1 + (ContributionPercentage ?? 0) / 100);
+        public decimal ValueAfterPercentage => Value * (ContributionPercentage ?? 0) / 100;
 
         [Display(Name = "تم الصرف")]
         public bool IsCleared { get; set; }
