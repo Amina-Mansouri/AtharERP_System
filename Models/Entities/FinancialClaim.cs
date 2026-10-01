@@ -63,11 +63,12 @@ namespace AtharERP_System.Models.Entities
         [NotMapped]
         public decimal MarkupResult2 => Value * (SaleMarkupPercent2 ?? 0) / 100;
 
-        // قيمة البيع بعد خصم ناتجَي النسبتين، ثم زيادة نسبة إعادة التصميم فوق الصافي
+        [NotMapped]
+        public decimal RedesignResult => Value * (RedesignIncreasePercentage ?? 0) / 100;
+
         [NotMapped]
         [Display(Name = "قيمة البيع بعد النسبة")]
-        public decimal ValueAfterPercentage =>
-            (Value - MarkupResult1 - MarkupResult2) * (1 + (RedesignIncreasePercentage ?? 0) / 100);
+        public decimal ValueAfterPercentage => Value - MarkupResult1 - MarkupResult2 + RedesignResult;
 
         [Display(Name = "مرحّلة إلى المالية")]
         public bool IsTransferredToFinance { get; set; }

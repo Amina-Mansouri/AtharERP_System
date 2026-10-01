@@ -268,7 +268,7 @@ namespace AtharERP_System.Services
         private static decimal CalculateStageSaleAfterPercentage(ProjectStage stage)
         {
             var redesignPercent = stage.RedesignRequests?.Sum(r => r.IncreasePercentage) ?? 0;
-            return stage.SaleValue * (1 + redesignPercent / 100);
+            return stage.SaleValue + (stage.SaleValue * redesignPercent / 100);
         }
 
         // نقطة الدخول المركزية لأي تعديل مالي على تكليف: مساحة/سعر/نسبة مساهمة مهندسة

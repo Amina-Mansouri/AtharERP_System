@@ -109,7 +109,7 @@
         {
             @foreach (var r in Model)
             {
-                var valueAfter = r.Value * (1 + (r.ContributionPercentage ?? 0) / 100);
+                var valueAfter = r.ValueAfterPercentage;
                 var engineerContribution = contributions.TryGetValue(r.EngineerId, out var c) ? c : 0;
                 <div class="data-table-row">
                     <div class="cell cell-num">@project.Id</div>
