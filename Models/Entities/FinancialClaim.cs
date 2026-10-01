@@ -44,25 +44,30 @@ namespace AtharERP_System.Models.Entities
         public decimal Value { get; set; }
 
         [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "النسبة اليدوية الأولى")]
+        [Display(Name = "نسبة 1")]
         public decimal? SaleMarkupPercent1 { get; set; }
 
         [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "النسبة اليدوية الثانية")]
+        [Display(Name = "نسبة 2")]
         public decimal? SaleMarkupPercent2 { get; set; }
 
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "نسبة زيادة إعادة التصميم")]
         public decimal? RedesignIncreasePercentage { get; set; }
 
-        // محسوبة = تراكمية عبر النسب الثلاث — للقراءة فقط
+        // ناتج نسبة 1 = قيمة البيع الأصلية × نسبة1 (مستقلة عن نسبة2، لا تراكمية)
+        [NotMapped]
+        public decimal MarkupResult1 => Value * (SaleMarkupPercent1 ?? 0) / 100;
+
+        // ناتج نسبة 2 = قيمة البيع الأصلية × نسبة2 (مستقلة عن نسبة1)
+        [NotMapped]
+        public decimal MarkupResult2 => Value * (SaleMarkupPercent2 ?? 0) / 100;
+
+        // قيمة البيع بعد خصم ناتجَي النسبتين، ثم زيادة نسبة إعادة التصميم فوق الصافي
         [NotMapped]
         [Display(Name = "قيمة البيع بعد النسبة")]
         public decimal ValueAfterPercentage =>
-            Value
-            * (1 + (SaleMarkupPercent1 ?? 0) / 100)
-            * (1 + (SaleMarkupPercent2 ?? 0) / 100)
-            * (1 + (RedesignIncreasePercentage ?? 0) / 100);
+            (Value - MarkupResult1 - MarkupResult2) * (1 + (RedesignIncreasePercentage ?? 0) / 100);
 
         [Display(Name = "مرحّلة إلى المالية")]
         public bool IsTransferredToFinance { get; set; }

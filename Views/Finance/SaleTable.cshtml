@@ -85,7 +85,7 @@
 
 @if (projectId.HasValue && project != null)
 {
-    <div class="data-table" style="--cols: 70px 1fr 1fr 90px 100px 100px 90px 90px 100px 110px 130px">
+    <div class="data-table" style="--cols: 70px 1fr 1fr 90px 100px 100px 170px 90px 110px 130px">
         <div class="data-table-head">
             <div class="cell">رقم المشروع</div>
             <div class="cell">المشروع</div>
@@ -93,8 +93,7 @@
             <div class="cell">مساحة التكليف</div>
             <div class="cell">سعر متر البيع</div>
             <div class="cell">قيمة البيع</div>
-            <div class="cell">نسبة يدوية 1</div>
-            <div class="cell">نسبة يدوية 2</div>
+            <div class="cell">نسبة 1 / نسبة 2</div>
             <div class="cell">نسبة إعادة تصميم</div>
             <div class="cell">قيمة البيع بعد النسبة</div>
             <div class="cell">الحالة</div>
@@ -108,10 +107,6 @@
         {
             @foreach (var c in Model)
             {
-                var valueAfter = c.Value
-                    * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
-                    * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
-                    * (1 + (c.RedesignIncreasePercentage ?? 0) / 100);
                 <div class="data-table-row">
                     <div class="cell cell-num">@project.Id</div>
                     <div class="cell">@project.Name</div>
@@ -119,10 +114,26 @@
                     <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
                     <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
                     <div class="cell cell-num">@c.Value.ToString("N0")</div>
-                    <div class="cell cell-num">@(c.SaleMarkupPercent1?.ToString("N1") + "%" ?? "-")</div>
-                    <div class="cell cell-num">@(c.SaleMarkupPercent2?.ToString("N1") + "%" ?? "-")</div>
+                    <div class="cell" style="white-space:normal; overflow:visible; padding:6px 8px;">
+                        <form method="post" asp-action="UpdateClaimPercentages" style="display:flex; flex-direction:column; gap:3px;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <input type="hidden" name="projectId" value="@projectId" />
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <span style="font-size:9.5px; color:#8a83a0; width:32px;">نسبة 1</span>
+                                <input type="number" step="0.01" name="percent1" value="@c.SaleMarkupPercent1" class="claim-percent-input" data-claim-id="@c.Id" data-which="1" data-value="@c.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="recalcClaimPercent(@c.Id)" style="width:62px; height:22px; font-size:10px; padding:0 4px; border:1px solid #e4e2ec; border-radius:5px;" />
+                                <span id="result1-@c.Id" style="font-size:9.5px; color:#2f8a57; font-weight:600;"></span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <span style="font-size:9.5px; color:#8a83a0; width:32px;">نسبة 2</span>
+                                <input type="number" step="0.01" name="percent2" value="@c.SaleMarkupPercent2" class="claim-percent-input" data-claim-id="@c.Id" data-which="2" data-value="@c.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="recalcClaimPercent(@c.Id)" style="width:62px; height:22px; font-size:10px; padding:0 4px; border:1px solid #e4e2ec; border-radius:5px;" />
+                                <span id="result2-@c.Id" style="font-size:9.5px; color:#c94a42; font-weight:600;"></span>
+                            </div>
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:9px; height:19px; padding:0 7px; align-self:flex-start;">حفظ</button>
+                        </form>
+                    </div>
                     <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
-                    <div class="cell cell-num">@valueAfter.ToString("N0")</div>
+                    <div class="cell cell-num">@c.ValueAfterPercentage.ToString("N0")</div>
                     <div class="cell">
                         @if (c.IsClientSettled)
                         {
@@ -142,4 +153,22 @@
             }
         }
     </div>
+
+    <script>
+        function recalcClaimPercent(claimId) {
+            const input1 = document.querySelector(`input[data-claim-id="${claimId}"][data-which="1"]`);
+            const input2 = document.querySelector(`input[data-claim-id="${claimId}"][data-which="2"]`);
+            const value = parseFloat(input1.getAttribute('data-value')) || 0;
+            const p1 = parseFloat(input1.value) || 0;
+            const p2 = parseFloat(input2.value) || 0;
+            const result1 = value * p1 / 100;
+            const result2 = value * p2 / 100;
+            document.getElementById('result1-' + claimId).textContent = p1 ? ('−' + result1.toFixed(0)) : '';
+            document.getElementById('result2-' + claimId).textContent = p2 ? ('−' + result2.toFixed(0)) : '';
+        }
+        document.querySelectorAll('.claim-percent-input[data-which="1"]').forEach(el => recalcClaimPercent(el.getAttribute('data-claim-id')));
+    </script>
+}
+        }
+ 
 }

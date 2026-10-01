@@ -221,6 +221,25 @@ namespace AtharERP_System.Controllers
             return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
         }
 
+        [RequirePermission("Finance.Claims.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateClaimPercentages(int id, int projectId, decimal? percent1, decimal? percent2)
+        {
+            var claim = await _context.FinancialClaims.FindAsync(id);
+            if (claim == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
+            claim.SaleMarkupPercent1 = percent1;
+            claim.SaleMarkupPercent2 = percent2;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم حفظ النسبتين بنجاح";
+            return RedirectToAction("SaleTable", new { projectId });
+        }
         // ============================================
         // المصروفات — عامة أو مرتبطة بموقع محدد
         // ============================================

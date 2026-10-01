@@ -268,10 +268,7 @@ namespace AtharERP_System.Services
         private static decimal CalculateStageSaleAfterPercentage(ProjectStage stage)
         {
             var redesignPercent = stage.RedesignRequests?.Sum(r => r.IncreasePercentage) ?? 0;
-            return stage.SaleValue
-                * (1 + (stage.SaleMarkupPercent1 ?? 0) / 100)
-                * (1 + (stage.SaleMarkupPercent2 ?? 0) / 100)
-                * (1 + redesignPercent / 100);
+            return stage.SaleValue * (1 + redesignPercent / 100);
         }
 
         // نقطة الدخول المركزية لأي تعديل مالي على تكليف: مساحة/سعر/نسبة مساهمة مهندسة
@@ -364,8 +361,7 @@ namespace AtharERP_System.Services
                 Area = assignment.Area,
                 SalePricePerMeter = assignment.SalePricePerMeter,
                 Value = assignment.AssignmentSaleValue,
-                SaleMarkupPercent1 = stage?.SaleMarkupPercent1,
-                SaleMarkupPercent2 = stage?.SaleMarkupPercent2,
+               
                 RedesignIncreasePercentage = redesignPercent,
                 IsTransferredToFinance = true,
                 TransferredToFinanceAt = DateTime.UtcNow
@@ -405,8 +401,7 @@ namespace AtharERP_System.Services
                 claim.Area = assignment.Area;
                 claim.SalePricePerMeter = assignment.SalePricePerMeter;
                 claim.Value = assignment.AssignmentSaleValue;
-                claim.SaleMarkupPercent1 = stage?.SaleMarkupPercent1;
-                claim.SaleMarkupPercent2 = stage?.SaleMarkupPercent2;
+              
                 claim.RedesignIncreasePercentage = stage?.RedesignRequests.Sum(r => r.IncreasePercentage) ?? 0;
             }
 
@@ -437,11 +432,7 @@ namespace AtharERP_System.Services
             if (dateTo.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
             var records = await recordsQuery.ToListAsync();
 
-            decimal ClaimValueAfter(FinancialClaim c) =>
-                c.Value
-                * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
-                * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
-                * (1 + (c.RedesignIncreasePercentage ?? 0) / 100);
+            decimal ClaimValueAfter(FinancialClaim c) => c.ValueAfterPercentage;
 
             decimal RecordValueAfter(FinancialRecord r) =>
                 r.Value * (1 + (r.ContributionPercentage ?? 0) / 100);
