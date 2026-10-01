@@ -163,11 +163,47 @@ namespace AtharERP_System.Controllers
             return View(claims);
         }
 
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> Claims(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        {
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.CategoryId = categoryId;
+            ViewBag.ProjectId = projectId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+
+            if (!projectId.HasValue)
+                return View(new List<FinancialClaim>());
+
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+                return Forbid();
+
+            var query = _context.FinancialClaims
+                .Include(c => c.ProjectAssignment)
+                .Where(c => c.ProjectId == projectId.Value);
+
+            if (dateFrom.HasValue)
+                query = query.Where(c => c.CreatedAt >= dateFrom.Value);
+            if (dateTo.HasValue)
+                query = query.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+
+            var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
+
+            ViewBag.Project = project;
+            return View(claims);
+        }
+
         [RequirePermission("Finance.Claims.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkClaimSettled(int id, int projectId)
-        {
+        public async Task<IActionResult> MarkClaimSettled(int id, int projectId, string returnAction = "SaleTable")
+        
+            {
             var claim = await _context.FinancialClaims.FindAsync(id);
             if (claim == null)
                 return NotFound();
@@ -182,7 +218,7 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("SaleTable", new { projectId });
+            return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
         }
 
         // ============================================

@@ -1,0 +1,140 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<FinancialClaim>
+@{
+    var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
+    var categoryId = ViewBag.CategoryId as int?;
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var projectId = ViewBag.ProjectId as int?;
+    var project = ViewBag.Project as Project;
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
+    ViewData["Title"] = "المطالبة";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>المطالبة</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">نوع المشروع</label>
+            <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id" selected="@(categoryId == cat.Id)">@cat.DisplayName</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:220px;">
+            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- اختاري مشروعاً --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">الربع</label>
+            <select id="quarterSelect" class="form-select form-select-sm" onchange="applyQuarter()">
+                <option value="">-- تحديد يدوي --</option>
+                <option value="1">الربع الأول</option>
+                <option value="2">الربع الثاني</option>
+                <option value="3">الربع الثالث</option>
+                <option value="4">الربع الرابع</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">السنة</label>
+            <input type="number" id="quarterYear" class="form-control form-control-sm" value="@DateTime.UtcNow.Year" style="width:90px;" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" id="dateFromInput" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" id="dateToInput" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+<script>
+    function applyQuarter() {
+        const q = document.getElementById('quarterSelect').value;
+        if (!q) return;
+        const year = document.getElementById('quarterYear').value || new Date().getFullYear();
+        const starts = { "1": "01-01", "2": "04-01", "3": "07-01", "4": "10-01" };
+        const ends = { "1": "03-31", "2": "06-30", "3": "09-30", "4": "12-31" };
+        document.getElementById('dateFromInput').value = year + "-" + starts[q];
+        document.getElementById('dateToInput').value = year + "-" + ends[q];
+    }
+</script>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (projectId.HasValue && project != null)
+{
+    <div class="data-table" style="--cols: 70px 1fr 1fr 90px 100px 100px 110px 130px">
+        <div class="data-table-head">
+            <div class="cell">رقم المشروع</div>
+            <div class="cell">المشروع</div>
+            <div class="cell">بيان التكليف</div>
+            <div class="cell">مساحة التكليف</div>
+            <div class="cell">سعر متر البيع</div>
+            <div class="cell">قيمة البيع</div>
+            <div class="cell">المبلغ المستحق</div>
+            <div class="cell">الحالة</div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مطالبات مُرحَّلة بعد لهذا المشروع</div></div>
+        }
+        else
+        {
+            @foreach (var c in Model)
+            {
+                var valueAfter = c.Value
+                    * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
+                    * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
+                    * (1 + (c.RedesignIncreasePercentage ?? 0) / 100);
+                <div class="data-table-row">
+                    <div class="cell cell-num">@project.Id</div>
+                    <div class="cell">@project.Name</div>
+                    <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
+                    <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
+                    <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                    <div class="cell cell-num">@c.Value.ToString("N0")</div>
+                    <div class="cell cell-num">@valueAfter.ToString("N0")</div>
+                    <div class="cell">
+                        @if (c.IsClientSettled)
+                        {
+                            <span class="tag tag-success">تم التحصيل (@c.ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="MarkClaimSettled" onsubmit="return confirm('تأكيد تحصيل هذه المطالبة من العميل؟');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <input type="hidden" name="projectId" value="@projectId" />
+                                <input type="hidden" name="returnAction" value="Claims" />
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">تسجيل تحصيل</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}
