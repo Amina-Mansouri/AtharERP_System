@@ -120,7 +120,7 @@
             <div class="cell">قيمة البيع</div>
             <div class="cell">نسبة 1 / نسبة 2</div>
             <div class="cell">نسبة إعادة تصميم</div>
-            <div class="cell">قيمة البيع بعد النسبة</div>
+            <div class="cell">قيمة النسب</div>
             <div class="cell">الحالة</div>
         </div>
 
@@ -176,6 +176,14 @@
                     </div>
                 </div>
             }
+            <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
+                <div class="cell" style="grid-column:1/6;">الإجمالي</div>
+                <div class="cell cell-num">@Model.Sum(c => c.Value).ToString("N0")</div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell cell-num">@Model.Sum(c => c.ValueAfterPercentage).ToString("N0")</div>
+                <div class="cell"></div>
+            </div>
         }
     </div>
 

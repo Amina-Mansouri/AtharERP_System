@@ -130,10 +130,7 @@
         {
             @foreach (var c in Model)
             {
-                var valueAfter = c.Value
-                    * (1 + (c.SaleMarkupPercent1 ?? 0) / 100)
-                    * (1 + (c.SaleMarkupPercent2 ?? 0) / 100)
-                    * (1 + (c.RedesignIncreasePercentage ?? 0) / 100);
+                var valueAfter = c.RealValue;
                 <div class="data-table-row">
                     <div class="cell cell-num">@project.Id</div>
                     <div class="cell">@project.Name</div>

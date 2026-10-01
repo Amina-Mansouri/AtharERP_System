@@ -270,7 +270,6 @@ namespace AtharERP_System.Services
             var redesignPercent = stage.RedesignRequests?.Sum(r => r.IncreasePercentage) ?? 0;
             return stage.SaleValue + (stage.SaleValue * redesignPercent / 100);
         }
-
         // نقطة الدخول المركزية لأي تعديل مالي على تكليف: مساحة/سعر/نسبة مساهمة مهندسة
         public async Task RecalculateAssignmentFinanceAsync(int assignmentId)
         {
@@ -437,8 +436,8 @@ namespace AtharERP_System.Services
             if (dateTo.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
             var records = await recordsQuery.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
-            var totalSalesAccrued = claims.Sum(c => c.ValueAfterPercentage);
-            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(c => c.ValueAfterPercentage);
+            var totalSalesAccrued = claims.Sum(c => c.Value);
+            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(c => c.Value);
 
             var totalTaskCostsAccrued = records.Sum(r => r.ValueAfterPercentage);
             var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(r => r.ValueAfterPercentage);
