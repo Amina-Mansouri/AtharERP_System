@@ -8,12 +8,11 @@ namespace AtharERP_System.Models.Entities
     {
         public int Id { get; set; }
 
-        [Required]
-        public int ProjectId { get; set; }
+        public int? ProjectId { get; set; }
 
         [ForeignKey("ProjectId")]
         [ValidateNever]
-        public virtual Project Project { get; set; } = null!;
+        public virtual Project? Project { get; set; }
 
         [Display(Name = "الموقع")]
         public int? SiteId { get; set; }

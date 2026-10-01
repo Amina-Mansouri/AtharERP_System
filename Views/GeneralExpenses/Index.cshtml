@@ -1,0 +1,148 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ProjectExpense>
+@{
+    var categoryId = ViewBag.CategoryId as int?;
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
+    var categories = ViewBag.ExpenseCategories as List<ExpenseCategory> ?? new List<ExpenseCategory>();
+    var totalAmount = (decimal)ViewBag.TotalAmount;
+    var categoryBreakdown = ViewBag.CategoryBreakdown as List<(string Category, decimal Total)> ?? new List<(string, decimal)>();
+    ViewData["Title"] = "المصروفات الإدارية العامة";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>المصروفات الإدارية العامة</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">التصنيف</label>
+            <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var c in categories)
+                {
+                    <option value="@c.Id" selected="@(categoryId == c.Id)">@c.NameAr</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">الربع</label>
+            <select id="quarterSelect" class="form-select form-select-sm" onchange="applyQuarter()">
+                <option value="">-- تحديد يدوي --</option>
+                <option value="1">الربع الأول</option>
+                <option value="2">الربع الثاني</option>
+                <option value="3">الربع الثالث</option>
+                <option value="4">الربع الرابع</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">السنة</label>
+            <input type="number" id="quarterYear" class="form-control form-control-sm" value="@DateTime.UtcNow.Year" style="width:90px;" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" id="dateFromInput" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" id="dateToInput" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+<script>
+    function applyQuarter() {
+        const q = document.getElementById('quarterSelect').value;
+        if (!q) return;
+        const year = document.getElementById('quarterYear').value || new Date().getFullYear();
+        const starts = { "1": "01-01", "2": "04-01", "3": "07-01", "4": "10-01" };
+        const ends = { "1": "03-31", "2": "06-30", "3": "09-30", "4": "12-31" };
+        document.getElementById('dateFromInput').value = year + "-" + starts[q];
+        document.getElementById('dateToInput').value = year + "-" + ends[q];
+    }
+</script>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="stat-strip stat-strip-text" style="margin-bottom:16px;">
+    <div class="stat-item"><span class="kicker">إجمالي المصروفات (ضمن التصفية)</span><span class="stat-value">@totalAmount.ToString("N0")</span></div>
+    @foreach (var b in categoryBreakdown)
+    {
+        <div class="stat-item"><span class="kicker">@b.Category</span><span class="stat-value">@b.Total.ToString("N0")</span></div>
+    }
+</div>
+
+<div class="data-table" style="--cols: 100px 1fr 90px 1fr 90px">
+    <div class="data-table-head">
+        <div class="cell">التاريخ</div>
+        <div class="cell">التصنيف</div>
+        <div class="cell">المبلغ</div>
+        <div class="cell">الوصف</div>
+        <div class="cell">إجراءات</div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات إدارية مسجَّلة بعد</div></div>
+    }
+    else
+    {
+        @foreach (var e in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
+                <div class="cell">@e.ExpenseCategory?.NameAr</div>
+                <div class="cell cell-num">@e.Amount.ToString("N0")</div>
+                <div class="cell">@(e.Description ?? "-")</div>
+                <div class="cell">
+                    <form method="post" asp-action="Delete" onsubmit="return confirm('حذف هذا المصروف؟');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@e.Id" />
+                        <button type="submit" class="btn-line" style="color:#c94a42; font-size:10.5px;">حذف</button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-top:12px;">
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تسجيل مصروف إداري جديد</div>
+    <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+        @Html.AntiForgeryToken()
+        <div>
+            <label class="form-label" style="font-size:11px;">التصنيف</label>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <select name="ExpenseCategoryId" class="form-select form-select-sm" required>
+                    <option value="">-- اختاري --</option>
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.Id">@c.NameAr</option>
+                    }
+                </select>
+                <a asp-controller="Admin" asp-action="ExpenseCategories" target="_blank" style="font-size:10px; white-space:nowrap;">+ إدارة الخيارات</a>
+            </div>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">المبلغ</label>
+            <input type="number" step="0.01" min="0" name="Amount" class="form-control form-control-sm" required />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">التاريخ</label>
+            <input type="date" name="Date" class="form-control form-control-sm" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div style="flex:1; min-width:180px;">
+            <label class="form-label" style="font-size:11px;">الوصف</label>
+            <input type="text" name="Description" class="form-control form-control-sm" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">+ تسجيل</button>
+    </form>
+</div>

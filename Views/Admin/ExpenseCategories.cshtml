@@ -35,6 +35,7 @@
                 <tr>
                     <th>اسم التصنيف</th>
                     <th>الحالة</th>
+                    <th>النوع</th>
                     <th>عدد المصروفات المرتبطة</th>
                     <th></th>
                 </tr>
@@ -54,10 +55,11 @@
                                 <span class="tag" style="color:#c94a42;">معطَّل</span>
                             }
                         </td>
+                        <td>@(c.Scope == ExpenseCategoryScope.General ? "إداري عام" : "مشروع")</td>
                         <td>@c.Expenses.Count</td>
                         <td>
                             <button type="button" class="btn-line"
-                                    onclick='openExpenseCategoryModal(@c.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.NameAr)), @c.IsActive.ToString().ToLower())'>
+                                    onclick='openExpenseCategoryModal(@c.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.NameAr)), @c.IsActive.ToString().ToLower(), @((int)c.Scope))'>
                                 تعديل
                             </button>
                             <form method="post" asp-action="DeleteExpenseCategory" asp-route-id="@c.Id" style="display:inline;" onsubmit="return confirm('هل أنتِ متأكدة من حذف هذا التصنيف؟');">
@@ -86,6 +88,13 @@
                         <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم التصنيف (مثال: نثريات، مصروفات المواقع)</div>
                         <input type="text" name="NameAr" id="expense-category-name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                     </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">النوع</div>
+                        <select name="Scope" id="expense-category-scope" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;">
+                            <option value="1">مصروف مشروع</option>
+                            <option value="2">مصروف إداري عام</option>
+                        </select>
+                    </div>
                     <div id="expense-category-active-wrapper" style="display:none; align-items:center; gap:8px;">
                         <input type="checkbox" name="IsActive" id="expense-category-isActive" value="true" />
                         <input type="hidden" name="IsActive" value="false" />
@@ -102,11 +111,12 @@
 
 @section Scripts {
     <script>
-        function openExpenseCategoryModal(id, nameAr, isActive) {
+        function openExpenseCategoryModal(id, nameAr, isActive, scope) {
             const form = document.getElementById('expenseCategoryForm');
             const isEdit = id !== undefined && id !== null;
             form.action = isEdit ? '@Url.Action("EditExpenseCategory")/' + id : '@Url.Action("CreateExpenseCategory")';
             document.getElementById('expense-category-name').value = nameAr ?? '';
+            document.getElementById('expense-category-scope').value = scope ?? 1;
             document.getElementById('expense-category-modal-title').textContent = isEdit ? 'تعديل التصنيف' : 'تصنيف مصروف جديد';
             document.getElementById('expense-category-active-wrapper').style.display = isEdit ? 'flex' : 'none';
             if (isEdit) {

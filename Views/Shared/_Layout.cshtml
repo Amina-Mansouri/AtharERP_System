@@ -75,9 +75,11 @@
             "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
             "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" or "SiteSupplyRequests" => "sys03",
             "Clients" => "sys07",
-            "Finance" or "ClientRedesignRequests" => "sys04",
+            "Finance" or "ClientRedesignRequests" or "GeneralExpenses" => "sys04",
             _ => ""
         };
+        bool expensesSubActive = (ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses")
+    || ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses";
         <header class="app-topbar">
             <img src="~/images/logo-icon.png" alt="أثر" class="ds-logo" />
             <span class="ds-brand">منظومة أثر</span>
@@ -238,9 +240,16 @@
                                asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
                                asp-controller="Finance" asp-action="SaleTable">جدول البيع النهائي</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")"
-                               asp-controller="Finance" asp-action="Expenses">المصروفات</a>
-                            <span class="nav-item disabled">الرواتب <span class="tag tag-muted">قادمة</span></span>
+                            <button type="button" class="nav-group-header @(expensesSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#expensesSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
+                                <span>المصروفات</span>
+                                <span class="nav-group-caret">▾</span>
+                            </button>
+                            <div class="collapse @(expensesSubActive ? "show" : "")" id="expensesSubGroup">
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")" style="padding-right:24px;"
+                                   asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
+                                   asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
+                            </div>     <span class="nav-item disabled">الرواتب <span class="tag tag-muted">قادمة</span></span>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
                                asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
                     </div>

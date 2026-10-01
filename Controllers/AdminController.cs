@@ -976,7 +976,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateExpenseCategory([Bind("NameAr")] ExpenseCategory model)
+        public async Task<IActionResult> CreateExpenseCategory([Bind("NameAr,Scope")] ExpenseCategory model)
         {
             model.IsActive = true;
 
@@ -990,7 +990,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditExpenseCategory(int id, [Bind("NameAr,IsActive")] ExpenseCategory model)
+        public async Task<IActionResult> EditExpenseCategory(int id, [Bind("NameAr,IsActive,Scope")] ExpenseCategory model)
         {
             var category = await _context.ExpenseCategories.FindAsync(id);
             if (category == null)
@@ -998,6 +998,7 @@ namespace AtharERP_System.Controllers
 
             category.NameAr = model.NameAr;
             category.IsActive = model.IsActive;
+            category.Scope = model.Scope;
 
             await _context.SaveChangesAsync();
 

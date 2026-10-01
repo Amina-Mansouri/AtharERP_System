@@ -221,7 +221,7 @@ namespace AtharERP_System.Controllers
             var expenses = await query.OrderByDescending(e => e.Date).ToListAsync();
 
             ViewBag.Project = project;
-            ViewBag.ExpenseCategories = await _context.ExpenseCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
+            ViewBag.ExpenseCategories = await _context.ExpenseCategories.Where(c => c.IsActive && c.Scope == ExpenseCategoryScope.Project).OrderBy(c => c.NameAr).ToListAsync();
             ViewBag.Sites = await _context.Sites.Where(s => s.ProjectId == projectId.Value).OrderBy(s => s.Name).ToListAsync();
 
             return View(expenses);
@@ -232,7 +232,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateExpense([Bind("ProjectId,ExpenseCategoryId,SiteId,Amount,Date,Description")] ProjectExpense model)
         {
-            if (!await _permissionService.CanAccessProjectAsync(User, model.ProjectId))
+            if (!model.ProjectId.HasValue || !await _permissionService.CanAccessProjectAsync(User, model.ProjectId.Value))
                 return Forbid();
 
             model.CreatedAt = DateTime.UtcNow;
