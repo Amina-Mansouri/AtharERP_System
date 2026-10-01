@@ -54,6 +54,7 @@ builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<ProposalReviewPdfService>();
+builder.Services.AddScoped<FinancePdfService>();
 builder.Services.AddHostedService<ContractLifecycleHostedService>();
 builder.Services.AddHostedService<ProjectDelayMonitorHostedService>();
 

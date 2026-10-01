@@ -65,7 +65,29 @@
         <button type="submit" class="btn-line btn-line-accent">تصفية</button>
     </form>
 </div>
-
+<div class="athar-card" style="margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="document.getElementById('batchExportBoxSale').classList.toggle('d-none')">
+        <strong style="font-size:12.5px;">تصدير جماعي (PDF)</strong>
+        <span>▾</span>
+    </div>
+    <div id="batchExportBoxSale" class="d-none" style="margin-top:10px;">
+        <form method="post" asp-action="ExportSaleTableBatchPdf" target="_blank">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+            <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+            <div style="max-height:180px; overflow-y:auto; display:grid; gap:4px; margin-bottom:8px; border:1px solid #e4e2ec; border-radius:8px; padding:8px;">
+                @foreach (var p in projects)
+                {
+                    <label style="display:flex; align-items:center; gap:6px; font-size:11.5px;">
+                        <input type="checkbox" name="projectIds" value="@p.Id" />
+                        @p.Code - @p.Name
+                    </label>
+                }
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">تصدير المشاريع المحدَّدة</button>
+        </form>
+    </div>
+</div>
 <script>
     function applyQuarter() {
         const q = document.getElementById('quarterSelect').value;
@@ -85,6 +107,9 @@
 
 @if (projectId.HasValue && project != null)
 {
+    <div style="margin-bottom:8px;">
+        <a asp-action="ExportSaleTablePdf" asp-route-projectId="@projectId" asp-route-dateFrom="@(dateFrom?.ToString("yyyy-MM-dd"))" asp-route-dateTo="@(dateTo?.ToString("yyyy-MM-dd"))" target="_blank" class="btn-line btn-line-accent">📄 تصدير PDF</a>
+    </div>
     <div class="data-table" style="--cols: 70px 1fr 1fr 90px 100px 100px 170px 90px 110px 130px">
         <div class="data-table-head">
             <div class="cell">رقم المشروع</div>
@@ -168,7 +193,4 @@
         }
         document.querySelectorAll('.claim-percent-input[data-which="1"]').forEach(el => recalcClaimPercent(el.getAttribute('data-claim-id')));
     </script>
-}
-        }
- 
 }
