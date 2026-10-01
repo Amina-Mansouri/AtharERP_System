@@ -323,30 +323,59 @@ namespace AtharERP_System.Controllers
         // الأرباح والخسائر
         // ============================================
         [RequirePermission("Finance.Reports")]
-        public async Task<IActionResult> Profit(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> Profit(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo, int? genCategoryId, DateTime? genDateFrom, DateTime? genDateTo)
         {
+            var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.Projects = accessibleProjects;
             ViewBag.CategoryId = categoryId;
             ViewBag.ProjectId = projectId;
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
-            if (!projectId.HasValue)
-                return View();
+            List<int> targetProjectIds;
+            Project? project = null;
 
-            var project = await _context.Projects.FindAsync(projectId.Value);
-            if (project == null)
-                return NotFound();
+            if (projectId.HasValue)
+            {
+                project = await _context.Projects.FindAsync(projectId.Value);
+                if (project == null)
+                    return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
-                return Forbid();
+                if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+                    return Forbid();
+
+                targetProjectIds = new List<int> { projectId.Value };
+            }
+            else
+            {
+                targetProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+            }
 
             ViewBag.Project = project;
-            var result = await _calc.CalculateProjectNetProfitAsync(projectId.Value, dateFrom, dateTo);
+
+            // القسم المعزول: المصروفات الإدارية العامة — لا علاقة له بأي مشروع أو فلترته
+            var genExpensesQuery = _context.ProjectExpenses.Include(e => e.ExpenseCategory).Where(e => e.ProjectId == null);
+            if (genCategoryId.HasValue) genExpensesQuery = genExpensesQuery.Where(e => e.ExpenseCategoryId == genCategoryId.Value);
+            if (genDateFrom.HasValue) genExpensesQuery = genExpensesQuery.Where(e => e.Date >= genDateFrom.Value);
+            if (genDateTo.HasValue) genExpensesQuery = genExpensesQuery.Where(e => e.Date <= genDateTo.Value);
+            var generalAdminExpenses = await genExpensesQuery.OrderByDescending(e => e.Date).ToListAsync();
+
+            ViewBag.GeneralAdminExpenses = generalAdminExpenses;
+            ViewBag.GeneralAdminTotal = generalAdminExpenses.Sum(e => e.Amount);
+            ViewBag.GeneralAdminCategories = await _context.ExpenseCategories
+                .Where(c => c.IsActive && c.Scope == ExpenseCategoryScope.General)
+                .OrderBy(c => c.NameAr).ToListAsync();
+            ViewBag.GenCategoryId = genCategoryId;
+            ViewBag.GenDateFrom = genDateFrom;
+            ViewBag.GenDateTo = genDateTo;
+
+            if (!targetProjectIds.Any())
+                return View((ProjectCalculationService.ProjectNetProfitResult?)null);
+
+            var result = await _calc.CalculateProjectNetProfitAsync(targetProjectIds, dateFrom, dateTo);
             return View(result);
         }
-
         [RequirePermission("Finance.Sales.View")]
         public async Task<IActionResult> ExportSaleTablePdf(int projectId, DateTime? dateFrom, DateTime? dateTo)
         {

@@ -87,5 +87,51 @@ namespace AtharERP_System.Services
 
             return structuredCost + manualSiteExpenses;
         }
+
+        public class SiteCostBreakdown
+        {
+            public decimal MaintenanceCost { get; set; }
+            public decimal ContractorCost { get; set; }
+            public decimal SupplyCost { get; set; }
+            public decimal ManualExpenses { get; set; }
+            public decimal Total => MaintenanceCost + ContractorCost + SupplyCost + ManualExpenses;
+        }
+
+        public async Task<SiteCostBreakdown> CalculateProjectSiteCostsBreakdownAsync(List<int> projectIds, DateTime? dateFrom = null, DateTime? dateTo = null)
+        {
+            var siteIds = await _context.Sites.Where(s => projectIds.Contains(s.ProjectId)).Select(s => s.Id).ToListAsync();
+
+            decimal maintenanceCost = 0, contractorCost = 0, supplyCost = 0;
+            foreach (var siteId in siteIds)
+            {
+                var maintenanceQuery = _context.SiteMaintenances.Where(m => m.SiteId == siteId);
+                if (dateFrom.HasValue) maintenanceQuery = maintenanceQuery.Where(m => m.RequestDate >= dateFrom.Value);
+                if (dateTo.HasValue) maintenanceQuery = maintenanceQuery.Where(m => m.RequestDate <= dateTo.Value.AddDays(1).AddTicks(-1));
+                maintenanceCost += await maintenanceQuery.SumAsync(m => m.Cost ?? 0);
+
+                var contractorQuery = _context.SiteContractors.Where(c => c.SiteId == siteId);
+                if (dateFrom.HasValue) contractorQuery = contractorQuery.Where(c => !c.StartDate.HasValue || c.StartDate.Value <= dateTo);
+                if (dateTo.HasValue) contractorQuery = contractorQuery.Where(c => !c.EndDate.HasValue || c.EndDate.Value >= dateFrom);
+                contractorCost += await contractorQuery.SumAsync(c => c.Amount ?? 0);
+
+                var supplyQuery = _context.SiteSupplyRequests.Where(s => s.SiteId == siteId);
+                if (dateFrom.HasValue) supplyQuery = supplyQuery.Where(s => s.RequestDate >= dateFrom.Value);
+                if (dateTo.HasValue) supplyQuery = supplyQuery.Where(s => s.RequestDate <= dateTo.Value.AddDays(1).AddTicks(-1));
+                supplyCost += await supplyQuery.SumAsync(s => s.Quantity * (s.UnitPrice ?? 0));
+            }
+
+            var expensesQuery = _context.ProjectExpenses.Where(e => siteIds.Contains(e.SiteId ?? 0));
+            if (dateFrom.HasValue) expensesQuery = expensesQuery.Where(e => e.Date >= dateFrom.Value);
+            if (dateTo.HasValue) expensesQuery = expensesQuery.Where(e => e.Date <= dateTo.Value);
+            var manualExpenses = await expensesQuery.SumAsync(e => e.Amount);
+
+            return new SiteCostBreakdown
+            {
+                MaintenanceCost = maintenanceCost,
+                ContractorCost = contractorCost,
+                SupplyCost = supplyCost,
+                ManualExpenses = manualExpenses
+            };
+        }
     }
 }

@@ -410,48 +410,55 @@ namespace AtharERP_System.Services
 
         public class ProjectNetProfitResult
         {
+            public List<FinancialClaim> Claims { get; set; } = new();
+            public List<FinancialRecord> Records { get; set; } = new();
+            public List<ProjectExpense> GeneralExpenseRows { get; set; } = new();
+            public SiteCalculationService.SiteCostBreakdown SiteCostBreakdown { get; set; } = new();
+
             public decimal TotalSalesAccrued { get; set; }
             public decimal TotalSalesRealized { get; set; }
             public decimal TotalTaskCostsAccrued { get; set; }
             public decimal TotalTaskCostsRealized { get; set; }
             public decimal TotalGeneralExpenses { get; set; }
             public decimal SiteCosts { get; set; }
-            public decimal AccruedNetProfit { get; set; }   // صافي متوقَّع/مستحق — كل المُرحَّل بصرف النظر عن التحصيل
-            public decimal RealizedNetProfit { get; set; }  // صافي محقَّق — فقط ما تحصَّل/صُرف فعلياً
+            public decimal AccruedNetProfit { get; set; }
+            public decimal RealizedNetProfit { get; set; }
         }
 
-        public async Task<ProjectNetProfitResult> CalculateProjectNetProfitAsync(int projectId, DateTime? dateFrom = null, DateTime? dateTo = null)
+        public async Task<ProjectNetProfitResult> CalculateProjectNetProfitAsync(List<int> projectIds, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            var claimsQuery = _context.FinancialClaims.Where(c => c.ProjectId == projectId);
+            var claimsQuery = _context.FinancialClaims.Include(c => c.ProjectAssignment).Include(c => c.Project).Where(c => projectIds.Contains(c.ProjectId));
             if (dateFrom.HasValue) claimsQuery = claimsQuery.Where(c => c.CreatedAt >= dateFrom.Value);
             if (dateTo.HasValue) claimsQuery = claimsQuery.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-            var claims = await claimsQuery.ToListAsync();
+            var claims = await claimsQuery.OrderByDescending(c => c.CreatedAt).ToListAsync();
 
-            var recordsQuery = _context.FinancialRecords.Where(r => r.ProjectId == projectId);
+            var recordsQuery = _context.FinancialRecords.Include(r => r.ProjectAssignment).Include(r => r.Engineer).Include(r => r.Project).Where(r => projectIds.Contains(r.ProjectId));
             if (dateFrom.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt >= dateFrom.Value);
             if (dateTo.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-            var records = await recordsQuery.ToListAsync();
+            var records = await recordsQuery.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
-            decimal ClaimValueAfter(FinancialClaim c) => c.ValueAfterPercentage;
+            var totalSalesAccrued = claims.Sum(c => c.ValueAfterPercentage);
+            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(c => c.ValueAfterPercentage);
 
-            decimal RecordValueAfter(FinancialRecord r) =>
-                r.Value * (1 + (r.ContributionPercentage ?? 0) / 100);
+            var totalTaskCostsAccrued = records.Sum(r => r.ValueAfterPercentage);
+            var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(r => r.ValueAfterPercentage);
 
-            var totalSalesAccrued = claims.Sum(ClaimValueAfter);
-            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(ClaimValueAfter);
-
-            var totalTaskCostsAccrued = records.Sum(RecordValueAfter);
-            var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(RecordValueAfter);
-
-            var expensesQuery = _context.ProjectExpenses.Where(e => e.ProjectId == projectId && e.SiteId == null);
+            var expensesQuery = _context.ProjectExpenses.Include(e => e.ExpenseCategory).Include(e => e.Project)
+                .Where(e => e.ProjectId.HasValue && projectIds.Contains(e.ProjectId.Value) && e.SiteId == null);
             if (dateFrom.HasValue) expensesQuery = expensesQuery.Where(e => e.Date >= dateFrom.Value);
             if (dateTo.HasValue) expensesQuery = expensesQuery.Where(e => e.Date <= dateTo.Value);
-            var totalGeneralExpenses = await expensesQuery.SumAsync(e => e.Amount);
+            var generalExpenseRows = await expensesQuery.OrderByDescending(e => e.Date).ToListAsync();
+            var totalGeneralExpenses = generalExpenseRows.Sum(e => e.Amount);
 
-            var siteCosts = await _siteCalc.CalculateProjectSiteCostsAsync(projectId, dateFrom, dateTo);
+            var siteCostBreakdown = await _siteCalc.CalculateProjectSiteCostsBreakdownAsync(projectIds, dateFrom, dateTo);
+            var siteCosts = siteCostBreakdown.Total;
 
             return new ProjectNetProfitResult
             {
+                Claims = claims,
+                Records = records,
+                GeneralExpenseRows = generalExpenseRows,
+                SiteCostBreakdown = siteCostBreakdown,
                 TotalSalesAccrued = totalSalesAccrued,
                 TotalSalesRealized = totalSalesRealized,
                 TotalTaskCostsAccrued = totalTaskCostsAccrued,
