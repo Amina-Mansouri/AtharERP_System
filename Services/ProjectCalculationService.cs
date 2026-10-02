@@ -436,8 +436,8 @@ namespace AtharERP_System.Services
             if (dateTo.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
             var records = await recordsQuery.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
-            var totalSalesAccrued = claims.Sum(c => c.Value);
-            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(c => c.Value);
+            var totalSalesAccrued = claims.Sum(c => c.RealValue);
+            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(c => c.RealValue);
 
             var totalTaskCostsAccrued = records.Sum(r => r.ValueAfterPercentage);
             var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(r => r.ValueAfterPercentage);

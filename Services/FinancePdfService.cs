@@ -103,6 +103,7 @@ namespace AtharERP_System.Services
                                     DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
                                     DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
                                     DataCell(table, c.Value.ToString("N0"));
+                                    DataCell(table, c.RealValue.ToString("N0"));
                                     DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                                 }
                             }
