@@ -317,6 +317,71 @@
                 <div class="cell cell-num" style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</div>
                 <div class="cell cell-num"></div>
             </div>
+        </div>
+    </div>
+
+    <div class="athar-card" style="border:2px solid #7b6bd6; margin-bottom:16px;">
+        <div style="font-size:13.5px; font-weight:700; margin-bottom:10px; color:#221837;">نظرة عامة: المصروفات الإدارية والرواتب <span class="stat-sub" style="font-weight:400;">(مستقلة عن اختيار المشروع أعلاه)</span></div>
+
+        <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:12px;">
+            <input type="hidden" name="categoryId" value="@categoryId" />
+            <input type="hidden" name="projectId" value="@projectId" />
+            <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+            <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+            <div style="min-width:200px;">
+                <label class="form-label" style="font-size:11px;">تصنيف المصروف الإداري</label>
+                <select name="genCategoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- الكل --</option>
+                    @foreach (var c in generalAdminCategories)
+                    {
+                        <option value="@c.Id" selected="@(genCategoryId == c.Id)">@c.NameAr</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">من</label>
+                <input type="date" name="genDateFrom" class="form-control form-control-sm" value="@(genDateFrom?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">إلى</label>
+                <input type="date" name="genDateTo" class="form-control form-control-sm" value="@(genDateTo?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+        </form>
+
+        <div class="stat-strip stat-strip-text" style="margin-bottom:12px;">
+            <div class="stat-item"><span class="kicker">إجمالي المصروفات الإدارية</span><span class="stat-value">@generalAdminTotal.ToString("N0")</span></div>
+            <div class="stat-item" style="opacity:.5;"><span class="kicker">الرواتب</span><span class="stat-value">قادمة</span></div>
+        </div>
+
+        <div class="data-table" style="--cols: 100px 1fr 100px 1fr">
+            <div class="data-table-head">
+                <div class="cell">التاريخ</div>
+                <div class="cell">التصنيف</div>
+                <div class="cell">المبلغ</div>
+                <div class="cell">الوصف</div>
+            </div>
+            @if (!generalAdminExpenses.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات إدارية ضمن هذه الفلترة</div></div>
+            }
+            else
+            {
+                @foreach (var e in generalAdminExpenses)
+                {
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
+                        <div class="cell">@e.ExpenseCategory?.NameAr</div>
+                        <div class="cell cell-num">@e.Amount.ToString("N0")</div>
+                        <div class="cell">@(e.Description ?? "-")</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="athar-card" style="margin-bottom:16px;">
+        <div class="data-table" style="--cols: 1fr 130px 130px 130px">
             <div class="data-table-row">
                 <div class="cell">− مصروفات عامة</div>
                 <div class="cell cell-num">@Model.TotalGeneralExpenses.ToString("N0")</div>
@@ -330,7 +395,7 @@
                 <div class="cell cell-num">-</div>
             </div>
             <div class="data-table-row">
-                <div class="cell">− الخصومات <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
+                <div class="cell">+ الخصومات <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
                 <div class="cell cell-num">0</div>
                 <div class="cell cell-num">0</div>
                 <div class="cell cell-num">-</div>
