@@ -354,22 +354,6 @@ namespace AtharERP_System.Controllers
             return View(result);
         }
    
-
-        [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> ExportClaimsPdf(int projectId, DateTime? dateFrom, DateTime? dateTo)
-        {
-            var project = await _context.Projects.FindAsync(projectId);
-            if (project == null) return NotFound();
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId)) return Forbid();
-
-            var query = _context.FinancialClaims.Include(c => c.ProjectAssignment).Where(c => c.ProjectId == projectId);
-            if (dateFrom.HasValue) query = query.Where(c => c.CreatedAt >= dateFrom.Value);
-            if (dateTo.HasValue) query = query.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-            var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
-
-            var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims) }, includePercentageColumns: false);
-            return File(pdf, "application/pdf", $"المطالبة-{project.Code}.pdf");
-        }
         [RequirePermission("Finance.Sales.View")]
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -100,17 +100,20 @@
             <span>▾</span>
         </button>
         <div class="collapse" id="secSales" style="margin-top:10px;">
-            <div class="data-table" style="--cols: @(project == null ? "1fr 1.5fr 100px 100px 100px 130px" : "1.5fr 100px 100px 100px 130px")">
+            <div class="data-table data-table-compact data-table-vertical-head" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px")">
                 <div class="data-table-head">
                     @if (project == null)
                     {
-                        <div class="cell">المشروع</div>
+                        <div class="cell"><span>المشروع</span></div>
                     }
-                    <div class="cell">بيان التكليف</div>
-                    <div class="cell">التاريخ</div>
-                    <div class="cell">قيمة البيع</div>
-                    <div class="cell">بعد النسبة</div>
-                    <div class="cell">الحالة</div>
+                    <div class="cell"><span>بيان التكليف</span></div>
+                    <div class="cell"><span>التاريخ</span></div>
+                    <div class="cell"><span>قيمة البيع</span></div>
+                    <div class="cell"><span>نسبة إعادة التصميم</span></div>
+                    <div class="cell"><span>الإجمالي بعد الزيادة</span></div>
+                    <div class="cell"><span>المدفوع</span></div>
+                    <div class="cell"><span>المتبقي</span></div>
+                    <div class="cell"><span>الحالة</span></div>
                 </div>
                 @if (!Model.Claims.Any())
                 {
@@ -128,7 +131,10 @@
                             <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
                             <div class="cell cell-num">@c.CreatedAt.ToString("yyyy-MM-dd")</div>
                             <div class="cell cell-num">@c.Value.ToString("N0")</div>
-                            <div class="cell cell-num">@c.ValueAfterPercentage.ToString("N0")</div>
+                            <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
+                            <div class="cell cell-num">@c.RealValue.ToString("N0")</div>
+                            <div class="cell cell-num">@c.PaidAmount.ToString("N0")</div>
+                            <div class="cell cell-num">@c.RemainingAmount.ToString("N0")</div>
                             <div class="cell">
                                 @if (c.IsClientSettled)
                                 {
