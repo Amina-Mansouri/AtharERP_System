@@ -96,7 +96,7 @@
 
     <div class="athar-card" style="margin-bottom:10px;">
         <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secSales">
-            <span>المبيعات — مستحق: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | مطلق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span>
+            <span>المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong> | المستحق: <strong>@((Model.TotalSalesAccrued - Model.TotalSalesRealized).ToString("N0"))</strong></span>
             <span>▾</span>
         </button>
         <div class="collapse" id="secSales" style="margin-top:10px;">
@@ -110,9 +110,9 @@
                     <div class="cell"><span>التاريخ</span></div>
                     <div class="cell"><span>قيمة البيع</span></div>
                     <div class="cell"><span>نسبة إعادة التصميم</span></div>
-                    <div class="cell"><span>الإجمالي بعد الزيادة</span></div>
-                    <div class="cell"><span>المدفوع</span></div>
-                    <div class="cell"><span>المتبقي</span></div>
+                    <div class="cell"><span>الإجمالي</span></div>
+                    <div class="cell"><span>المحقق</span></div>
+                    <div class="cell"><span>المستحق</span></div>
                     <div class="cell"><span>الحالة</span></div>
                 </div>
                 @if (!Model.Claims.Any())
@@ -154,7 +154,7 @@
 
     <div class="athar-card" style="margin-bottom:10px;">
         <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secCosts">
-            <span>تكاليف المهام — مستحق: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | مطلق: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span>
+            <span>تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span>
             <span>▾</span>
         </button>
         <div class="collapse" id="secCosts" style="margin-top:10px;">
