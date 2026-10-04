@@ -306,7 +306,7 @@ List<int>? taskIds)
                 return NotFound();
 
             var isLocked = await _context.FinancialRecords.AnyAsync(r => r.ProjectAssignmentId == id && r.IsCleared)
-                || await _context.FinancialClaims.AnyAsync(c => c.ProjectAssignmentId == id && c.IsClientSettled);
+            || await _context.FinancialClaims.AnyAsync(c => c.ProjectAssignmentId == id && (c.IsClientSettled || c.PaidAmount > 0));
 
             if (isLocked)
             {

@@ -65,29 +65,7 @@
         <button type="submit" class="btn-line btn-line-accent">تصفية</button>
     </form>
 </div>
-<div class="athar-card" style="margin-bottom:12px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="document.getElementById('batchExportBoxSale').classList.toggle('d-none')">
-        <strong style="font-size:12.5px;">تصدير جماعي (PDF)</strong>
-        <span>▾</span>
-    </div>
-    <div id="batchExportBoxSale" class="d-none" style="margin-top:10px;">
-        <form method="post" asp-action="ExportSaleTableBatchPdf" target="_blank">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
-            <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
-            <div style="max-height:180px; overflow-y:auto; display:grid; gap:4px; margin-bottom:8px; border:1px solid #e4e2ec; border-radius:8px; padding:8px;">
-                @foreach (var p in projects)
-                {
-                    <label style="display:flex; align-items:center; gap:6px; font-size:11.5px;">
-                        <input type="checkbox" name="projectIds" value="@p.Id" />
-                        @p.Code - @p.Name
-                    </label>
-                }
-            </div>
-            <button type="submit" class="btn-line btn-line-accent">تصدير المشاريع المحدَّدة</button>
-        </form>
-    </div>
-</div>
+
 <script>
     function applyQuarter() {
         const q = document.getElementById('quarterSelect').value;
@@ -107,56 +85,68 @@
 
 @if (projectId.HasValue && project != null)
 {
+    <form method="post" asp-action="ExportClaimsSelectedPdf" target="_blank">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="projectId" value="@projectId" />
+        <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        <input type="hidden" name="returnAction" value="Claims" />
+
         <div style="margin-bottom:8px;">
-        <a asp-action="ExportSaleTablePdf" asp-route-projectId="@projectId" asp-route-dateFrom="@(dateFrom?.ToString("yyyy-MM-dd"))" asp-route-dateTo="@(dateTo?.ToString("yyyy-MM-dd"))" target="_blank" class="btn-line btn-line-accent">📄 تصدير PDF</a>
-    </div>
-    <div class="data-table" style="--cols: 70px 1fr 1fr 90px 100px 100px 110px 130px">
-        <div class="data-table-head">
-            <div class="cell">رقم المشروع</div>
-            <div class="cell">المشروع</div>
-            <div class="cell">بيان التكليف</div>
-            <div class="cell">مساحة التكليف</div>
-            <div class="cell">سعر متر البيع</div>
-            <div class="cell">قيمة البيع</div>
-            <div class="cell">المبلغ المستحق</div>
-            <div class="cell">الحالة</div>
+            <button type="submit" class="btn-line btn-line-accent">📑 تصدير (PDF)</button>
         </div>
 
-        @if (!Model.Any())
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مطالبات مُرحَّلة بعد لهذا المشروع</div></div>
-        }
-        else
-        {
-            @foreach (var c in Model)
+        <div class="data-table" style="--cols: 36px 70px 1fr 1fr 90px 100px 100px 100px 100px 110px 170px">
+            <div class="data-table-head">
+                <div class="cell"></div>
+                <div class="cell">رقم المشروع</div>
+                <div class="cell">المشروع</div>
+                <div class="cell">بيان التكليف</div>
+                <div class="cell">مساحة التكليف</div>
+                <div class="cell">سعر متر البيع</div>
+                <div class="cell">قيمة البيع</div>
+                <div class="cell">نسبة إعادة التصميم</div>
+                <div class="cell">المدفوع</div>
+                <div class="cell">المبلغ المستحق</div>
+                <div class="cell">الحالة</div>
+            </div>
+
+            @if (!Model.Any())
             {
-                var valueAfter = c.RealValue;
-                <div class="data-table-row">
-                    <div class="cell cell-num">@project.Id</div>
-                    <div class="cell">@project.Name</div>
-                    <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
-                    <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
-                    <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
-                    <div class="cell cell-num">@c.Value.ToString("N0")</div>
-                    <div class="cell cell-num">@valueAfter.ToString("N0")</div>
-                    <div class="cell">
-                        @if (c.IsClientSettled)
-                        {
-                            <span class="tag tag-success">تم التحصيل (@c.ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
-                        }
-                        else
-                        {
-                            <form method="post" asp-action="MarkClaimSettled" onsubmit="return confirm('تأكيد تحصيل هذه المطالبة من العميل؟');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@c.Id" />
-                                <input type="hidden" name="projectId" value="@projectId" />
-                                <input type="hidden" name="returnAction" value="Claims" />
-                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">تسجيل تحصيل</button>
-                            </form>
-                        }
-                    </div>
-                </div>
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مطالبات مُرحَّلة بعد لهذا المشروع</div></div>
             }
-        }
-    </div>
+            else
+            {
+                @foreach (var c in Model)
+                {
+                    var remaining = c.RemainingAmount;
+                    <div class="data-table-row">
+                        <div class="cell"><input type="checkbox" name="claimIds" value="@c.Id" /></div>
+                        <div class="cell cell-num">@project.Code</div>
+                        <div class="cell">@project.Name</div>
+                        <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
+                        <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
+                        <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                        <div class="cell cell-num">@c.Value.ToString("N0")</div>
+                        <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
+                        <div class="cell cell-num">@c.PaidAmount.ToString("N0")</div>
+                        <div class="cell cell-num">@remaining.ToString("N0")</div>
+                        <div class="cell">
+                            @if (c.IsClientSettled)
+                            {
+                                <span class="tag tag-success">تم التحصيل (@c.ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
+                            }
+                            else
+                            {
+                                <div style="display:flex; gap:4px; align-items:center;">
+                                    <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" style="width:70px; height:22px; font-size:10px; padding:0 4px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="المبلغ" />
+                                    <button type="submit" formaction="@Url.Action("RegisterClaimPayment")" formmethod="post" formtarget="_self" name="claimId" value="@c.Id" class="btn-line btn-line-accent" style="font-size:10px;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">تسجيل دفعة</button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </form>
 }

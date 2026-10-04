@@ -55,9 +55,17 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نسبة زيادة إعادة التصميم")]
         public decimal? RedesignIncreasePercentage { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "المدفوع")]
+        public decimal PaidAmount { get; set; }
+
         // القيمة الحقيقية المستحقة/المحصَّلة فعلياً من العميل = قيمة البيع + زيادة إعادة التصميم فقط (بلا تأثير نسبة1/نسبة2 الإعلاميتين)
         [NotMapped]
         public decimal RealValue => Value + RedesignResult;
+
+        [NotMapped]
+        [Display(Name = "المتبقي")]
+        public decimal RemainingAmount => RealValue - PaidAmount;
 
         // ناتج نسبة 1 = قيمة البيع الأصلية × نسبة1 (مستقلة عن نسبة2، لا تراكمية)
         [NotMapped]

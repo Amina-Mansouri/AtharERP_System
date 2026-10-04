@@ -217,6 +217,7 @@ namespace AtharERP_System.Controllers
             {
                 claim.IsClientSettled = true;
                 claim.ClientSettledAt = DateTime.UtcNow;
+                claim.PaidAmount = claim.RealValue;
                 await _context.SaveChangesAsync();
             }
 
@@ -440,30 +441,63 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Sales.View")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ExportClaimsBatchPdf(List<int> projectIds, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> ExportClaimsSelectedPdf(List<int> claimIds, int projectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            if (projectIds == null || !projectIds.Any())
+            if (claimIds == null || !claimIds.Any())
             {
-                TempData["Error"] = "اختاري مشروعاً واحداً على الأقل للتصدير الجماعي";
-                return RedirectToAction("Claims");
+                TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
+                return RedirectToAction("Claims", new { projectId, dateFrom, dateTo });
             }
 
-            var sections = new List<(Project, List<FinancialClaim>)>();
-            foreach (var pid in projectIds)
-            {
-                if (!await _permissionService.CanAccessProjectAsync(User, pid)) continue;
-                var project = await _context.Projects.FindAsync(pid);
-                if (project == null) continue;
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null) return NotFound();
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId)) return Forbid();
 
-                var query = _context.FinancialClaims.Include(c => c.ProjectAssignment).Where(c => c.ProjectId == pid);
-                if (dateFrom.HasValue) query = query.Where(c => c.CreatedAt >= dateFrom.Value);
-                if (dateTo.HasValue) query = query.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-                var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
-                sections.Add((project, claims));
+            var claims = await _context.FinancialClaims
+                .Include(c => c.ProjectAssignment)
+                .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims) }, includePercentageColumns: false);
+            return File(pdf, "application/pdf", $"المطالبة-{project.Code}.pdf");
+        }
+
+        [RequirePermission("Finance.Claims.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegisterClaimPayment(int claimId, int projectId, string returnAction = "Claims")
+        {
+            var claim = await _context.FinancialClaims.FindAsync(claimId);
+            if (claim == null) return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
+            var amountRaw = Request.Form[$"amount_{claimId}"];
+            if (!decimal.TryParse(amountRaw, out var amount) || amount <= 0)
+            {
+                TempData["Error"] = "ادخلي مبلغاً صحيحاً أكبر من صفر";
+                return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
             }
 
-            var pdf = _pdfExport.GenerateClaimsReport("المطالبة — تصدير جماعي", sections, includePercentageColumns: false);
-            return File(pdf, "application/pdf", $"المطالبة-دفعة-{DateTime.UtcNow:yyyyMMdd}.pdf");
+            var remaining = claim.RealValue - claim.PaidAmount;
+            if (amount > remaining)
+            {
+                TempData["Error"] = "المبلغ المُدخل أكبر من المتبقي على هذه المطالبة";
+                return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
+            }
+
+            claim.PaidAmount += amount;
+            if (claim.RealValue - claim.PaidAmount <= 0)
+            {
+                claim.IsClientSettled = true;
+                claim.ClientSettledAt = DateTime.UtcNow;
+            }
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم تسجيل الدفعة بنجاح";
+            return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
         }
     }
 }

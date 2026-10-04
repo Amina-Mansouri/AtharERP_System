@@ -87,6 +87,7 @@ namespace AtharERP_System.Services
                                     c.RelativeColumn(1);
                                     c.RelativeColumn(1);
                                     c.RelativeColumn(1);
+                                    c.RelativeColumn(1.1f);
                                     c.RelativeColumn(1.3f);
                                     c.RelativeColumn(1.3f);
                                 });
@@ -94,6 +95,7 @@ namespace AtharERP_System.Services
                                 HeaderCell(table, "المساحة");
                                 HeaderCell(table, "سعر المتر");
                                 HeaderCell(table, "قيمة البيع");
+                                HeaderCell(table, "قيمة إعادة التصميم");
                                 HeaderCell(table, "المبلغ المستحق");
                                 HeaderCell(table, "الحالة");
 
@@ -103,6 +105,7 @@ namespace AtharERP_System.Services
                                     DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
                                     DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
                                     DataCell(table, c.Value.ToString("N0"));
+                                    DataCell(table, c.RedesignResult.ToString("N0"));
                                     DataCell(table, c.RealValue.ToString("N0"));
                                     DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                                 }

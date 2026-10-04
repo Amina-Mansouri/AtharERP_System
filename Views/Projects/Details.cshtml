@@ -754,7 +754,7 @@ else
                                 </div>
                                 <div class="cell" style="font-size:10.5px;">
                                     @{
-                                        var pricingLocked = a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled);
+                                        var pricingLocked = a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0);
                                     }
                                     @if (canManageAssignments && !pricingLocked)
                                     {

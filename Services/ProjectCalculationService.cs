@@ -388,7 +388,7 @@ namespace AtharERP_System.Services
             }
 
             var claim = await _context.FinancialClaims
-                .FirstOrDefaultAsync(c => c.ProjectAssignmentId == assignment.Id && !c.IsClientSettled);
+     .FirstOrDefaultAsync(c => c.ProjectAssignmentId == assignment.Id && !c.IsClientSettled && c.PaidAmount == 0);
 
             if (claim != null)
             {
@@ -437,7 +437,7 @@ namespace AtharERP_System.Services
             var records = await recordsQuery.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
             var totalSalesAccrued = claims.Sum(c => c.RealValue);
-            var totalSalesRealized = claims.Where(c => c.IsClientSettled).Sum(c => c.RealValue);
+            var totalSalesRealized = claims.Sum(c => c.PaidAmount);
 
             var totalTaskCostsAccrued = records.Sum(r => r.ValueAfterPercentage);
             var totalTaskCostsRealized = records.Where(r => r.IsCleared).Sum(r => r.ValueAfterPercentage);

@@ -112,7 +112,7 @@
                 var valueAfter = r.ValueAfterPercentage;
                 var engineerContribution = contributions.TryGetValue(r.EngineerId, out var c) ? c : 0;
                 <div class="data-table-row">
-                    <div class="cell cell-num">@project.Id</div>
+                    <div class="cell cell-num">@project.Code</div>
                     <div class="cell">@project.Name</div>
                     <div class="cell">@(r.ProjectAssignment?.AssignmentType ?? "-")</div>
                     <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
