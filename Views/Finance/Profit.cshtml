@@ -110,7 +110,13 @@
     var wBase = new[] { 0m, Math.Min(wCum1, wCum2), Math.Min(wCum2, wCum3), Math.Min(0, wCum3), Math.Min(wCum3, wCum5), Math.Min(wCum5, wCum6), Math.Min(wCum6, wCum7), Math.Min(wCum7, wCum8), Math.Min(0, wCum8) };
     var wDelta = new[] { Math.Abs(wStep1), Math.Abs(wCum2 - wCum1), Math.Abs(wCum3 - wCum2), Math.Abs(wCum3), Math.Abs(wCum5 - wCum3), Math.Abs(wCum6 - wCum5), Math.Abs(wCum7 - wCum6), Math.Abs(wCum8 - wCum7), Math.Abs(wCum8) };
     var wColors = new[] { "#2e8b57", "#c94a42", "#c94a42", "#7b6bd6", "#c94a42", "#c94a42", "#2e8b57", "#c94a42", "#c9a15a" };
-    var wLineLevels = new[] { wCum1, wCum2, wCum3, wCum3, wCum5, wCum6, wCum7, wCum8, wCum8 };
+
+    // تسمية كل عمود بسطرين ثابتين: اسم البند + رقمه الدقيق — لا يتأثر بارتفاع العمود إطلاقاً
+    var wTickLabels = new object[wLabels.Length];
+    for (int i = 0; i < wLabels.Length; i++)
+    {
+        wTickLabels[i] = new[] { wLabels[i], wDelta[i].ToString("N0") };
+    }
 
     <div style="font-size:11.5px; color:#8a83a0; margin-bottom:10px;">عرض بيانات: <strong>@scopeLabel</strong></div>
 
@@ -130,56 +136,27 @@
         <canvas id="profitWaterfall" height="140"></canvas>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
     <script>
-        const wColorsJs = @Json.Serialize(wColors);
-        const wLineLevelsJs = @Json.Serialize(wLineLevels);
-        const wAnnotations = {};
-        wLineLevelsJs.forEach((lvl, i) => {
-            wAnnotations['line' + i] = {
-                type: 'line',
-                yMin: lvl,
-                yMax: lvl,
-                borderColor: wColorsJs[i],
-                borderWidth: 1.5,
-                borderDash: [4, 4],
-                label: {
-                    display: true,
-                    content: Math.round(lvl).toLocaleString('en-US'),
-                    position: 'start',
-                    color: wColorsJs[i],
-                    font: { size: 9, weight: '600' }
-                }
-            };
-        });
+        const wNamesJs = @Json.Serialize(wLabels);
 
         new Chart(document.getElementById('profitWaterfall'), {
             type: 'bar',
             data: {
-                labels: @Json.Serialize(wLabels),
+                labels: @Json.Serialize(wTickLabels),
                 datasets: [
                     {
                         label: 'base',
                         data: @Json.Serialize(wBase),
                         backgroundColor: 'transparent',
                         borderWidth: 0,
-                        stack: 's',
-                        datalabels: { display: false }
+                        stack: 's'
                     },
-                    {
-                        label: 'value',
-                        data: @Json.Serialize(wDelta),
-                        backgroundColor: wColorsJs,
-                        stack: 's',
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'end',
-                            color: '#221837',
-                            font: { size: 10, weight: '600' },
-                            formatter: (value) => (value ?? 0).toLocaleString('en-US')
-                        }
-                    }
+                                   {
+            label: 'value',
+            data: @Json.Serialize(wDelta),
+            backgroundColor: @Json.Serialize(wColors),
+            stack: 's'
+        }
                 ]
             },
             options: {
@@ -189,10 +166,9 @@
                     tooltip: {
                         filter: (item) => item.datasetIndex === 1,
                         callbacks: {
-                            label: (ctx) => ctx.label + ': ' + (ctx.raw ?? 0).toLocaleString('en-US')
+                            label: (ctx) => wNamesJs[ctx.dataIndex] + ': ' + (ctx.raw ?? 0).toLocaleString('en-US')
                         }
-                    },
-                    annotation: { annotations: wAnnotations }
+                    }
                 },
                 scales: {
                     y: {
