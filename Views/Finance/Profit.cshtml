@@ -158,7 +158,7 @@
             <span>▾</span>
         </button>
         <div class="collapse" id="secCosts" style="margin-top:10px;">
-            <div class="data-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 100px 100px 130px" : "1.2fr 1fr 100px 100px 130px")">
+            <div class="data-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px")">
                 <div class="data-table-head">
                     @if (project == null)
                     {
@@ -167,7 +167,8 @@
                     <div class="cell">بيان التكليف</div>
                     <div class="cell">المهندسة</div>
                     <div class="cell">القيمة</div>
-                    <div class="cell">بعد النسبة</div>
+                    <div class="cell">تقييم الأداء</div>
+                    <div class="cell">استحقاق المهندسة</div>
                     <div class="cell">الحالة</div>
                 </div>
                 @if (!Model.Records.Any())
@@ -186,6 +187,7 @@
                             <div class="cell">@(r.ProjectAssignment?.AssignmentType ?? "-")</div>
                             <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
                             <div class="cell cell-num">@r.Value.ToString("N0")</div>
+                            <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
                             <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N0")</div>
                             <div class="cell">
                                 @if (r.IsCleared)
@@ -288,8 +290,8 @@
             <div class="data-table-head">
                 <div class="cell">البند</div>
                 <div class="cell">الإجمالي</div>
-                <div class="cell">المحقَّق</div>
-                <div class="cell">مستحق</div>
+                <div class="cell">المنفَّذ</div>
+                <div class="cell">المتبقي</div>
             </div>
             <div class="data-table-row">
                 <div class="cell">+ إجمالي المبيعات</div>
