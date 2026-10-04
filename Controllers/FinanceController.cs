@@ -481,7 +481,7 @@ namespace AtharERP_System.Controllers
                 .ToListAsync();
 
             ViewBag.Claim = claim;
-            return View(payments);
+            return View("ClaimPayments", payments);
         }
 
         [RequirePermission("Finance.Sales.View")]

@@ -1419,6 +1419,20 @@ button:focus-visible {
 .data-table-compact .data-table-head {
     min-width: 0;
 }
+.data-table-vertical-head .data-table-head .cell {
+    height: 105px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    white-space: nowrap;
+}
+
+    .data-table-vertical-head .data-table-head .cell span {
+        display: inline-block;
+        transform: rotate(-90deg);
+        white-space: nowrap;
+    }
 /* ===== شارات ملوّنة ===== */
 .tag {
     display: inline-flex;

@@ -56,8 +56,13 @@ namespace AtharERP_System.Services
                                     c.RelativeColumn(1);
                                     c.RelativeColumn(1);
                                     c.RelativeColumn(1);
+                                    c.RelativeColumn(0.8f);
+                                    c.RelativeColumn(0.8f);
+                                    c.RelativeColumn(1.1f);
                                     c.RelativeColumn(1);
+                                    c.RelativeColumn(1.1f);
                                     c.RelativeColumn(1);
+                                    c.RelativeColumn(1.1f);
                                     c.RelativeColumn(1.3f);
                                 });
                                 HeaderCell(table, "بيان التكليف");
@@ -67,6 +72,11 @@ namespace AtharERP_System.Services
                                 HeaderCell(table, "نسبة 1");
                                 HeaderCell(table, "نسبة 2");
                                 HeaderCell(table, "القيمة بعد النسبة");
+                                HeaderCell(table, "نسبة إعادة التصميم");
+                                HeaderCell(table, "الإجمالي بعد الزيادة");
+                                HeaderCell(table, "المدفوع");
+                                HeaderCell(table, "المبلغ المستحق");
+                                HeaderCell(table, "الحالة");
 
                                 foreach (var c in section.Claims)
                                 {
@@ -77,6 +87,11 @@ namespace AtharERP_System.Services
                                     DataCell(table, c.SaleMarkupPercent1.HasValue ? c.SaleMarkupPercent1.Value.ToString("N1") + "%" : "-");
                                     DataCell(table, c.SaleMarkupPercent2.HasValue ? c.SaleMarkupPercent2.Value.ToString("N1") + "%" : "-");
                                     DataCell(table, c.ValueAfterPercentage.ToString("N0"));
+                                    DataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
+                                    DataCell(table, c.RealValue.ToString("N0"));
+                                    DataCell(table, c.PaidAmount.ToString("N0"));
+                                    DataCell(table, c.RemainingAmount.ToString("N0"));
+                                    DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                                 }
                             }
                             else
@@ -87,15 +102,19 @@ namespace AtharERP_System.Services
                                     c.RelativeColumn(1);
                                     c.RelativeColumn(1);
                                     c.RelativeColumn(1);
+                                    c.RelativeColumn(1);
                                     c.RelativeColumn(1.1f);
-                                    c.RelativeColumn(1.3f);
+                                    c.RelativeColumn(1);
+                                    c.RelativeColumn(1.1f);
                                     c.RelativeColumn(1.3f);
                                 });
                                 HeaderCell(table, "بيان التكليف");
                                 HeaderCell(table, "المساحة");
                                 HeaderCell(table, "سعر المتر");
                                 HeaderCell(table, "قيمة البيع");
-                                HeaderCell(table, "قيمة إعادة التصميم");
+                                HeaderCell(table, "نسبة إعادة التصميم");
+                                HeaderCell(table, "الإجمالي بعد الزيادة");
+                                HeaderCell(table, "المدفوع");
                                 HeaderCell(table, "المبلغ المستحق");
                                 HeaderCell(table, "الحالة");
 
@@ -105,8 +124,10 @@ namespace AtharERP_System.Services
                                     DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
                                     DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
                                     DataCell(table, c.Value.ToString("N0"));
-                                    DataCell(table, c.RedesignResult.ToString("N0"));
+                                    DataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
                                     DataCell(table, c.RealValue.ToString("N0"));
+                                    DataCell(table, c.PaidAmount.ToString("N0"));
+                                    DataCell(table, c.RemainingAmount.ToString("N0"));
                                     DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                                 }
                             }
