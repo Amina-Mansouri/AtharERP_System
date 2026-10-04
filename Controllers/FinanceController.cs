@@ -203,30 +203,6 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Claims.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkClaimSettled(int id, int projectId, string returnAction = "SaleTable")
-        
-            {
-            var claim = await _context.FinancialClaims.FindAsync(id);
-            if (claim == null)
-                return NotFound();
-
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
-                return Forbid();
-
-            if (!claim.IsClientSettled)
-            {
-                claim.IsClientSettled = true;
-                claim.ClientSettledAt = DateTime.UtcNow;
-                claim.PaidAmount = claim.RealValue;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
-        }
-
-        [RequirePermission("Finance.Claims.Manage")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateClaimPercentages(int id, int projectId, decimal? percent1, decimal? percent2)
         {
             var claim = await _context.FinancialClaims.FindAsync(id);
