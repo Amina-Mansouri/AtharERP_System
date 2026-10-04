@@ -1433,6 +1433,30 @@ button:focus-visible {
         transform: rotate(-90deg);
         white-space: nowrap;
     }
+
+.profit-table .cell {
+    font-size: 12px;
+}
+
+.profit-table .data-table-head .cell {
+    font-size: 10.5px;
+}
+
+.profit-table .data-table-row.row-income {
+    background: rgba(46,139,87,.08);
+    box-shadow: inset 3px 0 0 #2e8b57;
+}
+
+.profit-table .data-table-row.row-expense {
+    background: rgba(201,74,66,.07);
+    box-shadow: inset 3px 0 0 #c94a42;
+}
+
+.profit-table .data-table-row.row-total {
+    font-weight: 700;
+    background: var(--sys-bg);
+    border-top: 2px solid var(--sys-border);
+}
 /* ===== شارات ملوّنة ===== */
 .tag {
     display: inline-flex;
