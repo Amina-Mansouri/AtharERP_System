@@ -1,0 +1,46 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ClaimPayment>
+@{
+    var claim = ViewBag.Claim as FinancialClaim;
+    ViewData["Title"] = "سجل الدفعات";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>سجل الدفعات</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px; font-size:12px;">
+    <div>المشروع: @claim?.Project?.Code - @claim?.Project?.Name</div>
+    <div>بيان التكليف: @(claim?.ProjectAssignment?.AssignmentType ?? "-")</div>
+    <div>الإجمالي بعد الزيادة: @claim?.RealValue.ToString("N0")</div>
+    <div>المدفوع: @claim?.PaidAmount.ToString("N0")</div>
+    <div>المتبقي: @claim?.RemainingAmount.ToString("N0")</div>
+</div>
+
+<div class="data-table data-table-compact" style="--cols: 1fr 1fr 110px">
+    <div class="data-table-head">
+        <div class="cell">تاريخ الدفعة</div>
+        <div class="cell">المبلغ</div>
+        <div class="cell">إيصال</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد دفعات مسجَّلة بعد</div></div>
+    }
+    else
+    {
+        @foreach (var p in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
+                <div class="cell cell-num">@p.Amount.ToString("N0")</div>
+                <div class="cell">
+                    <a asp-action="ExportPaymentReceiptPdf" asp-route-paymentId="@p.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>
+                </div>
+            </div>
+        }
+    }
+</div>

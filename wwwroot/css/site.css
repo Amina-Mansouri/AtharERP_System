@@ -1406,7 +1406,19 @@ button:focus-visible {
     direction: ltr;
     text-align: right;
 }
+.data-table-compact .cell {
+    padding: 5px 6px;
+    font-size: 10px;
+}
 
+.data-table-compact .data-table-head .cell {
+    font-size: 8.5px;
+}
+
+.data-table-compact .data-table-row,
+.data-table-compact .data-table-head {
+    min-width: 0;
+}
 /* ===== شارات ملوّنة ===== */
 .tag {
     display: inline-flex;

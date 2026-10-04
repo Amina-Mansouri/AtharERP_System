@@ -97,6 +97,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [ValidateNever]
+        public virtual ICollection<ClaimPayment> Payments { get; set; } = new List<ClaimPayment>();
+
         [Display(Name = "أُنشئت بواسطة")]
         [ValidateNever]
         public string? CreatedById { get; set; }

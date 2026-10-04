@@ -57,6 +57,7 @@ namespace AtharERP_System.Data
         public DbSet<DesignProposal> DesignProposals { get; set; } = null!;
         public DbSet<ProposalReview> ProposalReviews { get; set; } = null!;
         public DbSet<FinancialClaim> FinancialClaims { get; set; } = null!;
+        public DbSet<ClaimPayment> ClaimPayments { get; set; } = null!;
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
         public DbSet<Custody> Custodies { get; set; } = null!;
         public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;

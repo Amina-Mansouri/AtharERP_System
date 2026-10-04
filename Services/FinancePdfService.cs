@@ -127,5 +127,49 @@ namespace AtharERP_System.Services
         {
             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(text);
         }
+
+        public byte[] GeneratePaymentReceipt(ClaimPayment payment)
+        {
+            var claim = payment.FinancialClaim;
+            var project = claim.Project;
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
+            var hasLogo = File.Exists(logoPath);
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A5);
+                    page.Margin(25);
+                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10));
+                    page.ContentFromRightToLeft();
+
+                    page.Header().Column(header =>
+                    {
+                        if (hasLogo)
+                            header.Item().AlignCenter().Height(50).Image(logoPath).FitArea();
+
+                        header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a")
+                            .PaddingBottom(5).AlignCenter().Text("إيصال استلام دفعة").FontSize(15).Bold().FontColor("#221837");
+                    });
+
+                    page.Content().PaddingTop(15).Column(col =>
+                    {
+                        col.Spacing(8);
+                        col.Item().Text($"رقم الإيصال: {payment.Id}");
+                        col.Item().Text($"تاريخ الدفعة: {payment.PaidAt:yyyy-MM-dd}");
+                        col.Item().Text($"المشروع: {project.Code} - {project.Name}");
+                        col.Item().Text($"بيان التكليف: {claim.ProjectAssignment?.AssignmentType ?? "-"}");
+                        col.Item().PaddingTop(10).BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(10)
+                            .Text($"المبلغ المُستلَم: {payment.Amount:N0}").FontSize(14).Bold().FontColor("#221837");
+                        col.Item().Text($"الإجمالي بعد الزيادة: {claim.RealValue:N0}");
+                        col.Item().Text($"إجمالي المدفوع لتاريخه: {claim.PaidAmount:N0}");
+                        col.Item().Text($"المتبقي: {claim.RemainingAmount:N0}");
+                    });
+
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+            }).GeneratePdf();
+        }
     }
 }

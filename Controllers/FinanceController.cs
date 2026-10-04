@@ -465,6 +465,13 @@ namespace AtharERP_System.Controllers
             }
 
             claim.PaidAmount += amount;
+            _context.ClaimPayments.Add(new ClaimPayment
+            {
+                FinancialClaimId = claim.Id,
+                Amount = amount,
+                PaidAt = DateTime.UtcNow,
+                CreatedById = CurrentUserId
+            });
             if (claim.RealValue - claim.PaidAmount <= 0)
             {
                 claim.IsClientSettled = true;
@@ -474,6 +481,42 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = "تم تسجيل الدفعة بنجاح";
             return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
+        }
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> ClaimPaymentsHistory(int claimId)
+        {
+            var claim = await _context.FinancialClaims
+                .Include(c => c.Project)
+                .Include(c => c.ProjectAssignment)
+                .FirstOrDefaultAsync(c => c.Id == claimId);
+            if (claim == null) return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, claim.ProjectId))
+                return Forbid();
+
+            var payments = await _context.ClaimPayments
+                .Where(p => p.FinancialClaimId == claimId)
+                .OrderByDescending(p => p.PaidAt)
+                .ToListAsync();
+
+            ViewBag.Claim = claim;
+            return View(payments);
+        }
+
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> ExportPaymentReceiptPdf(int paymentId)
+        {
+            var payment = await _context.ClaimPayments
+                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project)
+                .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
+                .FirstOrDefaultAsync(p => p.Id == paymentId);
+            if (payment == null) return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, payment.FinancialClaim.ProjectId))
+                return Forbid();
+
+            var pdf = _pdfExport.GeneratePaymentReceipt(payment);
+            return File(pdf, "application/pdf", $"إيصال-دفعة-{payment.Id}.pdf");
         }
     }
 }
