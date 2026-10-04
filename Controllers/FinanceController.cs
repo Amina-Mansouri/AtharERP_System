@@ -353,21 +353,7 @@ namespace AtharERP_System.Controllers
             var result = await _calc.CalculateProjectNetProfitAsync(targetProjectIds, dateFrom, dateTo);
             return View(result);
         }
-        [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> ExportSaleTablePdf(int projectId, DateTime? dateFrom, DateTime? dateTo)
-        {
-            var project = await _context.Projects.FindAsync(projectId);
-            if (project == null) return NotFound();
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId)) return Forbid();
-
-            var query = _context.FinancialClaims.Include(c => c.ProjectAssignment).Where(c => c.ProjectId == projectId);
-            if (dateFrom.HasValue) query = query.Where(c => c.CreatedAt >= dateFrom.Value);
-            if (dateTo.HasValue) query = query.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-            var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
-
-            var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims) }, includePercentageColumns: true);
-            return File(pdf, "application/pdf", $"جدول-البيع-{project.Code}.pdf");
-        }
+   
 
         [RequirePermission("Finance.Sales.View")]
         public async Task<IActionResult> ExportClaimsPdf(int projectId, DateTime? dateFrom, DateTime? dateTo)
@@ -384,34 +370,29 @@ namespace AtharERP_System.Controllers
             var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims) }, includePercentageColumns: false);
             return File(pdf, "application/pdf", $"المطالبة-{project.Code}.pdf");
         }
-
         [RequirePermission("Finance.Sales.View")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ExportSaleTableBatchPdf(List<int> projectIds, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> ExportSaleTableSelectedPdf(List<int> claimIds, int projectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            if (projectIds == null || !projectIds.Any())
+            if (claimIds == null || !claimIds.Any())
             {
-                TempData["Error"] = "اختاري مشروعاً واحداً على الأقل للتصدير الجماعي";
-                return RedirectToAction("SaleTable");
+                TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
+                return RedirectToAction("SaleTable", new { projectId, dateFrom, dateTo });
             }
 
-            var sections = new List<(Project, List<FinancialClaim>)>();
-            foreach (var pid in projectIds)
-            {
-                if (!await _permissionService.CanAccessProjectAsync(User, pid)) continue;
-                var project = await _context.Projects.FindAsync(pid);
-                if (project == null) continue;
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null) return NotFound();
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId)) return Forbid();
 
-                var query = _context.FinancialClaims.Include(c => c.ProjectAssignment).Where(c => c.ProjectId == pid);
-                if (dateFrom.HasValue) query = query.Where(c => c.CreatedAt >= dateFrom.Value);
-                if (dateTo.HasValue) query = query.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-                var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
-                sections.Add((project, claims));
-            }
+            var claims = await _context.FinancialClaims
+                .Include(c => c.ProjectAssignment)
+                .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
 
-            var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي — تصدير جماعي", sections, includePercentageColumns: true);
-            return File(pdf, "application/pdf", $"جدول-البيع-دفعة-{DateTime.UtcNow:yyyyMMdd}.pdf");
+            var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims) }, includePercentageColumns: true);
+            return File(pdf, "application/pdf", $"جدول-البيع-{project.Code}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]
@@ -517,6 +498,33 @@ namespace AtharERP_System.Controllers
 
             var pdf = _pdfExport.GeneratePaymentReceipt(payment);
             return File(pdf, "application/pdf", $"إيصال-دفعة-{payment.Id}.pdf");
+        }
+
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> Receipts(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        {
+            var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = accessibleProjects;
+            ViewBag.CategoryId = categoryId;
+            ViewBag.ProjectId = projectId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+
+            var accessibleProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+            if (projectId.HasValue)
+                accessibleProjectIds = accessibleProjectIds.Where(id => id == projectId.Value).ToList();
+
+            var query = _context.ClaimPayments
+                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project)
+                .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
+                .Where(p => accessibleProjectIds.Contains(p.FinancialClaim.ProjectId));
+
+            if (dateFrom.HasValue) query = query.Where(p => p.PaidAt >= dateFrom.Value);
+            if (dateTo.HasValue) query = query.Where(p => p.PaidAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+
+            var payments = await query.OrderByDescending(p => p.PaidAt).ToListAsync();
+            return View(payments);
         }
     }
 }

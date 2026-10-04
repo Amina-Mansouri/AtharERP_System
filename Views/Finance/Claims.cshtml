@@ -92,8 +92,9 @@
         <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
         <input type="hidden" name="returnAction" value="Claims" />
 
-        <div style="margin-bottom:8px;">
+        <div style="margin-bottom:8px; display:flex; gap:8px;">
             <button type="submit" class="btn-line btn-line-accent">📑 تصدير (PDF)</button>
+            <a asp-action="Receipts" asp-route-projectId="@projectId" class="btn-line">🧾 سجل الإيصالات</a>
         </div>
 
         <div class="data-table data-table-compact" style="--cols: 36px 70px 1fr 1fr 70px 80px 80px 90px 100px 80px 90px 140px">

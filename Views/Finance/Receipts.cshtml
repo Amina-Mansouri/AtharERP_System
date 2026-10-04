@@ -1,0 +1,83 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ClaimPayment>
+@{
+    var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
+    var categoryId = ViewBag.CategoryId as int?;
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var projectId = ViewBag.ProjectId as int?;
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
+    ViewData["Title"] = "سجل الإيصالات";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>سجل الإيصالات</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">نوع المشروع</label>
+            <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id" selected="@(categoryId == cat.Id)">@cat.DisplayName</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:220px;">
+            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+<div class="data-table data-table-compact" style="--cols: 90px 70px 1fr 1fr 100px 100px">
+    <div class="data-table-head">
+        <div class="cell">تاريخ الدفعة</div>
+        <div class="cell">رقم المشروع</div>
+        <div class="cell">المشروع</div>
+        <div class="cell">بيان التكليف</div>
+        <div class="cell">المبلغ</div>
+        <div class="cell">إيصال</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد دفعات مسجَّلة ضمن هذا التصفية</div></div>
+    }
+    else
+    {
+        @foreach (var p in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
+                <div class="cell cell-num">@p.FinancialClaim.Project.Code</div>
+                <div class="cell">@p.FinancialClaim.Project.Name</div>
+                <div class="cell">@(p.FinancialClaim.ProjectAssignment?.AssignmentType ?? "-")</div>
+                <div class="cell cell-num">@p.Amount.ToString("N0")</div>
+                <div class="cell">
+                    <a asp-action="ExportPaymentReceiptPdf" asp-route-paymentId="@p.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>
+                </div>
+            </div>
+        }
+    }
+</div>
