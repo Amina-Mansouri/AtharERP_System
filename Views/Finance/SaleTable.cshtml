@@ -95,8 +95,35 @@
             <button type="submit" class="btn-line btn-line-accent">📑 تصدير المحدَّد (PDF)</button>
         </div>
 
-      <div class="data-table data-table-compact data-table-vertical-head" style="--cols: 32px 50px 1fr 1fr 55px 60px 65px 150px 60px 55px 65px 55px 60px 140px">
-    <div class="data-table-head">
+        @if (Model.Any())
+        {
+            <div class="athar-card" style="margin-bottom:12px;">
+                <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">أثر النسب على إجمالي قيمة البيع</div>
+                <div style="max-width:320px; margin:0 auto;">
+                    <canvas id="saleBarChart" height="160"></canvas>
+                </div>
+            </div>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+            <script>
+                            new Chart(document.getElementById('saleBarChart'), {
+                                type: 'bar',
+                                    data: {
+                                    labels: ['قيمة البيع', 'قيمة النسب'],
+                                    datasets: [{
+                                        data: [@Model.Sum(c => c.Value).ToString(System.Globalization.CultureInfo.InvariantCulture), @Model.Sum(c => c.ValueAfterPercentage).ToString(System.Globalization.CultureInfo.InvariantCulture)],
+                                        backgroundColor: ['#7b6bd6', '#c9a15a']
+                            }]
+                        },
+                        options: {
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+            </script>
+        }
+
+        <div class="data-table data-table-compact data-table-vertical-head" style="--cols: 32px 50px 1fr 1fr 55px 60px 65px 150px 60px 55px 65px 55px 60px 140px">
+            <div class="data-table-head">
         <div class="cell"></div>
         <div class="cell"><span>رقم المشروع</span></div>
         <div class="cell"><span>المشروع</span></div>

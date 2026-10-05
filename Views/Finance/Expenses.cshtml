@@ -87,6 +87,42 @@
 
 @if (projectId.HasValue && project != null)
 {
+    var categoryTotals = new Dictionary<string, decimal>();
+    foreach (var e in Model)
+    {
+        var catName = e.ExpenseCategory?.NameAr ?? "-";
+        categoryTotals[catName] = categoryTotals.TryGetValue(catName, out var curVal) ? curVal + e.Amount : e.Amount;
+    }
+
+    if (categoryTotals.Any())
+    {
+        <div class="athar-card" style="margin-bottom:12px;">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">توزيع المصروفات حسب التصنيف</div>
+            <div style="max-width:280px; margin:0 auto;">
+                <canvas id="expenseDonut" height="180"></canvas>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+        <script>
+            new Chart(document.getElementById('expenseDonut'), {
+                type: 'doughnut',
+                data: {
+                    labels: @Json.Serialize(categoryTotals.Keys.ToArray()),
+                    datasets: [{
+                        data: @Json.Serialize(categoryTotals.Values.ToArray()),
+                        backgroundColor: ['#7b6bd6', '#c9a15a', '#2e8b57', '#c94a42', '#4a90d9', '#e0a040', '#8c7ce6', '#5fa8a0']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                        tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') } }
+                    }
+                }
+            });
+        </script>
+    }
+
     <div class="data-table" style="--cols: 100px 1fr 1fr 90px 1fr 90px">
         <div class="data-table-head">
             <div class="cell">التاريخ</div>
