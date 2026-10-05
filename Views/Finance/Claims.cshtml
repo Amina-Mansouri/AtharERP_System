@@ -101,14 +101,27 @@
         {
             <div class="athar-card" style="margin-bottom:12px;">
                 <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل</div>
-                <div style="max-width:320px; margin:0 auto;">
-                    <canvas id="claimsDonut" height="160"></canvas>
+                <div style="display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap;">
+                    <div style="max-width:220px;">
+                        <canvas id="claimsDonut" height="150"></canvas>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div>
+                            <span style="display:inline-block; width:10px; height:10px; background:#2e8b57; border-radius:2px; margin-left:6px;"></span>
+                            <span style="font-size:11px; color:#8a83a0;">المحقق</span>
+                            <div style="font-size:18px; font-weight:700; color:#2e8b57;">@Model.Sum(c => c.PaidAmount).ToString("N0")</div>
+                        </div>
+                        <div>
+                            <span style="display:inline-block; width:10px; height:10px; background:#c94a42; border-radius:2px; margin-left:6px;"></span>
+                            <span style="font-size:11px; color:#8a83a0;">المستحق</span>
+                            <div style="font-size:18px; font-weight:700; color:#c94a42;">@Model.Sum(c => c.RemainingAmount).ToString("N0")</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
             <script>
-                    Chart.register(ChartDataLabels);
                     new Chart(document.getElementById('claimsDonut'), {
                         type: 'doughnut',
                         data: {
@@ -118,25 +131,12 @@
                                 backgroundColor: ['#2e8b57', '#c94a42']
                             }]
                         },
-                                          options: {
-                        layout: {
-                            padding: { left: 35, right: 35, top: 15, bottom: 15 }
-                        },
-                        plugins: {
-                            legend: { position: 'bottom', labels: { font: { size: 11 } } },
-                            tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') } },
-                            datalabels: {
-                                color: '#221837',
-                                font: { size: 11, weight: '700' },
-                                formatter: (value) => value.toLocaleString('en-US'),
-                                anchor: 'end',
-                                align: 'end',
-                                offset: 8,
-                                clamp: true,
-                                clip: false
+                        options: {
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') } }
                             }
                         }
-                    }
                     });
             </script>
         }
