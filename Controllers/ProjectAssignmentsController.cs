@@ -398,7 +398,13 @@ List<int>? taskIds)
 
             var projectId = assignment.ProjectId;
             var assignmentType = assignment.AssignmentType;
-            var linkedTasksCount = await _context.ProjectTasks.CountAsync(t => t.ProjectAssignmentId == id);
+            var taskIds = await _context.ProjectTasks.Where(t => t.ProjectAssignmentId == id).Select(t => t.Id).ToListAsync();
+            var linkedTasksCount = taskIds.Count;
+
+            var dependencyLinks = await _context.TaskDependencies
+                .Where(d => taskIds.Contains(d.TaskId) || taskIds.Contains(d.DependsOnTaskId))
+                .ToListAsync();
+            _context.TaskDependencies.RemoveRange(dependencyLinks);
 
             _context.ProjectAssignments.Remove(assignment);
             await _context.SaveChangesAsync();

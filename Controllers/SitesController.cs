@@ -292,13 +292,15 @@ namespace AtharERP_System.Controllers
             if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
                 return Forbid();
 
+            var hasExpenses = await _context.ProjectExpenses.AnyAsync(e => e.SiteId == id);
+
             var hasData = site.Operations.Any() || site.DailyReports.Any() || site.QualityChecks.Any()
                 || site.SafetyChecks.Any() || site.Contractors.Any() || site.MaintenanceRequests.Any()
-                || site.Documents.Any() || site.SupplyRequests.Any();
+                || site.Documents.Any() || site.SupplyRequests.Any() || hasExpenses;
 
             if (hasData)
             {
-                TempData["Error"] = "لا يمكن حذف الموقع لوجود بيانات ميدانية مسجَّلة عليه (مراحل/تقارير/فحوصات/مقاولين/صيانة/مستندات/طلبات توريد)";
+                TempData["Error"] = "لا يمكن حذف الموقع لوجود بيانات ميدانية أو مصروفات مسجَّلة عليه (مراحل/تقارير/فحوصات/مقاولين/صيانة/مستندات/طلبات توريد/مصروفات)";
                 return RedirectToAction("Details", new { id });
             }
 

@@ -417,6 +417,19 @@ namespace AtharERP_System.Controllers
             if (!await CanAccessProjectAsync(project))
                 return Forbid();
 
+            var allProjectIds = await GetProjectAndDescendantIdsAsync(id);
+            var allSiteIds = await _context.Sites.Where(s => allProjectIds.Contains(s.ProjectId)).Select(s => s.Id).ToListAsync();
+
+            var hasExpenses = await _context.ProjectExpenses.AnyAsync(e =>
+                (e.ProjectId.HasValue && allProjectIds.Contains(e.ProjectId.Value)) ||
+                (e.SiteId.HasValue && allSiteIds.Contains(e.SiteId.Value)));
+
+            if (hasExpenses)
+            {
+                TempData["Error"] = "لا يمكن حذف المشروع لوجود مصروفات مسجَّلة عليه أو على أحد مشاريعه الفرعية أو مواقعه — احذفي أو رحّلي هذه المصروفات أولاً";
+                return RedirectToAction("Details", new { id });
+            }
+
             var projectName = project.Name;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -427,6 +440,16 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = $"تم حذف المشروع {projectName} وكل بياناته التابعة بنجاح";
             return RedirectToAction("Index");
+        }
+        private async Task<List<int>> GetProjectAndDescendantIdsAsync(int projectId)
+        {
+            var ids = new List<int> { projectId };
+            var childIds = await _context.Projects.Where(p => p.ParentProjectId == projectId).Select(p => p.Id).ToListAsync();
+            foreach (var childId in childIds)
+            {
+                ids.AddRange(await GetProjectAndDescendantIdsAsync(childId));
+            }
+            return ids;
         }
 
         // حذف مشروع واحد بكل تبعياته، ثم استدعاء نفسها لكل مشروع فرعي أولاً (الأبناء قبل الأب)

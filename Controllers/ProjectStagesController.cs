@@ -301,14 +301,26 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var stage = await _context.ProjectStages.FindAsync(id);
+            var stage = await _context.ProjectStages.Include(s => s.Assignments).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
                 return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, stage.ProjectId))
                 return Forbid();
 
+            if (stage.Assignments.Any(a => a.IsTransferredToFinance))
+            {
+                TempData["Error"] = "لا يمكن حذف المرحلة لوجود تكليف تم ترحيله للمالية بالفعل ضمنها";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
+            }
+
             var projectId = stage.ProjectId;
+
+            var taskIds = await _context.ProjectTasks.Where(t => t.StageId == id).Select(t => t.Id).ToListAsync();
+            var dependencyLinks = await _context.TaskDependencies
+                .Where(d => taskIds.Contains(d.TaskId) || taskIds.Contains(d.DependsOnTaskId))
+                .ToListAsync();
+            _context.TaskDependencies.RemoveRange(dependencyLinks);
 
             _context.ProjectStages.Remove(stage);
             await _context.SaveChangesAsync();

@@ -876,6 +876,13 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Departments");
             }
 
+            var hasStages = await _context.ProjectStages.AnyAsync(s => s.DisciplineDepartmentId == id);
+            if (hasStages)
+            {
+                TempData["Error"] = "لا يمكن حذف القسم لاستخدامه كتخصص لمرحلة مشروع واحدة أو أكثر";
+                return RedirectToAction("Departments");
+            }
+
             var deletedDeptName = department.Name;
             _context.Departments.Remove(department);
             await _context.SaveChangesAsync();

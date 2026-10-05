@@ -173,6 +173,17 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Edit", new { id });
             }
 
+            var hasHistory = await _context.SiteDailyReports.AnyAsync(r => r.CreatedByContractorId == id)
+                || await _context.SiteQualityChecks.AnyAsync(q => q.CheckedByContractorId == id)
+                || await _context.SiteSafetyChecks.AnyAsync(s => s.CheckedByContractorId == id)
+                || await _context.SiteSupplyRequests.AnyAsync(r => r.RequestedByContractorId == id);
+
+            if (hasHistory)
+            {
+                TempData["Error"] = "لا يمكن حذف هذا الحساب لوجود سجلات تاريخية مرتبطة به (تقارير يومية/فحوصات/طلبات توريد) — عطّليه بدلاً من ذلك";
+                return RedirectToAction("Edit", new { id });
+            }
+
             _context.Contractors.Remove(contractor);
             await _context.SaveChangesAsync();
 
