@@ -4,7 +4,10 @@ using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
+using System.Net.Mail;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Hosting;
 
 namespace AtharERP_System.Controllers
 {
@@ -17,13 +20,16 @@ namespace AtharERP_System.Controllers
         private readonly ProposalReviewPdfService _pdfService;
         private readonly ProjectCalculationService _calc;
 
+        private readonly IWebHostEnvironment _environment;
+
         public DesignProposalsController(
             AppDbContext context,
             FileUploadService fileUpload,
             PermissionService permissionService,
             NotificationService notify,
             ProposalReviewPdfService pdfService,
-            ProjectCalculationService calc)
+            ProjectCalculationService calc,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _fileUpload = fileUpload;
@@ -31,6 +37,7 @@ namespace AtharERP_System.Controllers
             _notify = notify;
             _pdfService = pdfService;
             _calc = calc;
+            _environment = environment;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -149,7 +156,14 @@ namespace AtharERP_System.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Review(int id, int? projectId, int? stageId, string? taskFilter)
+        public async Task<IActionResult> Review(
+     int id,
+     ProposalStatus status,
+     string? notes,
+     int? projectId,
+     int? stageId,
+     string? taskFilter,
+     IFormFile? attachment)
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
@@ -268,6 +282,18 @@ namespace AtharERP_System.Controllers
             var actingUser = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
             var isApprovalDecision = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification;
 
+            string? attachmentPath = null;
+            string? attachmentFileName = null;
+            if (attachment != null && attachment.Length > 0)
+            {
+                var attachmentResult = await _fileUpload.SaveFileUnrestrictedAsync(attachment, $"review-attachments/proposal-{proposal.Id}");
+                if (attachmentResult.Success)
+                {
+                    attachmentPath = attachmentResult.FilePath;
+                    attachmentFileName = attachment.FileName;
+                }
+            }
+          
             // الخطوة الأولى (توصية المشرف بالاعتماد): تُحفَظ وتنتقل للمدير للاعتماد النهائي، دون أي تأثير على حالة المستند/المهمة بعد
             if (isSupervisorPhase && isApprovalDecision)
             {
@@ -284,6 +310,8 @@ namespace AtharERP_System.Controllers
                     SupervisorStatus = status,
                     SupervisorReviewedAt = DateTime.UtcNow,
                     Notes = notes,
+                    AttachmentPath = attachmentPath,
+                    AttachmentFileName = attachmentFileName,
                     Discipline = task.ProjectAssignment?.AssignmentType,
                     ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId),
                     ReviewDate = DateTime.UtcNow,
@@ -307,6 +335,8 @@ namespace AtharERP_System.Controllers
                 review.ReviewerPosition = actingUser?.JobRankRef?.NameAr;
                 review.ReviewerSignaturePath = actingUser?.SignatureImagePath;
                 review.Notes = notes;
+                review.AttachmentPath = attachmentPath ?? review.AttachmentPath;
+                review.AttachmentFileName = attachmentFileName ?? review.AttachmentFileName;
                 review.ReviewDate = DateTime.UtcNow;
                 review.ReviewedById = CurrentUserId;
             }
@@ -325,6 +355,8 @@ namespace AtharERP_System.Controllers
                     SupervisorStatus = hasSupervisor ? status : (ProposalStatus?)null,
                     SupervisorReviewedAt = hasSupervisor ? DateTime.UtcNow : (DateTime?)null,
                     Notes = notes,
+                    AttachmentPath = attachmentPath,
+                    AttachmentFileName = attachmentFileName,
                     Discipline = task.ProjectAssignment?.AssignmentType,
                     ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId),
                     ReviewDate = DateTime.UtcNow,
@@ -465,6 +497,42 @@ namespace AtharERP_System.Controllers
                 .Select(a => a.Status)
                 .FirstOrDefaultAsync();
             return status == AssignmentStatus.Cancelled;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadReview(int id)
+        {
+            var review = await _context.ProposalReviews
+                .Include(r => r.DesignProposal)
+                .FirstOrDefaultAsync(r => r.Id == id);
+            if (review == null || string.IsNullOrEmpty(review.PdfFilePath))
+                return NotFound();
+
+            var pdfFullPath = Path.Combine(_environment.WebRootPath, review.PdfFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(pdfFullPath))
+                return NotFound();
+
+            var reportName = $"مراجعة-{review.DesignProposal?.Code}";
+
+            if (string.IsNullOrEmpty(review.AttachmentPath))
+            {
+                return PhysicalFile(pdfFullPath, "application/pdf", $"{reportName}.pdf");
+            }
+
+            var attachmentFullPath = Path.Combine(_environment.WebRootPath, review.AttachmentPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+            using var memoryStream = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                archive.CreateEntryFromFile(pdfFullPath, $"{reportName}.pdf");
+                if (System.IO.File.Exists(attachmentFullPath))
+                {
+                    var attachmentName = !string.IsNullOrEmpty(review.AttachmentFileName) ? review.AttachmentFileName : Path.GetFileName(attachmentFullPath);
+                    archive.CreateEntryFromFile(attachmentFullPath, attachmentName);
+                }
+            }
+            memoryStream.Position = 0;
+            return File(memoryStream.ToArray(), "application/zip", $"{reportName}.zip");
         }
     }
 }

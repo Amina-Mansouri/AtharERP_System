@@ -62,6 +62,35 @@ namespace AtharERP_System.Services
             };
         }
 
+        public async Task<FileUploadResult> SaveFileUnrestrictedAsync(IFormFile file, string subfolder)
+        {
+            if (file == null || file.Length == 0)
+                return new FileUploadResult { Success = false, ErrorMessage = "لم يتم اختيار ملف" };
+
+            if (file.Length > MaxFileSizeBytes)
+                return new FileUploadResult { Success = false, ErrorMessage = "حجم الملف يتجاوز الحد المسموح (25 ميجابايت)" };
+
+            var extension = Path.GetExtension(file.FileName);
+            var uploadsRoot = Path.Combine(_environment.WebRootPath, "uploads", subfolder);
+            Directory.CreateDirectory(uploadsRoot);
+
+            var safeFileName = $"{Guid.NewGuid()}{extension}";
+            var fullPath = Path.Combine(uploadsRoot, safeFileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return new FileUploadResult
+            {
+                Success = true,
+                FilePath = $"/uploads/{subfolder}/{safeFileName}",
+                FileType = extension.TrimStart('.'),
+                FileSize = file.Length
+            };
+        }
+
         // لحفظ ملفات مولَّدة داخل النظام (مثل PDF عبر QuestPDF) وليست مرفوعة من المستخدم مباشرة
         public async Task<FileUploadResult> SaveGeneratedFileAsync(byte[] bytes, string subfolder, string extension)
         {

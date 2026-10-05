@@ -76,6 +76,14 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "مسار ملف PDF")]
         public string? PdfFilePath { get; set; }
 
+        [StringLength(500)]
+        [Display(Name = "مسار المرفق")]
+        public string? AttachmentPath { get; set; }
+
+        [StringLength(255)]
+        [Display(Name = "اسم المرفق الأصلي")]
+        public string? AttachmentFileName { get; set; }
+
         [Required]
         [Display(Name = "راجعه")]
         [ValidateNever]
