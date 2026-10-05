@@ -56,8 +56,78 @@ namespace AtharERP_System.Controllers
 
             return View(qualityChecks);
         }
-       
-       
+        [RequirePermission("Quality.Approve")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateQualityCheck(int siteId, SiteQualityType qualityType, string checkType, string? description)
+        {
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة فحص لموقع مكتمل";
+                return RedirectToAction("Index", new { siteId });
+            }
+
+            _context.SiteQualityChecks.Add(new SiteQualityCheck
+            {
+                SiteId = siteId,
+                QualityType = qualityType,
+                CheckType = checkType,
+                Description = description,
+                Result = QualityCheckResult.Pending,
+                CheckDate = DateTime.UtcNow,
+                CheckedById = CurrentUserId,
+                IsApproved = false
+            });
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteQualityCheck), "", "إضافة فحص جودة");
+
+            TempData["Success"] = "تمت إضافة فحص الجودة بنجاح";
+            return RedirectToAction("Index", new { siteId });
+        }
+
+        [RequirePermission("Quality.Approve")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateSafetyCheck(int siteId, string checkType, string? description)
+        {
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة فحص لموقع مكتمل";
+                return RedirectToAction("Index", new { siteId });
+            }
+
+            _context.SiteSafetyChecks.Add(new SiteSafetyCheck
+            {
+                SiteId = siteId,
+                CheckType = checkType,
+                Description = description,
+                Result = SafetyResult.Safe,
+                CheckDate = DateTime.UtcNow,
+                CheckedById = CurrentUserId,
+                IsApproved = false
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تمت إضافة فحص السلامة بنجاح";
+            return RedirectToAction("Index", new { siteId });
+        }
+
+
         [RequirePermission("Quality.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]

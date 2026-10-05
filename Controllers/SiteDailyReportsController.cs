@@ -58,6 +58,69 @@ namespace AtharERP_System.Controllers
 
             return View(reports);
         }
+        [RequirePermission("Sites.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(
+    int siteId, DateTime reportDate, string? weather, int workersCount, string? workCompleted,
+    string? issues, string? materialsUsed, string? equipmentUsed, string? visits, string? notes,
+    List<IFormFile>? photos, DateTime? fromDate, DateTime? toDate)
+        {
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة تقرير لموقع مكتمل";
+                return RedirectToAction("Index", new { siteId, fromDate, toDate });
+            }
+
+            var report = new SiteDailyReport
+            {
+                SiteId = siteId,
+                ReportDate = reportDate,
+                Weather = weather,
+                WorkersCount = workersCount,
+                WorkCompleted = workCompleted,
+                Issues = issues,
+                MaterialsUsed = materialsUsed,
+                EquipmentUsed = equipmentUsed,
+                Visits = visits,
+                Notes = notes,
+                CreatedById = CurrentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.SiteDailyReports.Add(report);
+            await _context.SaveChangesAsync();
+
+            if (photos != null)
+            {
+                foreach (var photo in photos.Where(p => p.Length > 0))
+                {
+                    var result = await _fileUpload.SaveFileAsync(photo, $"sites/{siteId}/daily-reports/{report.Id}");
+                    if (result.Success)
+                    {
+                        _context.SiteDailyReportPhotos.Add(new SiteDailyReportPhoto
+                        {
+                            DailyReportId = report.Id,
+                            FilePath = result.FilePath!,
+                            UploadedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteDailyReport), report.Id.ToString(), "إضافة تقرير يومي");
+
+            TempData["Success"] = "تمت إضافة التقرير اليومي بنجاح";
+            return RedirectToAction("Index", new { siteId, fromDate, toDate });
+        }
 
         // ============================================
         // تفاصيل تقرير يومي (يشمل الصور)

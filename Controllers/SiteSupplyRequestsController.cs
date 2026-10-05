@@ -44,6 +44,45 @@ namespace AtharERP_System.Controllers
             return View(requests);
         }
 
+        [RequirePermission("Supply.Create")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(int siteId, string materialName, string? dimensions, decimal quantity, string unit, string? notes)
+        {
+            var site = await _context.Sites.FindAsync(siteId);
+            if (site == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+                return Forbid();
+
+            if (site.Status == SiteStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن إضافة طلب توريد لموقع مكتمل";
+                return RedirectToAction("Index", new { siteId });
+            }
+
+            _context.SiteSupplyRequests.Add(new SiteSupplyRequest
+            {
+                SiteId = siteId,
+                ProjectId = site.ProjectId,
+                MaterialName = materialName,
+                Dimensions = dimensions,
+                Quantity = quantity,
+                Unit = unit,
+                Notes = notes,
+                Status = SiteSupplyStatus.Pending,
+                RequestDate = DateTime.UtcNow,
+                RequestedById = CurrentUserId
+            });
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteSupplyRequest), "", "إضافة طلب توريد");
+
+            TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
+            return RedirectToAction("Index", new { siteId });
+        }
+
         [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]
