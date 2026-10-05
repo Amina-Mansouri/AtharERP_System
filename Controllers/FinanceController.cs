@@ -269,6 +269,16 @@ namespace AtharERP_System.Controllers
             if (!model.ProjectId.HasValue || !await _permissionService.CanAccessProjectAsync(User, model.ProjectId.Value))
                 return Forbid();
 
+            if (model.SiteId.HasValue)
+            {
+                var site = await _context.Sites.FindAsync(model.SiteId.Value);
+                if (site == null || site.ProjectId != model.ProjectId.Value)
+                {
+                    TempData["Error"] = "الموقع المحدد لا يتبع هذا المشروع";
+                    return RedirectToAction("Expenses", new { projectId = model.ProjectId });
+                }
+            }
+
             model.CreatedAt = DateTime.UtcNow;
             _context.ProjectExpenses.Add(model);
             await _context.SaveChangesAsync();

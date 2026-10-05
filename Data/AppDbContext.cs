@@ -47,6 +47,7 @@ namespace AtharERP_System.Data
         public DbSet<SiteQualityCheck> SiteQualityChecks { get; set; } = null!;
         public DbSet<SiteSafetyCheck> SiteSafetyChecks { get; set; } = null!;
         public DbSet<SiteContractor> SiteContractors { get; set; } = null!;
+        public DbSet<SiteManager> SiteManagers { get; set; } = null!;
         public DbSet<Contractor> Contractors { get; set; } = null!;
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
         public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;

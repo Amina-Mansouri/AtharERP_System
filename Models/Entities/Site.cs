@@ -68,6 +68,7 @@ namespace AtharERP_System.Models.Entities
         public virtual ICollection<SiteQualityCheck> QualityChecks { get; set; } = new List<SiteQualityCheck>();
         public virtual ICollection<SiteSafetyCheck> SafetyChecks { get; set; } = new List<SiteSafetyCheck>();
         public virtual ICollection<SiteContractor> Contractors { get; set; } = new List<SiteContractor>();
+        public virtual ICollection<SiteManager> Managers { get; set; } = new List<SiteManager>();
         public virtual ICollection<SiteMaintenance> MaintenanceRequests { get; set; } = new List<SiteMaintenance>();
         public virtual ICollection<SiteDocument> Documents { get; set; } = new List<SiteDocument>();
         public virtual ICollection<SiteSupplyRequest> SupplyRequests { get; set; } = new List<SiteSupplyRequest>();
