@@ -107,7 +107,7 @@
     var wStep8 = 0m; var wCum8 = wCum7 - wStep8; // مكافآت = profitMargin
 
     var wLabels = new[] { "المبيعات", "تكاليف المهام", "تكاليف المواقع", "الخزينة", "مصروفات عامة", "الرواتب", "الخصومات", "المكافآت", "هامش الربح" };
-    var wBase = new[] { 0m, Math.Min(wCum1, wCum2), Math.Min(wCum2, wCum3), Math.Min(0, wCum3), Math.Min(wCum3, wCum5), Math.Min(wCum5, wCum6), Math.Min(wCum6, wCum7), Math.Min(wCum7, wCum8), Math.Min(0, wCum8) };
+    var wBase = new[] { 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m };
     var wDelta = new[] { Math.Abs(wStep1), Math.Abs(wCum2 - wCum1), Math.Abs(wCum3 - wCum2), Math.Abs(wCum3), Math.Abs(wCum5 - wCum3), Math.Abs(wCum6 - wCum5), Math.Abs(wCum7 - wCum6), Math.Abs(wCum8 - wCum7), Math.Abs(wCum8) };
     var wColors = new[] { "#2e8b57", "#c94a42", "#c94a42", "#7b6bd6", "#c94a42", "#c94a42", "#2e8b57", "#c94a42", "#c9a15a" };
 
