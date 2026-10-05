@@ -116,15 +116,17 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="taskId" value="@Model.Id" />
                         <div>
-                            <label style="font-size:10.5px; color:#8a83a0;">التصنيف</label>
-                            <select name="classification" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:11.5px;">
-                                <option value="">--</option>
-                                <option value="AA">معماري (AA)</option>
-                                <option value="IN">ديكور داخلي (IN)</option>
-                                <option value="SE">إنشائي (SE)</option>
-                                <option value="ME">ميكانيكي (ME)</option>
-                                <option value="EE">كهربائي (EE)</option>
-                            </select>
+                            <label style="font-size:10.5px; color:#8a83a0;">التصنيف (تلقائي حسب تخصص المرحلة)</label>
+                            <div style="width:100%; height:32px; display:flex; align-items:center; font-size:11.5px; font-weight:600;">
+                                @if (Model.Stage?.DisciplineDepartment != null)
+                                {
+                                    <span>@Model.Stage.DisciplineDepartment.Name (@Model.Stage.DisciplineDepartment.Code)</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#c94a42;">⚠ لم يُحدَّد تخصص المرحلة بعد</span>
+                                }
+                            </div>
                         </div>
                         <div>
                             <label style="font-size:10.5px; color:#8a83a0;">نوع الملف</label>

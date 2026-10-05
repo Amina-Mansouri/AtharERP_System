@@ -780,7 +780,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description")] Department model, IFormFile? stampImage)
+        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description,Code")] Department model, IFormFile? stampImage)
         {
             if (!ModelState.IsValid)
             {
@@ -812,7 +812,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive")] Department model, IFormFile? stampImage)
+        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive,Code")] Department model, IFormFile? stampImage)
         {
             var department = await _context.Departments.FindAsync(id);
             if (department == null)
@@ -833,6 +833,7 @@ namespace AtharERP_System.Controllers
             department.ParentDepartmentId = model.ParentDepartmentId;
             department.Description = model.Description;
             department.IsActive = model.IsActive;
+            department.Code = model.Code;
 
             if (stampImage != null && stampImage.Length > 0)
             {

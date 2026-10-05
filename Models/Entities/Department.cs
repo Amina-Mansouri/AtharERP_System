@@ -12,6 +12,10 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "اسم القسم")]
         public string Name { get; set; } = string.Empty;
 
+        [StringLength(10)]
+        [Display(Name = "الرمز")]
+        public string? Code { get; set; }
+
         [Display(Name = "القسم الرئيسي")]
         public int? ParentDepartmentId { get; set; }
 

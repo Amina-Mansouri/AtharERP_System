@@ -66,9 +66,12 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(int todoId, IFormFile file, DocumentClassification classification, FileCategory fileCategory, int? assignmentId)
+        public async Task<IActionResult> Upload(int todoId, IFormFile file, FileCategory fileCategory, int? assignmentId)
         {
-            var todo = await _context.TaskTodos.Include(t => t.Task).ThenInclude(task => task.Project).FirstOrDefaultAsync(t => t.Id == todoId);
+            var todo = await _context.TaskTodos
+                .Include(t => t.Task).ThenInclude(task => task.Project)
+                .Include(t => t.Task).ThenInclude(task => task.Stage!).ThenInclude(s => s.DisciplineDepartment)
+                .FirstOrDefaultAsync(t => t.Id == todoId);
             if (todo == null)
                 return NotFound();
 
@@ -98,7 +101,12 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "الرجاء اختيار ملف";
                 return BackToTask();
             }
-
+            var classification = task.Stage?.DisciplineDepartment?.Code;
+            if (string.IsNullOrWhiteSpace(classification))
+            {
+                TempData["Error"] = "لم يُحدَّد قسم/تخصص لمرحلة هذا التكليف بعد — يُرجى تحديد ذلك من بيانات المرحلة أولاً قبل رفع مستند";
+                return BackToTask();
+            }
             var result = await _fileUpload.SaveFileAsync(file, $"proposals/{task.ProjectId}");
             if (!result.Success)
             {

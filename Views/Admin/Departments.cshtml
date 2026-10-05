@@ -108,7 +108,7 @@
 
                 <div style="display:flex; gap:8px; margin-top:13px; padding-top:12px; border-top:1px solid #f1f0f6;">
                     <button type="button" class="btn-line" style="flex:1;"
-                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower(), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.StampImagePath)))'>
+                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower(), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.StampImagePath)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Code)))'>
                         تعديل
                     </button>
                     <form method="post" asp-action="DeleteDepartment" asp-route-id="@selected.Id" onsubmit="return confirm('حذف هذا العنصر؟')" style="flex:1;">
@@ -135,6 +135,10 @@
                     <div>
                         <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الاسم</div>
                         <input type="text" name="Name" id="dept-name" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرمز (اختياري)</div>
+                        <input type="text" name="Code" id="dept-code" maxlength="10" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" placeholder="مثال: AA" />
                     </div>
                     <div>
                         <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الإدارة الرئيسية (اختياري)</div>
@@ -171,7 +175,7 @@
 
 @section Scripts {
     <script>
-        function openDeptModal(id, name, parentId, description, isActive, stampPath) {
+        function openDeptModal(id, name, parentId, description, isActive, stampPath, code) {
             const form = document.getElementById('deptForm');
             const isEdit = id !== undefined && id !== null;
             form.action = isEdit ? '@Url.Action("EditDepartment")' : '@Url.Action("CreateDepartment")';
@@ -179,6 +183,7 @@
             document.getElementById('dept-name').value = name ?? '';
             document.getElementById('dept-parent').value = (parentId !== undefined && parentId !== null) ? parentId : '';
             document.getElementById('dept-description').value = description ?? '';
+            document.getElementById('dept-code').value = code ?? '';
             document.getElementById('dept-modal-title').textContent = isEdit ? 'تعديل' : ((parentId !== undefined && parentId !== null) ? 'قسم تابع جديد' : 'إدارة جديدة');
             document.getElementById('dept-active-wrapper').style.display = isEdit ? 'flex' : 'none';
             if (isEdit) {
