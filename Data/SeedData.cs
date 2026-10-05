@@ -219,6 +219,14 @@ namespace AtharERP_System.Data
                 "Quality.View", "Quality.Approve", "Quality.Reports",
                 "Reports.View"
             });
+            // مدير موقع: إدارة كاملة للمواقع والمقاولين وطلباتها الفنية والصيانة، + اعتماد فحوصات الجودة بالموقع + الموافقة على طلبات التوريد
+            await LinkPermissionsToRole(context, roleManager, "مدير موقع", new[]
+            {
+    "Sites.View", "Sites.Manage", "Sites.Reports",
+    "Sites.TechnicalRequests.Manage", "Sites.Maintenance.Manage",
+    "Quality.View", "Quality.Approve", "Quality.Reports",
+    "Supply.View", "Supply.Create", "Supply.Approve"
+});
             // ========== المسارات والرتب الوظيفية ==========
             if (!await context.CareerTracks.AnyAsync())
             {
