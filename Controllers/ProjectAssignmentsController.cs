@@ -227,26 +227,27 @@ List<int>? taskIds)
             if (model.StageId.HasValue)
                 await _calc.RecalculateStageAsync(model.StageId.Value);
 
-            // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" + ترحيل تلقائي للمواقع إن كان مفعّلاً (بند حالة المشروع)
+            // أول تكليف للمشروع: تحويل الحالة تلقائياً لـ"قيد التنفيذ" إن كانت لا تزال "جديد"
             if (project.Status == ProjectStatus.New)
             {
                 project.Status = ProjectStatus.InProgress;
-
-                if (project.AutoTransferToSite && !await _context.Sites.AnyAsync(s => s.ProjectId == project.Id))
-                {
-                    _context.Sites.Add(new Site
-                    {
-                        Name = project.Name,
-                        ProjectId = project.Id,
-                        Status = SiteStatus.Active,
-                        StartDate = DateTime.UtcNow,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
-
-                await _context.SaveChangesAsync();
             }
+
+            // ترحيل تلقائي للموقع إن كان مفعّلاً — بصرف النظر عن حالة المشروع الحالية (قد تكون تحوّلت فعلاً لـ"قيد التنفيذ" بمجرد إضافة المراحل)
+            if (project.AutoTransferToSite && !await _context.Sites.AnyAsync(s => s.ProjectId == project.Id))
+            {
+                _context.Sites.Add(new Site
+                {
+                    Name = project.Name,
+                    ProjectId = project.Id,
+                    Status = SiteStatus.Active,
+                    StartDate = DateTime.UtcNow,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
 
             await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectAssignment), model.Id.ToString(), $"إضافة تكليف: {model.AssignmentType}");
 

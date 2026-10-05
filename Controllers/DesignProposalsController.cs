@@ -72,7 +72,23 @@ namespace AtharERP_System.Controllers
                 .Distinct()
                 .ToListAsync();
         }
+        private async Task<List<string>> GetProjectManagersAsync(int projectId)
+        {
+            var recipientIds = await _permissionService.GetProjectRecipientsAsync(projectId);
+            if (!recipientIds.Any())
+                return new List<string>();
 
+            return await (
+                from ur in _context.UserRoles
+                join r in _context.Roles on ur.RoleId equals r.Id
+                join rp in _context.RolePermissions on r.Id equals rp.RoleId
+                join p in _context.Permissions on rp.PermissionId equals p.Id
+                where recipientIds.Contains(ur.UserId)
+                    && r.IsActive && rp.IsGranted && p.IsActive
+                    && p.Code == "Projects.Tasks.Manage"
+                select ur.UserId
+            ).Distinct().ToListAsync();
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(int todoId, IFormFile file, FileCategory fileCategory, int? assignmentId)
@@ -285,6 +301,9 @@ IFormFile? attachment)
             var actingUser = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
             var isApprovalDecision = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification;
 
+            var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
+            var mainProject = subProject != null && proposal.Project.ParentProject != null ? proposal.Project.ParentProject : proposal.Project;
+
             string? attachmentPath = null;
             string? attachmentFileName = null;
             if (attachment != null && attachment.Length > 0)
@@ -323,6 +342,26 @@ IFormFile? attachment)
                 };
                 _context.ProposalReviews.Add(pendingReview);
                 await _context.SaveChangesAsync();
+
+                var pendingPdfBytes = _pdfService.Generate(pendingReview, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code);
+                var pendingPdfResult = await _fileUpload.SaveGeneratedFileAsync(pendingPdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
+                if (pendingPdfResult.Success)
+                {
+                    pendingReview.PdfFilePath = pendingPdfResult.FilePath;
+                    await _context.SaveChangesAsync();
+                }
+
+                await _notify.NotifyAsync(proposal.PreparedById,
+                    $"وافق المهندس المشرف على مستندك \"{proposal.Name}\" — بانتظار الاعتماد النهائي من المدير",
+                    NotificationEventType.TaskStatusChanged,
+                    pendingReview.PdfFilePath != null ? $"/DesignProposals/DownloadReview/{pendingReview.Id}" : $"/ProjectTasks/Edit/{task.Id}",
+                    entityType: "DesignProposal", entityId: proposal.Id);
+
+                var managerIds = await GetProjectManagersAsync(proposal.ProjectId);
+                await _notify.NotifyManyAsync(managerIds,
+                    $"توصية المهندس المشرف بالاعتماد على مستند \"{proposal.Name}\" — بانتظار اعتمادك النهائي",
+                    NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}",
+                    requiresAction: true, entityType: "DesignProposal", entityId: proposal.Id);
 
                 TempData["Success"] = "تم إرسال توصيتك — بانتظار الاعتماد النهائي من المدير";
                 return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
@@ -395,9 +434,7 @@ IFormFile? attachment)
                 }
             }
 
-            var subProject = proposal.Project.Scope == ProjectScope.Sub ? proposal.Project : null;
-            var mainProject = subProject != null && proposal.Project.ParentProject != null ? proposal.Project.ParentProject : proposal.Project;
-
+            
             var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code);
             var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
             if (pdfResult.Success)
@@ -411,8 +448,9 @@ IFormFile? attachment)
                 : $"تم رفض مستندك \"{proposal.Name}\" — تحتاج مراجعة";
 
             await _notify.NotifyAsync(proposal.PreparedById, notifyMessage,
-                NotificationEventType.TaskStatusChanged, review.PdfFilePath ?? $"/ProjectTasks/Edit/{task.Id}",
-                entityType: "DesignProposal", entityId: proposal.Id);
+       NotificationEventType.TaskStatusChanged,
+       review.PdfFilePath != null ? $"/DesignProposals/DownloadReview/{review.Id}" : $"/ProjectTasks/Edit/{task.Id}",
+       entityType: "DesignProposal", entityId: proposal.Id);
 
             TempData["Success"] = "تم إرسال المراجعة بنجاح";
             return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
