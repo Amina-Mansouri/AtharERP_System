@@ -161,9 +161,8 @@ namespace AtharERP_System.Controllers
      ProposalStatus status,
      string? notes,
      int? projectId,
-     int? stageId,
-     string? taskFilter,
-     IFormFile? attachment)
+          int? stageId,
+     string? taskFilter)
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
@@ -236,12 +235,13 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Review(
-     int id,
-     ProposalStatus status,
-     string? notes,
-     int? projectId,
-     int? stageId,
-     string? taskFilter)
+int id,
+ProposalStatus status,
+string? notes,
+int? projectId,
+int? stageId,
+string? taskFilter,
+IFormFile? attachment)
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
