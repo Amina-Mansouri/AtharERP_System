@@ -180,6 +180,7 @@ namespace AtharERP_System.Controllers
 .Include(t => t.Todos)
 .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
 .Include(t => t.Stage).ThenInclude(s => s.Project)
+.Include(t => t.Stage).ThenInclude(s => s.DisciplineDepartment)
 .Include(t => t.ProjectAssignment).ThenInclude(a => a!.Engineers).ThenInclude(e => e.User)
 .Include(t => t.ProjectAssignment).ThenInclude(a => a!.Tasks)
 .FirstOrDefaultAsync(t => t.Id == id);

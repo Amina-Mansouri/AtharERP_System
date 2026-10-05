@@ -121,14 +121,16 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="todoId" value="@todo.Id" />
                                     <input type="hidden" name="assignmentId" value="@Model.Id" />
-                                    <select name="classification" required style="height:30px; border:1px solid #e4e2ec; border-radius:7px; font-size:10.5px;">
-                                        <option value="">--</option>
-                                        <option value="AA">AA</option>
-                                        <option value="IN">IN</option>
-                                        <option value="SE">SE</option>
-                                        <option value="ME">ME</option>
-                                        <option value="EE">EE</option>
-                                    </select>
+                                    <div style="height:30px; display:flex; align-items:center; font-size:10.5px; font-weight:600;" title="التصنيف تلقائي حسب تخصص المرحلة">
+                                        @if (Model.Stage?.DisciplineDepartment != null)
+                                        {
+                                            <span>@Model.Stage.DisciplineDepartment.Code</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#c94a42;">⚠ لا تخصص</span>
+                                        }
+                                    </div>
                                     <select name="fileCategory" required style="height:30px; border:1px solid #e4e2ec; border-radius:7px; font-size:10.5px;">
                                         <option value="">--</option>
                                         <option value="DG">DG</option>

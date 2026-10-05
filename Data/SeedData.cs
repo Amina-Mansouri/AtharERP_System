@@ -21,6 +21,14 @@ namespace AtharERP_System.Data
             Department? topManagement = null;
             if (!await context.Departments.AnyAsync())
             {
+                var departmentCodes = new Dictionary<string, string>
+                {
+                    ["التصميم المعماري والداخلي والتخطيط"] = "AA",
+                    ["التصميم الإنشائي"] = "SE",
+                    ["التصميم الميكانيكي"] = "ME",
+                    ["التصميم الكهربائي"] = "EE"
+                };
+
                 var departmentTree = new (string Name, string[] Children)[]
   {
                     ("الإدارة العليا", new string[] { }),
@@ -29,9 +37,9 @@ namespace AtharERP_System.Data
                         "التصميم المعماري والداخلي والتخطيط",
                         "التصميم الإنشائي",
                         "التصميم الميكانيكي",
-                        "التصميم الجرافيكي",
                         "التصميم الكهربائي"
                     }),
+
                     ("إدارة مشاريع ومواقع", new[]
                     {
                         "مدراء المواقع",
@@ -66,6 +74,7 @@ namespace AtharERP_System.Data
                         {
                             Name = childName,
                             ParentDepartmentId = parent.Id,
+                            Code = departmentCodes.TryGetValue(childName, out var code) ? code : null,
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow
                         });

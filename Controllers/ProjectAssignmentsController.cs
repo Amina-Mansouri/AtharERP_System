@@ -555,10 +555,11 @@ List<int>? taskIds)
         public async Task<IActionResult> ManageTasks(int id)
         {
             var assignment = await _context.ProjectAssignments
-                .Include(a => a.Stage).ThenInclude(s => s!.Project)
-                .Include(a => a.Engineers).ThenInclude(e => e.User)
-                .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals)
-                .FirstOrDefaultAsync(a => a.Id == id);
+    .Include(a => a.Stage).ThenInclude(s => s!.Project)
+    .Include(a => a.Stage).ThenInclude(s => s!.DisciplineDepartment)
+    .Include(a => a.Engineers).ThenInclude(e => e.User)
+    .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals)
+    .FirstOrDefaultAsync(a => a.Id == id);
 
             if (assignment == null)
                 return NotFound();
