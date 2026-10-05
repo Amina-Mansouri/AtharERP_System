@@ -84,10 +84,11 @@ namespace AtharERP_System.Data
 
             // ========== الأدوار القوالب الجاهزة (محمية من الحذف) ==========
             var templateRoles = new[]
-            {
+{
                 new { Name = "مدير النظام", Desc = "صلاحيات كاملة" },
                 new { Name = "مهندس تصميم", Desc = "المشاريع والتصاميم" },
-                new { Name = "مهندس جودة", Desc = "الجودة والتقارير" }
+                new { Name = "مهندس جودة", Desc = "الجودة والتقارير" },
+                new { Name = "مدير موقع", Desc = "إدارة المواقع والمقاولين والتوريدات" }
             };
 
             foreach (var r in templateRoles)
