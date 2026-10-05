@@ -177,6 +177,9 @@ namespace AtharERP_System.Controllers
                 return View(model);
             }
 
+            if (!await _permissionService.CanAccessProjectAsync(User, model.ProjectId))
+                return Forbid();
+
             model.Status = SiteStatus.Active;
             model.IsActive = true;
             model.CreatedAt = DateTime.UtcNow;
@@ -442,7 +445,17 @@ namespace AtharERP_System.Controllers
 
         private async Task LoadProjectsAsync()
         {
-            ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
+            var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
+            var query = _context.Projects.AsQueryable();
+            if (!canViewAll)
+            {
+                var myProjectIds = await _context.ProjectTeamMembers
+                    .Where(tm => tm.UserId == CurrentUserId)
+                    .Select(tm => tm.ProjectId)
+                    .ToListAsync();
+                query = query.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
+            }
+            ViewBag.Projects = await query.OrderBy(p => p.Name).ToListAsync();
         }
 
         private async Task<string> GenerateSiteCodeAsync()

@@ -40,6 +40,9 @@ namespace AtharERP_System.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
             var result = await _fileUpload.SaveFileAsync(file, $"projects/{projectId}");
             if (!result.Success)
             {
@@ -76,6 +79,9 @@ namespace AtharERP_System.Controllers
             var document = await _context.ProjectDocuments.FindAsync(id);
             if (document == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, document.ProjectId))
+                return Forbid();
 
             var projectId = document.ProjectId;
             var fileName = document.FileName;

@@ -8,9 +8,11 @@ using System.IO.Compression;
 using System.Net.Mail;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AtharERP_System.Controllers
 {
+    [Authorize]
     public class DesignProposalsController : Controller
     {
         private readonly AppDbContext _context;
@@ -45,7 +47,7 @@ namespace AtharERP_System.Controllers
         private async Task<bool> CanExecuteTaskAsync(ProjectTask task)
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
-                return true;
+                return await _permissionService.CanAccessProjectAsync(User, task.ProjectId);
 
             if (task.ProjectAssignmentId.HasValue)
             {
@@ -190,7 +192,7 @@ namespace AtharERP_System.Controllers
                 if (CurrentUserId != supervisorId)
                     return Forbid();
             }
-            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage") || !await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId))
             {
                 return Forbid();
             }
@@ -274,7 +276,8 @@ IFormFile? attachment)
                 if (CurrentUserId != supervisorId)
                     return Forbid();
             }
-            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+
+            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage") || !await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId))
             {
                 return Forbid();
             }
@@ -507,6 +510,9 @@ IFormFile? attachment)
                 .FirstOrDefaultAsync(r => r.Id == id);
             if (review == null || string.IsNullOrEmpty(review.PdfFilePath))
                 return NotFound();
+
+            if (review.DesignProposal == null || !await _permissionService.CanAccessProjectAsync(User, review.DesignProposal.ProjectId))
+                return Forbid();
 
             var pdfFullPath = Path.Combine(_environment.WebRootPath, review.PdfFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
             if (!System.IO.File.Exists(pdfFullPath))

@@ -271,10 +271,13 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Edit(
             int id,
            [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite,ProjectCategoryId")] Project model)
-        { 
+        {
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
                 return NotFound();
+
+            if (!await CanAccessProjectAsync(project))
+                return Forbid();
 
             if (model.ParentProjectId == id)
             {
@@ -349,6 +352,9 @@ namespace AtharERP_System.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await CanAccessProjectAsync(project))
+                return Forbid();
+
             project.Status = ProjectStatus.OnHold;
             await _context.SaveChangesAsync();
 
@@ -366,6 +372,9 @@ namespace AtharERP_System.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await CanAccessProjectAsync(project))
+                return Forbid();
+
             project.Status = ProjectStatus.Cancelled;
             await _context.SaveChangesAsync();
 
@@ -382,6 +391,9 @@ namespace AtharERP_System.Controllers
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
                 return NotFound();
+
+            if (!await CanAccessProjectAsync(project))
+                return Forbid();
 
             project.Status = project.CompletionPercentage > 0 ? ProjectStatus.InProgress : ProjectStatus.New;
             await _context.SaveChangesAsync();
@@ -401,6 +413,9 @@ namespace AtharERP_System.Controllers
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
                 return NotFound();
+
+            if (!await CanAccessProjectAsync(project))
+                return Forbid();
 
             var projectName = project.Name;
 
@@ -463,6 +478,9 @@ namespace AtharERP_System.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await CanAccessProjectAsync(project))
+                return Forbid();
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات الحدث الزمني غير صحيحة";
@@ -482,14 +500,19 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> DeleteTimeline(int id, int projectId)
         {
             var entry = await _context.ProjectTimelines.FindAsync(id);
-            if (entry != null)
-            {
-                _context.ProjectTimelines.Remove(entry);
-                await _context.SaveChangesAsync();
-            }
+            if (entry == null)
+                return RedirectToAction("Details", new { id = projectId });
+
+            var project = await _context.Projects.FindAsync(entry.ProjectId);
+            if (project == null || !await CanAccessProjectAsync(project))
+                return Forbid();
+
+            var ownerProjectId = entry.ProjectId;
+            _context.ProjectTimelines.Remove(entry);
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم حذف الحدث الزمني";
-            return RedirectToAction("Details", new { id = projectId });
+            return RedirectToAction("Details", new { id = ownerProjectId });
         }
 
         // ============================================

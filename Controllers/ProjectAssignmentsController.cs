@@ -144,10 +144,13 @@ namespace AtharERP_System.Controllers
 [Bind("ProjectId,StageId,AssignmentType,Description,IsUrgent,PlannedStartDate,PlannedEndDate,Area,PricePerMeter,SalePricePerMeter")] ProjectAssignment model,
 List<string>? engineerIds,
 List<int>? taskIds)
-        { 
+        {
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, project.Id))
+                return Forbid();
 
             ProjectStage? targetStage = null;
             if (model.StageId.HasValue)
@@ -251,26 +254,28 @@ List<int>? taskIds)
             return this.RedirectKeepingTab("Details", "Projects", new { id = model.ProjectId });
         }
 
-
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddEngineer(int assignmentId, string userId, int projectId)
         {
+            var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
+            if (assignment == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
+
             var exists = await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == assignmentId && e.UserId == userId);
             if (!exists)
             {
                 _context.AssignmentEngineers.Add(new AssignmentEngineer { ProjectAssignmentId = assignmentId, UserId = userId });
-                await EnsureTeamMembershipAsync(projectId, userId);
+                await EnsureTeamMembershipAsync(assignment.ProjectId, userId);
                 await _context.SaveChangesAsync();
 
-                var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
-                if (assignment != null)
-                {
-                    await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
-                }
+                await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
             }
-            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -279,21 +284,29 @@ List<int>? taskIds)
         public async Task<IActionResult> RemoveEngineer(int id, int projectId)
         {
             var link = await _context.AssignmentEngineers.FindAsync(id);
-            if (link != null)
+            if (link == null)
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+
+            var assignment = await _context.ProjectAssignments.FindAsync(link.ProjectAssignmentId);
+            if (assignment == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
+
+            var remainingCount = await _context.AssignmentEngineers
+                .CountAsync(e => e.ProjectAssignmentId == link.ProjectAssignmentId);
+
+            if (remainingCount <= 1)
             {
-                var remainingCount = await _context.AssignmentEngineers
-                    .CountAsync(e => e.ProjectAssignmentId == link.ProjectAssignmentId);
-
-                if (remainingCount <= 1)
-                {
-                    TempData["Error"] = "لا يمكن حذف آخر مهندسة في التكليف";
-                    return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
-                }
-
-                _context.AssignmentEngineers.Remove(link);
-                await _context.SaveChangesAsync();
+                TempData["Error"] = "لا يمكن حذف آخر مهندسة في التكليف";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
             }
-            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+
+            _context.AssignmentEngineers.Remove(link);
+            await _context.SaveChangesAsync();
+
+            return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -304,6 +317,9 @@ List<int>? taskIds)
             var assignment = await _context.ProjectAssignments.FindAsync(id);
             if (assignment == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
 
             var isLocked = await _context.FinancialRecords.AnyAsync(r => r.ProjectAssignmentId == id && r.IsCleared)
             || await _context.FinancialClaims.AnyAsync(c => c.ProjectAssignmentId == id && (c.IsClientSettled || c.PaidAmount > 0));
@@ -331,12 +347,18 @@ List<int>? taskIds)
         public async Task<IActionResult> Hold(int id, int projectId)
         {
             var assignment = await _context.ProjectAssignments.FindAsync(id);
-            if (assignment != null && assignment.Status != AssignmentStatus.Completed)
+            if (assignment == null)
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
+
+            if (assignment.Status != AssignmentStatus.Completed)
             {
                 assignment.Status = AssignmentStatus.Pending;
                 await _context.SaveChangesAsync();
             }
-            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -345,14 +367,16 @@ List<int>? taskIds)
         public async Task<IActionResult> Cancel(int id, int projectId)
         {
             var assignment = await _context.ProjectAssignments.FindAsync(id);
-            if (assignment != null)
-            {
-                assignment.Status = AssignmentStatus.Cancelled;
-                await _context.SaveChangesAsync();
-            }
-            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
-        }
+            if (assignment == null)
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
 
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
+
+            assignment.Status = AssignmentStatus.Cancelled;
+            await _context.SaveChangesAsync();
+            return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
+        }
 
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
@@ -362,6 +386,9 @@ List<int>? taskIds)
             var assignment = await _context.ProjectAssignments.FindAsync(id);
             if (assignment == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
 
             if (assignment.IsTransferredToFinance)
             {
@@ -396,6 +423,9 @@ List<int>? taskIds)
             if (assignment == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
+                return Forbid();
+
             if (!string.IsNullOrWhiteSpace(name))
             {
                 _context.ProjectAssignmentSubtasks.Add(new ProjectAssignmentSubtask { ProjectAssignmentId = projectAssignmentId, Name = name });
@@ -410,15 +440,18 @@ List<int>? taskIds)
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleSubtask(int id, int projectId)
         {
-            var subtask = await _context.ProjectAssignmentSubtasks.FindAsync(id);
-            if (subtask != null)
-            {
-                subtask.IsCompleted = !subtask.IsCompleted;
-                subtask.CompletedAt = subtask.IsCompleted ? DateTime.UtcNow : null;
-                await _context.SaveChangesAsync();
-            }
+            var subtask = await _context.ProjectAssignmentSubtasks.Include(s => s.ProjectAssignment).FirstOrDefaultAsync(s => s.Id == id);
+            if (subtask == null)
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
 
-            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+            if (!await _permissionService.CanAccessProjectAsync(User, subtask.ProjectAssignment.ProjectId))
+                return Forbid();
+
+            subtask.IsCompleted = !subtask.IsCompleted;
+            subtask.CompletedAt = subtask.IsCompleted ? DateTime.UtcNow : null;
+            await _context.SaveChangesAsync();
+
+            return this.RedirectKeepingTab("Details", "Projects", new { id = subtask.ProjectAssignment.ProjectId });
         }
 
         [RequirePermission("Projects.Assignments.Edit")]
@@ -426,14 +459,18 @@ List<int>? taskIds)
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteSubtask(int id, int projectId)
         {
-            var subtask = await _context.ProjectAssignmentSubtasks.FindAsync(id);
-            if (subtask != null)
-            {
-                _context.ProjectAssignmentSubtasks.Remove(subtask);
-                await _context.SaveChangesAsync();
-            }
+            var subtask = await _context.ProjectAssignmentSubtasks.Include(s => s.ProjectAssignment).FirstOrDefaultAsync(s => s.Id == id);
+            if (subtask == null)
+                return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
 
-            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
+            if (!await _permissionService.CanAccessProjectAsync(User, subtask.ProjectAssignment.ProjectId))
+                return Forbid();
+
+            var ownerProjectId = subtask.ProjectAssignment.ProjectId;
+            _context.ProjectAssignmentSubtasks.Remove(subtask);
+            await _context.SaveChangesAsync();
+
+            return this.RedirectKeepingTab("Details", "Projects", new { id = ownerProjectId });
         }
 
         [HttpPost]
@@ -521,7 +558,8 @@ List<int>? taskIds)
                 return NotFound();
 
             var isWorker = assignment.Engineers.Any(e => e.UserId == CurrentUserId);
-            var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.Edit");
+            var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.Edit")
+                && await _permissionService.CanAccessProjectAsync(User, assignment.Stage!.ProjectId);
             if (!isWorker && !canManage)
                 return Forbid();
 

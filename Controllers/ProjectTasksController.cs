@@ -33,8 +33,8 @@ namespace AtharERP_System.Controllers
         private async Task<bool> CanExecuteAsync(ProjectTask task)
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
-                return true;
-           
+                return await _permissionService.CanAccessProjectAsync(User, task.ProjectId);
+
             if (task.ProjectAssignmentId.HasValue)
             {
                 if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
@@ -51,7 +51,8 @@ namespace AtharERP_System.Controllers
         private async Task<bool> CanEditDatesAsync(ProjectTask task)
         {
             if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
-                return true;
+                return await _permissionService.CanAccessProjectAsync(User, task.ProjectId);
+
             var stageEngineerId = await _context.ProjectStages
                 .Where(s => s.Id == task.StageId)
                 .Select(s => s.AssignedEngineerId)
@@ -134,6 +135,9 @@ namespace AtharERP_System.Controllers
             var stage = await _context.ProjectStages.Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment).FirstOrDefaultAsync(s => s.Id == model.StageId);
             if (stage == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, stage.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -231,6 +235,9 @@ namespace AtharERP_System.Controllers
             var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
+
+            if (!await CanExecuteAsync(task))
+                return Forbid();
 
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             var canEditDates = canManage || await CanEditDatesAsync(task);
@@ -353,6 +360,9 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, task.ProjectId))
+                return Forbid();
+
             var projectId = task.ProjectId;
 
             var dependencyLinks = await _context.TaskDependencies
@@ -379,7 +389,7 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
-            if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+            if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage") || !await _permissionService.CanAccessProjectAsync(User, task.ProjectId))
                 return Forbid();
 
             if (await IsProjectLockedAsync(task.ProjectId))
@@ -553,8 +563,11 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
-            var dependsOnTaskExists = await _context.ProjectTasks.AnyAsync(t => t.Id == dependsOnTaskId);
-            if (!dependsOnTaskExists)
+            if (!await _permissionService.CanAccessProjectAsync(User, task.ProjectId))
+                return Forbid();
+
+            var dependsOnTask = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == dependsOnTaskId);
+            if (dependsOnTask == null || dependsOnTask.ProjectId != task.ProjectId)
             {
                 TempData["Error"] = "لم يتم اختيار مهمة صحيحة للاعتماد عليها";
                 return this.RedirectKeepingTab("Edit", new { id = taskId });
@@ -596,6 +609,13 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveDependency(int id, int taskId)
         {
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+            if (task == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, task.ProjectId))
+                return Forbid();
+
             var link = await _context.TaskDependencies.FindAsync(id);
             if (link != null)
             {

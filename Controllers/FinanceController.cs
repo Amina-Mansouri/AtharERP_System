@@ -114,7 +114,7 @@ namespace AtharERP_System.Controllers
             if (record == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+            if (!await _permissionService.CanAccessProjectAsync(User, record.ProjectId))
                 return Forbid();
 
             if (!record.IsCleared)
@@ -209,7 +209,7 @@ namespace AtharERP_System.Controllers
             if (claim == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+            if (!await _permissionService.CanAccessProjectAsync(User, claim.ProjectId))
                 return Forbid();
 
             claim.SaleMarkupPercent1 = percent1;
@@ -286,7 +286,7 @@ namespace AtharERP_System.Controllers
             if (expense == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+            if (expense.ProjectId.HasValue && !await _permissionService.CanAccessProjectAsync(User, expense.ProjectId.Value))
                 return Forbid();
 
             _context.ProjectExpenses.Remove(expense);
@@ -412,7 +412,7 @@ namespace AtharERP_System.Controllers
             var claim = await _context.FinancialClaims.FindAsync(claimId);
             if (claim == null) return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+            if (!await _permissionService.CanAccessProjectAsync(User, claim.ProjectId))
                 return Forbid();
 
             var amountRaw = Request.Form[$"amount_{claimId}"];

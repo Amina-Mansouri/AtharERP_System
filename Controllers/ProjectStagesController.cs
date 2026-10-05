@@ -39,11 +39,26 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
         public async Task<IActionResult> Overview(int? projectId)
         {
-            ViewBag.Projects = await _context.Projects.OrderBy(p => p.Name).ToListAsync();
+            var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
+            var myProjectIds = await _context.ProjectTeamMembers
+                .Where(tm => tm.UserId == CurrentUserId)
+                .Select(tm => tm.ProjectId)
+                .ToListAsync();
+
+            var accessibleProjectsQuery = _context.Projects.AsQueryable();
+            if (!canViewAll)
+            {
+                accessibleProjectsQuery = accessibleProjectsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
+            }
+            ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.ProjectId = projectId;
 
             if (!projectId.HasValue)
                 return View(new List<ProjectStage>());
+
+            var canAccessThisProject = canViewAll || await _context.Projects.AnyAsync(p => p.Id == projectId.Value && (p.CreatedById == CurrentUserId)) || myProjectIds.Contains(projectId.Value);
+            if (!canAccessThisProject)
+                return Forbid();
 
             var stages = await _context.ProjectStages
                 .Include(s => s.AssignedEngineer)
@@ -87,9 +102,10 @@ namespace AtharERP_System.Controllers
             if (project == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
             var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == stageTemplateId);
-            if (template == null)
-                return NotFound();
 
             IActionResult Fail(string error)
             {
@@ -210,6 +226,9 @@ namespace AtharERP_System.Controllers
             if (stage == null)
                 return NotFound();
 
+            if (!await _permissionService.CanAccessProjectAsync(User, stage.ProjectId))
+                return Forbid();
+
             await LoadDropdownsAsync(stage.ProjectId);
             return View(stage);
         }
@@ -224,6 +243,9 @@ namespace AtharERP_System.Controllers
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, stage.ProjectId))
+                return Forbid();
 
             if (!ModelState.IsValid)
             {
@@ -282,6 +304,9 @@ namespace AtharERP_System.Controllers
             var stage = await _context.ProjectStages.FindAsync(id);
             if (stage == null)
                 return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, stage.ProjectId))
+                return Forbid();
 
             var projectId = stage.ProjectId;
 
