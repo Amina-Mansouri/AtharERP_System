@@ -187,7 +187,7 @@
                             else
                             {
                                 <div style="display:flex; gap:3px; align-items:center;">
-                                    <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" style="width:48px; height:20px; font-size:9px; padding:0 3px; border:1px solid #e4e2ec; border-radius:4px;" placeholder="مبلغ" />
+                                    <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:48px; height:20px; font-size:9px; padding:0 3px; border:1px solid #e4e2ec; border-radius:4px;" placeholder="مبلغ" />
                                     <button type="submit" formaction="@Url.Action("RegisterClaimPayment")" formmethod="post" formtarget="_self" name="claimId" value="@c.Id" class="btn-line btn-line-accent" style="height:20px; padding:0 6px; font-size:8.5px;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
                                 </div>
                             }

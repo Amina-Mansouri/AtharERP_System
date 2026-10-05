@@ -472,9 +472,9 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> ExportPaymentReceiptPdf(int paymentId)
         {
             var payment = await _context.ClaimPayments
-                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project)
-                .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
-                .FirstOrDefaultAsync(p => p.Id == paymentId);
+     .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
+     .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
+     .FirstOrDefaultAsync(p => p.Id == paymentId);
             if (payment == null) return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, payment.FinancialClaim.ProjectId))
@@ -510,5 +510,6 @@ namespace AtharERP_System.Controllers
             var payments = await query.OrderByDescending(p => p.PaidAt).ToListAsync();
             return View(payments);
         }
+    
     }
 }
