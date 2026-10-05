@@ -101,7 +101,7 @@
         {
             <div class="athar-card" style="margin-bottom:12px;">
                 <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل</div>
-                <div style="max-width:260px; margin:0 auto;">
+                <div style="max-width:320px; margin:0 auto;">
                     <canvas id="claimsDonut" height="160"></canvas>
                 </div>
             </div>
@@ -118,19 +118,25 @@
                                 backgroundColor: ['#2e8b57', '#c94a42']
                             }]
                         },
-                        options: {
-                            plugins: {
-                                legend: { position: 'bottom', labels: { font: { size: 11 } } },
-                                tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') } },
-                                                  datalabels: {
-                        color: '#fff',
-                        font: { size: 9.5, weight: '700' },
-                        formatter: (value) => value.toLocaleString('en-US'),
-                        clamp: true,
-                        clip: false
-                    }
+                                          options: {
+                        layout: {
+                            padding: { left: 35, right: 35, top: 15, bottom: 15 }
+                        },
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                            tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') } },
+                            datalabels: {
+                                color: '#221837',
+                                font: { size: 11, weight: '700' },
+                                formatter: (value) => value.toLocaleString('en-US'),
+                                anchor: 'end',
+                                align: 'end',
+                                offset: 8,
+                                clamp: true,
+                                clip: false
                             }
                         }
+                    }
                     });
             </script>
         }
