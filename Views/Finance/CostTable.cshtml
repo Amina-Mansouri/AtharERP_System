@@ -86,19 +86,19 @@
 
 @if (projectId.HasValue && project != null)
 {
-    <div class="data-table" style="--cols: 70px 1fr 1fr 1fr 90px 100px 100px 110px 90px 110px 110px">
+    <div class="data-table data-table-compact data-table-vertical-head" style="--cols: 50px 1fr 1fr 1fr 55px 65px 65px 70px 65px 75px 110px">
         <div class="data-table-head">
-            <div class="cell">رقم المشروع</div>
-            <div class="cell">المشروع</div>
-            <div class="cell">بيان التكليف</div>
-            <div class="cell">المهندسة</div>
-            <div class="cell">مساحة التكليف</div>
-            <div class="cell">سعر متر التكليف</div>
-            <div class="cell">قيمة التكليف</div>
-            <div class="cell">نسبة المهمة من المشروع</div>
-            <div class="cell">نسبة مساهمة</div>
-            <div class="cell">استحقاق المهندسة</div>
-            <div class="cell">الحالة</div>
+            <div class="cell"><span>رقم المشروع</span></div>
+            <div class="cell"><span>المشروع</span></div>
+            <div class="cell"><span>بيان التكليف</span></div>
+            <div class="cell"><span>المهندسة</span></div>
+            <div class="cell"><span>مساحة التكليف</span></div>
+            <div class="cell"><span>سعر متر التكليف</span></div>
+            <div class="cell"><span>قيمة التكليف</span></div>
+            <div class="cell"><span>نسبة التكليف من المشروع</span></div>
+            <div class="cell"><span>تقييم الأداء</span></div>
+            <div class="cell"><span>استحقاق المهندسة</span></div>
+            <div class="cell"><span>الحالة</span></div>
         </div>
 
         @if (!Model.Any())
@@ -133,7 +133,7 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@r.Id" />
                                 <input type="hidden" name="projectId" value="@projectId" />
-                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">تسجيل صرف</button>
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">صرف المكافأة</button>
                             </form>
                         }
                     </div>
