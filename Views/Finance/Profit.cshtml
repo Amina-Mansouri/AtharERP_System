@@ -112,8 +112,26 @@
 
     var wLabels = new[] { "المبيعات", "تكاليف المهام", "تكاليف المواقع", "الخزينة", "مصروفات عامة", "الرواتب", "الخصومات", "المكافآت", "هامش الربح" };
     var wBase = new[] { 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m };
-    var wDelta = new[] { Math.Abs(wStep1), Math.Abs(wCum2 - wCum1), Math.Abs(wCum3 - wCum2), Math.Abs(wCum3), Math.Abs(wCum5 - wCum3), Math.Abs(wCum6 - wCum5), Math.Abs(wCum7 - wCum6), Math.Abs(wCum8 - wCum7), Math.Abs(wCum8) };
-    var wColors = new[] { "#2e8b57", "#c94a42", "#c94a42", "#7b6bd6", "#c94a42", "#c94a42", "#2e8b57", "#c94a42", "#c9a15a" };
+    var wDeltaRaw = new[] { wStep1, wCum2 - wCum1, wCum3 - wCum2, wCum3, wCum5 - wCum3, wCum6 - wCum5, wCum7 - wCum6, wCum8 - wCum7, wCum8 };
+    var wBaseColors = new[] { "#2e8b57", "#c94a42", "#c94a42", "#7b6bd6", "#c94a42", "#c94a42", "#2e8b57", "#c94a42", "#c9a15a" };
+    // المؤشران 3 (الخزينة) و8 (هامش الربح) نتيجتان صافيتان قد تكونان سالبتين فعلاً (خسارة) — تُعرضان بقيمتهما الحقيقية مع لون أحمر عند السلب؛
+    // بقية الأعمدة مبالغ خطوات لا تكون سالبة طبيعياً فتُعرض بقيمتها المطلقة كما استقر التصميم سابقاً
+    var wNetResultIndices = new HashSet<int> { 3, 8 };
+    var wDelta = new decimal[wDeltaRaw.Length];
+    var wColors = new string[wDeltaRaw.Length];
+    for (int i = 0; i < wDeltaRaw.Length; i++)
+    {
+        if (wNetResultIndices.Contains(i))
+        {
+            wDelta[i] = wDeltaRaw[i];
+            wColors[i] = wDeltaRaw[i] < 0 ? "#c94a42" : wBaseColors[i];
+        }
+        else
+        {
+            wDelta[i] = Math.Abs(wDeltaRaw[i]);
+            wColors[i] = wBaseColors[i];
+        }
+    }
 
     // تسمية كل عمود بسطرين ثابتين: اسم البند + رقمه الدقيق — لا يتأثر بارتفاع العمود إطلاقاً
     var wTickLabels = new object[wLabels.Length];
