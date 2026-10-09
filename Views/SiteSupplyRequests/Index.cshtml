@@ -118,19 +118,19 @@
                 <div class="supply-item-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; border-bottom:1px dashed var(--sys-border); padding-bottom:8px;">
                     <div style="flex:1; min-width:140px;">
                         <label class="form-label" style="font-size:11px;">المادة</label>
-                        <input type="text" name="items[0].MaterialName" class="form-control form-control-sm" required />
+                        <input type="text" name="materialNames" class="form-control form-control-sm" required />
                     </div>
                     <div>
                         <label class="form-label" style="font-size:11px;">الكمية</label>
-                        <input type="number" step="0.01" name="items[0].Quantity" class="form-control form-control-sm" style="max-width:90px;" required />
+                        <input type="number" step="0.01" name="quantities" class="form-control form-control-sm" style="max-width:90px;" required />
                     </div>
                     <div>
                         <label class="form-label" style="font-size:11px;">الوحدة</label>
-                        <input type="text" name="items[0].Unit" class="form-control form-control-sm" style="max-width:90px;" required />
+                        <input type="text" name="units" class="form-control form-control-sm" style="max-width:90px;" required />
                     </div>
                     <div>
                         <label class="form-label" style="font-size:11px;">المورّد (اختياري)</label>
-                        <select name="items[0].VendorId" class="form-select form-select-sm">
+                        <select name="vendorIds" class="form-select form-select-sm">
                             <option value="">-- بلا --</option>
                             @foreach (var v in vendors)
                             {
@@ -140,11 +140,11 @@
                     </div>
                     <div>
                         <label class="form-label" style="font-size:11px;">صورة</label>
-                        <input type="file" name="items[0].Photo" accept="image/*" class="form-control form-control-sm" />
+                        <input type="file" name="photos" accept="image/*" class="form-control form-control-sm" />
                     </div>
                     <div style="flex:1; min-width:140px;">
                         <label class="form-label" style="font-size:11px;">ملاحظات المادة</label>
-                        <input type="text" name="items[0].Notes" class="form-control form-control-sm" />
+                        <input type="text" name="itemNotes" class="form-control form-control-sm" />
                     </div>
                     <button type="button" class="btn-line" onclick="removeSupplyItemRow(this)" style="color:#c94a42;">حذف</button>
                 </div>
@@ -163,22 +163,16 @@
 
 @section Scripts {
     <script>
-        let supplyItemIndex = 1;
         function addSupplyItemRow() {
             var container = document.getElementById('supplyItemsContainer');
             var first = container.querySelector('.supply-item-row');
             var clone = first.cloneNode(true);
-            clone.querySelectorAll('input, select').forEach(function(el) {
-                var name = el.getAttribute('name');
-                if (name) {
-                    el.setAttribute('name', name.replace(/items\[\d+\]/, 'items[' + supplyItemIndex + ']'));
-                }
+            clone.querySelectorAll('input, select').forEach(function (el) {
                 if (el.type === 'file') { el.value = ''; }
                 else if (el.tagName === 'SELECT') { el.selectedIndex = 0; }
                 else { el.value = ''; }
             });
             container.appendChild(clone);
-            supplyItemIndex++;
         }
         function removeSupplyItemRow(btn) {
             var container = document.getElementById('supplyItemsContainer');
