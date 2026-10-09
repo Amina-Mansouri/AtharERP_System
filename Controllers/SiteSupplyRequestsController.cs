@@ -105,6 +105,42 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Supply.Approve")]
+        [HttpGet]
+        public async Task<IActionResult> RegisterExpense(int id)
+        {
+            var request = await _context.SiteSupplyRequests.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == id);
+            if (request == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, request.Site.ProjectId))
+                return Forbid();
+
+            if (request.Status != SiteSupplyStatus.Approved)
+            {
+                TempData["Error"] = "لا يمكن تسجيل صرف لطلب لم تتم الموافقة عليه بعد";
+                return RedirectToAction("Index", new { siteId = request.SiteId });
+            }
+
+            var category = await _context.ExpenseCategories.FirstOrDefaultAsync(c => c.NameAr == "طلبات التوريد" && c.Scope == ExpenseCategoryScope.Project);
+            if (category == null)
+            {
+                category = new ExpenseCategory { NameAr = "طلبات التوريد", Scope = ExpenseCategoryScope.Project, IsActive = true };
+                _context.ExpenseCategories.Add(category);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Expenses", "Finance", new
+            {
+                projectId = request.ProjectId,
+                prefillSiteId = request.SiteId,
+                prefillCategoryId = category.Id,
+                prefillDescription = $"{request.MaterialName} - {request.Quantity.ToString("N2")} {request.Unit}",
+                supplyRequestId = request.Id
+            });
+        }
+
+
+        [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)

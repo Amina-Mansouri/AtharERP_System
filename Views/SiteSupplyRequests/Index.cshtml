@@ -67,7 +67,7 @@
                 <div class="cell"><span class="tag @StatusTagClass(r.Status)">@StatusLabel(r.Status)</span></div>
                 @if (canApprove)
                 {
-                    <div class="cell">
+                    <div class="cell" style="display:flex; gap:4px; align-items:center;">
                         <form method="post" asp-action="UpdateStatus" style="display:flex; gap:4px;">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
@@ -79,6 +79,10 @@
                             </select>
                             <button type="submit" class="btn-line btn-line-accent">تحديث</button>
                         </form>
+                        @if (r.Status == SiteSupplyStatus.Approved)
+                        {
+                            <a asp-action="RegisterExpense" asp-route-id="@r.Id" class="btn-line" style="color:#2f8a57;">تسجيل الصرف</a>
+                        }
                     </div>
                 }
             </div>

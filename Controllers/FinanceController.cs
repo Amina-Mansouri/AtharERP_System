@@ -223,7 +223,8 @@ namespace AtharERP_System.Controllers
         // المصروفات — عامة أو مرتبطة بموقع محدد
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> Expenses(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> Expenses(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo,
+            int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? supplyRequestId)
         {
             ViewBag.Categories = await GetActiveCategoriesAsync();
             ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
@@ -257,6 +258,10 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
             ViewBag.ExpenseCategories = await _context.ExpenseCategories.Where(c => c.IsActive && c.Scope == ExpenseCategoryScope.Project).OrderBy(c => c.NameAr).ToListAsync();
             ViewBag.Sites = await _context.Sites.Where(s => s.ProjectId == projectId.Value).OrderBy(s => s.Name).ToListAsync();
+            ViewBag.PrefillSiteId = prefillSiteId;
+            ViewBag.PrefillCategoryId = prefillCategoryId;
+            ViewBag.PrefillDescription = prefillDescription;
+            ViewBag.SupplyRequestId = supplyRequestId;
 
             return View(expenses);
         }
@@ -264,7 +269,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateExpense([Bind("ProjectId,ExpenseCategoryId,SiteId,Amount,Date,Description")] ProjectExpense model)
+        public async Task<IActionResult> CreateExpense([Bind("ProjectId,ExpenseCategoryId,SiteId,Amount,Date,Description")] ProjectExpense model, int? supplyRequestId)
         {
             if (!model.ProjectId.HasValue || !await _permissionService.CanAccessProjectAsync(User, model.ProjectId.Value))
                 return Forbid();
@@ -282,6 +287,16 @@ namespace AtharERP_System.Controllers
             model.CreatedAt = DateTime.UtcNow;
             _context.ProjectExpenses.Add(model);
             await _context.SaveChangesAsync();
+
+            if (supplyRequestId.HasValue)
+            {
+                var supplyRequest = await _context.SiteSupplyRequests.FindAsync(supplyRequestId.Value);
+                if (supplyRequest != null && supplyRequest.Status == SiteSupplyStatus.Approved)
+                {
+                    supplyRequest.Status = SiteSupplyStatus.Delivered;
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             TempData["Success"] = "تم تسجيل المصروف بنجاح";
             return RedirectToAction("Expenses", new { projectId = model.ProjectId });

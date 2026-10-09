@@ -91,6 +91,18 @@ namespace AtharERP_System.Data
                     ?? await context.Departments.FirstOrDefaultAsync(d => d.ParentDepartmentId == null);
             }
 
+            // ========== تصنيف مصروف "طلبات التوريد" — يُزرع دائماً إن لم يكن موجوداً، يُستخدم في "تسجيل الصرف" ==========
+            if (!await context.ExpenseCategories.AnyAsync(c => c.NameAr == "طلبات التوريد"))
+            {
+                context.ExpenseCategories.Add(new ExpenseCategory
+                {
+                    NameAr = "طلبات التوريد",
+                    Scope = ExpenseCategoryScope.Project,
+                    IsActive = true
+                });
+                await context.SaveChangesAsync();
+            }
+
             // ========== الأدوار القوالب الجاهزة (محمية من الحذف) ==========
             var templateRoles = new[]
 {
@@ -232,10 +244,10 @@ namespace AtharERP_System.Data
             // مدير موقع: إدارة كاملة للمواقع والمقاولين وطلباتها الفنية والصيانة، + اعتماد فحوصات الجودة بالموقع + الموافقة على طلبات التوريد
             await LinkPermissionsToRole(context, roleManager, "مدير موقع", new[]
             {
-    "Sites.View", "Sites.Manage", "Sites.Reports",
+        "Sites.View", "Sites.Manage", "Sites.Reports",
     "Sites.TechnicalRequests.Manage", "Sites.Maintenance.Manage",
     "Quality.View", "Quality.Approve", "Quality.Reports",
-    "Supply.View", "Supply.Create", "Supply.Approve"
+    "Supply.View", "Supply.Create"
 });
             // ========== المسارات والرتب الوظيفية ==========
             if (!await context.CareerTracks.AnyAsync())
