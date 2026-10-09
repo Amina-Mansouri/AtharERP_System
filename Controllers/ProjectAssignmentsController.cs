@@ -553,7 +553,7 @@ List<int>? taskIds)
         // ============================================
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> ManageTasks(int id)
+        public async Task<IActionResult> ManageTasks(int id, int? taskId = null)
         {
             var assignment = await _context.ProjectAssignments
     .Include(a => a.Stage).ThenInclude(s => s!.Project)
@@ -572,6 +572,7 @@ List<int>? taskIds)
                 return Forbid();
 
             ViewBag.IsSysAdmin = User.IsInRole("مدير النظام");
+            ViewBag.SelectedTaskId = taskId;
 
             return View(assignment);
         }

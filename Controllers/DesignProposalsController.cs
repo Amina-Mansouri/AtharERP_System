@@ -106,8 +106,8 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             IActionResult BackToTask() => assignmentId.HasValue
-                ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value })
-                : this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = task.Id });
+     ? this.RedirectKeepingTab("ManageTasks", "ProjectAssignments", new { id = assignmentId.Value, taskId = task.Id })
+     : this.RedirectKeepingTab("Edit", "ProjectTasks", new { id = task.Id });
 
             if (await IsAssignmentLockedAsync(task))
             {

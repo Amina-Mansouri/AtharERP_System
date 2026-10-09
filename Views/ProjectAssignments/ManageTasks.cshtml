@@ -9,6 +9,7 @@
     var totalTasks = Model.Tasks.Count;
     var completedTasks = Model.Tasks.Count(t => t.Status == ProjectTaskStatus.Completed);
     var progressPct = totalTasks > 0 ? Math.Round((decimal)completedTasks / totalTasks * 100, 0) : 0;
+    var selectedTaskId = ViewBag.SelectedTaskId as int?;
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
@@ -71,10 +72,10 @@
         <div style="font-size:13.5px; font-weight:700;">بنود المهمة</div>
         @if (Model.Tasks.Any())
         {
-            <select id="taskFilterSelect" onchange="filterTodosByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
+                   <select id="taskFilterSelect" onchange="filterTodosByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
                 @foreach (var t in Model.Tasks)
                 {
-                    <option value="@t.Id">@t.Title</option>
+                    <option value="@t.Id" selected="@(selectedTaskId == t.Id)">@t.Title</option>
                 }
             </select>
         }
