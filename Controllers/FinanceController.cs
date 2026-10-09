@@ -510,6 +510,31 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> PrintProjectInvoice(int projectId)
+        {
+            var project = await _context.Projects.Include(p => p.Client).FirstOrDefaultAsync(p => p.Id == projectId);
+            if (project == null) return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
+            var claims = await _context.FinancialClaims
+                .Include(c => c.ProjectAssignment)
+                .Where(c => c.ProjectId == projectId)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+
+            if (!claims.Any())
+            {
+                TempData["Error"] = "لا توجد مطالبات لهذا المشروع لإصدار فاتورة";
+                return RedirectToAction("Claims", new { projectId });
+            }
+
+            var pdf = _pdfExport.GenerateProjectInvoice(project, claims);
+            return File(pdf, "application/pdf", $"فاتورة-{project.Code}.pdf");
+        }
+
+        [RequirePermission("Finance.Sales.View")]
         public async Task<IActionResult> Receipts(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
         {
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);

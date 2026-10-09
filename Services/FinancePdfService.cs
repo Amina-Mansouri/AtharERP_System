@@ -313,5 +313,131 @@ namespace AtharERP_System.Services
                 });
             }).GeneratePdf();
         }
+
+        public byte[] GenerateProjectInvoice(Project project, List<FinancialClaim> claims)
+        {
+            var client = project.Client;
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
+            var hasLogo = File.Exists(logoPath);
+            var totalValue = claims.Sum(c => c.RealValue);
+            var totalPaid = claims.Sum(c => c.PaidAmount);
+            var totalRemaining = claims.Sum(c => c.RemainingAmount);
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A5);
+                    page.Margin(28);
+                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10));
+                    page.ContentFromRightToLeft();
+
+                    page.Header().Column(header =>
+                    {
+                        if (hasLogo)
+                            header.Item().AlignCenter().Height(50).Image(logoPath).FitArea();
+
+                        header.Item().PaddingTop(8).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("فاتورة").FontSize(16).Bold().FontColor("#221837");
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                            });
+                            row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(6).Column(c =>
+                            {
+                                c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(project.Code).FontSize(13).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(4).Text($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(9);
+                            });
+                        });
+                        header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a");
+                    });
+
+                    page.Content().PaddingTop(18).Column(col =>
+                    {
+                        col.Spacing(10);
+
+                        col.Item().Text(t =>
+                        {
+                            t.Span("السادة: ").FontSize(10.5f);
+                            t.Span(client?.Name ?? "-").FontSize(11).Bold();
+                        });
+                        if (!string.IsNullOrWhiteSpace(client?.CompanyName))
+                        {
+                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(10);
+                        }
+                        col.Item().Text(t =>
+                        {
+                            t.Span("المشروع: ").FontSize(10);
+                            t.Span(project.Name).FontSize(10).Bold();
+                        });
+
+                        col.Item().PaddingTop(6).Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.ConstantColumn(28);
+                                c.RelativeColumn(2);
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                            });
+                            HeaderCell(table, "#");
+                            HeaderCell(table, "بيانات المشروع");
+                            HeaderCell(table, "المساحة");
+                            HeaderCell(table, "سعر المتر");
+                            HeaderCell(table, "القيمة");
+
+                            int i = 1;
+                            foreach (var claim in claims)
+                            {
+                                DataCell(table, (i++).ToString());
+                                DataCell(table, claim.Description ?? claim.ProjectAssignment?.AssignmentType ?? "-");
+                                DataCell(table, (claim.Area ?? 0).ToString("N2"));
+                                DataCell(table, (claim.SalePricePerMeter ?? 0).ToString("N2"));
+                                DataCell(table, claim.RealValue.ToString("N0") + " د.ل");
+                            }
+                        });
+
+                        col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                            });
+                            HeaderCell(table, "الإجمالي");
+                            HeaderCell(table, "المدفوع");
+                            HeaderCell(table, "الباقي");
+
+                            DataCell(table, totalValue.ToString("N0") + " د.ل");
+                            DataCell(table, totalPaid.ToString("N0") + " د.ل");
+                            DataCell(table, totalRemaining.ToString("N0") + " د.ل");
+                        });
+
+                        col.Item().PaddingTop(30).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("توقيع المستلم").FontSize(9).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(18).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(20);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("يعتمد الإدارة الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(18).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                        });
+                    });
+
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+            }).GeneratePdf();
+        }
     }
 }

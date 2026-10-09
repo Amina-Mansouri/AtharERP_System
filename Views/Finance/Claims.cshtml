@@ -85,6 +85,7 @@
 
 @if (projectId.HasValue && project != null)
 {
+    <a asp-action="PrintProjectInvoice" asp-route-projectId="@projectId" target="_blank" class="btn-line btn-line-accent" style="margin-bottom:10px; display:inline-block;">🖨 طباعة فاتورة المشروع</a>
     <form method="post" asp-action="ExportClaimsSelectedPdf" target="_blank">
         @Html.AntiForgeryToken()
         <input type="hidden" name="projectId" value="@projectId" />
