@@ -63,10 +63,7 @@ namespace AtharERP_System.Services
             if (dateTo.HasValue) contractorQuery = contractorQuery.Where(c => !c.EndDate.HasValue || c.EndDate.Value >= dateFrom);
             var contractorCost = await contractorQuery.SumAsync(c => c.Amount ?? 0);
 
-            var supplyQuery = _context.SiteSupplyRequests.Where(s => s.SiteId == siteId && s.Status == SiteSupplyStatus.Delivered);
-            if (dateFrom.HasValue) supplyQuery = supplyQuery.Where(s => s.RequestDate >= dateFrom.Value);
-            if (dateTo.HasValue) supplyQuery = supplyQuery.Where(s => s.RequestDate <= dateTo.Value.AddDays(1).AddTicks(-1));
-            var supplyCost = await supplyQuery.SumAsync(s => s.Quantity * (s.UnitPrice ?? 0));
+            var supplyCost = 0m; // تكلفة طلبات التوريد تُسجَّل كمصروف مشروع عبر "تسجيل الصرف"، وليست حقلاً على الطلب نفسه
 
             return maintenanceCost + contractorCost + supplyCost;
         }
@@ -114,10 +111,7 @@ namespace AtharERP_System.Services
                 if (dateTo.HasValue) contractorQuery = contractorQuery.Where(c => !c.EndDate.HasValue || c.EndDate.Value >= dateFrom);
                 contractorCost += await contractorQuery.SumAsync(c => c.Amount ?? 0);
 
-                var supplyQuery = _context.SiteSupplyRequests.Where(s => s.SiteId == siteId && s.Status == SiteSupplyStatus.Delivered);
-                if (dateFrom.HasValue) supplyQuery = supplyQuery.Where(s => s.RequestDate >= dateFrom.Value);
-                if (dateTo.HasValue) supplyQuery = supplyQuery.Where(s => s.RequestDate <= dateTo.Value.AddDays(1).AddTicks(-1));
-                supplyCost += await supplyQuery.SumAsync(s => s.Quantity * (s.UnitPrice ?? 0));
+                // تكلفة طلبات التوريد تُسجَّل كمصروف مشروع عبر "تسجيل الصرف"، لا كحقل على الطلب نفسه
             }
 
             var expensesQuery = _context.ProjectExpenses.Where(e => siteIds.Contains(e.SiteId ?? 0));

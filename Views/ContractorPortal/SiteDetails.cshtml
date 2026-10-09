@@ -295,12 +295,15 @@
         {
             @foreach (var r in supplyRequests)
             {
-                <div class="data-table-row">
-                    <div class="cell">@r.MaterialName</div>
-                    <div class="cell cell-num">@r.Quantity.ToString("N2")</div>
-                    <div class="cell">@r.Unit</div>
-                    <div class="cell"><span class="tag @(r.Status == SiteSupplyStatus.Delivered ? "tag-success" : r.Status == SiteSupplyStatus.Rejected ? "tag-danger" : "tag-muted")">@SupplyStatusLabel(r.Status)</span></div>
-                </div>
+                @foreach (var item in r.Items)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@item.MaterialName</div>
+                        <div class="cell cell-num">@item.Quantity.ToString("N2")</div>
+                        <div class="cell">@item.Unit</div>
+                        <div class="cell"><span class="tag @(r.Status == SiteSupplyStatus.Delivered ? "tag-success" : r.Status == SiteSupplyStatus.Rejected ? "tag-danger" : "tag-muted")">@SupplyStatusLabel(r.Status)</span></div>
+                    </div>
+                }
             }
         }
     </div>

@@ -1,0 +1,93 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<Vendor>
+@inject PermissionService PermissionService
+@{
+    ViewData["Title"] = "دليل الموردين";
+    var canManage = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">التوريدات</span>
+        <h1>دليل الموردين المعتمدين</h1>
+    </div>
+</div>
+
+<div class="data-table" style="--cols: 1.2fr 1fr 1fr 1fr 90px @(canManage ? "160px" : "");">
+    <div class="data-table-head">
+        <div class="cell">الاسم</div>
+        <div class="cell">جهة التواصل</div>
+        <div class="cell">الهاتف</div>
+        <div class="cell">ملاحظات</div>
+        <div class="cell">الحالة</div>
+        @if (canManage)
+        {
+            <div class="cell">إجراءات</div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد موردون بعد</div></div>
+    }
+    else
+    {
+        @foreach (var v in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@v.Name</div>
+                <div class="cell">@(v.ContactName ?? "-")</div>
+                <div class="cell cell-num">@(v.Phone ?? "-")</div>
+                <div class="cell">@(v.Notes ?? "-")</div>
+                <div class="cell"><span class="tag @(v.IsActive ? "tag-success" : "tag-muted")">@(v.IsActive ? "نشط" : "غير نشط")</span></div>
+                @if (canManage)
+                {
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="Edit" style="display:flex; gap:4px;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@v.Id" />
+                            <input type="hidden" name="name" value="@v.Name" />
+                            <input type="hidden" name="contactName" value="@v.ContactName" />
+                            <input type="hidden" name="phone" value="@v.Phone" />
+                            <input type="hidden" name="notes" value="@v.Notes" />
+                            <input type="hidden" name="isActive" value="@(!v.IsActive)" />
+                            <button type="submit" class="btn-line">@(v.IsActive ? "تعطيل" : "تفعيل")</button>
+                        </form>
+                        <form method="post" asp-action="Delete" asp-route-id="@v.Id" onsubmit="return confirm('حذف هذا المورّد؟');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-line" style="color:#c94a42;">حذف</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@if (canManage)
+{
+    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-top:12px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">+ مورّد جديد</div>
+        <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+            @Html.AntiForgeryToken()
+            <div style="flex:1; min-width:160px;">
+                <label class="form-label" style="font-size:11px;">الاسم</label>
+                <input type="text" name="name" class="form-control form-control-sm" required />
+            </div>
+            <div style="flex:1; min-width:160px;">
+                <label class="form-label" style="font-size:11px;">جهة التواصل</label>
+                <input type="text" name="contactName" class="form-control form-control-sm" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الهاتف</label>
+                <input type="text" name="phone" class="form-control form-control-sm" />
+            </div>
+            <div style="flex:1; min-width:160px;">
+                <label class="form-label" style="font-size:11px;">ملاحظات</label>
+                <input type="text" name="notes" class="form-control form-control-sm" />
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">+ إضافة</button>
+        </form>
+    </div>
+}

@@ -16,7 +16,6 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual Site Site { get; set; } = null!;
 
-        // تُملأ تلقائياً من مشروع الموقع (site.ProjectId) في الكنترولر، وليست ضمن أي [Bind]
         [Required]
         [Display(Name = "المشروع")]
         public int ProjectId { get; set; }
@@ -24,32 +23,6 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("ProjectId")]
         [ValidateNever]
         public virtual Project Project { get; set; } = null!;
-
-        [Required(ErrorMessage = "اسم المادة مطلوب")]
-        [StringLength(255)]
-        [Display(Name = "اسم المادة")]
-        public string MaterialName { get; set; } = string.Empty;
-
-        [StringLength(255)]
-        [Display(Name = "الأبعاد")]
-        public string? Dimensions { get; set; }
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "الكمية")]
-        public decimal Quantity { get; set; }
-
-        [Required]
-        [StringLength(50)]
-        [Display(Name = "الوحدة")]
-        public string Unit { get; set; } = string.Empty;
-
-        [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "سعر الوحدة")]
-        public decimal? UnitPrice { get; set; }
-
-        [NotMapped]
-        [Display(Name = "الإجمالي")]
-        public decimal TotalCost => Quantity * (UnitPrice ?? 0);
 
         [Display(Name = "ملاحظات")]
         public string? Notes { get; set; }
@@ -74,6 +47,7 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("RequestedByContractorId")]
         [ValidateNever]
         public virtual Contractor? RequestedByContractor { get; set; }
+
+        public virtual ICollection<SiteSupplyRequestItem> Items { get; set; } = new List<SiteSupplyRequestItem>();
     }
 }
-   

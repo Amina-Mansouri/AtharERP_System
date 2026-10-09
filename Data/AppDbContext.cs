@@ -52,6 +52,8 @@ namespace AtharERP_System.Data
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
         public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
+        public DbSet<SiteSupplyRequestItem> SiteSupplyRequestItems { get; set; } = null!;
+        public DbSet<Vendor> Vendors { get; set; } = null!;
         public DbSet<StageTaskTemplate> StageTaskTemplates { get; set; } = null!;
         public DbSet<StageTemplate> StageTemplates { get; set; } = null!;
         public DbSet<StageTemplateTask> StageTemplateTasks { get; set; } = null!;
@@ -435,10 +437,22 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<SiteSupplyRequest>()
-                .HasOne(sr => sr.RequestedByContractor)
+      .HasOne(sr => sr.RequestedBy)
+      .WithMany()
+      .HasForeignKey(sr => sr.RequestedById)
+      .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteSupplyRequestItem>()
+                .HasOne(i => i.SiteSupplyRequest)
+                .WithMany(r => r.Items)
+                .HasForeignKey(i => i.SiteSupplyRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<SiteSupplyRequestItem>()
+                .HasOne(i => i.Vendor)
                 .WithMany()
-                .HasForeignKey(sr => sr.RequestedByContractorId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(i => i.VendorId)
+                .OnDelete(DeleteBehavior.SetNull);
             // ========== الصيانة (SiteMaintenance) ==========
             builder.Entity<SiteMaintenance>()
                 .HasOne(m => m.Site)

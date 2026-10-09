@@ -140,10 +140,11 @@ namespace AtharERP_System.Controllers
                 .ToListAsync();
 
             var supplyRequests = await _context.SiteSupplyRequests
-                .Where(r => r.SiteId == siteId && r.RequestedByContractorId == CurrentContractorId)
-                .OrderByDescending(r => r.RequestDate)
-                .Take(10)
-                .ToListAsync();
+      .Include(r => r.Items)
+      .Where(r => r.SiteId == siteId && r.RequestedByContractorId == CurrentContractorId)
+      .OrderByDescending(r => r.RequestDate)
+      .Take(10)
+      .ToListAsync();
 
             ViewData["PlainPage"] = true;
             ViewBag.Site = site;
@@ -334,19 +335,22 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("SiteDetails", new { siteId });
             }
 
-            _context.SiteSupplyRequests.Add(new SiteSupplyRequest
+            var request = new SiteSupplyRequest
             {
                 SiteId = siteId,
                 ProjectId = site.ProjectId,
-                MaterialName = materialName,
-                Dimensions = dimensions,
-                Quantity = quantity,
-                Unit = unit,
                 Notes = notes,
                 Status = SiteSupplyStatus.Pending,
                 RequestDate = DateTime.UtcNow,
                 RequestedByContractorId = CurrentContractorId
+            };
+            request.Items.Add(new SiteSupplyRequestItem
+            {
+                MaterialName = materialName,
+                Quantity = quantity,
+                Unit = unit
             });
+            _context.SiteSupplyRequests.Add(request);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم إرسال طلب التوريد بنجاح";

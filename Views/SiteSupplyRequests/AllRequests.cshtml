@@ -1,0 +1,66 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<SiteSupplyRequest>
+@{
+    ViewData["Title"] = "طلبات التوريد - كل المواقع";
+
+    string StatusLabel(SiteSupplyStatus s) => s switch
+    {
+        SiteSupplyStatus.Pending => "معلق",
+        SiteSupplyStatus.Approved => "تمت الموافقة",
+        SiteSupplyStatus.Delivered => "تم التسليم",
+        SiteSupplyStatus.Rejected => "مرفوض",
+        _ => s.ToString()
+    };
+
+    string StatusTagClass(SiteSupplyStatus s) => s switch
+    {
+        SiteSupplyStatus.Approved => "tag-accent",
+        SiteSupplyStatus.Delivered => "tag-success",
+        SiteSupplyStatus.Rejected => "tag-danger",
+        _ => "tag-muted"
+    };
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">التوريدات</span>
+        <h1>طلبات التوريد - كل المواقع</h1>
+    </div>
+</div>
+
+<div class="data-table" style="--cols: 1fr 1fr 1.2fr 90px 90px 1fr 1fr 130px;">
+    <div class="data-table-head">
+        <div class="cell">المشروع</div>
+        <div class="cell">الموقع</div>
+        <div class="cell">المادة</div>
+        <div class="cell">الكمية</div>
+        <div class="cell">الوحدة</div>
+        <div class="cell">المورّد</div>
+        <div class="cell">طلبه</div>
+        <div class="cell">الحالة</div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد بعد</div></div>
+    }
+    else
+    {
+        @foreach (var r in Model)
+        {
+            @foreach (var item in r.Items)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.Site?.Project?.Name</div>
+                    <div class="cell"><a asp-controller="SiteSupplyRequests" asp-action="Index" asp-route-siteId="@r.SiteId">@r.Site?.Name</a></div>
+                    <div class="cell">@item.MaterialName</div>
+                    <div class="cell cell-num">@item.Quantity.ToString("N2")</div>
+                    <div class="cell">@item.Unit</div>
+                    <div class="cell">@(item.Vendor?.Name ?? "-")</div>
+                    <div class="cell">@(r.RequestedBy?.FullName ?? r.RequestedByContractor?.Name ?? "-")</div>
+                    <div class="cell"><span class="tag @StatusTagClass(r.Status)">@StatusLabel(r.Status)</span></div>
+                </div>
+            }
+        }
+    }
+</div>
