@@ -72,7 +72,7 @@
         <div style="font-size:13.5px; font-weight:700;">بنود المهمة</div>
         @if (Model.Tasks.Any())
         {
-                   <select id="taskFilterSelect" onchange="filterTodosByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
+            <select id="taskFilterSelect" onchange="filterTodosByTask()" style="height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;">
                 @foreach (var t in Model.Tasks)
                 {
                     <option value="@t.Id" selected="@(selectedTaskId == t.Id)">@t.Title</option>
