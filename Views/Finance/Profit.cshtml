@@ -26,6 +26,10 @@
         <span class="kicker">المالية</span>
         <h1>الأرباح والخسائر</h1>
     </div>
+    @if (project != null)
+    {
+        <a asp-action="PrintProfitReport" asp-route-projectId="@projectId" asp-route-dateFrom="@dateFrom" asp-route-dateTo="@dateTo" target="_blank" class="btn-line btn-line-accent">🖨 طباعة تقرير الربح والخسارة</a>
+    }
 </div>
 
 <div class="athar-card" style="margin-bottom:12px;">

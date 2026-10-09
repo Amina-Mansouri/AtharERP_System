@@ -535,6 +535,21 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> PrintProfitReport(int projectId, DateTime? dateFrom, DateTime? dateTo)
+        {
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null) return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, projectId))
+                return Forbid();
+
+            var result = await _calc.CalculateProjectNetProfitAsync(new List<int> { projectId }, dateFrom, dateTo);
+
+            var pdf = _pdfExport.GenerateProjectProfitReport(project, result);
+            return File(pdf, "application/pdf", $"تقرير-الربح-{project.Code}.pdf");
+        }
+
+        [RequirePermission("Finance.Sales.View")]
         public async Task<IActionResult> Receipts(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
         {
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
