@@ -14,13 +14,11 @@ namespace AtharERP_System.Controllers
     public class ContractorPortalController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly SiteCalculationService _siteCalc;
         private readonly FileUploadService _fileUpload;
 
-        public ContractorPortalController(AppDbContext context, SiteCalculationService siteCalc, FileUploadService fileUpload)
+        public ContractorPortalController(AppDbContext context, FileUploadService fileUpload)
         {
             _context = context;
-            _siteCalc = siteCalc;
             _fileUpload = fileUpload;
         }
 
@@ -120,80 +118,29 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
-            var dailyReports = await _context.SiteDailyReports
-     .Include(r => r.Photos)
-     .Where(r => r.SiteId == siteId && r.CreatedByContractorId == CurrentContractorId)
-     .OrderByDescending(r => r.ReportDate)
-     .Take(10)
-     .ToListAsync();
-
-            var qualityChecks = await _context.SiteQualityChecks
-                .Where(q => q.SiteId == siteId && q.CheckedByContractorId == CurrentContractorId)
-                .OrderByDescending(q => q.CheckDate)
-                .Take(10)
+            var requirements = await _context.SiteRequirements
+                .Include(r => r.SentBy)
+                .Include(r => r.SentByContractor)
+                .Where(r => r.SiteId == siteId)
+                .OrderBy(r => r.CreatedAt)
                 .ToListAsync();
 
-            var safetyChecks = await _context.SiteSafetyChecks
-                .Where(s => s.SiteId == siteId && s.CheckedByContractorId == CurrentContractorId)
-                .OrderByDescending(s => s.CheckDate)
-                .Take(10)
-                .ToListAsync();
-
-            var supplyRequests = await _context.SiteSupplyRequests
-      .Include(r => r.Items)
-      .Where(r => r.SiteId == siteId && r.RequestedByContractorId == CurrentContractorId)
-      .OrderByDescending(r => r.RequestDate)
-      .Take(10)
-      .ToListAsync();
+            var unreadFromCompany = requirements.Where(r => !r.IsFromContractor && !r.IsRead).ToList();
+            foreach (var r in unreadFromCompany)
+                r.IsRead = true;
+            if (unreadFromCompany.Any())
+                await _context.SaveChangesAsync();
 
             ViewData["PlainPage"] = true;
             ViewBag.Site = site;
-            ViewBag.DailyReports = dailyReports;
-            ViewBag.QualityChecks = qualityChecks;
-            ViewBag.SafetyChecks = safetyChecks;
-            ViewBag.SupplyRequests = supplyRequests;
+            ViewBag.Requirements = requirements;
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(AuthenticationSchemes = "ContractorScheme")]
-        public async Task<IActionResult> UpdateOperationDates(int id, DateTime? actualStartDate, DateTime? actualEndDate)
-        {
-            var op = await _context.SiteOperations.Include(o => o.Site).FirstOrDefaultAsync(o => o.Id == id);
-            if (op == null)
-                return NotFound();
-
-            if (!await CanAccessSiteAsync(op.SiteId))
-                return Forbid();
-
-            if (op.Site.Status == SiteStatus.Completed)
-            {
-                TempData["Error"] = "لا يمكن تعديل مراحل موقع مكتمل";
-                return RedirectToAction("SiteDetails", new { siteId = op.SiteId });
-            }
-
-            if (op.Status != OperationStatus.OnHold)
-            {
-                op.ActualStartDate = actualStartDate;
-                op.ActualEndDate = actualEndDate;
-                SiteCalculationService.ApplyAutomaticOperationStatus(op);
-            }
-
-            await _context.SaveChangesAsync();
-            await _siteCalc.ApplyAutomaticSiteStatusAsync(op.SiteId);
-
-            TempData["Success"] = "تم تحديث مرحلة العمل بنجاح";
-            return RedirectToAction("SiteDetails", new { siteId = op.SiteId });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(AuthenticationSchemes = "ContractorScheme")]
-        public async Task<IActionResult> CreateDailyReport(
-            int siteId, DateTime reportDate, string? weather, int workersCount, string? workCompleted,
-            string? issues, string? materialsUsed, string? equipmentUsed, string? visits, string? notes,
-            List<IFormFile>? photos)
+        public async Task<IActionResult> SendRequirement(int siteId, string message, IFormFile? attachment)
         {
             if (!await CanAccessSiteAsync(siteId))
                 return Forbid();
@@ -202,158 +149,32 @@ namespace AtharERP_System.Controllers
             if (site == null)
                 return NotFound();
 
-            if (site.Status == SiteStatus.Completed)
+            string? attachmentPath = null;
+            string? attachmentFileName = null;
+            if (attachment != null && attachment.Length > 0)
             {
-                TempData["Error"] = "لا يمكن إضافة تقرير لموقع مكتمل";
-                return RedirectToAction("SiteDetails", new { siteId });
-            }
-
-            var report = new SiteDailyReport
-            {
-                SiteId = siteId,
-                ReportDate = reportDate,
-                Weather = weather,
-                WorkersCount = workersCount,
-                WorkCompleted = workCompleted,
-                Issues = issues,
-                MaterialsUsed = materialsUsed,
-                EquipmentUsed = equipmentUsed,
-                Visits = visits,
-                Notes = notes,
-                CreatedByContractorId = CurrentContractorId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.SiteDailyReports.Add(report);
-            await _context.SaveChangesAsync();
-
-            if (photos != null)
-            {
-                foreach (var photo in photos.Where(p => p.Length > 0))
+                var result = await _fileUpload.SaveFileUnrestrictedAsync(attachment, $"sites/{siteId}/requirements");
+                if (result.Success)
                 {
-                    var result = await _fileUpload.SaveFileAsync(photo, $"sites/{siteId}/daily-reports/{report.Id}");
-                    if (result.Success)
-                    {
-                        _context.SiteDailyReportPhotos.Add(new SiteDailyReportPhoto
-                        {
-                            DailyReportId = report.Id,
-                            FilePath = result.FilePath!,
-                            UploadedAt = DateTime.UtcNow
-                        });
-                    }
+                    attachmentPath = result.FilePath;
+                    attachmentFileName = attachment.FileName;
                 }
-                await _context.SaveChangesAsync();
-            }
-            TempData["Success"] = "تمت إضافة التقرير اليومي بنجاح";
-            return RedirectToAction("SiteDetails", new { siteId });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(AuthenticationSchemes = "ContractorScheme")]
-        public async Task<IActionResult> CreateQualityCheck(int siteId, SiteQualityType qualityType, string checkType, string? description)
-        {
-            if (!await CanAccessSiteAsync(siteId))
-                return Forbid();
-
-            var site = await _context.Sites.FindAsync(siteId);
-            if (site == null)
-                return NotFound();
-
-            if (site.Status == SiteStatus.Completed)
-            {
-                TempData["Error"] = "لا يمكن إضافة فحص لموقع مكتمل";
-                return RedirectToAction("SiteDetails", new { siteId });
             }
 
-            _context.SiteQualityChecks.Add(new SiteQualityCheck
+            _context.SiteRequirements.Add(new SiteRequirement
             {
                 SiteId = siteId,
-                QualityType = qualityType,
-                CheckType = checkType,
-                Description = description,
-                Result = QualityCheckResult.Pending,
-                CheckDate = DateTime.UtcNow,
-                CheckedByContractorId = CurrentContractorId,
-                IsApproved = false
+                Message = message,
+                AttachmentPath = attachmentPath,
+                AttachmentFileName = attachmentFileName,
+                IsFromContractor = true,
+                SentByContractorId = CurrentContractorId,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "تمت إضافة فحص الجودة بنجاح";
-            return RedirectToAction("SiteDetails", new { siteId });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(AuthenticationSchemes = "ContractorScheme")]
-        public async Task<IActionResult> CreateSafetyCheck(int siteId, string checkType, string? description)
-        {
-            if (!await CanAccessSiteAsync(siteId))
-                return Forbid();
-
-            var site = await _context.Sites.FindAsync(siteId);
-            if (site == null)
-                return NotFound();
-
-            if (site.Status == SiteStatus.Completed)
-            {
-                TempData["Error"] = "لا يمكن إضافة فحص لموقع مكتمل";
-                return RedirectToAction("SiteDetails", new { siteId });
-            }
-
-            _context.SiteSafetyChecks.Add(new SiteSafetyCheck
-            {
-                SiteId = siteId,
-                CheckType = checkType,
-                Description = description,
-                Result = SafetyResult.Safe,
-                CheckDate = DateTime.UtcNow,
-                CheckedByContractorId = CurrentContractorId,
-                IsApproved = false
-            });
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تمت إضافة فحص السلامة بنجاح";
-            return RedirectToAction("SiteDetails", new { siteId });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(AuthenticationSchemes = "ContractorScheme")]
-        public async Task<IActionResult> CreateSupplyRequest(int siteId, string materialName, string? dimensions, decimal quantity, string unit, string? notes)
-        {
-            if (!await CanAccessSiteAsync(siteId))
-                return Forbid();
-
-            var site = await _context.Sites.FindAsync(siteId);
-            if (site == null)
-                return NotFound();
-
-            if (site.Status == SiteStatus.Completed)
-            {
-                TempData["Error"] = "لا يمكن إضافة طلب توريد لموقع مكتمل";
-                return RedirectToAction("SiteDetails", new { siteId });
-            }
-
-            var request = new SiteSupplyRequest
-            {
-                SiteId = siteId,
-                ProjectId = site.ProjectId,
-                Notes = notes,
-                Status = SiteSupplyStatus.Pending,
-                RequestDate = DateTime.UtcNow,
-                RequestedByContractorId = CurrentContractorId
-            };
-            request.Items.Add(new SiteSupplyRequestItem
-            {
-                MaterialName = materialName,
-                Quantity = quantity,
-                Unit = unit
-            });
-            _context.SiteSupplyRequests.Add(request);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
+            TempData["Success"] = "تم إرسال المتطلب للشركة بنجاح";
             return RedirectToAction("SiteDetails", new { siteId });
         }
     }

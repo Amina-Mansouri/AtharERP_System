@@ -72,5 +72,6 @@ namespace AtharERP_System.Models.Entities
         public virtual ICollection<SiteMaintenance> MaintenanceRequests { get; set; } = new List<SiteMaintenance>();
         public virtual ICollection<SiteDocument> Documents { get; set; } = new List<SiteDocument>();
         public virtual ICollection<SiteSupplyRequest> SupplyRequests { get; set; } = new List<SiteSupplyRequest>();
+        public virtual ICollection<SiteRequirement> SiteRequirements { get; set; } = new List<SiteRequirement>();
     }
 }

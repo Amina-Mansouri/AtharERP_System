@@ -1,11 +1,7 @@
 ﻿@using AtharERP_System.Models.Entities
 @{
-    ViewData["Title"] = "الموقع";
     var site = ViewBag.Site as Site;
-    var dailyReports = ViewBag.DailyReports as List<SiteDailyReport> ?? new List<SiteDailyReport>();
-    var qualityChecks = ViewBag.QualityChecks as List<SiteQualityCheck> ?? new List<SiteQualityCheck>();
-    var safetyChecks = ViewBag.SafetyChecks as List<SiteSafetyCheck> ?? new List<SiteSafetyCheck>();
-    var supplyRequests = ViewBag.SupplyRequests as List<SiteSupplyRequest> ?? new List<SiteSupplyRequest>();
+    var requirements = ViewBag.Requirements as List<SiteRequirement> ?? new List<SiteRequirement>();
     ViewData["Title"] = site?.Name;
 
     string OpStatusLabel(OperationStatus s) => s switch
@@ -26,32 +22,6 @@
         OperationStatus.OnHold => "tag-warning",
         _ => "tag-muted"
     };
-
-    string QualityResultLabel(QualityCheckResult r) => r switch
-    {
-        QualityCheckResult.Pending => "معلق",
-        QualityCheckResult.Pass => "مطابق",
-        QualityCheckResult.Fail => "غير مطابق",
-        QualityCheckResult.NeedsReview => "يحتاج مراجعة",
-        _ => r.ToString()
-    };
-
-    string SafetyResultLabel(SafetyResult r) => r switch
-    {
-        SafetyResult.Safe => "آمن",
-        SafetyResult.Warning => "تحذير",
-        SafetyResult.Danger => "خطير",
-        _ => r.ToString()
-    };
-
-    string SupplyStatusLabel(SiteSupplyStatus s) => s switch
-    {
-        SiteSupplyStatus.Pending => "معلق",
-        SiteSupplyStatus.Approved => "تمت الموافقة",
-        SiteSupplyStatus.Delivered => "تم التسليم",
-        SiteSupplyStatus.Rejected => "مرفوض",
-        _ => s.ToString()
-    };
 }
 
 <div style="max-width:1100px; margin:30px auto; padding:0 16px;">
@@ -64,14 +34,13 @@
     </div>
 
     <div style="font-size:13.5px; font-weight:600; margin:18px 0 8px;">مراحل العمل</div>
-    <div class="data-table" style="--cols: 1.1fr 90px 70px 130px 130px 80px;">
+    <div class="data-table" style="--cols: 1.1fr 90px 70px 130px 130px;">
         <div class="data-table-head">
             <div class="cell">المرحلة</div>
             <div class="cell">الحالة</div>
             <div class="cell">%</div>
             <div class="cell">بدء فعلي</div>
             <div class="cell">انتهاء فعلي</div>
-            <div class="cell"></div>
         </div>
 
         @if (site == null || !site.Operations.Any())
@@ -82,229 +51,56 @@
         {
             @foreach (var op in site.Operations.OrderBy(o => o.Sequence))
             {
-                <form method="post" asp-controller="ContractorPortal" asp-action="UpdateOperationDates" class="data-table-row">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@op.Id" />
+                <div class="data-table-row">
                     <div class="cell">@op.Sequence. @op.Name</div>
                     <div class="cell"><span class="tag @OpStatusTagClass(op.Status)">@OpStatusLabel(op.Status)</span></div>
                     <div class="cell cell-num">@op.CompletionPercentage.ToString("N0")%</div>
-                    <div class="cell">
-                        <input type="date" name="actualStartDate" class="form-control form-control-sm" value="@(op.ActualStartDate?.ToString("yyyy-MM-dd"))" disabled="@(op.Status == OperationStatus.OnHold)" />
-                    </div>
-                    <div class="cell">
-                        <input type="date" name="actualEndDate" class="form-control form-control-sm" value="@(op.ActualEndDate?.ToString("yyyy-MM-dd"))" disabled="@(op.Status == OperationStatus.OnHold)" />
-                    </div>
-                    <div class="cell">
-                        @if (op.Status != OperationStatus.OnHold)
-                        {
-                            <button type="submit" class="btn-line btn-line-accent">حفظ</button>
-                        }
-                        else
-                        {
-                            <span class="tag tag-warning">متوقفة</span>
-                        }
-                    </div>
-                </form>
-            }
-        }
-    </div>
-    <div style="font-size:10.5px; color:var(--sys-text-light); margin-top:6px;">تحديد تاريخ البدء الفعلي ينقل المرحلة تلقائياً إلى "قيد التنفيذ"، وتحديد تاريخ الانتهاء الفعلي ينقلها إلى "مكتملة".</div>
-
-    <div style="font-size:13.5px; font-weight:600; margin:22px 0 8px;">التقارير اليومية</div>
-    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-bottom:10px;">
-        <form method="post" asp-controller="ContractorPortal" asp-action="CreateDailyReport" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="siteId" value="@site?.Id" />
-            <div>
-                <label class="form-label" style="font-size:11px;">تاريخ التقرير</label>
-                <input type="date" name="reportDate" class="form-control form-control-sm" style="max-width:150px;" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">حالة الطقس</label>
-                <input type="text" name="weather" class="form-control form-control-sm" style="max-width:120px;" placeholder="مثال: مشمس" />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">عدد العمال في الموقع اليوم</label>
-                <input type="number" name="workersCount" class="form-control form-control-sm" style="max-width:130px;" min="0" value="0" />
-            </div>
-            <div style="flex:1; min-width:200px;">
-                <label class="form-label" style="font-size:11px;">الأعمال المنجزة</label>
-                <input type="text" name="workCompleted" class="form-control form-control-sm" />
-            </div>
-            <div style="flex-basis:100%;">
-                <label class="form-label" style="font-size:11px;">صور من الموقع (يمكن اختيار أكثر من صورة)</label>
-                <input type="file" name="photos" class="form-control form-control-sm" multiple accept="image/*" />
-            </div>
-            <button type="submit" class="btn-line btn-line-accent">+ حفظ التقرير</button>
-        </form>
-    </div>
-    <div class="data-table" style="--cols: 100px 100px 90px 1fr 70px;">
-        <div class="data-table-head">
-            <div class="cell">التاريخ</div>
-            <div class="cell">الطقس</div>
-            <div class="cell">العمال</div>
-            <div class="cell">الأعمال المنجزة</div>
-            <div class="cell">الصور</div>
-        </div>
-        @if (!dailyReports.Any())
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تقارير بعد</div></div>
-        }
-        else
-        {
-            @foreach (var r in dailyReports)
-            {
-                <div class="data-table-row">
-                    <div class="cell cell-num">@r.ReportDate.ToString("yyyy-MM-dd")</div>
-                    <div class="cell">@(r.Weather ?? "-")</div>
-                    <div class="cell cell-num">@r.WorkersCount</div>
-                    <div class="cell">@(r.WorkCompleted ?? "-")</div>
-                    <div class="cell cell-num">@r.Photos.Count</div>
+                    <div class="cell cell-num">@(op.ActualStartDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                    <div class="cell cell-num">@(op.ActualEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
                 </div>
             }
         }
     </div>
 
-    <div style="font-size:13.5px; font-weight:600; margin:22px 0 8px;">فحص جودة جديد</div>
-    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-bottom:10px;">
-        <form method="post" asp-controller="ContractorPortal" asp-action="CreateQualityCheck" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="siteId" value="@site?.Id" />
-            <div>
-                <label class="form-label" style="font-size:11px;">نوع الجودة</label>
-                <select name="qualityType" class="form-select form-select-sm">
-                    <option value="Technical">جودة فنية</option>
-                    <option value="Site" selected>جودة موقع</option>
-                    <option value="Financial">جودة مالية</option>
-                    <option value="Administrative">جودة إدارية</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">نوع الفحص</label>
-                <input type="text" name="checkType" class="form-control form-control-sm" required />
-            </div>
-            <div style="flex:1; min-width:180px;">
-                <label class="form-label" style="font-size:11px;">الوصف</label>
-                <input type="text" name="description" class="form-control form-control-sm" />
-            </div>
-            <button type="submit" class="btn-line btn-line-accent">+ إضافة</button>
-        </form>
-    </div>
-    <div class="data-table" style="--cols: 1fr 110px 90px;">
-        <div class="data-table-head">
-            <div class="cell">نوع الفحص</div>
-            <div class="cell">النتيجة</div>
-            <div class="cell">اعتُمد</div>
-        </div>
-        @if (!qualityChecks.Any())
+    <div style="font-size:13.5px; font-weight:600; margin:22px 0 8px;">المتطلبات</div>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+        @if (!requirements.Any())
         {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد فحوصات بعد</div></div>
+            <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); padding:16px; text-align:center; color:var(--sys-text-light);">لا توجد متطلبات بعد</div>
         }
         else
         {
-            @foreach (var q in qualityChecks)
+            @foreach (var r in requirements)
             {
-                <div class="data-table-row">
-                    <div class="cell">@q.CheckType</div>
-                    <div class="cell"><span class="tag @(q.Result == QualityCheckResult.Pass ? "tag-success" : q.Result == QualityCheckResult.Fail ? "tag-danger" : "tag-muted")">@QualityResultLabel(q.Result)</span></div>
-                    <div class="cell">@(q.IsApproved ? "نعم" : "لا")</div>
+                var isMine = r.IsFromContractor;
+                <div style="background:@(isMine ? "#f1eefc" : "#fff"); border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); padding:10px 14px; max-width:80%; align-self:@(isMine ? "flex-end" : "flex-start");">
+                    <div style="font-size:11px; color:var(--sys-text-light); margin-bottom:4px;">
+                        @(r.IsFromContractor ? "أنت" : (r.SentBy?.FullName ?? "الشركة")) — @r.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                    </div>
+                    <div style="font-size:13px;">@r.Message</div>
+                    @if (!string.IsNullOrEmpty(r.AttachmentPath))
+                    {
+                        <a href="@r.AttachmentPath" target="_blank" style="font-size:11.5px; display:inline-block; margin-top:6px;">📎 @(r.AttachmentFileName ?? "مرفق")</a>
+                    }
                 </div>
             }
         }
     </div>
 
-    <div style="font-size:13.5px; font-weight:600; margin:22px 0 8px;">فحص سلامة جديد</div>
-    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-bottom:10px;">
-        <form method="post" asp-controller="ContractorPortal" asp-action="CreateSafetyCheck" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إرسال متطلب للشركة</div>
+        <form method="post" asp-controller="ContractorPortal" asp-action="SendRequirement" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
             @Html.AntiForgeryToken()
             <input type="hidden" name="siteId" value="@site?.Id" />
-            <div>
-                <label class="form-label" style="font-size:11px;">نوع الفحص</label>
-                <input type="text" name="checkType" class="form-control form-control-sm" required />
-            </div>
-            <div style="flex:1; min-width:200px;">
-                <label class="form-label" style="font-size:11px;">الوصف</label>
-                <input type="text" name="description" class="form-control form-control-sm" />
-            </div>
-            <button type="submit" class="btn-line btn-line-accent">+ إضافة</button>
-        </form>
-    </div>
-    <div class="data-table" style="--cols: 1fr 110px 90px;">
-        <div class="data-table-head">
-            <div class="cell">نوع الفحص</div>
-            <div class="cell">النتيجة</div>
-            <div class="cell">اعتُمد</div>
-        </div>
-        @if (!safetyChecks.Any())
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد فحوصات بعد</div></div>
-        }
-        else
-        {
-            @foreach (var s in safetyChecks)
-            {
-                <div class="data-table-row">
-                    <div class="cell">@s.CheckType</div>
-                    <div class="cell"><span class="tag @(s.Result == SafetyResult.Danger ? "tag-danger" : s.Result == SafetyResult.Warning ? "tag-warning" : "tag-success")">@SafetyResultLabel(s.Result)</span></div>
-                    <div class="cell">@(s.IsApproved ? "نعم" : "لا")</div>
-                </div>
-            }
-        }
-    </div>
-
-    <div style="font-size:13.5px; font-weight:600; margin:22px 0 8px;">طلب توريد جديد</div>
-    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-bottom:10px;">
-        <form method="post" asp-controller="ContractorPortal" asp-action="CreateSupplyRequest" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="siteId" value="@site?.Id" />
-            <div>
-                <label class="form-label" style="font-size:11px;">اسم المادة</label>
-                <input type="text" name="materialName" class="form-control form-control-sm" required />
+            <div style="flex:1; min-width:220px;">
+                <label class="form-label" style="font-size:11px;">نص المتطلب</label>
+                <input type="text" name="message" class="form-control form-control-sm" required />
             </div>
             <div>
-                <label class="form-label" style="font-size:11px;">الأبعاد</label>
-                <input type="text" name="dimensions" class="form-control form-control-sm" />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">الكمية</label>
-                <input type="number" step="0.01" min="0" name="quantity" class="form-control form-control-sm" style="max-width:100px;" required />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">الوحدة</label>
-                <input type="text" name="unit" class="form-control form-control-sm" style="max-width:110px;" placeholder="متر / قطعة..." required />
-            </div>
-            <div style="flex:1; min-width:150px;">
-                <label class="form-label" style="font-size:11px;">ملاحظات</label>
-                <input type="text" name="notes" class="form-control form-control-sm" />
+                <label class="form-label" style="font-size:11px;">مرفق (اختياري)</label>
+                <input type="file" name="attachment" class="form-control form-control-sm" />
             </div>
             <button type="submit" class="btn-line btn-line-accent">+ إرسال</button>
         </form>
-    </div>
-    <div class="data-table" style="--cols: 1fr 90px 90px 110px;">
-        <div class="data-table-head">
-            <div class="cell">المادة</div>
-            <div class="cell">الكمية</div>
-            <div class="cell">الوحدة</div>
-            <div class="cell">الحالة</div>
-        </div>
-        @if (!supplyRequests.Any())
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات بعد</div></div>
-        }
-        else
-        {
-            @foreach (var r in supplyRequests)
-            {
-                @foreach (var item in r.Items)
-                {
-                    <div class="data-table-row">
-                        <div class="cell">@item.MaterialName</div>
-                        <div class="cell cell-num">@item.Quantity.ToString("N2")</div>
-                        <div class="cell">@item.Unit</div>
-                        <div class="cell"><span class="tag @(r.Status == SiteSupplyStatus.Delivered ? "tag-success" : r.Status == SiteSupplyStatus.Rejected ? "tag-danger" : "tag-muted")">@SupplyStatusLabel(r.Status)</span></div>
-                    </div>
-                }
-            }
-        }
     </div>
 </div>

@@ -1,0 +1,62 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<SiteRequirement>
+@inject PermissionService PermissionService
+@{
+    var site = ViewBag.Site as Site;
+    ViewData["Title"] = $"متطلبات المقاول - {site?.Name}";
+    var canManage = await PermissionService.HasPermissionAsync(User, "Sites.Manage");
+}
+
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px; flex-wrap:wrap;">
+    <div>
+        <div style="font-size:11px; color:var(--sys-text-light); font-weight:500;">@site?.Code</div>
+        <h1 class="athar-page-title" style="margin-top:2px;">متطلبات المقاول - @site?.Name</h1>
+    </div>
+    <a asp-controller="Sites" asp-action="Details" asp-route-id="@site?.Id" class="btn-line">العودة للموقع</a>
+</div>
+
+<div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+    @if (!Model.Any())
+    {
+        <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); padding:16px; text-align:center; color:var(--sys-text-light);">لا توجد متطلبات بعد</div>
+    }
+    else
+    {
+        @foreach (var r in Model)
+        {
+            var isMine = !r.IsFromContractor;
+            <div style="background:@(isMine ? "#f1eefc" : "#fff"); border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); padding:10px 14px; max-width:70%; align-self:@(isMine ? "flex-end" : "flex-start");">
+                <div style="font-size:11px; color:var(--sys-text-light); margin-bottom:4px;">
+                    @(r.IsFromContractor ? (r.SentByContractor?.Name ?? "المقاول") : "أنت")
+                    — @r.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                </div>
+                <div style="font-size:13px;">@r.Message</div>
+                @if (!string.IsNullOrEmpty(r.AttachmentPath))
+                {
+                    <a href="@r.AttachmentPath" target="_blank" style="font-size:11.5px; display:inline-block; margin-top:6px;">📎 @(r.AttachmentFileName ?? "مرفق")</a>
+                }
+            </div>
+        }
+    }
+</div>
+
+@if (canManage)
+{
+    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إرسال متطلب للمقاول</div>
+        <form method="post" asp-action="Create" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="siteId" value="@site?.Id" />
+            <div style="flex:1; min-width:220px;">
+                <label class="form-label" style="font-size:11px;">نص المتطلب</label>
+                <input type="text" name="message" class="form-control form-control-sm" required />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">مرفق (اختياري)</label>
+                <input type="file" name="attachment" class="form-control form-control-sm" />
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">+ إرسال</button>
+        </form>
+    </div>
+}
