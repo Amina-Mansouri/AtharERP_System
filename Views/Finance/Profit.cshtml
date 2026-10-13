@@ -373,22 +373,27 @@
                     <div class="cell">المصدر</div>
                     <div class="cell">المبلغ</div>
                 </div>
-                <div class="data-table-row row-expense">
-                    <div class="cell">الصيانة</div>
-                    <div class="cell cell-num">@Model.SiteCostBreakdown.MaintenanceCost.ToString("N0")</div>
-                </div>
-                <div class="data-table-row row-expense">
-                    <div class="cell">أجور المقاولين</div>
-                    <div class="cell cell-num">@Model.SiteCostBreakdown.ContractorCost.ToString("N0")</div>
-                </div>
-                <div class="data-table-row row-expense">
-                    <div class="cell">طلبات التوريد</div>
-                    <div class="cell cell-num">@Model.SiteCostBreakdown.SupplyCost.ToString("N0")</div>
-                </div>
-                <div class="data-table-row row-expense">
-                    <div class="cell">مصروفات موقع يدوية</div>
-                    <div class="cell cell-num">@Model.SiteCostBreakdown.ManualExpenses.ToString("N0")</div>
-                </div>
+                @if (Model.SiteCostBreakdown.MaintenanceCost != 0)
+                {
+                    <div class="data-table-row row-expense">
+                        <div class="cell">الصيانة</div>
+                        <div class="cell cell-num">@Model.SiteCostBreakdown.MaintenanceCost.ToString("N0")</div>
+                    </div>
+                }
+                @if (Model.SiteCostBreakdown.ContractorCost != 0)
+                {
+                    <div class="data-table-row row-expense">
+                        <div class="cell">أجور المقاولين</div>
+                        <div class="cell cell-num">@Model.SiteCostBreakdown.ContractorCost.ToString("N0")</div>
+                    </div>
+                }
+                @foreach (var cat in Model.SiteCostBreakdown.ExpensesByCategory)
+                {
+                    <div class="data-table-row row-expense">
+                        <div class="cell">@cat.CategoryName</div>
+                        <div class="cell cell-num">@cat.Amount.ToString("N0")</div>
+                    </div>
+                }
             </div>
         </div>
     </div>

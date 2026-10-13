@@ -14,6 +14,7 @@
     string postedNewEmail = ViewBag.PostedNewEmail as string ?? "";
     string postedNewPassword = ViewBag.PostedNewPassword as string ?? "";
     string postedSpecialty = ViewBag.PostedSpecialty as string ?? "";
+    decimal? postedAmount = ViewBag.PostedAmount as decimal?;
     var isGlobalView = site == null;
 
     string pageTitle;
@@ -30,19 +31,19 @@
     string cols;
     if (isGlobalView && canManage)
     {
-        cols = "1.2fr 1.1fr 1.2fr 110px 1fr 90px 160px";
+        cols = "1.2fr 1.1fr 1.2fr 110px 1fr 90px 90px 160px";
     }
     else if (isGlobalView)
     {
-        cols = "1.2fr 1.1fr 1.2fr 110px 1fr 90px";
+        cols = "1.2fr 1.1fr 1.2fr 110px 1fr 90px 90px";
     }
     else if (canManage)
     {
-        cols = "1.2fr 1.2fr 110px 1fr 90px 160px";
+        cols = "1.2fr 1.2fr 110px 1fr 90px 90px 160px";
     }
     else
     {
-        cols = "1.2fr 1.2fr 110px 1fr 90px";
+        cols = "1.2fr 1.2fr 110px 1fr 90px 90px";
     }
 
     string StatusLabel(ContractorStatus s) => s switch
@@ -85,6 +86,7 @@
         <div class="cell">الشركة</div>
         <div class="cell">الهاتف</div>
         <div class="cell">التخصص</div>
+        <div class="cell">الأجر</div>
         <div class="cell">الحالة</div>
         @if (canManage)
         {
@@ -111,6 +113,7 @@
                 <div class="cell">@(c.Contractor.CompanyName ?? "-")</div>
                 <div class="cell cell-num">@(c.Contractor.Phone ?? "-")</div>
                 <div class="cell">@(c.Specialty ?? "-")</div>
+                <div class="cell cell-num">@(c.Amount?.ToString("N0") ?? "-")</div>
                 <div class="cell"><span class="tag @StatusTagClass(c.Status)">@StatusLabel(c.Status)</span></div>
                 @if (canManage)
                 {
@@ -152,6 +155,10 @@
                 <label class="form-label" style="font-size:11px;">التخصص</label>
                 <input type="text" name="specialty" class="form-control form-control-sm" value="@postedSpecialty" />
             </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الأجر</label>
+                <input type="number" step="0.01" min="0" name="amount" class="form-control form-control-sm" style="max-width:110px;" value="@postedAmount" />
+            </div>
             <button type="submit" class="btn-line btn-line-accent">+ ربط</button>
         </form>
 
@@ -182,6 +189,10 @@
             <div>
                 <label class="form-label" style="font-size:11px;">التخصص</label>
                 <input type="text" name="specialty" class="form-control form-control-sm" value="@postedSpecialty" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">الأجر</label>
+                <input type="number" step="0.01" min="0" name="amount" class="form-control form-control-sm" style="max-width:110px;" value="@postedAmount" />
             </div>
             <button type="submit" class="btn-line btn-line-accent">+ إنشاء وربط</button>
         </form>

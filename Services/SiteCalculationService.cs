@@ -85,20 +85,25 @@ namespace AtharERP_System.Services
             return structuredCost + manualSiteExpenses;
         }
 
+        public class CategoryExpenseBreakdown
+        {
+            public string CategoryName { get; set; } = string.Empty;
+            public decimal Amount { get; set; }
+        }
+
         public class SiteCostBreakdown
         {
             public decimal MaintenanceCost { get; set; }
             public decimal ContractorCost { get; set; }
-            public decimal SupplyCost { get; set; }
-            public decimal ManualExpenses { get; set; }
-            public decimal Total => MaintenanceCost + ContractorCost + SupplyCost + ManualExpenses;
+            public List<CategoryExpenseBreakdown> ExpensesByCategory { get; set; } = new();
+            public decimal Total => MaintenanceCost + ContractorCost + ExpensesByCategory.Sum(c => c.Amount);
         }
 
         public async Task<SiteCostBreakdown> CalculateProjectSiteCostsBreakdownAsync(List<int> projectIds, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
             var siteIds = await _context.Sites.Where(s => projectIds.Contains(s.ProjectId)).Select(s => s.Id).ToListAsync();
 
-            decimal maintenanceCost = 0, contractorCost = 0, supplyCost = 0;
+            decimal maintenanceCost = 0, contractorCost = 0;
             foreach (var siteId in siteIds)
             {
                 var maintenanceQuery = _context.SiteMaintenances.Where(m => m.SiteId == siteId);
@@ -110,21 +115,24 @@ namespace AtharERP_System.Services
                 if (dateFrom.HasValue) contractorQuery = contractorQuery.Where(c => !c.StartDate.HasValue || c.StartDate.Value <= dateTo);
                 if (dateTo.HasValue) contractorQuery = contractorQuery.Where(c => !c.EndDate.HasValue || c.EndDate.Value >= dateFrom);
                 contractorCost += await contractorQuery.SumAsync(c => c.Amount ?? 0);
-
-                // تكلفة طلبات التوريد تُسجَّل كمصروف مشروع عبر "تسجيل الصرف"، لا كحقل على الطلب نفسه
             }
 
             var expensesQuery = _context.ProjectExpenses.Where(e => siteIds.Contains(e.SiteId ?? 0));
             if (dateFrom.HasValue) expensesQuery = expensesQuery.Where(e => e.Date >= dateFrom.Value);
             if (dateTo.HasValue) expensesQuery = expensesQuery.Where(e => e.Date <= dateTo.Value);
-            var manualExpenses = await expensesQuery.SumAsync(e => e.Amount);
+
+            var expensesByCategory = await expensesQuery
+                .GroupBy(e => e.ExpenseCategory.NameAr)
+                .Select(g => new CategoryExpenseBreakdown { CategoryName = g.Key, Amount = g.Sum(e => e.Amount) })
+                .Where(c => c.Amount != 0)
+                .OrderByDescending(c => c.Amount)
+                .ToListAsync();
 
             return new SiteCostBreakdown
             {
                 MaintenanceCost = maintenanceCost,
                 ContractorCost = contractorCost,
-                SupplyCost = supplyCost,
-                ManualExpenses = manualExpenses
+                ExpensesByCategory = expensesByCategory
             };
         }
     }

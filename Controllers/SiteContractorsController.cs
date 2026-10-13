@@ -81,8 +81,8 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            int siteId, int? contractorId, string? newName, string? newCompanyName, string? newPhone,
-            string? newEmail, string? newPassword, string? specialty, DateTime? startDate, DateTime? endDate)
+    int siteId, int? contractorId, string? newName, string? newCompanyName, string? newPhone,
+    string? newEmail, string? newPassword, string? specialty, DateTime? startDate, DateTime? endDate, decimal? amount)
         {
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
@@ -105,6 +105,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.PostedSpecialty = specialty;
                 ViewBag.PostedStartDate = startDate;
                 ViewBag.PostedEndDate = endDate;
+                ViewBag.PostedAmount = amount;
 
                 var listData = await _context.SiteContractors
                     .Include(c => c.Contractor)
@@ -160,6 +161,7 @@ namespace AtharERP_System.Controllers
                 Specialty = specialty,
                 StartDate = startDate,
                 EndDate = endDate,
+                Amount = amount,
                 Status = ContractorStatus.Active
             });
             await _context.SaveChangesAsync();
@@ -189,8 +191,8 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int id,
-            [Bind("Specialty,StartDate,EndDate,Status,Notes")] SiteContractor model)
+    int id,
+    [Bind("Specialty,StartDate,EndDate,Status,Notes,Amount")] SiteContractor model)
         {
             var contractor = await _context.SiteContractors.Include(c => c.Site).Include(c => c.Contractor).FirstOrDefaultAsync(c => c.Id == id);
             if (contractor == null)
@@ -207,6 +209,7 @@ namespace AtharERP_System.Controllers
             contractor.EndDate = model.EndDate;
             contractor.Status = model.Status;
             contractor.Notes = model.Notes;
+            contractor.Amount = model.Amount;
 
             await _context.SaveChangesAsync();
 
