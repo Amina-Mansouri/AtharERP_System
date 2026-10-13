@@ -204,7 +204,7 @@ namespace AtharERP_System.Services
 
             return string.Join(" و", resultParts);
         }
-        public byte[] GeneratePaymentReceipt(ClaimPayment payment)
+        public byte[] GeneratePaymentReceipt(ClaimPayment payment, int assignmentSeq)
         {
             var claim = payment.FinancialClaim;
             var project = claim.Project;
@@ -234,10 +234,12 @@ namespace AtharERP_System.Services
                                 c.Item().Text("إيصال استلام نقدية").FontSize(16).Bold().FontColor("#221837");
                                 c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
-                            row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(6).Column(c =>
+                            row.ConstantItem(130).Border(1).BorderColor("#c9a15a").Padding(6).Column(c =>
                             {
+                                var disciplineCode = claim.ProjectAssignment?.Stage?.DisciplineDepartment?.Code ?? "-";
+                                var receiptCode = $"{project.Code}-{disciplineCode}-{assignmentSeq:D2}-{payment.ReceiptNumber:D4}";
                                 c.Item().Text("رقم الإيصال").FontSize(8).FontColor(Colors.Grey.Medium);
-                                c.Item().Text($"{payment.Id:D6}").FontSize(13).Bold().FontColor("#221837");
+                                c.Item().Text(receiptCode).FontSize(11).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(4).Text($"{payment.PaidAt:yyyy-MM-dd}").FontSize(9);
                             });
                         });

@@ -454,13 +454,16 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
             }
 
+            var nextReceiptNumber = await _context.ClaimPayments.CountAsync() + 1;
+
             claim.PaidAmount += amount;
             _context.ClaimPayments.Add(new ClaimPayment
             {
                 FinancialClaimId = claim.Id,
                 Amount = amount,
                 PaidAt = DateTime.UtcNow,
-                CreatedById = CurrentUserId
+                CreatedById = CurrentUserId,
+                ReceiptNumber = nextReceiptNumber
             });
             if (claim.RealValue - claim.PaidAmount <= 0)
             {
@@ -498,14 +501,17 @@ namespace AtharERP_System.Controllers
         {
             var payment = await _context.ClaimPayments
      .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
-     .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
+     .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment).ThenInclude(a => a.Stage).ThenInclude(s => s.DisciplineDepartment)
      .FirstOrDefaultAsync(p => p.Id == paymentId);
             if (payment == null) return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, payment.FinancialClaim.ProjectId))
                 return Forbid();
 
-            var pdf = _pdfExport.GeneratePaymentReceipt(payment);
+            var assignmentSeq = await _context.ProjectAssignments
+                .CountAsync(a => a.ProjectId == payment.FinancialClaim.ProjectId && a.CreatedAt <= payment.FinancialClaim.ProjectAssignment.CreatedAt);
+
+            var pdf = _pdfExport.GeneratePaymentReceipt(payment, assignmentSeq);
             return File(pdf, "application/pdf", $"إيصال-دفعة-{payment.Id}.pdf");
         }
 

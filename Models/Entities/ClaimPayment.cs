@@ -30,5 +30,8 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("CreatedById")]
         [ValidateNever]
         public virtual ApplicationUser? CreatedBy { get; set; }
+
+        [Display(Name = "الرقم التسلسلي للإيصال")]
+        public int ReceiptNumber { get; set; }
     }
 }
