@@ -372,6 +372,12 @@ namespace AtharERP_System.Controllers
             ViewBag.GenDateFrom = genDateFrom;
             ViewBag.GenDateTo = genDateTo;
 
+            // الخزينة وهامش الربح: دائماً على كل المشاريع ضمن التصنيف المختار، بغض النظر عن اختيار مشروع معيّن
+            var aggregateProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+            ViewBag.Aggregate = aggregateProjectIds.Any()
+                ? await _calc.CalculateProjectNetProfitAsync(aggregateProjectIds, dateFrom, dateTo)
+                : new ProjectCalculationService.ProjectNetProfitResult();
+
             if (!targetProjectIds.Any())
                 return View((ProjectCalculationService.ProjectNetProfitResult?)null);
 

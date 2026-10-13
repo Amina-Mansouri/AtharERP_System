@@ -95,28 +95,29 @@
 
 @if (Model != null)
 {
-    var scopeLabel = project != null ? project.Name : "كل المشاريع المتاحة لك";
+    var aggregate = ViewBag.Aggregate as ProjectCalculationService.ProjectNetProfitResult ?? new ProjectCalculationService.ProjectNetProfitResult();
     var salesOutstanding = Model.TotalSalesAccrued - Model.TotalSalesRealized;
     var taskCostsOutstanding = Model.TotalTaskCostsAccrued - Model.TotalTaskCostsRealized;
-    var treasury = Model.TotalSalesRealized - Model.TotalTaskCostsRealized - Model.SiteCosts;
-    var profitMargin = treasury - Model.TotalGeneralExpenses;
+    var treasury = aggregate.TotalSalesRealized - aggregate.TotalTaskCostsRealized - aggregate.SiteCosts - aggregate.TotalGeneralExpenses;
+    var profitMargin = treasury - generalAdminTotal;
 
-    // --- بيانات رسم Waterfall (بنفس تسلسل جدولَي الخزينة/هامش الربح، على أساس "المنفَّذ") ---
-    var wStep1 = Model.TotalSalesRealized; var wCum1 = wStep1;
-    var wStep2 = Model.TotalTaskCostsRealized; var wCum2 = wCum1 - wStep2;
-    var wStep3 = Model.SiteCosts; var wCum3 = wCum2 - wStep3; // = treasury
-    var wStep5 = Model.TotalGeneralExpenses; var wCum5 = wCum3 - wStep5;
-    var wStep6 = 0m; var wCum6 = wCum5 - wStep6; // رواتب
-    var wStep7 = 0m; var wCum7 = wCum6 + wStep7; // خصومات (+)
-    var wStep8 = 0m; var wCum8 = wCum7 - wStep8; // مكافآت = profitMargin
+    // --- بيانات رسم Waterfall (دائماً على كل المشاريع ضمن التصنيف المختار، على أساس "المنفَّذ") ---
+    var wStep1 = aggregate.TotalSalesRealized; var wCum1 = wStep1;
+    var wStep2 = aggregate.TotalTaskCostsRealized; var wCum2 = wCum1 - wStep2;
+    var wStep3 = aggregate.SiteCosts; var wCum3 = wCum2 - wStep3;
+    var wStep4 = aggregate.TotalGeneralExpenses; var wCum4 = wCum3 - wStep4; // = treasury
+    var wStep6 = generalAdminTotal; var wCum6 = wCum4 - wStep6;
+    var wStep7 = 0m; var wCum7 = wCum6 - wStep7; // رواتب
+    var wStep8 = 0m; var wCum8 = wCum7 + wStep8; // خصومات (+)
+    var wStep9 = 0m; var wCum9 = wCum8 - wStep9; // مكافآت = profitMargin
 
-    var wLabels = new[] { "المبيعات", "تكاليف المهام", "تكاليف المواقع", "الخزينة", "مصروفات عامة", "الرواتب", "الخصومات", "المكافآت", "هامش الربح" };
-    var wBase = new[] { 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m };
-    var wDeltaRaw = new[] { wStep1, wCum2 - wCum1, wCum3 - wCum2, wCum3, wCum5 - wCum3, wCum6 - wCum5, wCum7 - wCum6, wCum8 - wCum7, wCum8 };
-    var wBaseColors = new[] { "#2e8b57", "#c94a42", "#c94a42", "#7b6bd6", "#c94a42", "#c94a42", "#2e8b57", "#c94a42", "#c9a15a" };
-    // المؤشران 3 (الخزينة) و8 (هامش الربح) نتيجتان صافيتان قد تكونان سالبتين فعلاً (خسارة) — تُعرضان بقيمتهما الحقيقية مع لون أحمر عند السلب؛
+    var wLabels = new[] { "المبيعات", "تكاليف المهام", "تكاليف المواقع", "مصروفات المشروع", "الخزينة", "مصروفات عامة", "الرواتب", "الخصومات", "المكافآت", "هامش الربح" };
+    var wBase = new[] { 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m };
+    var wDeltaRaw = new[] { wStep1, wCum2 - wCum1, wCum3 - wCum2, wCum4 - wCum3, wCum4, wCum6 - wCum4, wCum7 - wCum6, wCum8 - wCum7, wCum9 - wCum8, wCum9 };
+    var wBaseColors = new[] { "#2e8b57", "#c94a42", "#c94a42", "#c94a42", "#7b6bd6", "#c94a42", "#c94a42", "#2e8b57", "#c94a42", "#c9a15a" };
+    // المؤشران 4 (الخزينة) و9 (هامش الربح) نتيجتان صافيتان قد تكونان سالبتين فعلاً (خسارة) — تُعرضان بقيمتهما الحقيقية مع لون أحمر عند السلب؛
     // بقية الأعمدة مبالغ خطوات لا تكون سالبة طبيعياً فتُعرض بقيمتها المطلقة كما استقر التصميم سابقاً
-    var wNetResultIndices = new HashSet<int> { 3, 8 };
+    var wNetResultIndices = new HashSet<int> { 4, 9 };
     var wDelta = new decimal[wDeltaRaw.Length];
     var wColors = new string[wDeltaRaw.Length];
     for (int i = 0; i < wDeltaRaw.Length; i++)
@@ -139,8 +140,6 @@
     {
         wTickLabels[i] = new[] { wLabels[i], wDelta[i].ToString("N0") };
     }
-
-    <div style="font-size:11.5px; color:#8a83a0; margin-bottom:10px;">عرض بيانات: <strong>@scopeLabel</strong></div>
 
     <div class="stat-strip" style="margin-bottom:16px;">
         <div class="stat-item" style="border-right:4px solid @(treasury >= 0 ? "#2e8b57" : "#c94a42");">
@@ -323,38 +322,26 @@
 
     <div class="athar-card" style="margin-bottom:10px;">
         <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secExp">
-            <span style="font-size:13px;">مصروفات عامة (للمشاريع المعروضة): <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></span>
+            <span style="font-size:13px;">مصروفات المشروع: <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></span>
             <span>▾</span>
         </button>
         <div class="collapse" id="secExp" style="margin-top:10px;">
-            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 100px 1fr 100px 1fr" : "100px 1fr 100px 1fr")">
+            <div class="data-table profit-table" style="--cols: 1fr 130px">
                 <div class="data-table-head">
-                    @if (project == null)
-                    {
-                        <div class="cell">المشروع</div>
-                    }
-                    <div class="cell">التاريخ</div>
                     <div class="cell">التصنيف</div>
                     <div class="cell">المبلغ</div>
-                    <div class="cell">الوصف</div>
                 </div>
-                @if (!Model.GeneralExpenseRows.Any())
+                @if (!Model.ProjectExpensesByCategory.Any())
                 {
-                    <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات ضمن هذه الفلترة</div></div>
+                    <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات مشروع ضمن هذه الفلترة</div></div>
                 }
                 else
                 {
-                    @foreach (var e in Model.GeneralExpenseRows)
+                    @foreach (var cat in Model.ProjectExpensesByCategory)
                     {
                         <div class="data-table-row row-expense">
-                            @if (project == null)
-                            {
-                                <div class="cell">@e.Project?.Name</div>
-                            }
-                            <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
-                            <div class="cell">@e.ExpenseCategory?.NameAr</div>
-                            <div class="cell cell-num">@e.Amount.ToString("N0")</div>
-                            <div class="cell">@(e.Description ?? "-")</div>
+                            <div class="cell">@cat.CategoryName</div>
+                            <div class="cell cell-num">@cat.Amount.ToString("N0")</div>
                         </div>
                     }
                 }
@@ -409,20 +396,26 @@
             </div>
             <div class="data-table-row row-income">
                 <div class="cell">+ إجمالي المبيعات</div>
-                <div class="cell cell-num">@Model.TotalSalesAccrued.ToString("N0")</div>
-                <div class="cell cell-num">@Model.TotalSalesRealized.ToString("N0")</div>
-                <div class="cell cell-num">@salesOutstanding.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.TotalSalesAccrued.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.TotalSalesRealized.ToString("N0")</div>
+                <div class="cell cell-num">@((aggregate.TotalSalesAccrued - aggregate.TotalSalesRealized).ToString("N0"))</div>
             </div>
             <div class="data-table-row row-expense">
                 <div class="cell">− تكاليف المهام</div>
-                <div class="cell cell-num">@Model.TotalTaskCostsAccrued.ToString("N0")</div>
-                <div class="cell cell-num">@Model.TotalTaskCostsRealized.ToString("N0")</div>
-                <div class="cell cell-num">@taskCostsOutstanding.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.TotalTaskCostsAccrued.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.TotalTaskCostsRealized.ToString("N0")</div>
+                <div class="cell cell-num">@((aggregate.TotalTaskCostsAccrued - aggregate.TotalTaskCostsRealized).ToString("N0"))</div>
             </div>
             <div class="data-table-row row-expense">
                 <div class="cell">− تكاليف المواقع</div>
-                <div class="cell cell-num">@Model.SiteCosts.ToString("N0")</div>
-                <div class="cell cell-num">@Model.SiteCosts.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.SiteCosts.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.SiteCosts.ToString("N0")</div>
+                <div class="cell cell-num">-</div>
+            </div>
+            <div class="data-table-row row-expense">
+                <div class="cell">− مصروفات المشروع</div>
+                <div class="cell cell-num">@aggregate.TotalGeneralExpenses.ToString("N0")</div>
+                <div class="cell cell-num">@aggregate.TotalGeneralExpenses.ToString("N0")</div>
                 <div class="cell cell-num">-</div>
             </div>
             <div class="data-table-row row-total">
@@ -435,8 +428,7 @@
     </div>
 
     <div class="athar-card" style="border:2px solid #7b6bd6; margin-bottom:16px;">
-        <div style="font-size:13.5px; font-weight:700; margin-bottom:10px; color:#221837;">نظرة عامة: المصروفات الإدارية والرواتب <span class="stat-sub" style="font-weight:400;">(مستقلة عن اختيار المشروع أعلاه)</span></div>
-
+        <div style="font-size:13.5px; font-weight:700; margin-bottom:10px; color:#221837;">مصروفات عامة</div>
         <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:12px;">
             <input type="hidden" name="categoryId" value="@categoryId" />
             <input type="hidden" name="projectId" value="@projectId" />
@@ -505,8 +497,8 @@
             </div>
             <div class="data-table-row row-expense">
                 <div class="cell">− مصروفات عامة</div>
-                <div class="cell cell-num">@Model.TotalGeneralExpenses.ToString("N0")</div>
-                <div class="cell cell-num">@Model.TotalGeneralExpenses.ToString("N0")</div>
+                <div class="cell cell-num">@generalAdminTotal.ToString("N0")</div>
+                <div class="cell cell-num">@generalAdminTotal.ToString("N0")</div>
                 <div class="cell cell-num">-</div>
             </div>
             <div class="data-table-row row-expense">

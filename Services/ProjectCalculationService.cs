@@ -412,6 +412,7 @@ namespace AtharERP_System.Services
             public List<FinancialClaim> Claims { get; set; } = new();
             public List<FinancialRecord> Records { get; set; } = new();
             public List<ProjectExpense> GeneralExpenseRows { get; set; } = new();
+            public List<SiteCalculationService.CategoryExpenseBreakdown> ProjectExpensesByCategory { get; set; } = new();
             public SiteCalculationService.SiteCostBreakdown SiteCostBreakdown { get; set; } = new();
 
             public decimal TotalSalesAccrued { get; set; }
@@ -449,6 +450,13 @@ namespace AtharERP_System.Services
             var generalExpenseRows = await expensesQuery.OrderByDescending(e => e.Date).ToListAsync();
             var totalGeneralExpenses = generalExpenseRows.Sum(e => e.Amount);
 
+            var projectExpensesByCategory = generalExpenseRows
+                .GroupBy(e => e.ExpenseCategory.NameAr)
+                .Select(g => new SiteCalculationService.CategoryExpenseBreakdown { CategoryName = g.Key, Amount = g.Sum(e => e.Amount) })
+                .Where(c => c.Amount != 0)
+                .OrderByDescending(c => c.Amount)
+                .ToList();
+
             var siteCostBreakdown = await _siteCalc.CalculateProjectSiteCostsBreakdownAsync(projectIds, dateFrom, dateTo);
             var siteCosts = siteCostBreakdown.Total;
 
@@ -457,6 +465,7 @@ namespace AtharERP_System.Services
                 Claims = claims,
                 Records = records,
                 GeneralExpenseRows = generalExpenseRows,
+                ProjectExpensesByCategory = projectExpensesByCategory,
                 SiteCostBreakdown = siteCostBreakdown,
                 TotalSalesAccrued = totalSalesAccrued,
                 TotalSalesRealized = totalSalesRealized,
