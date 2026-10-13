@@ -1399,6 +1399,10 @@ button:focus-visible {
     color: var(--sys-text-light);
     font-weight: 600;
     white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+    line-height: 1.35;
 }
 
 .cell-num {
@@ -1419,20 +1423,6 @@ button:focus-visible {
 .data-table-compact .data-table-head {
     min-width: 0;
 }
-.data-table-vertical-head .data-table-head .cell {
-    height: 105px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 2px;
-    white-space: nowrap;
-}
-
-    .data-table-vertical-head .data-table-head .cell span {
-        display: inline-block;
-        transform: rotate(-90deg);
-        white-space: nowrap;
-    }
 
 .profit-table .cell {
     font-size: 12px;
