@@ -552,22 +552,28 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> Receipts(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> Receipts(int? categoryId, int? clientId, List<int>? projectIds, DateTime? dateFrom, DateTime? dateTo)
         {
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
             ViewBag.Categories = await GetActiveCategoriesAsync();
             ViewBag.Projects = accessibleProjects;
+            ViewBag.Clients = await _context.Clients.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = projectId;
+            ViewBag.ClientId = clientId;
+            ViewBag.ProjectIds = projectIds ?? new List<int>();
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
             var accessibleProjectIds = accessibleProjects.Select(p => p.Id).ToList();
-            if (projectId.HasValue)
-                accessibleProjectIds = accessibleProjectIds.Where(id => id == projectId.Value).ToList();
+
+            if (clientId.HasValue)
+                accessibleProjectIds = accessibleProjects.Where(p => p.ClientId == clientId.Value).Select(p => p.Id).ToList();
+
+            if (projectIds != null && projectIds.Any())
+                accessibleProjectIds = accessibleProjectIds.Where(id => projectIds.Contains(id)).ToList();
 
             var query = _context.ClaimPayments
-                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project)
+                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
                 .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
                 .Where(p => accessibleProjectIds.Contains(p.FinancialClaim.ProjectId));
 
@@ -577,6 +583,6 @@ namespace AtharERP_System.Controllers
             var payments = await query.OrderByDescending(p => p.PaidAt).ToListAsync();
             return View(payments);
         }
-    
+
     }
 }

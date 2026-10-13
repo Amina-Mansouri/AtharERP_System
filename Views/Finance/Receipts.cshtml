@@ -4,7 +4,9 @@
     var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
     var categoryId = ViewBag.CategoryId as int?;
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
-    var projectId = ViewBag.ProjectId as int?;
+    var clients = ViewBag.Clients as List<Client> ?? new List<Client>();
+    var clientId = ViewBag.ClientId as int?;
+    var projectIds = ViewBag.ProjectIds as List<int> ?? new List<int>();
     var dateFrom = ViewBag.DateFrom as DateTime?;
     var dateTo = ViewBag.DateTo as DateTime?;
     ViewData["Title"] = "سجل الإيصالات";
@@ -19,7 +21,7 @@
 
 <div class="athar-card" style="margin-bottom:12px;">
     <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
-        <div style="min-width:180px;">
+        <div style="min-width:160px;">
             <label class="form-label" style="font-size:11px;">نوع المشروع</label>
             <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="">-- الكل --</option>
@@ -29,13 +31,23 @@
                 }
             </select>
         </div>
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">العميل</label>
+            <input type="text" name="clientSearch" list="clientsList" class="form-control form-control-sm" placeholder="ابحثي بالاسم..." value="@(clients.FirstOrDefault(c => c.Id == clientId)?.Name)" oninput="athSyncClientId(this.value)" />
+            <input type="hidden" name="clientId" id="clientIdHidden" value="@clientId" />
+            <datalist id="clientsList">
+                @foreach (var c in clients)
+                {
+                    <option data-id="@c.Id" value="@c.Name"></option>
+                }
+            </datalist>
+        </div>
         <div style="min-width:220px;">
-            <label class="form-label" style="font-size:11px;">المشروع</label>
-            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- الكل --</option>
+            <label class="form-label" style="font-size:11px;">المشاريع (يمكن اختيار أكثر من واحد)</label>
+            <select name="projectIds" class="form-select form-select-sm" multiple size="4" style="min-height:84px;">
                 @foreach (var p in projects)
                 {
-                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                    <option value="@p.Id" selected="@projectIds.Contains(p.Id)">@p.Code - @p.Name</option>
                 }
             </select>
         </div>
@@ -51,11 +63,12 @@
     </form>
 </div>
 
-<div class="data-table data-table-compact" style="--cols: 90px 70px 1fr 1fr 100px 100px">
+<div class="data-table data-table-compact" style="--cols: 90px 70px 1fr 1fr 1fr 100px 100px">
     <div class="data-table-head">
         <div class="cell">تاريخ الدفعة</div>
         <div class="cell">رقم المشروع</div>
         <div class="cell">المشروع</div>
+        <div class="cell">العميل</div>
         <div class="cell">بيان التكليف</div>
         <div class="cell">المبلغ</div>
         <div class="cell">إيصال</div>
@@ -72,6 +85,7 @@
                 <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
                 <div class="cell cell-num">@p.FinancialClaim.Project.Code</div>
                 <div class="cell">@p.FinancialClaim.Project.Name</div>
+                <div class="cell">@p.FinancialClaim.Project.Client.Name</div>
                 <div class="cell">@(p.FinancialClaim.ProjectAssignment?.AssignmentType ?? "-")</div>
                 <div class="cell cell-num">@p.Amount.ToString("N0")</div>
                 <div class="cell">
@@ -81,3 +95,12 @@
         }
     }
 </div>
+
+@section Scripts {
+    <script>
+        function athSyncClientId(name) {
+            var opt = document.querySelector('#clientsList option[value="' + CSS.escape(name) + '"]');
+            document.getElementById('clientIdHidden').value = opt ? opt.getAttribute('data-id') : '';
+        }
+    </script>
+}
