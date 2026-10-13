@@ -12,6 +12,7 @@
 
     var generalAdminExpenses = ViewBag.GeneralAdminExpenses as List<ProjectExpense> ?? new List<ProjectExpense>();
     var generalAdminTotal = ViewBag.GeneralAdminTotal as decimal? ?? 0;
+    var generalAdminTotalForMargin = ViewBag.GeneralAdminTotalForMargin as decimal? ?? 0;
     var generalAdminCategories = ViewBag.GeneralAdminCategories as List<ExpenseCategory> ?? new List<ExpenseCategory>();
     var genCategoryId = ViewBag.GenCategoryId as int?;
     var genDateFrom = ViewBag.GenDateFrom as DateTime?;
@@ -99,14 +100,14 @@
     var salesOutstanding = Model.TotalSalesAccrued - Model.TotalSalesRealized;
     var taskCostsOutstanding = Model.TotalTaskCostsAccrued - Model.TotalTaskCostsRealized;
     var treasury = aggregate.TotalSalesRealized - aggregate.TotalTaskCostsRealized - aggregate.SiteCosts - aggregate.TotalGeneralExpenses;
-    var profitMargin = treasury - generalAdminTotal;
+    var profitMargin = treasury - generalAdminTotalForMargin;
 
     // --- بيانات رسم Waterfall (دائماً على كل المشاريع ضمن التصنيف المختار، على أساس "المنفَّذ") ---
     var wStep1 = aggregate.TotalSalesRealized; var wCum1 = wStep1;
     var wStep2 = aggregate.TotalTaskCostsRealized; var wCum2 = wCum1 - wStep2;
     var wStep3 = aggregate.SiteCosts; var wCum3 = wCum2 - wStep3;
     var wStep4 = aggregate.TotalGeneralExpenses; var wCum4 = wCum3 - wStep4; // = treasury
-    var wStep6 = generalAdminTotal; var wCum6 = wCum4 - wStep6;
+    var wStep6 = generalAdminTotalForMargin; var wCum6 = wCum4 - wStep6;
     var wStep7 = 0m; var wCum7 = wCum6 - wStep7; // رواتب
     var wStep8 = 0m; var wCum8 = wCum7 + wStep8; // خصومات (+)
     var wStep9 = 0m; var wCum9 = wCum8 - wStep9; // مكافآت = profitMargin
@@ -497,8 +498,8 @@
             </div>
             <div class="data-table-row row-expense">
                 <div class="cell">− مصروفات عامة</div>
-                <div class="cell cell-num">@generalAdminTotal.ToString("N0")</div>
-                <div class="cell cell-num">@generalAdminTotal.ToString("N0")</div>
+                <div class="cell cell-num">@generalAdminTotalForMargin.ToString("N0")</div>
+                <div class="cell cell-num">@generalAdminTotalForMargin.ToString("N0")</div>
                 <div class="cell cell-num">-</div>
             </div>
             <div class="data-table-row row-expense">

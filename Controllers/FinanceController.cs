@@ -372,6 +372,12 @@ namespace AtharERP_System.Controllers
             ViewBag.GenDateFrom = genDateFrom;
             ViewBag.GenDateTo = genDateTo;
 
+            // إجمالي المصروفات الإدارية ضمن نفس فترة الفلتر الرئيسي (من/إلى)، يُستخدم فقط لحساب هامش الربح
+            var marginAdminExpensesQuery = _context.ProjectExpenses.Where(e => e.ProjectId == null);
+            if (dateFrom.HasValue) marginAdminExpensesQuery = marginAdminExpensesQuery.Where(e => e.Date >= dateFrom.Value);
+            if (dateTo.HasValue) marginAdminExpensesQuery = marginAdminExpensesQuery.Where(e => e.Date <= dateTo.Value);
+            ViewBag.GeneralAdminTotalForMargin = await marginAdminExpensesQuery.SumAsync(e => e.Amount);
+
             // الخزينة وهامش الربح: دائماً على كل المشاريع ضمن التصنيف المختار، بغض النظر عن اختيار مشروع معيّن
             var aggregateProjectIds = accessibleProjects.Select(p => p.Id).ToList();
             ViewBag.Aggregate = aggregateProjectIds.Any()
