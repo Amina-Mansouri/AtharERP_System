@@ -68,47 +68,43 @@
         }
     </div>
 
-    <div id="replyBanner" style="display:none; background:#f1eefc; border:1px solid var(--sys-border); border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:11.5px; display:flex; justify-content:space-between; align-items:center;">
-        <span>سيُرسَل هذا كرد على الطلب المحدد</span>
-        <button type="button" class="btn-line" style="font-size:10px; padding:2px 6px;" onclick="cancelReply()">إلغاء الرد</button>
-    </div>
-    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px;">
-        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إرسال مراسلة للشركة</div>
-        <form method="post" asp-controller="ContractorPortal" asp-action="SendCorrespondence" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="siteId" value="@site?.Id" />
-            <input type="hidden" name="parentCorrespondenceId" id="parentCorrespondenceId" value="" />
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
-                <div>
-                    <label class="form-label" style="font-size:11px;">الأولوية</label>
-                    <select name="priority" class="form-select form-select-sm">
-                        <option value="Normal">عادية</option>
-                        <option value="High">عالية</option>
-                        <option value="Urgent">عاجلة</option>
-                    </select>
+    <div style="font-size:13.5px; font-weight:600; margin:22px 0 8px;">المراسلات</div>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+        @if (!correspondences.Any())
+        {
+            <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); padding:16px; text-align:center; color:var(--sys-text-light);">لا توجد مراسلات بعد</div>
+        }
+        else
+        {
+            @foreach (var c in correspondences)
+            {
+                var isMine = c.IsFromContractor;
+                <div style="background:@(isMine ? "#f1eefc" : "#fff"); border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); padding:10px 14px; max-width:85%; align-self:@(isMine ? "flex-end" : "flex-start");">
+                    <div style="font-size:11px; color:var(--sys-text-light); margin-bottom:4px; display:flex; gap:8px; align-items:center;">
+                        <span>@(c.IsFromContractor ? "أنت" : (c.SentBy?.FullName ?? "الشركة"))</span>
+                        <span>— @c.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        <span class="tag @StatusTagClass(c)" style="font-size:9px;">@StatusLabel(c)</span>
+                    </div>
+                    <div style="font-size:13px; white-space:pre-wrap;">@c.DetailedQuery</div>
+                    <div style="margin-top:6px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <a asp-controller="ContractorPortal" asp-action="DownloadCorrespondence" asp-route-id="@c.Id" target="_blank" style="font-size:11.5px;">📄 عرض PDF</a>
+                        @foreach (var att in c.Attachments)
+                        {
+                            <a href="@att.FilePath" target="_blank" style="font-size:11.5px;">📎 @att.FileName</a>
+                        }
+                        @if (!c.IsFromContractor && c.Status == CorrespondenceStatus.Pending)
+                        {
+                            <button type="button" class="btn-line" style="font-size:11px; padding:3px 8px;" onclick="replyTo(@c.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.DetailedQuery)))">↩ رد</button>
+                        }
+                    </div>
                 </div>
-                <div>
-                    <label class="form-label" style="font-size:11px;">تاريخ الرد المطلوب</label>
-                    <input type="date" name="requiredResponseDate" class="form-control form-control-sm" />
-                </div>
-                <div>
-                    <label class="form-label" style="font-size:11px;">المرفقات (يمكن اختيار أكثر من ملف)</label>
-                    <input type="file" name="attachments" multiple class="form-control form-control-sm" />
-                </div>
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">تفاصيل الاستفسار</label>
-                <textarea name="detailedQuery" id="detailedQueryInput" class="form-control" rows="3" required></textarea>
-            </div>
-            <div>
-                <button type="submit" class="btn-line btn-line-accent">+ إرسال</button>
-            </div>
-        </form>
+            }
+        }
     </div>
 
-    <div id="replyBanner" style="display:none; background:#f1eefc; border:1px solid var(--sys-border); border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:11.5px; display:flex; justify-content:space-between; align-items:center;">
-        <span>سيُرسَل هذا كرد على الطلب المحدد</span>
-        <button type="button" class="btn-line" style="font-size:10px; padding:2px 6px;" onclick="cancelReply()">إلغاء الرد</button>
+    <div id="replyBanner" style="display:none; background:#f1eefc; border:1px solid var(--sys-border); border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:11.5px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <span id="replyBannerText" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+        <button type="button" class="btn-line" style="font-size:10px; padding:2px 6px; flex-shrink:0;" onclick="cancelReply()">إلغاء الرد</button>
     </div>
     <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px;">
         <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إرسال مراسلة للشركة</div>
@@ -144,3 +140,19 @@
         </form>
     </div>
 </div>
+
+<script>
+    function replyTo(id, text) {
+        document.getElementById('parentCorrespondenceId').value = id;
+        var snippet = text.length > 70 ? text.substring(0, 70) + '…' : text;
+        document.getElementById('replyBannerText').innerText = 'سيُرسَل هذا كرد على: "' + snippet + '"';
+        document.getElementById('replyBanner').style.display = 'flex';
+        var ta = document.getElementById('detailedQueryInput');
+        ta.focus();
+        ta.scrollIntoView({ behavior: 'smooth' });
+    }
+    function cancelReply() {
+        document.getElementById('parentCorrespondenceId').value = '';
+        document.getElementById('replyBanner').style.display = 'none';
+    }
+</script>
