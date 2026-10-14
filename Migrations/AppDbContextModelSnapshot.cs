@@ -1821,6 +1821,92 @@ namespace AtharERP_System.Migrations
                     b.ToTable("SiteContractors");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteCorrespondence", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApproverName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ApproverPosition")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ApproverSignaturePath")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DetailedQuery")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsFromContractor")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ParentCorrespondenceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RequestNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RequiredResponseDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("SentByContractorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SentById")
+                        .HasColumnType("text");
+
+                    b.Property<int>("SiteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SubmittedByName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SubmittedByPosition")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SubmittedBySignaturePath")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentCorrespondenceId");
+
+                    b.HasIndex("SentByContractorId");
+
+                    b.HasIndex("SentById");
+
+                    b.HasIndex("SiteId");
+
+                    b.ToTable("SiteCorrespondences");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDailyReport", b =>
                 {
                     b.Property<int>("Id")
@@ -2129,53 +2215,6 @@ namespace AtharERP_System.Migrations
                     b.HasIndex("SiteId");
 
                     b.ToTable("SiteQualityChecks");
-                });
-
-            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteRequirement", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AttachmentFileName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AttachmentPath")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsFromContractor")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("SentByContractorId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SentById")
-                        .HasColumnType("text");
-
-                    b.Property<int>("SiteId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SentByContractorId");
-
-                    b.HasIndex("SentById");
-
-                    b.HasIndex("SiteId");
-
-                    b.ToTable("SiteRequirements");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteSafetyCheck", b =>
@@ -3174,6 +3213,38 @@ namespace AtharERP_System.Migrations
                     b.Navigation("Site");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteCorrespondence", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.SiteCorrespondence", "ParentCorrespondence")
+                        .WithMany()
+                        .HasForeignKey("ParentCorrespondenceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AtharERP_System.Models.Entities.Contractor", "SentByContractor")
+                        .WithMany()
+                        .HasForeignKey("SentByContractorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "SentBy")
+                        .WithMany()
+                        .HasForeignKey("SentById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AtharERP_System.Models.Entities.Site", "Site")
+                        .WithMany("Correspondences")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParentCorrespondence");
+
+                    b.Navigation("SentBy");
+
+                    b.Navigation("SentByContractor");
+
+                    b.Navigation("Site");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDailyReport", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.Contractor", "CreatedByContractor")
@@ -3297,31 +3368,6 @@ namespace AtharERP_System.Migrations
                     b.Navigation("CheckedBy");
 
                     b.Navigation("CheckedByContractor");
-
-                    b.Navigation("Site");
-                });
-
-            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteRequirement", b =>
-                {
-                    b.HasOne("AtharERP_System.Models.Entities.Contractor", "SentByContractor")
-                        .WithMany()
-                        .HasForeignKey("SentByContractorId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "SentBy")
-                        .WithMany()
-                        .HasForeignKey("SentById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("AtharERP_System.Models.Entities.Site", "Site")
-                        .WithMany("SiteRequirements")
-                        .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SentBy");
-
-                    b.Navigation("SentByContractor");
 
                     b.Navigation("Site");
                 });
@@ -3643,6 +3689,8 @@ namespace AtharERP_System.Migrations
                 {
                     b.Navigation("Contractors");
 
+                    b.Navigation("Correspondences");
+
                     b.Navigation("DailyReports");
 
                     b.Navigation("Documents");
@@ -3656,8 +3704,6 @@ namespace AtharERP_System.Migrations
                     b.Navigation("QualityChecks");
 
                     b.Navigation("SafetyChecks");
-
-                    b.Navigation("SiteRequirements");
 
                     b.Navigation("SupplyRequests");
                 });

@@ -56,6 +56,9 @@ namespace AtharERP_System.Models.Entities
         ProposalSubmitted = 16,
 
         [Display(Name = "مطالبة مالية معتمدة")]
-        ClaimApproved = 17
+        ClaimApproved = 17,
+
+        [Display(Name = "مراسلة موقع جديدة")]
+        SiteCorrespondenceReceived = 18
     }
 }
