@@ -204,6 +204,18 @@ namespace AtharERP_System.Services
 
             return string.Join(" و", resultParts);
         }
+
+        private static string ArabicDayName(DateTime date) => date.DayOfWeek switch
+        {
+            DayOfWeek.Sunday => "الأحد",
+            DayOfWeek.Monday => "الاثنين",
+            DayOfWeek.Tuesday => "الثلاثاء",
+            DayOfWeek.Wednesday => "الأربعاء",
+            DayOfWeek.Thursday => "الخميس",
+            DayOfWeek.Friday => "الجمعة",
+            DayOfWeek.Saturday => "السبت",
+            _ => ""
+        };
         public byte[] GeneratePaymentReceipt(ClaimPayment payment)
         {
             var claim = payment.FinancialClaim;
@@ -350,6 +362,7 @@ namespace AtharERP_System.Services
                                 c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().Text(project.Code).FontSize(13).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(4).Text($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(9);
+                                c.Item().Text(ArabicDayName(DateTime.UtcNow)).FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                         });
                         header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a");
@@ -422,12 +435,7 @@ namespace AtharERP_System.Services
 
                         col.Item().PaddingTop(30).Row(row =>
                         {
-                            row.RelativeItem().Column(c =>
-                            {
-                                c.Item().Text("توقيع المستلم").FontSize(9).FontColor(Colors.Grey.Medium);
-                                c.Item().PaddingTop(18).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
-                            });
-                            row.ConstantItem(20);
+                            row.RelativeItem();
                             row.RelativeItem().Column(c =>
                             {
                                 c.Item().Text("يعتمد الإدارة الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
