@@ -39,6 +39,13 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual Vendor? Vendor { get; set; }
 
+        [Display(Name = "الصنف")]
+        public int? MaterialItemId { get; set; }
+
+        [ForeignKey("MaterialItemId")]
+        [ValidateNever]
+        public virtual MaterialItem? MaterialItem { get; set; }
+
         [Display(Name = "ملاحظات")]
         public string? Notes { get; set; }
     }

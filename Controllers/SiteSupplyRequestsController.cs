@@ -14,19 +14,21 @@ namespace AtharERP_System.Controllers
         private readonly AuditService _audit;
         private readonly PermissionService _permissionService;
         private readonly FileUploadService _fileUpload;
+        private readonly FinancePdfService _pdfExport;
 
-        public SiteSupplyRequestsController(AppDbContext context, AuditService audit, PermissionService permissionService, FileUploadService fileUpload)
+        public SiteSupplyRequestsController(AppDbContext context, AuditService audit, PermissionService permissionService, FileUploadService fileUpload, FinancePdfService pdfExport)
         {
             _context = context;
             _audit = audit;
             _permissionService = permissionService;
             _fileUpload = fileUpload;
+            _pdfExport = pdfExport;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [RequirePermission("Supply.View")]
-        public async Task<IActionResult> Index(int siteId)
+        public async Task<IActionResult> Index(int siteId, int? materialCategoryId)
         {
             var site = await _context.Sites.FindAsync(siteId);
             if (site == null)
@@ -39,17 +41,21 @@ namespace AtharERP_System.Controllers
                 .Include(r => r.RequestedBy)
                 .Include(r => r.RequestedByContractor)
                 .Include(r => r.Items).ThenInclude(i => i.Vendor)
+                .Include(r => r.Items).ThenInclude(i => i.MaterialItem)
                 .Where(r => r.SiteId == siteId)
                 .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();
 
             ViewBag.Site = site;
             ViewBag.Vendors = await _context.Vendors.Where(v => v.IsActive).OrderBy(v => v.Name).ToListAsync();
+            ViewBag.MaterialCategories = await _context.MaterialCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
+            ViewBag.MaterialItems = await _context.MaterialItems.Where(i => i.IsActive).Include(i => i.MaterialCategory).OrderBy(i => i.Name).ToListAsync();
+            ViewBag.MaterialCategoryId = materialCategoryId;
             return View(requests);
         }
 
         [RequirePermission("Supply.Approve")]
-        public async Task<IActionResult> AllRequests()
+        public async Task<IActionResult> AllRequests(int? projectId, int? subProjectId, int? materialCategoryId)
         {
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
@@ -57,20 +63,70 @@ namespace AtharERP_System.Controllers
                 .Select(tm => tm.ProjectId)
                 .ToListAsync();
 
+            var accessibleProjectsQuery = _context.Projects.AsQueryable();
+            if (!canViewAll)
+                accessibleProjectsQuery = accessibleProjectsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
+
+            var accessibleProjects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
+            ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
+            ViewBag.SubProjects = projectId.HasValue
+                ? await _context.Projects.Where(p => p.ParentProjectId == projectId.Value).OrderBy(p => p.Name).ToListAsync()
+                : new List<Project>();
+            ViewBag.MainProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
+            ViewBag.MaterialCategories = await _context.MaterialCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
+            ViewBag.MaterialCategoryId = materialCategoryId;
+
+            var effectiveProjectId = subProjectId ?? projectId;
+
             var query = _context.SiteSupplyRequests
                 .Include(r => r.Site).ThenInclude(s => s.Project)
                 .Include(r => r.RequestedBy)
                 .Include(r => r.RequestedByContractor)
                 .Include(r => r.Items).ThenInclude(i => i.Vendor)
+                .Include(r => r.Items).ThenInclude(i => i.MaterialItem)
                 .AsQueryable();
 
             if (!canViewAll)
-            {
                 query = query.Where(r => r.Project.CreatedById == CurrentUserId || myProjectIds.Contains(r.ProjectId));
-            }
+
+            if (effectiveProjectId.HasValue)
+                query = query.Where(r => r.ProjectId == effectiveProjectId.Value);
 
             var requests = await query.OrderByDescending(r => r.RequestDate).ToListAsync();
+
+            if (materialCategoryId.HasValue)
+                requests = requests.Where(r => r.Items.Any(i => i.MaterialItem != null && i.MaterialItem.MaterialCategoryId == materialCategoryId.Value)).ToList();
+
             return View(requests);
+        }
+
+        [RequirePermission("Supply.Approve")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExportSelectedPdf(List<int> itemIds)
+        {
+            if (itemIds == null || !itemIds.Any())
+            {
+                TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
+                return RedirectToAction("AllRequests");
+            }
+
+            var items = await _context.SiteSupplyRequestItems
+                .Include(i => i.SiteSupplyRequest).ThenInclude(r => r.Site).ThenInclude(s => s.Project)
+                .Include(i => i.Vendor)
+                .Include(i => i.MaterialItem).ThenInclude(mi => mi!.MaterialCategory)
+                .Where(i => itemIds.Contains(i.Id))
+                .ToListAsync();
+
+            foreach (var item in items)
+            {
+                if (!await _permissionService.CanAccessProjectAsync(User, item.SiteSupplyRequest.ProjectId))
+                    return Forbid();
+            }
+
+            var pdf = _pdfExport.GenerateSupplyRequestsPdf(items);
+            return File(pdf, "application/pdf", "طلبات-توريد-مجمّعة.pdf");
         }
 
         [RequirePermission("Supply.Create")]
@@ -78,7 +134,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
       int siteId, string? notes,
-      List<string> materialNames, List<decimal> quantities, List<string> units,
+      List<int?> materialItemIds, List<decimal> quantities, List<string> units,
       List<int?> vendorIds, List<string?> itemNotes, List<IFormFile> photos)
         {
             var site = await _context.Sites.FindAsync(siteId);
@@ -94,10 +150,10 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Index", new { siteId });
             }
 
-            var itemCount = materialNames?.Count ?? 0;
-            if (itemCount == 0 || !materialNames!.Any(m => !string.IsNullOrWhiteSpace(m)))
+            var itemCount = materialItemIds?.Count ?? 0;
+            if (itemCount == 0 || !materialItemIds!.Any(m => m.HasValue))
             {
-                TempData["Error"] = "يجب إضافة مادة واحدة على الأقل";
+                TempData["Error"] = "يجب اختيار صنف واحد على الأقل";
                 return RedirectToAction("Index", new { siteId });
             }
 
@@ -115,8 +171,11 @@ namespace AtharERP_System.Controllers
 
             for (int i = 0; i < itemCount; i++)
             {
-                var materialName = materialNames![i];
-                if (string.IsNullOrWhiteSpace(materialName))
+                if (!materialItemIds![i].HasValue)
+                    continue;
+
+                var materialItem = await _context.MaterialItems.FindAsync(materialItemIds[i]!.Value);
+                if (materialItem == null)
                     continue;
 
                 string? photoPath = null;
@@ -130,7 +189,8 @@ namespace AtharERP_System.Controllers
                 _context.SiteSupplyRequestItems.Add(new SiteSupplyRequestItem
                 {
                     SiteSupplyRequestId = request.Id,
-                    MaterialName = materialName,
+                    MaterialItemId = materialItem.Id,
+                    MaterialName = materialItem.Name,
                     Quantity = i < quantities.Count ? quantities[i] : 0,
                     Unit = i < units.Count ? units[i] : "",
                     VendorId = i < vendorIds.Count ? vendorIds[i] : null,
@@ -145,6 +205,7 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
             return RedirectToAction("Index", new { siteId });
         }
+
         [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]

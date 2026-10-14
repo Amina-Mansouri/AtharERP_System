@@ -69,6 +69,8 @@ namespace AtharERP_System.Data
         public DbSet<ClientRedesignRequest> ClientRedesignRequests { get; set; } = null!;
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; } = null!;
         public DbSet<ProjectExpense> ProjectExpenses { get; set; } = null!;
+        public DbSet<MaterialCategory> MaterialCategories { get; set; } = null!;
+        public DbSet<MaterialItem> MaterialItems { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -485,6 +487,18 @@ namespace AtharERP_System.Data
     .WithMany(c => c.Attachments)
     .HasForeignKey(a => a.SiteCorrespondenceId)
     .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<MaterialItem>()
+    .HasOne(m => m.MaterialCategory)
+    .WithMany(c => c.Items)
+    .HasForeignKey(m => m.MaterialCategoryId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteSupplyRequestItem>()
+                .HasOne(i => i.MaterialItem)
+                .WithMany()
+                .HasForeignKey(i => i.MaterialItemId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ========== الصيانة (SiteMaintenance) ==========
             builder.Entity<SiteMaintenance>()

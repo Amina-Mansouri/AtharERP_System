@@ -1,0 +1,138 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<MaterialItem>
+@inject PermissionService PermissionService
+@{
+    ViewData["Title"] = "الأصناف";
+    var categories = ViewBag.Categories as List<MaterialCategory> ?? new List<MaterialCategory>();
+    var canManage = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">التوريدات</span>
+        <h1>الأصناف</h1>
+    </div>
+</div>
+
+<div style="font-size:13px; font-weight:600; margin-bottom:8px;">التصنيفات</div>
+<div class="data-table" style="--cols: 1fr 100px @(canManage ? "160px" : "");">
+    <div class="data-table-head">
+        <div class="cell">اسم التصنيف</div>
+        <div class="cell">الحالة</div>
+        @if (canManage)
+        {
+            <div class="cell">إجراءات</div>
+        }
+    </div>
+    @if (!categories.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تصنيفات بعد</div></div>
+    }
+    else
+    {
+        @foreach (var c in categories)
+        {
+            <div class="data-table-row">
+                <div class="cell">@c.NameAr</div>
+                <div class="cell"><span class="tag @(c.IsActive ? "tag-success" : "tag-muted")">@(c.IsActive ? "نشط" : "غير نشط")</span></div>
+                @if (canManage)
+                {
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="ToggleCategory">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <input type="hidden" name="isActive" value="@(!c.IsActive)" />
+                            <button type="submit" class="btn-line">@(c.IsActive ? "تعطيل" : "تفعيل")</button>
+                        </form>
+                        <form method="post" asp-action="DeleteCategory" asp-route-id="@c.Id" onsubmit="return confirm('حذف هذا التصنيف؟');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-line" style="color:#c94a42;">حذف</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@if (canManage)
+{
+    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:10px 14px; margin:10px 0 20px;">
+        <form method="post" asp-action="CreateCategory" style="display:flex; gap:8px; align-items:end;">
+            @Html.AntiForgeryToken()
+            <div style="flex:1; min-width:200px;">
+                <label class="form-label" style="font-size:11px;">تصنيف جديد</label>
+                <input type="text" name="nameAr" class="form-control form-control-sm" required />
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">+ إضافة تصنيف</button>
+        </form>
+    </div>
+}
+
+<div style="font-size:13px; font-weight:600; margin-bottom:8px;">الأصناف</div>
+<div class="data-table" style="--cols: 1.2fr 1fr 100px @(canManage ? "160px" : "");">
+    <div class="data-table-head">
+        <div class="cell">اسم الصنف</div>
+        <div class="cell">التصنيف</div>
+        <div class="cell">الحالة</div>
+        @if (canManage)
+        {
+            <div class="cell">إجراءات</div>
+        }
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد أصناف بعد</div></div>
+    }
+    else
+    {
+        @foreach (var i in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@i.Name</div>
+                <div class="cell">@i.MaterialCategory.NameAr</div>
+                <div class="cell"><span class="tag @(i.IsActive ? "tag-success" : "tag-muted")">@(i.IsActive ? "نشط" : "غير نشط")</span></div>
+                @if (canManage)
+                {
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="ToggleItem">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@i.Id" />
+                            <input type="hidden" name="isActive" value="@(!i.IsActive)" />
+                            <button type="submit" class="btn-line">@(i.IsActive ? "تعطيل" : "تفعيل")</button>
+                        </form>
+                        <form method="post" asp-action="DeleteItem" asp-route-id="@i.Id" onsubmit="return confirm('حذف هذا الصنف؟');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-line" style="color:#c94a42;">حذف</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@if (canManage)
+{
+    <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:10px 14px; margin-top:10px;">
+        <form method="post" asp-action="CreateItem" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+            @Html.AntiForgeryToken()
+            <div style="flex:1; min-width:200px;">
+                <label class="form-label" style="font-size:11px;">اسم الصنف</label>
+                <input type="text" name="name" class="form-control form-control-sm" required />
+            </div>
+            <div style="min-width:200px;">
+                <label class="form-label" style="font-size:11px;">التصنيف</label>
+                <select name="materialCategoryId" class="form-select form-select-sm" required>
+                    <option value="">-- اختاري --</option>
+                    @foreach (var c in categories.Where(c => c.IsActive))
+                    {
+                        <option value="@c.Id">@c.NameAr</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">+ إضافة صنف</button>
+        </form>
+    </div>
+}

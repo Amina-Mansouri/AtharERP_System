@@ -575,5 +575,64 @@ namespace AtharERP_System.Services
                 });
             }).GeneratePdf();
         }
+
+        public byte[] GenerateSupplyRequestsPdf(List<SiteSupplyRequestItem> items)
+        {
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
+            var hasLogo = File.Exists(logoPath);
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(30);
+                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10));
+                    page.ContentFromRightToLeft();
+
+                    page.Header().Column(header =>
+                    {
+                        if (hasLogo)
+                            header.Item().AlignCenter().Height(55).Image(logoPath).FitArea();
+                        header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a")
+                            .PaddingBottom(6).AlignCenter().Text("طلبات التوريد").FontSize(16).Bold().FontColor("#221837");
+                    });
+
+                    page.Content().PaddingTop(15).Table(table =>
+                    {
+                        table.ColumnsDefinition(c =>
+                        {
+                            c.RelativeColumn(1.3f);
+                            c.RelativeColumn(1.3f);
+                            c.RelativeColumn();
+                            c.RelativeColumn(0.8f);
+                            c.RelativeColumn(0.8f);
+                            c.RelativeColumn();
+                            c.RelativeColumn();
+                        });
+                        HeaderCell(table, "المشروع");
+                        HeaderCell(table, "الموقع");
+                        HeaderCell(table, "المادة");
+                        HeaderCell(table, "الكمية");
+                        HeaderCell(table, "الوحدة");
+                        HeaderCell(table, "المورّد");
+                        HeaderCell(table, "التصنيف");
+
+                        foreach (var item in items)
+                        {
+                            DataCell(table, item.SiteSupplyRequest.Site?.Project?.Name ?? "-");
+                            DataCell(table, item.SiteSupplyRequest.Site?.Name ?? "-");
+                            DataCell(table, item.MaterialName);
+                            DataCell(table, item.Quantity.ToString("N2"));
+                            DataCell(table, item.Unit);
+                            DataCell(table, item.Vendor?.Name ?? "-");
+                            DataCell(table, item.MaterialItem?.MaterialCategory?.NameAr ?? "-");
+                        }
+                    });
+
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+            }).GeneratePdf();
+        }
     }
 }

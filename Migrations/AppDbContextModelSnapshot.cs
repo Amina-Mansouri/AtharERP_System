@@ -940,6 +940,56 @@ namespace AtharERP_System.Migrations
                     b.ToTable("JobRanks");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MaterialCategories");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaterialCategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialCategoryId");
+
+                    b.ToTable("MaterialItems");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.Notification", b =>
                 {
                     b.Property<int>("Id")
@@ -2335,6 +2385,9 @@ namespace AtharERP_System.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("MaterialItemId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("MaterialName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -2361,6 +2414,8 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MaterialItemId");
 
                     b.HasIndex("SiteSupplyRequestId");
 
@@ -2946,6 +3001,17 @@ namespace AtharERP_System.Migrations
                     b.Navigation("CareerTrack");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialItem", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.MaterialCategory", "MaterialCategory")
+                        .WithMany("Items")
+                        .HasForeignKey("MaterialCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MaterialCategory");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.Notification", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
@@ -3462,6 +3528,11 @@ namespace AtharERP_System.Migrations
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteSupplyRequestItem", b =>
                 {
+                    b.HasOne("AtharERP_System.Models.Entities.MaterialItem", "MaterialItem")
+                        .WithMany()
+                        .HasForeignKey("MaterialItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("AtharERP_System.Models.Entities.SiteSupplyRequest", "SiteSupplyRequest")
                         .WithMany("Items")
                         .HasForeignKey("SiteSupplyRequestId")
@@ -3472,6 +3543,8 @@ namespace AtharERP_System.Migrations
                         .WithMany()
                         .HasForeignKey("VendorId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("MaterialItem");
 
                     b.Navigation("SiteSupplyRequest");
 
@@ -3654,6 +3727,11 @@ namespace AtharERP_System.Migrations
             modelBuilder.Entity("AtharERP_System.Models.Entities.FinancialClaim", b =>
                 {
                     b.Navigation("Payments");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialCategory", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Permission", b =>

@@ -256,17 +256,18 @@
                 </div>
 
                 <div class="nav-group">
-                    <button type="button" class="nav-group-header @(activeSystem == "sys05" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys05">
-                        <span>التوريدات <span class="tag tag-warning">جزئية</span></span>
-                        <span class="nav-group-caret">▾</span>
-                    </button>
-                    <div class="collapse @(activeSystem == "sys05" ? "show" : "")" id="sys05">
-                      
-                        <span class="nav-item disabled">الموردون <span class="tag tag-muted">قادمة</span></span>
-                        <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
-                        <span class="nav-item disabled">المخازن والأصناف <span class="tag tag-muted">قادمة</span></span>
-                        <span class="nav-item disabled">أوامر الشراء والاستلام <span class="tag tag-muted">قادمة</span></span>
-                    </div>
+                        <button type="button" class="nav-group-header @(activeSystem == "sys05" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys05">
+                            <span>التوريدات <span class="tag tag-success">كاملة</span></span>
+                            <span class="nav-group-caret">▾</span>
+                        </button>
+                        <div class="collapse @(activeSystem == "sys05" ? "show" : "")" id="sys05">
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Vendors" ? "active" : "")"
+                               asp-controller="Vendors" asp-action="Index">الموردون</a>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Materials" ? "active" : "")"
+                               asp-controller="Materials" asp-action="Index">الأصناف</a>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteSupplyRequests" && ViewContext.RouteData.Values["action"]?.ToString() == "AllRequests" ? "active" : "")"
+                               asp-controller="SiteSupplyRequests" asp-action="AllRequests">طلبات التوريد</a>
+                        </div>
                 </div>
 
                     <div class="nav-group">

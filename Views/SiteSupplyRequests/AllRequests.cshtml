@@ -1,7 +1,13 @@
 ﻿@using AtharERP_System.Models.Entities
 @model List<SiteSupplyRequest>
 @{
-    ViewData["Title"] = "طلبات التوريد - كل المواقع";
+    ViewData["Title"] = "طلبات التوريد";
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
+    var mainProjectId = ViewBag.MainProjectId as int?;
+    var subProjectId = ViewBag.SubProjectId as int?;
+    var materialCategories = ViewBag.MaterialCategories as List<MaterialCategory> ?? new List<MaterialCategory>();
+    var materialCategoryId = ViewBag.MaterialCategoryId as int?;
 
     string StatusLabel(SiteSupplyStatus s) => s switch
     {
@@ -24,36 +30,88 @@
 <div class="page-head">
     <div>
         <span class="kicker">التوريدات</span>
-        <h1>طلبات التوريد - كل المواقع</h1>
+        <h1>طلبات التوريد</h1>
     </div>
 </div>
 
-<div class="data-table" style="--cols: 1fr 1fr 1.2fr 90px 90px 1fr 1fr 130px;">
-    <div class="data-table-head">
-        <div class="cell">المشروع</div>
-        <div class="cell">الموقع</div>
-        <div class="cell">المادة</div>
-        <div class="cell">الكمية</div>
-        <div class="cell">الوحدة</div>
-        <div class="cell">المورّد</div>
-        <div class="cell">طلبه</div>
-        <div class="cell">الحالة</div>
-    </div>
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var p in projects)
+                {
+                    <option value="@p.Id" selected="@(mainProjectId == p.Id)">@p.Code - @p.Name</option>
+                }
+            </select>
+        </div>
+        @if (mainProjectId.HasValue && subProjects.Any())
+        {
+            <div style="min-width:200px;">
+                <label class="form-label" style="font-size:11px;">المشروع الفرعي</label>
+                <select name="subProjectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- المشروع الرئيسي نفسه --</option>
+                    @foreach (var sp in subProjects)
+                    {
+                        <option value="@sp.Id" selected="@(subProjectId == sp.Id)">@sp.Name</option>
+                    }
+                </select>
+            </div>
+        }
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">تصنيف المادة</label>
+            <select name="materialCategoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var cat in materialCategories)
+                {
+                    <option value="@cat.Id" selected="@(materialCategoryId == cat.Id)">@cat.NameAr</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
 
-    @if (!Model.Any())
-    {
-        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد بعد</div></div>
-    }
-    else
-    {
+<form method="post" asp-action="ExportSelectedPdf" id="exportForm">
+    @Html.AntiForgeryToken()
+    <div style="margin-bottom:10px;">
+        <button type="submit" class="btn-line btn-line-accent">🖨 طباعة المحدد كملف واحد</button>
+    </div>
+    <div class="data-table" style="--cols: 36px 1fr 1fr 1.2fr 1fr 90px 90px 1fr 1fr 130px;">
+        <div class="data-table-head">
+            <div class="cell"></div>
+            <div class="cell">المشروع</div>
+            <div class="cell">الموقع</div>
+            <div class="cell">المادة</div>
+            <div class="cell">التصنيف</div>
+            <div class="cell">الكمية</div>
+            <div class="cell">الوحدة</div>
+            <div class="cell">المورّد</div>
+            <div class="cell">طلبه</div>
+            <div class="cell">الحالة</div>
+        </div>
+
+        @{
+            var anyRows = false;
+        }
         @foreach (var r in Model)
         {
             @foreach (var item in r.Items)
             {
+                anyRows = true;
                 <div class="data-table-row">
-                    <div class="cell">@r.Site?.Project?.Name</div>
+                    <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+                    <div class="cell"><a asp-controller="Sites" asp-action="Details" asp-route-id="@r.Site?.ProjectId">@r.Site?.Project?.Name</a></div>
                     <div class="cell"><a asp-controller="SiteSupplyRequests" asp-action="Index" asp-route-siteId="@r.SiteId">@r.Site?.Name</a></div>
-                    <div class="cell">@item.MaterialName</div>
+                    <div class="cell">
+                        @item.MaterialName
+                        @if (!string.IsNullOrEmpty(item.PhotoPath))
+                        {
+                            <br /><img src="@item.PhotoPath" style="max-width:60px; max-height:40px; margin-top:4px; border-radius:4px;" />
+                        }
+                    </div>
+                    <div class="cell">@(item.MaterialItem?.MaterialCategory?.NameAr ?? "-")</div>
                     <div class="cell cell-num">@item.Quantity.ToString("N2")</div>
                     <div class="cell">@item.Unit</div>
                     <div class="cell">@(item.Vendor?.Name ?? "-")</div>
@@ -62,5 +120,9 @@
                 </div>
             }
         }
-    }
-</div>
+        @if (!anyRows)
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد ضمن هذه الفلترة</div></div>
+        }
+    </div>
+</form>
