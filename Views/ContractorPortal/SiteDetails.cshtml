@@ -22,12 +22,6 @@
         OperationStatus.OnHold => "tag-warning",
         _ => "tag-muted"
     };
-
-    string StatusLabel(SiteCorrespondence c) => c.IsFromContractor
-        ? (c.Status == CorrespondenceStatus.Pending ? "في انتظار الاعتماد" : "معتمد")
-        : (c.Status == CorrespondenceStatus.Pending ? "في انتظار قبول الطلب" : "مقبول");
-
-    string StatusTagClass(SiteCorrespondence c) => c.Status == CorrespondenceStatus.Resolved ? "tag-success" : "tag-accent";
 }
 
 <div style="max-width:1100px; margin:30px auto; padding:0 16px;">
@@ -83,8 +77,21 @@
                     <div style="font-size:11px; color:var(--sys-text-light); margin-bottom:4px; display:flex; gap:8px; align-items:center;">
                         <span>@(c.IsFromContractor ? "أنت" : (c.SentBy?.FullName ?? "الشركة"))</span>
                         <span>— @c.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
-                        <span class="tag @StatusTagClass(c)" style="font-size:9px;">@StatusLabel(c)</span>
+                        <span class="tag @(c.Status == CorrespondenceStatus.Resolved ? "tag-success" : "tag-accent")" style="font-size:9px;">@(c.Status == CorrespondenceStatus.Pending ? "قيد الانتظار" : "تم الرد")</span>
+                        @if (isMine)
+                        {
+                            <span class="tag tag-muted" style="font-size:9px;">@(c.IsRead ? "✓✓ قرأتها الشركة" : "✓ لم تُقرأ بعد")</span>
+                        }
                     </div>
+                    @if (c.ParentCorrespondence != null)
+                    {
+                        var parentSnippet = c.ParentCorrespondence.DetailedQuery.Length > 60
+                            ? c.ParentCorrespondence.DetailedQuery.Substring(0, 60) + "…"
+                            : c.ParentCorrespondence.DetailedQuery;
+                        <div style="border-right:3px solid #c9a15a; background:#f8f6fb; padding:4px 8px; margin-bottom:6px; font-size:11px; color:var(--sys-text-light);">
+                            ↩ رداً على: "@parentSnippet"
+                        </div>
+                    }
                     <div style="font-size:13px; white-space:pre-wrap;">@c.DetailedQuery</div>
                     <div style="margin-top:6px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <a asp-controller="ContractorPortal" asp-action="DownloadCorrespondence" asp-route-id="@c.Id" target="_blank" style="font-size:11.5px;">📄 عرض PDF</a>
@@ -94,7 +101,7 @@
                         }
                         @if (!c.IsFromContractor && c.Status == CorrespondenceStatus.Pending)
                         {
-                            <button type="button" class="btn-line" style="font-size:11px; padding:3px 8px;" onclick="replyTo(@c.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(c.DetailedQuery)))">↩ رد</button>
+                            <button type="button" class="btn-line reply-btn" style="font-size:11px; padding:3px 8px;" data-id="@c.Id" data-text="@c.DetailedQuery">↩ رد</button>
                         }
                     </div>
                 </div>
@@ -142,6 +149,11 @@
 </div>
 
 <script>
+        document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('reply-btn')) {
+            replyTo(e.target.dataset.id, e.target.dataset.text);
+        }
+    });
     function replyTo(id, text) {
         document.getElementById('parentCorrespondenceId').value = id;
         var snippet = text.length > 70 ? text.substring(0, 70) + '…' : text;

@@ -44,11 +44,12 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var items = await _context.SiteCorrespondences
-                .Include(r => r.SentBy)
-                .Include(r => r.SentByContractor)
-                .Where(r => r.SiteId == siteId)
-                .OrderBy(r => r.CreatedAt)
-                .ToListAsync();
+     .Include(r => r.SentBy)
+     .Include(r => r.SentByContractor)
+     .Include(r => r.ParentCorrespondence)
+     .Where(r => r.SiteId == siteId)
+     .OrderBy(r => r.CreatedAt)
+     .ToListAsync();
 
             var unreadFromContractor = items.Where(r => r.IsFromContractor && !r.IsRead).ToList();
             foreach (var r in unreadFromContractor)

@@ -18,7 +18,7 @@ namespace AtharERP_System.Models.Entities
 
     public enum CorrespondenceStatus
     {
-        [Display(Name = "في انتظار الرد")]
+        [Display(Name = "قيد الانتظار")]
         Pending = 1,
 
         [Display(Name = "تم الرد")]

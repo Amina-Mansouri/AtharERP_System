@@ -21,9 +21,7 @@ namespace AtharERP_System.Services
             var project = site.Project;
             var buildingCode = project?.Scope == ProjectScope.Sub ? project.Code : null;
             var priorityLabel = GetDisplayName(item.Priority);
-            var statusLabel = item.IsFromContractor
-                ? (item.Status == CorrespondenceStatus.Pending ? "في انتظار الاعتماد" : "معتمد")
-                : (item.Status == CorrespondenceStatus.Pending ? "في انتظار قبول الطلب" : "مقبول");
+            var statusLabel = item.Status == CorrespondenceStatus.Pending ? "قيد الانتظار" : "تم الرد";
             var requestCode = $"{site.Code}-{item.RequestNumber:D4}";
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
