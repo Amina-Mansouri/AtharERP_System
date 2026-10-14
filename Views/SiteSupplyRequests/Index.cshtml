@@ -1,5 +1,6 @@
 ﻿@using AtharERP_System.Models.Entities
 @using AtharERP_System.Services
+@using System.Text.Json
 @model List<SiteSupplyRequest>
 @inject PermissionService PermissionService
 @{
@@ -62,75 +63,85 @@
     </form>
 </div>
 
-<div class="data-table" style="--cols: 70px 1.2fr 90px 90px 1fr 1fr 130px @(canApprove ? "260px" : "");">
-    <div class="data-table-head">
-        <div class="cell">#الطلب</div>
-        <div class="cell">المادة</div>
-        <div class="cell">الكمية</div>
-        <div class="cell">الوحدة</div>
-        <div class="cell">المورّد</div>
-        <div class="cell">طلبه</div>
-        <div class="cell">الحالة</div>
-        @if (canApprove)
-        {
-            <div class="cell">إجراء</div>
-        }
+<form method="post" asp-action="ExportSelectedPdf">
+    @Html.AntiForgeryToken()
+    <div style="margin-bottom:10px;">
+        <button type="submit" class="btn-line btn-line-accent">🖨 طباعة المحدد</button>
     </div>
-
-    @{
-        var anyRows = false;
-    }
-    @foreach (var r in Model)
-    {
-        @foreach (var item in r.Items)
-        {
-            if (materialCategoryId.HasValue && (item.MaterialItem == null || item.MaterialItem.MaterialCategoryId != materialCategoryId.Value))
+    <div class="data-table" style="--cols: 36px 70px 1.2fr 90px 90px 1fr 1fr 130px @(canApprove ? "260px" : "");">
+        <div class="data-table-head">
+            <div class="cell"></div>
+            <div class="cell">#الطلب</div>
+            <div class="cell">المادة</div>
+            <div class="cell">الكمية</div>
+            <div class="cell">الوحدة</div>
+            <div class="cell">المورّد</div>
+            <div class="cell">طلبه</div>
+            <div class="cell">الحالة</div>
+            @if (canApprove)
             {
-                continue;
+                <div class="cell">إجراء</div>
             }
-            anyRows = true;
-            <div class="data-table-row">
-                <div class="cell cell-num">@r.Id</div>
-                <div class="cell">
-                    @item.MaterialName
-                    @if (!string.IsNullOrEmpty(item.PhotoPath))
-                    {
-                        <a href="@item.PhotoPath" target="_blank" style="margin-right:6px;">📷</a>
-                    }
-                </div>
-                <div class="cell cell-num">@item.Quantity.ToString("N2")</div>
-                <div class="cell">@item.Unit</div>
-                <div class="cell">@(item.Vendor?.Name ?? "-")</div>
-                <div class="cell">@(r.RequestedBy?.FullName ?? r.RequestedByContractor?.Name ?? "-")</div>
-                <div class="cell"><span class="tag @StatusTagClass(r.Status)">@StatusLabel(r.Status)</span></div>
-                @if (canApprove)
+        </div>
+
+        @{
+            var anyRows = false;
+        }
+        @foreach (var r in Model)
+        {
+            @foreach (var item in r.Items)
+            {
+                if (materialCategoryId.HasValue && (item.MaterialItem == null || item.MaterialItem.MaterialCategoryId != materialCategoryId.Value))
                 {
-                    <div class="cell" style="display:flex; gap:4px; align-items:center;">
-                        <form method="post" asp-action="UpdateStatus" style="display:flex; gap:4px;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <select name="status" class="form-select form-select-sm">
-                                <option value="Pending" selected="@(r.Status == SiteSupplyStatus.Pending)">معلق</option>
-                                <option value="Approved" selected="@(r.Status == SiteSupplyStatus.Approved)">تمت الموافقة</option>
-                                <option value="Delivered" selected="@(r.Status == SiteSupplyStatus.Delivered)">تم التسليم</option>
-                                <option value="Rejected" selected="@(r.Status == SiteSupplyStatus.Rejected)">مرفوض</option>
-                            </select>
-                            <button type="submit" class="btn-line btn-line-accent">تحديث</button>
-                        </form>
-                        @if (r.Status == SiteSupplyStatus.Approved)
+                    continue;
+                }
+                anyRows = true;
+                <div class="data-table-row">
+                    <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+                    <div class="cell cell-num">@r.Id</div>
+                    <div class="cell">
+                        @item.MaterialName
+                        @if (!string.IsNullOrEmpty(item.PhotoPath))
                         {
-                            <a asp-action="RegisterExpense" asp-route-id="@r.Id" class="btn-line" style="color:#2f8a57;">تسجيل الصرف</a>
+                            <br />
+                            <a href="@item.PhotoPath" target="_blank">
+                                <img src="@item.PhotoPath" style="max-width:60px; max-height:40px; margin-top:4px; border-radius:4px;" />
+                            </a>
                         }
                     </div>
-                }
-            </div>
+                    <div class="cell cell-num">@item.Quantity.ToString("N2")</div>
+                    <div class="cell">@item.Unit</div>
+                    <div class="cell">@(item.Vendor?.Name ?? "-")</div>
+                    <div class="cell">@(r.RequestedBy?.FullName ?? r.RequestedByContractor?.Name ?? "-")</div>
+                    <div class="cell"><span class="tag @StatusTagClass(r.Status)">@StatusLabel(r.Status)</span></div>
+                    @if (canApprove)
+                    {
+                        <div class="cell" style="display:flex; gap:4px; align-items:center;">
+                            <form method="post" asp-action="UpdateStatus" style="display:flex; gap:4px;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="Pending" selected="@(r.Status == SiteSupplyStatus.Pending)">معلق</option>
+                                    <option value="Approved" selected="@(r.Status == SiteSupplyStatus.Approved)">تمت الموافقة</option>
+                                    <option value="Rejected" selected="@(r.Status == SiteSupplyStatus.Rejected)">مرفوض</option>
+                                </select>
+                                <button type="submit" class="btn-line btn-line-accent">تحديث</button>
+                            </form>
+                            @if (r.Status == SiteSupplyStatus.Approved)
+                            {
+                                <a asp-action="RegisterExpense" asp-route-id="@r.Id" class="btn-line" style="color:#2f8a57;">تسجيل الصرف</a>
+                            }
+                        </div>
+                    }
+                </div>
+            }
         }
-    }
-    @if (!anyRows)
-    {
-        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد ضمن هذه الفلترة</div></div>
-    }
-</div>
+        @if (!anyRows)
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد ضمن هذه الفلترة</div></div>
+        }
+    </div>
+</form>
 
 @if (canCreate && site?.Status != SiteStatus.Completed)
 {
@@ -141,19 +152,20 @@
             <input type="hidden" name="siteId" value="@site?.Id" />
             <div id="supplyItemsContainer" style="display:flex; flex-direction:column; gap:8px;">
                 <div class="supply-item-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; border-bottom:1px dashed var(--sys-border); padding-bottom:8px;">
-                    <div style="flex:1; min-width:180px;">
-                        <label class="form-label" style="font-size:11px;">المادة (من الأصناف)</label>
-                        <select name="materialItemIds" class="form-select form-select-sm" required>
-                            <option value="">-- اختاري مادة --</option>
+                    <div style="min-width:160px;">
+                        <label class="form-label" style="font-size:11px;">التصنيف</label>
+                        <select class="form-select form-select-sm materialCategorySelect" onchange="onCategoryChange(this)">
+                            <option value="">-- اختاري تصنيفاً --</option>
                             @foreach (var cat in materialCategories)
                             {
-                                <optgroup label="@cat.NameAr">
-                                    @foreach (var mi in materialItems.Where(m => m.MaterialCategoryId == cat.Id))
-                                    {
-                                        <option value="@mi.Id">@mi.Name</option>
-                                    }
-                                </optgroup>
+                                <option value="@cat.Id">@cat.NameAr</option>
                             }
+                        </select>
+                    </div>
+                    <div style="min-width:180px;">
+                        <label class="form-label" style="font-size:11px;">المادة</label>
+                        <select name="materialItemIds" class="form-select form-select-sm materialItemSelect" required>
+                            <option value="">-- اختاري تصنيفاً أولاً --</option>
                         </select>
                     </div>
                     <div>
@@ -199,15 +211,31 @@
 
 @section Scripts {
     <script>
+        const allMaterialItems = @Html.Raw(JsonSerializer.Serialize(materialItems.Select(m => new { id = m.Id, name = m.Name, categoryId = m.MaterialCategoryId })));
+
+        function onCategoryChange(select) {
+            var row = select.closest('.supply-item-row');
+            var categoryId = parseInt(select.value);
+            var materialSelect = row.querySelector('.materialItemSelect');
+            materialSelect.innerHTML = '<option value="">-- اختاري مادة --</option>';
+            allMaterialItems.filter(function (m) { return m.categoryId === categoryId; }).forEach(function (m) {
+                var opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                materialSelect.appendChild(opt);
+            });
+        }
+
         function addSupplyItemRow() {
             var container = document.getElementById('supplyItemsContainer');
             var first = container.querySelector('.supply-item-row');
             var clone = first.cloneNode(true);
-            clone.querySelectorAll('input, select').forEach(function(el) {
+            clone.querySelectorAll('input, select').forEach(function (el) {
                 if (el.type === 'file') { el.value = ''; }
                 else if (el.tagName === 'SELECT') { el.selectedIndex = 0; }
                 else { el.value = ''; }
             });
+            clone.querySelector('.materialItemSelect').innerHTML = '<option value="">-- اختاري تصنيفاً أولاً --</option>';
             container.appendChild(clone);
         }
         function removeSupplyItemRow(btn) {

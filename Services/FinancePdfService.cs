@@ -148,6 +148,20 @@ namespace AtharERP_System.Services
         {
             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(text);
         }
+        private void ImageCell(TableDescriptor table, string? relativePath)
+        {
+            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Column(c =>
+            {
+                var fullPath = string.IsNullOrEmpty(relativePath)
+                    ? null
+                    : Path.Combine(_environment.WebRootPath, relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+                if (fullPath != null && File.Exists(fullPath))
+                    c.Item().Height(35).Image(fullPath).FitArea();
+                else
+                    c.Item().Text("-");
+            });
+        }
         private static string NumberToArabicWords(decimal amount)
         {
             long number = (long)Math.Floor(amount);
@@ -602,6 +616,7 @@ namespace AtharERP_System.Services
                     {
                         table.ColumnsDefinition(c =>
                         {
+                            c.ConstantColumn(50);
                             c.RelativeColumn(1.3f);
                             c.RelativeColumn(1.3f);
                             c.RelativeColumn();
@@ -610,6 +625,7 @@ namespace AtharERP_System.Services
                             c.RelativeColumn();
                             c.RelativeColumn();
                         });
+                        HeaderCell(table, "الصورة");
                         HeaderCell(table, "المشروع");
                         HeaderCell(table, "الموقع");
                         HeaderCell(table, "المادة");
@@ -620,6 +636,7 @@ namespace AtharERP_System.Services
 
                         foreach (var item in items)
                         {
+                            ImageCell(table, item.PhotoPath);
                             DataCell(table, item.SiteSupplyRequest.Site?.Project?.Name ?? "-");
                             DataCell(table, item.SiteSupplyRequest.Site?.Name ?? "-");
                             DataCell(table, item.MaterialName);

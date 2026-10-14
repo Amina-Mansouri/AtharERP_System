@@ -73,9 +73,10 @@
         {
             "Admin" => "sys01",
             "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
-            "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" or "SiteSupplyRequests" => "sys03",
+            "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" => "sys03",
             "Clients" => "sys07",
             "Finance" or "ClientRedesignRequests" or "GeneralExpenses" => "sys04",
+            "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
             _ => ""
         };
         bool expensesSubActive = (ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses")
