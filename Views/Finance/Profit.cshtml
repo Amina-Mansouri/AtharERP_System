@@ -6,6 +6,9 @@
     var categoryId = ViewBag.CategoryId as int?;
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var projectId = ViewBag.ProjectId as int?;
+    var mainProjectId = ViewBag.MainProjectId as int?;
+    var subProjectId = ViewBag.SubProjectId as int?;
+    var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
     var project = ViewBag.Project as Project;
     var dateFrom = ViewBag.DateFrom as DateTime?;
     var dateTo = ViewBag.DateTo as DateTime?;
@@ -47,15 +50,28 @@
             </select>
         </div>
         <div style="min-width:220px;">
-            <label class="form-label" style="font-size:11px;">المشروع</label>
+            <label class="form-label" style="font-size:11px;">المشروع الرئيسي</label>
             <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- كل المشاريع (إجمالي) --</option>
+                <option value="">-- كل المشاريع (الرئيسية) --</option>
                 @foreach (var p in projects)
                 {
-                    <option value="@p.Id" selected="@(projectId == p.Id)">@p.Name</option>
+                    <option value="@p.Id" selected="@(mainProjectId == p.Id)">@p.Name</option>
                 }
             </select>
         </div>
+        @if (mainProjectId.HasValue && subProjects.Any())
+        {
+            <div style="min-width:200px;">
+                <label class="form-label" style="font-size:11px;">المشروع الفرعي</label>
+                <select name="subProjectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- المشروع الرئيسي نفسه --</option>
+                    @foreach (var sp in subProjects)
+                    {
+                        <option value="@sp.Id" selected="@(subProjectId == sp.Id)">@sp.Name</option>
+                    }
+                </select>
+            </div>
+        }
         <div>
             <label class="form-label" style="font-size:11px;">الربع</label>
             <select id="quarterSelect" class="form-select form-select-sm" onchange="applyQuarter()">

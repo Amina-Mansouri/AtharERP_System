@@ -42,6 +42,18 @@ namespace AtharERP_System.Controllers
             return await query.OrderBy(p => p.Name).ToListAsync();
         }
 
+        private async Task<List<Project>> GetAccessibleMainProjectsAsync(int? categoryId = null)
+        {
+            var all = await GetAccessibleProjectsAsync(categoryId);
+            return all.Where(p => p.Scope == ProjectScope.Main).ToList();
+        }
+
+        private async Task<List<Project>> GetSubProjectsAsync(int? parentProjectId)
+        {
+            if (!parentProjectId.HasValue)
+                return new List<Project>();
+            return await _context.Projects.Where(p => p.ParentProjectId == parentProjectId.Value).OrderBy(p => p.Name).ToListAsync();
+        }
         private async Task<List<ProjectCategory>> GetActiveCategoriesAsync()
         {
             return await _context.ProjectCategories.Where(c => c.IsActive).OrderBy(c => c.Classification).ToListAsync();
@@ -51,29 +63,34 @@ namespace AtharERP_System.Controllers
         // جدول التكاليف — داخلي، لحساب مستحقات المهندسات
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> CostTable(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> CostTable(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
         {
+            var effectiveProjectId = subProjectId ?? projectId;
+
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.Projects = await GetAccessibleMainProjectsAsync(categoryId);
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = projectId;
+            ViewBag.ProjectId = effectiveProjectId;
+            ViewBag.MainProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
+            ViewBag.SubProjects = await GetSubProjectsAsync(projectId);
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
-            if (!projectId.HasValue)
+            if (!effectiveProjectId.HasValue)
                 return View(new List<FinancialRecord>());
 
-            var project = await _context.Projects.FindAsync(projectId.Value);
+            var project = await _context.Projects.FindAsync(effectiveProjectId.Value);
             if (project == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+            if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
                 return Forbid();
 
             var query = _context.FinancialRecords
                 .Include(r => r.ProjectAssignment)
                 .Include(r => r.Engineer)
-                .Where(r => r.ProjectId == projectId.Value);
+                .Where(r => r.ProjectId == effectiveProjectId.Value);
 
             if (dateFrom.HasValue)
                 query = query.Where(r => r.CreatedAt >= dateFrom.Value);
@@ -85,7 +102,7 @@ namespace AtharERP_System.Controllers
             var allProjectTasks = await _context.ProjectTasks
                 .Include(t => t.Stage)
                 .Include(t => t.Todos).ThenInclude(td => td.DesignProposals)
-                .Where(t => t.ProjectId == projectId.Value)
+                .Where(t => t.ProjectId == effectiveProjectId.Value)
                 .ToListAsync();
 
             decimal EngineerProjectContribution(string engineerId)
@@ -131,28 +148,33 @@ namespace AtharERP_System.Controllers
         // جدول البيع النهائي / المطالبة — خارجي، لمطالبات الزبائن
         // ============================================
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> SaleTable(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> SaleTable(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
         {
+            var effectiveProjectId = subProjectId ?? projectId;
+
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.Projects = await GetAccessibleMainProjectsAsync(categoryId);
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = projectId;
+            ViewBag.ProjectId = effectiveProjectId;
+            ViewBag.MainProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
+            ViewBag.SubProjects = await GetSubProjectsAsync(projectId);
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
-            if (!projectId.HasValue)
+            if (!effectiveProjectId.HasValue)
                 return View(new List<FinancialClaim>());
 
-            var project = await _context.Projects.FindAsync(projectId.Value);
+            var project = await _context.Projects.FindAsync(effectiveProjectId.Value);
             if (project == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+            if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
                 return Forbid();
 
             var query = _context.FinancialClaims
                 .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == projectId.Value);
+                .Where(c => c.ProjectId == effectiveProjectId.Value);
 
             if (dateFrom.HasValue)
                 query = query.Where(c => c.CreatedAt >= dateFrom.Value);
@@ -166,28 +188,33 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> Claims(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> Claims(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
         {
+            var effectiveProjectId = subProjectId ?? projectId;
+
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.Projects = await GetAccessibleMainProjectsAsync(categoryId);
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = projectId;
+            ViewBag.ProjectId = effectiveProjectId;
+            ViewBag.MainProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
+            ViewBag.SubProjects = await GetSubProjectsAsync(projectId);
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
-            if (!projectId.HasValue)
+            if (!effectiveProjectId.HasValue)
                 return View(new List<FinancialClaim>());
 
-            var project = await _context.Projects.FindAsync(projectId.Value);
+            var project = await _context.Projects.FindAsync(effectiveProjectId.Value);
             if (project == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+            if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
                 return Forbid();
 
             var query = _context.FinancialClaims
                 .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == projectId.Value);
+                .Where(c => c.ProjectId == effectiveProjectId.Value);
 
             if (dateFrom.HasValue)
                 query = query.Where(c => c.CreatedAt >= dateFrom.Value);
@@ -223,30 +250,35 @@ namespace AtharERP_System.Controllers
         // المصروفات — عامة أو مرتبطة بموقع محدد
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> Expenses(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo,
-            int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? supplyRequestId)
+        public async Task<IActionResult> Expenses(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo,
+    int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? supplyRequestId)
         {
+            var effectiveProjectId = subProjectId ?? projectId;
+
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = await GetAccessibleProjectsAsync(categoryId);
+            ViewBag.Projects = await GetAccessibleMainProjectsAsync(categoryId);
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = projectId;
+            ViewBag.ProjectId = effectiveProjectId;
+            ViewBag.MainProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
+            ViewBag.SubProjects = await GetSubProjectsAsync(projectId);
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
-            if (!projectId.HasValue)
+            if (!effectiveProjectId.HasValue)
                 return View(new List<ProjectExpense>());
 
-            var project = await _context.Projects.FindAsync(projectId.Value);
+            var project = await _context.Projects.FindAsync(effectiveProjectId.Value);
             if (project == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+            if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
                 return Forbid();
 
             var query = _context.ProjectExpenses
                 .Include(e => e.ExpenseCategory)
                 .Include(e => e.Site)
-                .Where(e => e.ProjectId == projectId.Value);
+                .Where(e => e.ProjectId == effectiveProjectId.Value);
 
             if (dateFrom.HasValue)
                 query = query.Where(e => e.Date >= dateFrom.Value);
@@ -257,7 +289,7 @@ namespace AtharERP_System.Controllers
 
             ViewBag.Project = project;
             ViewBag.ExpenseCategories = await _context.ExpenseCategories.Where(c => c.IsActive && c.Scope == ExpenseCategoryScope.Project).OrderBy(c => c.NameAr).ToListAsync();
-            ViewBag.Sites = await _context.Sites.Where(s => s.ProjectId == projectId.Value).OrderBy(s => s.Name).ToListAsync();
+            ViewBag.Sites = await _context.Sites.Where(s => s.ProjectId == effectiveProjectId.Value).OrderBy(s => s.Name).ToListAsync();
             ViewBag.PrefillSiteId = prefillSiteId;
             ViewBag.PrefillCategoryId = prefillCategoryId;
             ViewBag.PrefillDescription = prefillDescription;
@@ -325,29 +357,33 @@ namespace AtharERP_System.Controllers
         // الأرباح والخسائر
         // ============================================
         [RequirePermission("Finance.Reports")]
-        public async Task<IActionResult> Profit(int? categoryId, int? projectId, DateTime? dateFrom, DateTime? dateTo, int? genCategoryId, DateTime? genDateFrom, DateTime? genDateTo)
+        public async Task<IActionResult> Profit(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo, int? genCategoryId, DateTime? genDateFrom, DateTime? genDateTo)
         {
+            var effectiveProjectId = subProjectId ?? projectId;
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = accessibleProjects;
+            ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = projectId;
+            ViewBag.ProjectId = effectiveProjectId;
+            ViewBag.MainProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
+            ViewBag.SubProjects = await GetSubProjectsAsync(projectId);
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
             List<int> targetProjectIds;
             Project? project = null;
 
-            if (projectId.HasValue)
+            if (effectiveProjectId.HasValue)
             {
-                project = await _context.Projects.FindAsync(projectId.Value);
+                project = await _context.Projects.FindAsync(effectiveProjectId.Value);
                 if (project == null)
                     return NotFound();
 
-                if (!await _permissionService.CanAccessProjectAsync(User, projectId.Value))
+                if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
                     return Forbid();
 
-                targetProjectIds = new List<int> { projectId.Value };
+                targetProjectIds = new List<int> { effectiveProjectId.Value };
             }
             else
             {
