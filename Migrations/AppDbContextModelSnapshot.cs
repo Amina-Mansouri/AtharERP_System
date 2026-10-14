@@ -1838,12 +1838,6 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("ApproverSignaturePath")
                         .HasColumnType("text");
 
-                    b.Property<string>("AttachmentFileName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AttachmentPath")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1905,6 +1899,32 @@ namespace AtharERP_System.Migrations
                     b.HasIndex("SiteId");
 
                     b.ToTable("SiteCorrespondences");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteCorrespondenceAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SiteCorrespondenceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SiteCorrespondenceId");
+
+                    b.ToTable("SiteCorrespondenceAttachments");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDailyReport", b =>
@@ -3245,6 +3265,17 @@ namespace AtharERP_System.Migrations
                     b.Navigation("Site");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteCorrespondenceAttachment", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.SiteCorrespondence", "SiteCorrespondence")
+                        .WithMany("Attachments")
+                        .HasForeignKey("SiteCorrespondenceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SiteCorrespondence");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDailyReport", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.Contractor", "CreatedByContractor")
@@ -3706,6 +3737,11 @@ namespace AtharERP_System.Migrations
                     b.Navigation("SafetyChecks");
 
                     b.Navigation("SupplyRequests");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteCorrespondence", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDailyReport", b =>

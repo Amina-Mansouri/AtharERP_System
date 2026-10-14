@@ -78,8 +78,20 @@ namespace AtharERP_System.Services
                         col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(90).Text(item.DetailedQuery);
 
                         col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("المرفقات").Bold().FontSize(13).FontColor(Colors.White);
-                        col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(30)
-                            .Text(item.AttachmentFileName ?? "لا يوجد مرفق");
+                        col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(30).Column(c =>
+                        {
+                            if (!item.Attachments.Any())
+                            {
+                                c.Item().Text("لا يوجد مرفق");
+                            }
+                            else
+                            {
+                                foreach (var att in item.Attachments)
+                                {
+                                    c.Item().Text($"• {att.FileName}");
+                                }
+                            }
+                        });
 
                         if (!item.IsFromContractor)
                         {

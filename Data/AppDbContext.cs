@@ -55,6 +55,7 @@ namespace AtharERP_System.Data
         public DbSet<SiteSupplyRequestItem> SiteSupplyRequestItems { get; set; } = null!;
         public DbSet<Vendor> Vendors { get; set; } = null!;
         public DbSet<SiteCorrespondence> SiteCorrespondences { get; set; } = null!;
+        public DbSet<SiteCorrespondenceAttachment> SiteCorrespondenceAttachments { get; set; } = null!;
         public DbSet<StageTaskTemplate> StageTaskTemplates { get; set; } = null!;
         public DbSet<StageTemplate> StageTemplates { get; set; } = null!;
         public DbSet<StageTemplateTask> StageTemplateTasks { get; set; } = null!;
@@ -478,6 +479,12 @@ namespace AtharERP_System.Data
                 .WithMany()
                 .HasForeignKey(r => r.ParentCorrespondenceId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SiteCorrespondenceAttachment>()
+    .HasOne(a => a.SiteCorrespondence)
+    .WithMany(c => c.Attachments)
+    .HasForeignKey(a => a.SiteCorrespondenceId)
+    .OnDelete(DeleteBehavior.Cascade);
 
             // ========== الصيانة (SiteMaintenance) ==========
             builder.Entity<SiteMaintenance>()

@@ -5,6 +5,7 @@ using AtharERP_System.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
 using System.Security.Claims;
 
 namespace AtharERP_System.Controllers
@@ -63,7 +64,7 @@ namespace AtharERP_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int siteId, int? parentCorrespondenceId, CorrespondencePriority priority,
-            DateTime? requiredResponseDate, string detailedQuery, IFormFile? attachment)
+    DateTime? requiredResponseDate, string detailedQuery, List<IFormFile>? attachments)
         {
             var site = await _context.Sites.Include(s => s.Project).FirstOrDefaultAsync(s => s.Id == siteId);
             if (site == null)
@@ -74,15 +75,14 @@ namespace AtharERP_System.Controllers
 
             var user = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
-            string? attachmentPath = null;
-            string? attachmentFileName = null;
-            if (attachment != null && attachment.Length > 0)
+            var attachmentEntities = new List<SiteCorrespondenceAttachment>();
+            if (attachments != null)
             {
-                var result = await _fileUpload.SaveFileUnrestrictedAsync(attachment, $"sites/{siteId}/correspondences");
-                if (result.Success)
+                foreach (var file in attachments.Where(f => f.Length > 0))
                 {
-                    attachmentPath = result.FilePath;
-                    attachmentFileName = attachment.FileName;
+                    var result = await _fileUpload.SaveFileUnrestrictedAsync(file, $"sites/{siteId}/correspondences");
+                    if (result.Success)
+                        attachmentEntities.Add(new SiteCorrespondenceAttachment { FilePath = result.FilePath, FileName = file.FileName });
                 }
             }
 
@@ -95,8 +95,7 @@ namespace AtharERP_System.Controllers
                 Priority = priority,
                 RequiredResponseDate = requiredResponseDate,
                 DetailedQuery = detailedQuery,
-                AttachmentPath = attachmentPath,
-                AttachmentFileName = attachmentFileName,
+                Attachments = attachmentEntities,
                 IsFromContractor = false,
                 SubmittedByName = user?.FullName ?? "-",
                 SubmittedByPosition = user?.JobRankRef?.NameAr,
@@ -134,7 +133,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Sites.View")]
         public async Task<IActionResult> Download(int id)
         {
-            var item = await _context.SiteCorrespondences.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == id);
+            var item = await _context.SiteCorrespondences.Include(r => r.Site).Include(r => r.Attachments).FirstOrDefaultAsync(r => r.Id == id);
             if (item == null || string.IsNullOrEmpty(item.PdfFilePath))
                 return NotFound();
 
@@ -145,7 +144,23 @@ namespace AtharERP_System.Controllers
             if (!System.IO.File.Exists(pdfFullPath))
                 return NotFound();
 
-            return PhysicalFile(pdfFullPath, "application/pdf", $"مراسلة-{item.Site.Code}-{item.RequestNumber:D4}.pdf");
+            var reportName = $"مراسلة-{item.Site.Code}-{item.RequestNumber:D4}";
+
+            if (!item.Attachments.Any())
+                return PhysicalFile(pdfFullPath, "application/pdf", $"{reportName}.pdf");
+
+            using var memoryStream = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                archive.CreateEntryFromFile(pdfFullPath, $"{reportName}.pdf");
+                foreach (var att in item.Attachments)
+                {
+                    var attFullPath = Path.Combine(_environment.WebRootPath, att.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (System.IO.File.Exists(attFullPath))
+                        archive.CreateEntryFromFile(attFullPath, att.FileName);
+                }
+            }
+            return File(memoryStream.ToArray(), "application/zip", $"{reportName}.zip");
         }
     }
 }

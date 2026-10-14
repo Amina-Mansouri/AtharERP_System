@@ -51,12 +51,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تفاصيل الاستفسار")]
         public string DetailedQuery { get; set; } = string.Empty;
 
-        [Display(Name = "المرفق")]
-        public string? AttachmentPath { get; set; }
-
-        [Display(Name = "اسم ملف المرفق")]
-        public string? AttachmentFileName { get; set; }
-
         [Display(Name = "من المقاول")]
         public bool IsFromContractor { get; set; }
 
@@ -110,5 +104,7 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "تاريخ الإرسال")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public virtual ICollection<SiteCorrespondenceAttachment> Attachments { get; set; } = new List<SiteCorrespondenceAttachment>();
     }
 }
