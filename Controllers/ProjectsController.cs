@@ -201,6 +201,22 @@ namespace AtharERP_System.Controllers
                 ModelState.AddModelError(string.Empty, "تاريخ التسليم المتفق عليه يجب أن يكون بعد تاريخ البدء");
             }
 
+            if (model.Scope == ProjectScope.Sub && model.ParentProjectId.HasValue)
+            {
+                var parentForDateCheck = await _context.Projects.FindAsync(model.ParentProjectId.Value);
+                if (parentForDateCheck != null)
+                {
+                    if (parentForDateCheck.PlannedStartDate.HasValue && model.PlannedStartDate.HasValue && model.PlannedStartDate.Value < parentForDateCheck.PlannedStartDate.Value)
+                    {
+                        ModelState.AddModelError(string.Empty, $"تاريخ بداية المبنى لا يمكن أن يكون قبل تاريخ بداية المشروع الرئيسي ({parentForDateCheck.PlannedStartDate.Value:yyyy-MM-dd})");
+                    }
+                    if (parentForDateCheck.PlannedEndDate.HasValue && model.PlannedEndDate.HasValue && model.PlannedEndDate.Value > parentForDateCheck.PlannedEndDate.Value)
+                    {
+                        ModelState.AddModelError(string.Empty, $"تاريخ نهاية المبنى لا يمكن أن يتجاوز تاريخ نهاية المشروع الرئيسي ({parentForDateCheck.PlannedEndDate.Value:yyyy-MM-dd})");
+                    }
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync();

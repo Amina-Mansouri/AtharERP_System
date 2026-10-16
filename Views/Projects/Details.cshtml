@@ -1088,19 +1088,20 @@ else
                         <div style="font-size:13px; font-weight:600; margin-bottom:8px;">+ إضافة مبنى جديد</div>
                         @{
                             var lastSubHere = lastSubProjectByParent.ContainsKey(Model.Id) ? lastSubProjectByParent[Model.Id] : null;
+                            var parentTypeLabel = Model.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == Model.Type.Value.ToString()).Label : "-";
+                            var parentCategoryLabel = Model.ProjectCategory?.DisplayName ?? "-";
                         }
-                        <form method="post" asp-controller="Projects" asp-action="Create" style="display:grid; gap:8px; max-width:420px;">
+                        <form method="post" asp-controller="Projects" asp-action="Create">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="Scope" value="Sub" />
                             <input type="hidden" name="ParentProjectId" value="@Model.Id" />
+                            <input type="hidden" name="ClientId" value="@Model.ClientId" />
+                            <input type="hidden" name="Type" value="@(Model.Type?.ToString() ?? "")" />
                             <input type="hidden" name="ProjectCategoryId" value="@(Model.ProjectCategoryId?.ToString() ?? "")" />
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">اسم المبنى</label>
-                                <input type="text" name="Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                            </div>
-                            <div>
-                                <label style="font-size:11px; color:#8a83a0;">رقم المبنى (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
-                                <input type="text" name="Code" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+
+                            <div style="margin-bottom:8px;">
+                                <label style="font-size:11px; color:#8a83a0;">رقم المبنى</label>
+                                <input type="text" name="Code" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                                 @if (!string.IsNullOrEmpty(lastSubHere))
                                 {
                                     <div class="stat-sub" style="margin-top:3px;">آخر مبنى أُضيف تحت هذا المشروع: @lastSubHere</div>
@@ -1110,6 +1111,68 @@ else
                                     <div class="stat-sub" style="margin-top:3px;">هذا أول مبنى يُضاف تحت المشروع الرئيسي (@Model.Code)</div>
                                 }
                             </div>
+
+                            <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">اسم المبنى</label>
+                                    <input type="text" name="Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
+                                    <select disabled style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px; background:#f6f5fa; color:#6b6680;">
+                                        <option selected>مشروع فرعي</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">ملكية المشروع</label>
+                                    <select disabled style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px; background:#f6f5fa; color:#6b6680;">
+                                        <option selected>@parentTypeLabel</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">نوع المشروع</label>
+                                    <select disabled style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px; background:#f6f5fa; color:#6b6680;">
+                                        <option selected>@parentCategoryLabel</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">العميل</label>
+                                    <select disabled style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px; background:#f6f5fa; color:#6b6680;">
+                                        <option selected>@(Model.Client?.Name ?? "-")</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">الأولوية</label>
+                                    <select name="Priority" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                                        @foreach (var pr in priorityLabels)
+                                        {
+                                            <option value="@pr.Value" selected="@(Model.Priority.ToString() == pr.Value)">@pr.Label</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">تاريخ البداية</label>
+                                    <input type="date" name="PlannedStartDate" min="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" max="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">تاريخ النهاية</label>
+                                    <input type="date" name="PlannedEndDate" min="@(Model.PlannedStartDate?.ToString("yyyy-MM-dd"))" max="@(Model.PlannedEndDate?.ToString("yyyy-MM-dd"))" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
+                                @if (Model.PlannedStartDate.HasValue || Model.PlannedEndDate.HasValue)
+                                {
+                                    <div class="stat-sub" style="grid-column:1/-1;">يجب أن يقع تاريخا المبنى ضمن نطاق المشروع الرئيسي: @(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "بلا بداية محددة") → @(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "بلا نهاية محددة")</div>
+                                }
+                            </div>
+
                             <div>
                                 <button type="submit" class="btn-line btn-line-accent">+ إضافة المبنى</button>
                             </div>
