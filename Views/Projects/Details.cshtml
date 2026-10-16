@@ -184,6 +184,17 @@
 
         <form method="post" asp-action="Create">
             @Html.AntiForgeryToken()
+            @{
+                var lastCode = ViewBag.LastProjectCode as string;
+            }
+            <div style="margin-bottom:8px;">
+                <label style="font-size:11px; color:#8a83a0;">رمز المشروع (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
+                <input type="text" name="Code" value="@Model.Code" placeholder="رمز المشروع" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                @if (!string.IsNullOrEmpty(lastCode))
+                {
+                    <div class="stat-sub" style="margin-top:3px;">آخر رمز مسجَّل: @lastCode</div>
+                }
+            </div>
             <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
                 <div>
                     <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
@@ -221,19 +232,6 @@
                     <input type="hidden" id="categoryHidden" name="ProjectCategoryId" disabled />
                     <a asp-controller="Admin" asp-action="ProjectCategories" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
                 </div>
-            </div>
-
-            <div style="margin-bottom:8px;">
-                <label style="font-size:11px; color:#8a83a0;">رمز المشروع (اختياري — يُنشأ تلقائياً إن تُرك فارغاً)</label>
-                <input type="text" name="Code" value="@Model.Code" placeholder="رمز المشروع" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                @{
-                    var lastCode = ViewBag.LastProjectCode as string;
-                }
-                @if (!string.IsNullOrEmpty(lastCode))
-                {
-                    <div class="stat-sub" style="margin-top:3px;">آخر رمز مسجَّل: @lastCode</div>
-                }
-                <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
             </div>
             <div style="margin-bottom:8px;">
                 <label style="font-size:11px; color:#8a83a0;">الوصف</label>
@@ -346,14 +344,14 @@ else
                         </div>
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">المشروع الرئيسي (فرعي فقط)</label>
-                            <select name="ParentProjectId" id="parentProjectSelect" onchange="toggleParentDependentFields()" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px;">
+                            <input type="text" value="@(Model.ParentProject != null ? $"{Model.ParentProject.Code} - {Model.ParentProject.Name}" : "-- لا يوجد --")" disabled style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px; padding:0 8px; background:#f6f5fa; color:#6b6680;" />
+                            <select name="ParentProjectId" id="parentProjectSelect" onchange="toggleParentDependentFields()" style="display:none;">
                                 <option value="">-- لا يوجد --</option>
                                 @foreach (var p in parentProjects)
                                 {
-                                    <option value="@p.Id" data-code="@p.Code" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-category="@(p.ProjectCategoryId?.ToString() ?? "")" data-last-sub="@(lastSubProjectByParent.ContainsKey(p.Id) ? lastSubProjectByParent[p.Id] : "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
+                                    <option value="@p.Id" data-code="@p.Code" data-client="@p.ClientId" data-type="@(p.Type.HasValue ? p.Type.Value.ToString() : "")" data-category="@(p.ProjectCategoryId?.ToString() ?? "")" selected="@(Model.ParentProjectId == p.Id)">@p.Code - @p.Name</option>
                                 }
                             </select>
-                            <div id="lastSubProjectHint" class="stat-sub" style="margin-top:3px;"></div>
                         </div>
                     </div>
 
@@ -1099,16 +1097,18 @@ else
                             <input type="hidden" name="Type" value="@(Model.Type?.ToString() ?? "")" />
                             <input type="hidden" name="ProjectCategoryId" value="@(Model.ProjectCategoryId?.ToString() ?? "")" />
 
-                            <div style="margin-bottom:8px;">
-                                <label style="font-size:11px; color:#8a83a0;">رقم المبنى</label>
-                                <input type="text" name="Code" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                            <div style="display:grid; grid-template-columns:160px 1fr; gap:10px; align-items:center; margin-bottom:8px;">
+                                <div>
+                                    <label style="font-size:11px; color:#8a83a0;">رقم المبنى</label>
+                                    <input type="text" name="Code" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                </div>
                                 @if (!string.IsNullOrEmpty(lastSubHere))
                                 {
-                                    <div class="stat-sub" style="margin-top:3px;">آخر مبنى أُضيف تحت هذا المشروع: @lastSubHere</div>
+                                    <div class="stat-sub">آخر مبنى أُضيف تحت هذا المشروع: @lastSubHere</div>
                                 }
                                 else
                                 {
-                                    <div class="stat-sub" style="margin-top:3px;">هذا أول مبنى يُضاف تحت المشروع الرئيسي (@Model.Code)</div>
+                                    <div class="stat-sub">هذا أول مبنى يُضاف تحت المشروع الرئيسي (@Model.Code)</div>
                                 }
                             </div>
 
