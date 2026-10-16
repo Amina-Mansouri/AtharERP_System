@@ -577,6 +577,54 @@ List<int>? taskIds)
             return View(assignment);
         }
 
+        // إنهاء مباشر لتكليف قديم/مؤرشف — لمدير النظام فقط، يتجاوز سلسلة المراجعة والاعتماد المعتادة
+        [Authorize(Roles = "مدير النظام")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdminForceComplete(int id)
+        {
+            var assignment = await _context.ProjectAssignments
+                .Include(a => a.Tasks)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (assignment == null)
+                return NotFound();
+
+            if (assignment.Status == AssignmentStatus.Completed)
+            {
+                TempData["Error"] = "التكليف مكتمل بالفعل";
+                return RedirectToAction("ManageTasks", new { id });
+            }
+
+            if (!await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == id))
+            {
+                TempData["Error"] = "لا يمكن إنهاء التكليف بدون مهندس واحد على الأقل مرتبط به";
+                return RedirectToAction("ManageTasks", new { id });
+            }
+
+            var today = DateTime.UtcNow.Date;
+            foreach (var task in assignment.Tasks)
+            {
+                task.Status = ProjectTaskStatus.Completed;
+                task.CompletionPercentage = 100;
+                if (!task.ActualDeliveryDate.HasValue)
+                    task.ActualDeliveryDate = today;
+            }
+
+            assignment.Status = AssignmentStatus.Completed;
+            await _context.SaveChangesAsync();
+
+            // الخطوتان الإلزاميتان اللتان تضمنان تصرّف المشروع بشكل طبيعي تماماً بعد هذا التجاوز:
+            await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
+            if (assignment.StageId.HasValue)
+                await _calc.RecalculateStageAsync(assignment.StageId.Value);
+
+            await _audit.LogAsync(CurrentUserId, "AdminForceComplete", nameof(ProjectAssignment), id.ToString(), "إنهاء تكليف مباشرة بواسطة مدير النظام (تجاوز المراجعات والاعتمادات)");
+
+            TempData["Success"] = "تم إنهاء التكليف مباشرة وترحيله للمالية بنجاح";
+            return RedirectToAction("ManageTasks", new { id });
+        }
+
 
     }
 }

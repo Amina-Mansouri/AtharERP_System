@@ -65,6 +65,17 @@
             }
         </div>
     </div>
+    @if (isSysAdmin && Model.Status != AssignmentStatus.Completed)
+    {
+        <div style="margin-top:14px; padding-top:12px; border-top:1px dashed #e4e2ec;">
+            <form method="post" asp-controller="ProjectAssignments" asp-action="AdminForceComplete"
+                  onsubmit="return confirm('سيُنهى هذا التكليف مباشرة بدون المرور بالمراجعات، ويُرحَّل فوراً للمالية. هل تريدين المتابعة؟');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn-line" style="color:#c9a15a; border-color:#c9a15a;">إنهاء مباشر (أرشفة)</button>
+            </form>
+        </div>
+    }
 </div>
 
 <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">
