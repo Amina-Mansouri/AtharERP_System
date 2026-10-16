@@ -579,80 +579,127 @@ else
                     }
                 </div>
 
-                @if (canManageStages)
+                             @if (canManageStages)
                 {
                     <div style="padding:14px 16px; border-top:1px solid #f1f0f6;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                            <div style="font-size:12px; font-weight:600;">قوالب المراحل — فعّلي ما يحتاجه هذا المشروع</div>
+                            <div style="font-size:12px; font-weight:600;">قوالب المراحل</div>
                             <a asp-controller="StageTemplates" asp-action="Index" style="font-size:11px;">+ إدارة القوالب</a>
                         </div>
-                                                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-                            @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
-                            {
-                                var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
-                                var isFailedTemplate = failedTemplateId == tpl.Id;
-                                <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff");">
-                                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                                        <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
-                                        @if (isUsed)
+                        <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+                            <div style="display:flex; flex-direction:column; gap:4px; min-width:170px;">
+                                @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
+                                {
+                                    var isUsedNav = Model.Stages.Any(s => s.Name == tpl.Name);
+                                    <a href="#" data-bs-toggle="collapse" data-bs-target="#tpl-card-@tpl.Id" style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 10px; border:1px solid @(isUsedNav ? "#c9c2e6" : "#ecebf2"); border-radius:8px; background:@(isUsedNav ? "rgba(123,107,214,.05)" : "#fff"); text-decoration:none; color:inherit; font-size:11.5px;">
+                                        <span>@tpl.Name</span>
+                                        @if (isUsedNav)
                                         {
-                                            <span class="tag tag-accent">مفعّلة</span>
+                                            <span class="tag tag-accent" style="font-size:9px;">مفعّلة</span>
                                         }
-                                    </div>
-                                    <div style="font-size:10px; color:#8a83a0; margin-top:4px;">@tpl.DefaultTasks.Count مهام افتراضية</div>
-
-                                    @if (!isUsed)
-                                    {
-                                        @if (isFailedTemplate && !string.IsNullOrEmpty(TempData.Peek("Error") as string))
-                                        {
-                                            <div style="background:#fdecea; border:1px solid #e35d54; color:#c94a42; border-radius:7px; padding:6px 8px; margin-top:8px; font-size:10.5px; font-weight:600;">@(TempData.Peek("Error") as string)</div>
-                                        }
-                                        <form method="post" asp-controller="ProjectStages" asp-action="ActivateTemplate" style="margin-top:8px;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="projectId" value="@Model.Id" />
-                                            <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
-                                            <div style="margin-bottom:6px;">
-                                                <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                            </div>
-                                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-                                                <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" value="@(isFailedTemplate ? failedArea : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                            
-                                            </div>
-                                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-                                                <select name="disciplineDepartmentId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
-                                                    <option value="">-- التخصص --</option>
-                                                    @foreach (var d in (ViewBag.StageDisciplines as List<Department> ?? new List<Department>()))
-                                                    {
-                                                        <option value="@d.Id">@d.Name</option>
-                                                    }
-                                                </select>
-                                                <input type="number" step="0.01" min="0" name="kpiWeight" placeholder="وزن KPI" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                            </div>
-                                            <div style="margin-bottom:6px;">
-                                                <select name="assignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
-                                                    <option value="">-- المهندس المشرف --</option>
-                                                    @foreach (var eng in engineers)
-                                                    {
-                                                        <option value="@eng.Id" selected="@(isFailedTemplate && failedEngineerId == eng.Id)">@eng.FullName</option>
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div style="display:grid; gap:4px; margin-bottom:6px;">
-                                                @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                    </a>
+                                }
+                            </div>
+                            <div style="flex:1 1 320px; min-width:260px;">
+                                @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
+                                {
+                                    var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
+                                    var usedStage = isUsed ? Model.Stages.First(s => s.Name == tpl.Name) : null;
+                                    var isFailedTemplate = failedTemplateId == tpl.Id;
+                                    <div class="collapse" id="tpl-card-@tpl.Id">
+                                        <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff"); margin-bottom:10px;">
+                                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                                <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
+                                                @if (isUsed)
                                                 {
-                                                    <div style="display:flex; align-items:center; gap:5px;">
-                                                        <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
-                                                        <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
-                                                        <input type="number" step="0.01" min="0" max="100" name="taskWeight_@t.Id" placeholder="الوزن %" style="width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
-                                                    </div>
+                                                    <span class="tag tag-accent">مفعّلة</span>
                                                 }
                                             </div>
-                                            <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;">@(isFailedTemplate ? failedExtraTasks : "")</textarea>
-                                            <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
-                                        </form>
-                                    }
-                                </div>
-                            }
+                                            <div style="font-size:10px; color:#8a83a0; margin-top:4px;">@tpl.DefaultTasks.Count مهام افتراضية</div>
+
+                                            @if (!isUsed)
+                                            {
+                                                @if (isFailedTemplate && !string.IsNullOrEmpty(TempData.Peek("Error") as string))
+                                                {
+                                                    <div style="background:#fdecea; border:1px solid #e35d54; color:#c94a42; border-radius:7px; padding:6px 8px; margin-top:8px; font-size:10.5px; font-weight:600;">@(TempData.Peek("Error") as string)</div>
+                                                }
+                                                <form method="post" asp-controller="ProjectStages" asp-action="ActivateTemplate" style="margin-top:8px;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@Model.Id" />
+                                                    <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
+                                                    <div style="margin-bottom:6px;">
+                                                        <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                    </div>
+                                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                        <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" value="@(isFailedTemplate ? failedArea : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                    
+                                                    </div>
+                                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                        <select name="disciplineDepartmentId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                            <option value="">-- التخصص --</option>
+                                                            @foreach (var d in (ViewBag.StageDisciplines as List<Department> ?? new List<Department>()))
+                                                            {
+                                                                <option value="@d.Id">@d.Name</option>
+                                                            }
+                                                        </select>
+                                                        <input type="number" step="0.01" min="0" name="kpiWeight" placeholder="وزن KPI" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                    </div>
+                                                    <div style="margin-bottom:6px;">
+                                                        <select name="assignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                            <option value="">-- المهندس المشرف --</option>
+                                                            @foreach (var eng in engineers)
+                                                            {
+                                                                <option value="@eng.Id" selected="@(isFailedTemplate && failedEngineerId == eng.Id)">@eng.FullName</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <div style="display:grid; gap:4px; margin-bottom:6px;">
+                                                        @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                                        {
+                                                            <div style="display:flex; align-items:center; gap:5px;">
+                                                                <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
+                                                                <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
+                                                                <input type="number" step="0.01" min="0" max="100" name="taskWeight_@t.Id" placeholder="الوزن %" style="width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <textarea name="extraTasks" placeholder="مهام إضافية (سطر لكل مهمة)" rows="2" style="width:100%; border:1px solid #e4e2ec; border-radius:7px; padding:6px 8px; font-size:10.5px; margin-bottom:6px;">@(isFailedTemplate ? failedExtraTasks : "")</textarea>
+                                                    <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
+                                                </form>
+                                            }
+                                            else if (usedStage != null)
+                                            {
+                                                <div style="margin-top:8px; display:grid; gap:5px;">
+                                                    @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                                    {
+                                                        var existingTask = usedStage.Tasks.FirstOrDefault(pt => pt.Title == t.TaskName);
+                                                        <div style="display:flex; align-items:center; gap:6px; border:1px solid #ecebf2; border-radius:7px; padding:5px 8px; background:#fff;">
+                                                            @if (existingTask != null)
+                                                            {
+                                                                <input type="checkbox" class="chk-gold" checked disabled />
+                                                                <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
+                                                                <span class="stat-sub">@existingTask.Weight.ToString("N0")%</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <form method="post" asp-controller="ProjectTasks" asp-action="Create" style="display:flex; align-items:center; gap:6px; flex:1;">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="StageId" value="@usedStage.Id" />
+                                                                    <input type="hidden" name="Title" value="@t.TaskName" />
+                                                                    <input type="checkbox" disabled style="opacity:.4;" />
+                                                                    <span style="font-size:10.5px; color:#8a83a0; flex:1;">@t.TaskName</span>
+                                                                    <input type="number" step="0.01" min="0" max="100" name="Weight" placeholder="الوزن %" required style="width:60px; height:24px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
+                                                                    <button type="submit" style="height:24px; padding:0 8px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px; white-space:nowrap;">+ إضافة</button>
+                                                                </form>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
