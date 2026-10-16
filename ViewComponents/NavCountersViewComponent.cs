@@ -14,6 +14,8 @@ namespace AtharERP_System.ViewComponents
         public int PendingApprovals { get; set; }
         public int MissingDailyReports { get; set; }
         public int PendingSupplyRequests { get; set; }
+        public int MyActiveAssignments { get; set; }
+        public string Slot { get; set; } = "bell";
     }
 
     public class NavCountersViewComponent : ViewComponent
@@ -29,15 +31,25 @@ namespace AtharERP_System.ViewComponents
             _cache = cache;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync()
+        public async Task<IViewComponentResult> InvokeAsync(string slot = "bell")
         {
             var userId = UserClaimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
-                return View(new NavCountersViewModel());
+                return View(new NavCountersViewModel { Slot = slot });
 
             var cacheKey = $"NavCounters_{userId}";
             if (_cache.TryGetValue(cacheKey, out NavCountersViewModel? cached) && cached != null)
-                return View(cached);
+            {
+                return View(new NavCountersViewModel
+                {
+                    UnreadNotifications = cached.UnreadNotifications,
+                    PendingApprovals = cached.PendingApprovals,
+                    MissingDailyReports = cached.MissingDailyReports,
+                    PendingSupplyRequests = cached.PendingSupplyRequests,
+                    MyActiveAssignments = cached.MyActiveAssignments,
+                    Slot = slot
+                });
+            }
 
             var canApprove = await _permissionService.HasPermissionAsync(UserClaimsPrincipal, "Quality.Approve");
             var canSupplyApprove = await _permissionService.HasPermissionAsync(UserClaimsPrincipal, "Supply.Approve");
@@ -54,14 +66,22 @@ namespace AtharERP_System.ViewComponents
                 : 0;
 
             var supplyCount = canSupplyApprove
-                ? await _context.SiteSupplyRequests.CountAsync(r => r.Status == SiteSupplyStatus.Pending)
-                : 0;
+     ? await _context.SiteSupplyRequests.CountAsync(r => r.Status == SiteSupplyStatus.Pending)
+     : 0;
+
+            var myActiveAssignments = await _context.AssignmentEngineers.CountAsync(e =>
+                e.UserId == userId
+                && e.ProjectAssignment.Status != AssignmentStatus.Completed
+                && e.ProjectAssignment.Status != AssignmentStatus.Cancelled);
+
             var result = new NavCountersViewModel
             {
                 UnreadNotifications = unread,
                 PendingApprovals = qualityCount + safetyCount,
                 MissingDailyReports = 0,
-                PendingSupplyRequests = supplyCount
+                PendingSupplyRequests = supplyCount,
+                MyActiveAssignments = myActiveAssignments,
+                Slot = slot
             };
 
             _cache.Set(cacheKey, result, TimeSpan.FromSeconds(60));

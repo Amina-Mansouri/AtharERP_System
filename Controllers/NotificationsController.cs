@@ -1,11 +1,11 @@
 ﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
-using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 
 namespace AtharERP_System.Controllers
@@ -15,13 +15,15 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailSender _emailSender;
+        private readonly AtharERP_System.Services.IEmailSender _emailSender;
+        private readonly IMemoryCache _cache;
 
-        public NotificationsController(AppDbContext context, UserManager<ApplicationUser> userManager, IEmailSender emailSender)
+        public NotificationsController(AppDbContext context, UserManager<ApplicationUser> userManager, AtharERP_System.Services.IEmailSender emailSender, IMemoryCache cache)
         {
             _context = context;
             _userManager = userManager;
             _emailSender = emailSender;
+            _cache = cache;
         }
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
@@ -96,6 +98,7 @@ namespace AtharERP_System.Controllers
                 notification.IsRead = true;
                 notification.ReadAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+                _cache.Remove($"NavCounters_{CurrentUserId}");
 
                 if (notification.EventType == NotificationEventType.TaskAssigned)
                     await SendReadReceiptAsync(notification);
@@ -192,6 +195,7 @@ namespace AtharERP_System.Controllers
                 n.IsRead = true;
 
             await _context.SaveChangesAsync();
+            _cache.Remove($"NavCounters_{CurrentUserId}");
 
             return RedirectToAction("Index", new { filter = returnFilter, eventType = returnEventType, period = returnPeriod });
         }

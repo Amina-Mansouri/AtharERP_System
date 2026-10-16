@@ -1,10 +1,18 @@
 ﻿@model AtharERP_System.ViewComponents.NavCountersViewModel
-<span id="nav-counters-data" hidden
-      data-unread="@Model.UnreadNotifications"
-      data-approvals="@Model.PendingApprovals"
-      data-missing-reports="@Model.MissingDailyReports"
-      data-supply="@Model.PendingSupplyRequests"></span>
-@if (Model.UnreadNotifications > 0)
+@if (Model.Slot == "bell")
 {
-    <span class="ds-bell-count">@(Model.UnreadNotifications > 99 ? "99+" : Model.UnreadNotifications.ToString())</span>
+    <span id="nav-counters-data" hidden
+          data-unread="@Model.UnreadNotifications"
+          data-approvals="@Model.PendingApprovals"
+          data-missing-reports="@Model.MissingDailyReports"
+          data-supply="@Model.PendingSupplyRequests"
+          data-assignments="@Model.MyActiveAssignments"></span>
+    @if (Model.UnreadNotifications > 0)
+    {
+        <span class="ds-bell-count">@(Model.UnreadNotifications > 99 ? "99+" : Model.UnreadNotifications.ToString())</span>
+    }
+}
+else if (Model.Slot == "assignments" && Model.MyActiveAssignments > 0)
+{
+    <span class="ds-bell-count">@(Model.MyActiveAssignments > 99 ? "99+" : Model.MyActiveAssignments.ToString())</span>
 }

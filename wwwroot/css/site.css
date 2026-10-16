@@ -852,8 +852,8 @@ button:focus-visible {
     }
 
 .app-topbar .ds-bell {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -864,8 +864,8 @@ button:focus-visible {
 }
 
     .app-topbar .ds-bell svg {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         stroke: #fff;
         stroke-width: 1.7;
     }
@@ -885,10 +885,10 @@ button:focus-visible {
         justify-content: center;
         line-height: 1;
     }
-    
+
 .app-topbar .ds-icon-link {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -899,8 +899,8 @@ button:focus-visible {
 }
 
     .app-topbar .ds-icon-link svg {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         stroke: #fff;
         stroke-width: 1.7;
     }
