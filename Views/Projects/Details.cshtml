@@ -591,7 +591,7 @@ else
                                 @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
                                 {
                                     var isUsedNav = Model.Stages.Any(s => s.Name == tpl.Name);
-                                    <a href="#" data-bs-toggle="collapse" data-bs-target="#tpl-card-@tpl.Id" style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 10px; border:1px solid @(isUsedNav ? "#c9c2e6" : "#ecebf2"); border-radius:8px; background:@(isUsedNav ? "rgba(123,107,214,.05)" : "#fff"); text-decoration:none; color:inherit; font-size:11.5px;">
+                                    <a href="#" data-bs-toggle="collapse" data-bs-target="#tpl-card-@tpl.Id" onclick="try { sessionStorage.setItem('openStageTemplateId', '@tpl.Id'); } catch(e) {}" style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 10px; border:1px solid @(isUsedNav ? "#c9c2e6" : "#ecebf2"); border-radius:8px; background:@(isUsedNav ? "rgba(123,107,214,.05)" : "#fff"); text-decoration:none; color:inherit; font-size:11.5px;">
                                         <span>@tpl.Name</span>
                                         @if (isUsedNav)
                                         {
@@ -667,11 +667,61 @@ else
                                                     <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
                                                 </form>
                                             }
-                                                                                      else if (usedStage != null)
+                                                                                                                                 else if (usedStage != null)
                                             {
                                                 @if (canManageStages)
                                                 {
-                                                    <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@usedStage.Id" class="btn-line" style="display:inline-block; margin-top:8px; font-size:11px;">تعديل بيانات المرحلة (الوزن، المشرف، المساحة، التخصص...)</a>
+                                                    var otherStagesWeightTotal = Model.Stages.Where(s => s.Id != usedStage.Id).Sum(s => s.Weight);
+                                                    var canEditStageWeight = otherStagesWeightTotal < 100;
+                                                    <form method="post" asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@usedStage.Id" style="margin-top:8px; border:1px solid #ecebf2; border-radius:8px; padding:8px; background:#faf9fc;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="Name" value="@usedStage.Name" />
+                                                        <input type="hidden" name="Sequence" value="@usedStage.Sequence" />
+                                                        <input type="hidden" name="PlannedStartDate" value="@(usedStage.PlannedStartDate?.ToString("yyyy-MM-dd"))" />
+                                                        <input type="hidden" name="PlannedEndDate" value="@(usedStage.PlannedEndDate?.ToString("yyyy-MM-dd"))" />
+                                                        <input type="hidden" name="ActualDeliveryDate" value="@(usedStage.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" />
+                                                        <input type="hidden" name="WorkDocumentation" value="@usedStage.WorkDocumentation" />
+                                                        <div style="margin-bottom:6px;">
+                                                            <label style="font-size:10px; color:#8a83a0;">الوزن %</label>
+                                                            @if (canEditStageWeight)
+                                                            {
+                                                                <input type="number" step="0.01" min="0" max="100" name="Weight" required value="@usedStage.Weight.ToString("N2")" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                            }
+                                                            else
+                                                            {
+                                                                <input type="text" value="@usedStage.Weight.ToString("N0")%" disabled style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px; background:#f1f0f6;" />
+                                                                <input type="hidden" name="Weight" value="@usedStage.Weight" />
+                                                                <div class="stat-sub">مقفل — أوزان بقية المراحل وصلت 100%</div>
+                                                            }
+                                                        </div>
+                                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                            <div>
+                                                                <label style="font-size:10px; color:#8a83a0;">المساحة (م²)</label>
+                                                                <input type="number" step="0.01" min="0" name="Area" value="@usedStage.Area" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                            </div>
+                                                            <div>
+                                                                <label style="font-size:10px; color:#8a83a0;">وزن KPI</label>
+                                                                <input type="number" step="0.01" min="0" name="KpiWeight" value="@usedStage.KpiWeight" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                            </div>
+                                                        </div>
+                                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                            <select name="DisciplineDepartmentId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                                <option value="">-- التخصص --</option>
+                                                                @foreach (var d in (ViewBag.StageDisciplines as List<Department> ?? new List<Department>()))
+                                                                {
+                                                                    <option value="@d.Id" selected="@(usedStage.DisciplineDepartmentId == d.Id)">@d.Name</option>
+                                                                }
+                                                            </select>
+                                                            <select name="AssignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                                <option value="">-- المهندس المشرف --</option>
+                                                                @foreach (var eng in engineers)
+                                                                {
+                                                                    <option value="@eng.Id" selected="@(usedStage.AssignedEngineerId == eng.Id)">@eng.FullName</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                        <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">حفظ تعديلات المرحلة</button>
+                                                    </form>
                                                 }
                                                 <div style="margin-top:8px; display:grid; gap:5px;">
                                                     @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
@@ -697,6 +747,15 @@ else
                                                                 </form>
                                                             }
                                                                                                                </div>
+                                                                                                      }
+                                                    @foreach (var extraTask in usedStage.Tasks.Where(pt => !tpl.DefaultTasks.Any(dt => dt.TaskName == pt.Title)))
+                                                    {
+                                                        <div style="display:flex; align-items:center; gap:6px; border:1px solid #ecebf2; border-radius:7px; padding:5px 8px; background:#fff;">
+                                                            <input type="checkbox" class="chk-gold" checked disabled />
+                                                            <span style="font-size:10.5px; color:#5a5370; flex:1;">@extraTask.Title</span>
+                                                            <span class="tag tag-accent" style="font-size:9px;">إضافية</span>
+                                                            <span class="stat-sub">@extraTask.Weight.ToString("N0")%</span>
+                                                        </div>
                                                     }
                                                     @{
                                                         var remainingStageWeight = usedStage.Weight - usedStage.Tasks.Sum(t => t.Weight);
@@ -1313,6 +1372,17 @@ else
             });
             el.setAttribute('aria-expanded', expanded ? 'false' : 'true');
             el.textContent = expanded ? '▸' : '▾';
+            document.addEventListener('DOMContentLoaded', function () {
+    try {
+        var openTplId = sessionStorage.getItem('openStageTemplateId');
+        if (openTplId) {
+            var el = document.getElementById('tpl-card-' + openTplId);
+            if (el && window.bootstrap) {
+                new bootstrap.Collapse(el, { show: true });
+            }
+        }
+    } catch (e) {}
+});
         }
 
         function filterAssignmentsByStage() {
