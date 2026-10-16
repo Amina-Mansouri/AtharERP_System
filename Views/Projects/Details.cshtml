@@ -591,7 +591,7 @@ else
                                 @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
                                 {
                                     var isUsedNav = Model.Stages.Any(s => s.Name == tpl.Name);
-                                    <a href="#" data-bs-toggle="collapse" data-bs-target="#tpl-card-@tpl.Id" onclick="try { sessionStorage.setItem('openStageTemplateId', '@tpl.Id'); } catch(e) {}" style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 10px; border:1px solid @(isUsedNav ? "#c9c2e6" : "#ecebf2"); border-radius:8px; background:@(isUsedNav ? "rgba(123,107,214,.05)" : "#fff"); text-decoration:none; color:inherit; font-size:11.5px;">
+                                    <a href="#" id="tpl-nav-@tpl.Id" data-bs-toggle="collapse" data-bs-target="#tpl-card-@tpl.Id" onclick="try { sessionStorage.setItem('openStageTemplateId', '@tpl.Id'); } catch(e) {}" class="tpl-nav-link" style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 10px; border:1px solid @(isUsedNav ? "#c9c2e6" : "#ecebf2"); border-radius:8px; background:@(isUsedNav ? "rgba(123,107,214,.05)" : "#fff"); text-decoration:none; color:inherit; font-size:11.5px;">
                                         <span>@tpl.Name</span>
                                         @if (isUsedNav)
                                         {
@@ -600,13 +600,13 @@ else
                                     </a>
                                 }
                             </div>
-                            <div style="flex:1 1 320px; min-width:260px;">
+                               <div id="tplCardsAccordion" style="flex:1 1 320px; min-width:260px;">
                                 @foreach (var tpl in stageTemplates.Where(t => t.IsActive))
                                 {
                                     var isUsed = Model.Stages.Any(s => s.Name == tpl.Name);
                                     var usedStage = isUsed ? Model.Stages.First(s => s.Name == tpl.Name) : null;
                                     var isFailedTemplate = failedTemplateId == tpl.Id;
-                                    <div class="collapse" id="tpl-card-@tpl.Id">
+                               <div class="collapse" id="tpl-card-@tpl.Id" data-bs-parent="#tplCardsAccordion">
                                         <div style="border:1px solid @(isUsed ? "#c9c2e6" : "#ecebf2"); border-radius:9px; padding:10px 12px; background:@(isUsed ? "rgba(123,107,214,.03)" : "#fff"); margin-bottom:10px;">
                                             <div style="display:flex; align-items:center; justify-content:space-between;">
                                                 <div style="font-size:12px; font-weight:600;">@tpl.Name</div>
@@ -1303,6 +1303,13 @@ else
     </div>
 }
 @section Scripts {
+    <style>
+    .tpl-nav-link.tpl-nav-active {
+        background: #7b6bd6 !important;
+        border-color: #7b6bd6 !important;
+        color: #fff !important;
+    }
+</style>
         <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>
                 function toggleParentDependentFields() {
@@ -1364,7 +1371,7 @@ else
             if (dangerZone) dangerZone.hidden = false;
         }
 
-        function toggleTreeChildren(el) {
+           function toggleTreeChildren(el) {
             var key = el.getAttribute('data-target');
             var expanded = el.getAttribute('aria-expanded') !== 'false';
             document.querySelectorAll('[data-parent-key="' + key + '"]').forEach(function (row) {
@@ -1372,18 +1379,29 @@ else
             });
             el.setAttribute('aria-expanded', expanded ? 'false' : 'true');
             el.textContent = expanded ? '▸' : '▾';
-            document.addEventListener('DOMContentLoaded', function () {
-    try {
-        var openTplId = sessionStorage.getItem('openStageTemplateId');
-        if (openTplId) {
-            var el = document.getElementById('tpl-card-' + openTplId);
-            if (el && window.bootstrap) {
-                new bootstrap.Collapse(el, { show: true });
-            }
         }
-    } catch (e) {}
-});
-        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                var openTplId = sessionStorage.getItem('openStageTemplateId');
+                if (openTplId) {
+                    var tplEl = document.getElementById('tpl-card-' + openTplId);
+                    if (tplEl && window.bootstrap) {
+                        new bootstrap.Collapse(tplEl, { show: true });
+                    }
+                }
+            } catch (e) {}
+
+            document.querySelectorAll('[id^="tpl-card-"]').forEach(function (cardEl) {
+                cardEl.addEventListener('shown.bs.collapse', function () {
+                    document.querySelectorAll('[id^="tpl-nav-"]').forEach(function (navEl) {
+                        navEl.classList.remove('tpl-nav-active');
+                    });
+                    var navLink = document.getElementById('tpl-nav-' + cardEl.id.replace('tpl-card-', ''));
+                    if (navLink) navLink.classList.add('tpl-nav-active');
+                });
+            });
+        });
 
         function filterAssignmentsByStage() {
             var val = document.getElementById('stageFilter').value;
