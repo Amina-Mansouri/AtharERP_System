@@ -64,7 +64,8 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = $"تمت إضافة قالب {template.Name} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = Request.Query["projectId"] });
+            return RedirectToAction("Index", "StageTemplates");
+        
         }
 
         [RequirePermission("Projects.Stages.Manage")]
