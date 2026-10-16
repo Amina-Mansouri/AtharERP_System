@@ -187,7 +187,7 @@
                     {
                         <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px; flex-shrink:0; margin-top:1px;">▾</span>
                     }
-                    <div style="min-width:0;">
+                    <div style="min-width:0; flex:1 1 0;">
                         @project.Name
                         @if (project.ChildProjects.Any())
                         {
