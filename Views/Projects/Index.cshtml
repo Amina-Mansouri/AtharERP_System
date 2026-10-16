@@ -178,24 +178,26 @@
             var rowStyle = isNestedChild ? "text-decoration:none; color:inherit; background:#faf9fc;" : "text-decoration:none; color:inherit;";
             <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" data-parent-id="@parentIdAttr" style="@rowStyle">
                 <div class="cell cell-num">@project.Code</div>
-                <div class="cell" style="@nameCellStyle">
+                <div class="cell" style="@nameCellStyle display:flex; align-items:flex-start; gap:4px;">
                     @if (isNestedChild)
                     {
-                        <span style="color:#8a83a0;">↳</span>
+                        <span style="color:#8a83a0; flex-shrink:0;">↳</span>
                     }
                     @if (showToggle)
                     {
-                        <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px; margin-left:4px; vertical-align:middle;">▾</span>
+                        <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px; flex-shrink:0; margin-top:1px;">▾</span>
                     }
-                    @project.Name
-                    @if (project.ChildProjects.Any())
-                    {
-                        <span class="tag tag-accent">@project.ChildProjects.Count مشاريع فرعية</span>
-                    }
-                    @if (project.ParentProject != null && !isNestedChild)
-                    {
-                        <div class="stat-sub">فرعي من: @project.ParentProject.Name</div>
-                    }
+                    <div style="min-width:0;">
+                        @project.Name
+                        @if (project.ChildProjects.Any())
+                        {
+                            <span class="tag tag-accent">@project.ChildProjects.Count مشاريع فرعية</span>
+                        }
+                        @if (project.ParentProject != null && !isNestedChild)
+                        {
+                            <div class="stat-sub">فرعي من: @project.ParentProject.Name</div>
+                        }
+                    </div>
                 </div>
                 @if (canViewClient)
                 {

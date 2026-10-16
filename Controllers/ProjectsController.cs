@@ -612,7 +612,7 @@ namespace AtharERP_System.Controllers
                 .Where(p => p.Scope == ProjectScope.Sub && p.ParentProjectId != null)
                 .GroupBy(p => p.ParentProjectId!.Value)
                 .Select(g => new { ParentId = g.Key, Last = g.OrderByDescending(x => x.Id).First() })
-                .ToDictionaryAsync(x => x.ParentId, x => x.Last.Code + " - " + x.Last.Name);
+                                .ToDictionaryAsync(x => x.ParentId, x => x.Last.Code);
         }
 
         private async Task<string> GenerateProjectCodeAsync()
