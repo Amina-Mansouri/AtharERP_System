@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<div class="data-table" style="--cols: minmax(0,1.4fr) 90px 90px 90px">
+<div class="data-table" style="--cols: minmax(0,1.4fr) 90px 80px 150px">
     <div class="data-table-head">
         <div class="cell">اسم القالب</div>
         <div class="cell">المهام الافتراضية</div>
@@ -42,11 +42,11 @@
                         <span class="tag">معطّل</span>
                     }
                 </div>
-                <div class="cell" style="display:flex; gap:8px;">
-                    <a asp-action="Edit" asp-route-id="@tpl.Id" style="font-size:11px;">تعديل</a>
-                    <form method="post" asp-action="Delete" asp-route-id="@tpl.Id" onsubmit="return confirm('حذف هذا القالب؟ لن يؤثر على المراحل التي فُعِّلت منه سابقاً.');">
+                <div class="cell" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                    <a asp-action="Edit" asp-route-id="@tpl.Id" style="font-size:11px; white-space:nowrap;">تعديل</a>
+                    <form method="post" asp-action="Delete" asp-route-id="@tpl.Id" onsubmit="return confirm('حذف هذا القالب؟ لن يؤثر على المراحل التي فُعِّلت منه سابقاً.');" style="display:inline;">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10.5px; color:#c94a42;">حذف</button>
+                        <button type="submit" class="btn-line" style="height:24px; padding:0 8px; font-size:10.5px; color:#c94a42; white-space:nowrap;">حذف</button>
                     </form>
                 </div>
             </div>
