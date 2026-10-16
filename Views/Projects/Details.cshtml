@@ -311,7 +311,7 @@ else
         <a class="tab-item" data-bs-toggle="tab" href="#pane-assignments">التكليفات (@allAssignments.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">وثائق المشروع (@documents.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-timeline">الجدول الزمني</a>
-        @if (Model.Scope == ProjectScope.Main)
+        
         @if (Model.Scope == ProjectScope.Main)
         {
             <a class="tab-item" data-bs-toggle="tab" href="#pane-subprojects">المشاريع الفرعية (@Model.ChildProjects.Count)</a>
