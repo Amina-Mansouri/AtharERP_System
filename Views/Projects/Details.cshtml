@@ -464,7 +464,7 @@ else
                     <span class="tag @(weightSum == 100 ? "tag-success" : "tag-warning")">مجموع الأوزان @weightSum.ToString("N0")%@(weightSum == 100 ? " ✓" : "")</span>
                 </div>
 
-                <div class="data-table" style="--cols: 30px minmax(0,1.2fr) 56px 90px 70px 128px 84px 104px 92px 84px">
+                <div class="data-table" style="--cols: 30px minmax(0,1.2fr) 56px 90px 70px 110px 70px 96px 92px 160px">
                     <div class="data-table-head">
                         <div class="cell">ت</div>
                         <div class="cell">المرحلة</div>
@@ -516,17 +516,17 @@ else
                                 <div class="cell cell-num">@stage.Assignments.Count</div>
                                 <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
                                 <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
-                                <div class="cell" style="display:flex; gap:6px;">
+                                <div class="cell" style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
                                     @if (canManageStages)
                                     {
-                                        <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px;">تعديل</a>
+                                        <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11px; white-space:nowrap;">تعديل</a>
                                         @if (stage.Status == StageStatus.Completed)
                                         {
-                                            <a asp-controller="ClientRedesignRequests" asp-action="Index" asp-route-stageId="@stage.Id" style="font-size:11px;">إعادة تصميم</a>
+                                            <a asp-controller="ClientRedesignRequests" asp-action="Index" asp-route-stageId="@stage.Id" style="font-size:11px; white-space:nowrap;">إعادة تصميم</a>
                                         }
-                                        <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها أيضاً. متابعة؟');">
+                                        <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها أيضاً. متابعة؟');" style="display:inline;">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42;">حذف</button>
+                                            <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42; white-space:nowrap;">حذف</button>
                                         </form>
                                     }
                                 </div>

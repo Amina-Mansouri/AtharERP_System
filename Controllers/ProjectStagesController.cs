@@ -238,7 +238,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,DisciplineDepartmentId,KpiWeight")] ProjectStage model)
+      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,DisciplineDepartmentId,KpiWeight,Weight")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
@@ -251,6 +251,27 @@ namespace AtharERP_System.Controllers
             {
                 await LoadDropdownsAsync(stage.ProjectId);
                 return View(model);
+            }
+
+            if (model.Weight != stage.Weight)
+            {
+                var otherStagesWeightTotal = await _context.ProjectStages
+                    .Where(s => s.ProjectId == stage.ProjectId && s.Id != stage.Id)
+                    .SumAsync(s => s.Weight);
+                if (otherStagesWeightTotal + model.Weight > 100)
+                {
+                    TempData["Error"] = $"سيتجاوز مجموع أوزان مراحل المشروع 100% (الوزن المتاح حاليًا: {100 - otherStagesWeightTotal:N0}%)";
+                    await LoadDropdownsAsync(stage.ProjectId);
+                    return View(model);
+                }
+                var tasksWeightTotal = stage.Tasks.Sum(t => t.Weight);
+                if (model.Weight < tasksWeightTotal)
+                {
+                    TempData["Error"] = $"لا يمكن أن يكون وزن المرحلة أقل من مجموع أوزان مهامها الحالية ({tasksWeightTotal:N0}%)";
+                    await LoadDropdownsAsync(stage.ProjectId);
+                    return View(model);
+                }
+                stage.Weight = model.Weight;
             }
 
             var wasCompleted = stage.Status == StageStatus.Completed;

@@ -142,14 +142,14 @@ namespace AtharERP_System.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "بيانات المهمة غير صحيحة";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             var otherTasksWeightTotal = stage.Tasks.Where(t => !IsTaskFrozen(t)).Sum(t => t.Weight);
             if (otherTasksWeightTotal + model.Weight > stage.Weight)
             {
                 TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             model.ProjectId = stage.ProjectId;
@@ -165,7 +165,7 @@ namespace AtharERP_System.Controllers
             await _calc.RecalculateStageAsync(stage.Id);
 
             TempData["Success"] = $"تمت إضافة المهمة {model.Title} بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
         }
         // ============================================
         // عرض/تعديل مهمة - العرض متاح للمكلَّف بالمهمة أيضاً، والحفظ (تعديل البيانات) للإدارة فقط
@@ -375,7 +375,7 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم حذف المهمة بنجاح";
-            return RedirectToAction("Details", "Projects", new { id = projectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
         }
 
         // ============================================
