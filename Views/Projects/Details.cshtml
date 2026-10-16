@@ -667,8 +667,12 @@ else
                                                     <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">+ تفعيل</button>
                                                 </form>
                                             }
-                                            else if (usedStage != null)
+                                                                                      else if (usedStage != null)
                                             {
+                                                @if (canManageStages)
+                                                {
+                                                    <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@usedStage.Id" class="btn-line" style="display:inline-block; margin-top:8px; font-size:11px;">تعديل بيانات المرحلة (الوزن، المشرف، المساحة، التخصص...)</a>
+                                                }
                                                 <div style="margin-top:8px; display:grid; gap:5px;">
                                                     @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
                                                     {
@@ -692,7 +696,21 @@ else
                                                                     <button type="submit" style="height:24px; padding:0 8px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px; white-space:nowrap;">+ إضافة</button>
                                                                 </form>
                                                             }
-                                                        </div>
+                                                                                                               </div>
+                                                    }
+                                                    @{
+                                                        var remainingStageWeight = usedStage.Weight - usedStage.Tasks.Sum(t => t.Weight);
+                                                    }
+                                                    @if (remainingStageWeight > 0)
+                                                    {
+                                                        <form method="post" asp-controller="ProjectTasks" asp-action="Create" style="display:flex; align-items:center; gap:6px; border:1px dashed #c9c2e6; border-radius:7px; padding:5px 8px; background:#faf9fc; margin-top:4px;">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="StageId" value="@usedStage.Id" />
+                                                            <input type="text" name="Title" placeholder="اسم مهمة جديدة" required style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:5px; padding:0 6px; font-size:10.5px;" />
+                                                            <input type="number" step="0.01" min="0" max="@remainingStageWeight" name="Weight" placeholder="الوزن %" required style="width:60px; height:24px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
+                                                            <button type="submit" style="height:24px; padding:0 8px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px; white-space:nowrap;">+ إضافة مهمة جديدة</button>
+                                                        </form>
+                                                        <div class="stat-sub" style="margin-top:2px;">الوزن المتبقي القابل للتوزيع: @remainingStageWeight.ToString("N0")%</div>
                                                     }
                                                 </div>
                                             }
