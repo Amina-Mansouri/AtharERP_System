@@ -41,10 +41,11 @@ namespace AtharERP_System.Controllers
         {
             ViewBag.Page = page;
             var baseQuery = _context.Projects
-                .Include(p => p.Client)
-                .Include(p => p.ParentProject)
-                .Include(p => p.ChildProjects)
-                .AsQueryable();
+    .Include(p => p.Client)
+    .Include(p => p.ParentProject)
+    .Include(p => p.ChildProjects)
+    .Include(p => p.ProjectCategory)
+    .AsQueryable();
 
             baseQuery = await ApplyVisibilityFilterAsync(baseQuery);
 

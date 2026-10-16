@@ -138,8 +138,7 @@
         <a asp-action="Index" class="filter-clear">مسح التصفية</a>
     }
 </form>
-
-<div class="data-table" style="--cols: 92px minmax(0,1.6fr) 122px 62px 108px 112px 88px 62px 96px">
+<div class="data-table" style="--cols: 92px minmax(0,1.6fr) 122px 62px 110px 108px 112px 88px 62px 96px 90px">
     <div class="data-table-head">
         <div class="cell">الرمز</div>
         <div class="cell">المشروع</div>
@@ -147,6 +146,7 @@
         {
             <div class="cell">العميل</div>
         }
+        <div class="cell">الملكية</div>
         <div class="cell">النوع</div>
         @if (canViewClient)
         {
@@ -156,6 +156,8 @@
         <div class="cell">التسليم</div>
         <div class="cell">تأخير</div>
         <div class="cell">الحالة</div>
+        <div class="cell">المستندات</div>
+    </div>
     </div>
     @if (!Model.Any())
     {
@@ -199,15 +201,19 @@
                 {
                     <div class="cell">@(project.Client?.Name ?? "-")</div>
                 }
-                <div class="cell">@(project.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == project.Type.Value.ToString()).Label : "-")</div>
-                @if (canViewCosts)
-                {
-                    <div class="cell cell-num">@(project.Budget?.ToString("N0") ?? "-")</div>
-                }
-                <div class="cell cell-num">@project.CompletionPercentage.ToString("N0")%</div>
-                <div class="cell cell-num">@(project.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
-                <div class="cell cell-num">@(delayDays > 0 ? delayDays + " يوم" : "-")</div>
+            <div class="cell">@(project.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == project.Type.Value.ToString()).Label : "-")</div>
+            <div class="cell">@(project.ProjectCategory?.DisplayName ?? "-")</div>
+            @if (canViewCosts)
+            {
+                <div class="cell cell-num">@(project.Budget?.ToString("N0") ?? "-")</div>
+            }
+            <div class="cell cell-num">@project.CompletionPercentage.ToString("N0")%</div>
+            <div class="cell cell-num">@(project.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+            <div class="cell cell-num">@(delayDays > 0 ? delayDays + " يوم" : "-")</div>
                 <div class="cell"><span class="tag @(project.Status == ProjectStatus.Completed ? "tag-success" : project.Status == ProjectStatus.Delayed ? "tag-danger" : "")">@statusLabels.FirstOrDefault(x => x.Value == project.Status.ToString()).Label</span></div>
+           <div class="cell">
+    <span onclick="event.preventDefault(); event.stopPropagation(); window.location.href='@Url.Action("Details", "Projects", new { id = project.Id, tab = "pane-documents" })';" style="color:#5a5370; text-decoration:underline; cursor:pointer; font-size:11.5px;">📄 المستندات</span>
+</div>
             </a>
         }
     }
