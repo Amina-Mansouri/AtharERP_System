@@ -109,13 +109,14 @@
             @foreach (var item in r.Items)
             {
                 anyRows = true;
-                <div class="data-table-row">
+                var rowUrl = Url.Action("Index", "SiteSupplyRequests", new { siteId = r.SiteId });
+                <a href="@rowUrl" class="data-table-row" style="text-decoration:none; color:inherit;">
                     @if (canApprove)
                     {
-                        <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+                        <div class="cell" onclick="event.preventDefault(); event.stopPropagation();"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
                     }
-                    <div class="cell"><a asp-controller="Sites" asp-action="Details" asp-route-id="@r.Site?.ProjectId">@r.Site?.Project?.Name</a></div>
-                    <div class="cell"><a asp-controller="SiteSupplyRequests" asp-action="Index" asp-route-siteId="@r.SiteId">@r.Site?.Name</a></div>
+                    <div class="cell">@r.Site?.Project?.Name</div>
+                    <div class="cell">@r.Site?.Name</div>
                     <div class="cell">
                         @item.MaterialName
                         @if (!string.IsNullOrEmpty(item.PhotoPath))
@@ -129,7 +130,7 @@
                     <div class="cell">@(item.Vendor?.Name ?? "-")</div>
                     <div class="cell">@(r.RequestedBy?.FullName ?? r.RequestedByContractor?.Name ?? "-")</div>
                     <div class="cell"><span class="tag @StatusTagClass(r.Status)">@StatusLabel(r.Status)</span></div>
-                </div>
+                </a>
             }
         }
         @if (!anyRows)

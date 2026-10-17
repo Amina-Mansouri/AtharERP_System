@@ -68,6 +68,7 @@
         bool canProjects = await PermissionService.HasPermissionAsync(User, "Projects.ViewOwn") || await PermissionService.HasPermissionAsync(User, "Projects.ViewAll");
         bool canClients = await PermissionService.HasPermissionAsync(User, "PR.Clients");
         bool canSites = await PermissionService.HasPermissionAsync(User, "Sites.View");
+        bool isDesignEngineer = User.IsInRole("مهندس تصميم");
         bool canViewAssignments = await PermissionService.HasPermissionAsync(User, "Projects.Assignments.View");
         bool canFinance = await PermissionService.HasPermissionAsync(User, "Finance.View")
             || await PermissionService.HasPermissionAsync(User, "Finance.Costs.View")
@@ -150,12 +151,12 @@
                 {
                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
                        asp-controller="Projects" asp-action="Index">المشاريع</a>
-                }
-                @if (canSites)
-                {
-                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
-                       asp-controller="Sites" asp-action="Index">المواقع</a>
-                }
+                    }
+                    @if (canSites && !isDesignEngineer)
+                    {
+                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
+                           asp-controller="Sites" asp-action="Index">المواقع</a>
+                    }
                 @if (canUsers)
                 {
                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
@@ -217,7 +218,7 @@
                         </div>
                     }
 
-                    @if (canSites)
+                    @if (canSites && !isDesignEngineer)
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys03" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys03">
