@@ -165,45 +165,43 @@
                 <div class="nav-quick-divider"></div>
                 <div class="nav-section-title">الإدارات</div>
 
-                @if (canUsers || canRoles || canDepartments)
+                    @if (canUsers || canRoles || canDepartments)
                     {
-                        @if (canFinance)
-                        {
-                            <div class="nav-group">
-                                <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
-                            <span>الصلاحيات والمصادقة <span class="tag tag-success">كاملة</span></span>
-                            <span class="nav-group-caret">▾</span>
-                        </button>
-                        <div class="collapse @(activeSystem == "sys01" ? "show" : "")" id="sys01">
-                            <div class="nav-subgroup-title">الموظفون والصلاحيات</div>
-                            @if (canUsers)
-                            {
-                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
-                                   asp-controller="Admin" asp-action="Users">إدارة الموظفين</a>
-                            }
-                            @if (canRoles)
-                            {
-                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")"
-                                   asp-controller="Admin" asp-action="Roles">إدارة الأدوار والصلاحيات</a>
-                            }
-                            @if (canDepartments)
-                            {
-                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Departments" ? "active" : "")"
-                                   asp-controller="Admin" asp-action="Departments">الإدارات والأقسام</a>
+                        <div class="nav-group">
+                            <button type="button" class="nav-group-header @(activeSystem == "sys01" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys01">
+                                <span>الصلاحيات والمصادقة <span class="tag tag-success">كاملة</span></span>
+                                <span class="nav-group-caret">▾</span>
+                            </button>
+                            <div class="collapse @(activeSystem == "sys01" ? "show" : "")" id="sys01">
+                                <div class="nav-subgroup-title">الموظفون والصلاحيات</div>
+                                @if (canUsers)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
+                                       asp-controller="Admin" asp-action="Users">إدارة الموظفين</a>
+                                }
+                                @if (canRoles)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")"
+                                       asp-controller="Admin" asp-action="Roles">إدارة الأدوار والصلاحيات</a>
+                                }
+                                @if (canDepartments)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Departments" ? "active" : "")"
+                                       asp-controller="Admin" asp-action="Departments">الإدارات والأقسام</a>
                                     <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "RanksAndTracks" ? "active" : "")"
                                        asp-controller="Admin" asp-action="RanksAndTracks">الرتب والمسارات</a>
-                            }
+                                }
+                            </div>
                         </div>
-                    </div>
-                }
+                    }
 
-                @if (canProjects)
-                {
-                    <div class="nav-group">
-                        <button type="button" class="nav-group-header @(activeSystem == "sys02" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys02">
-                            <span>المشاريع <span class="tag tag-success">كاملة</span></span>
-                            <span class="nav-group-caret">▾</span>
-                        </button>
+                    @if (canProjects)
+                    {
+                        <div class="nav-group">
+                            <button type="button" class="nav-group-header @(activeSystem == "sys02" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys02">
+                                <span>المشاريع <span class="tag tag-success">كاملة</span></span>
+                                <span class="nav-group-caret">▾</span>
+                            </button>
                             <div class="collapse @(activeSystem == "sys02" ? "show" : "")" id="sys02">
                                 <div class="nav-subgroup-title">المشاريع والتكليفات</div>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
@@ -216,8 +214,8 @@
                                        asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشروع</a>
                                 }
                             </div>
-                    </div>
-                }
+                        </div>
+                    }
 
                     @if (canSites)
                     {
@@ -238,29 +236,31 @@
                         </div>
                     }
 
-                <div class="nav-group">
-                    <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
-                        <span>المالية <span class="tag tag-warning">قيد التنفيذ</span></span>
-                        <span class="nav-group-caret">▾</span>
-                    </button>
-                    <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Claims" ? "active" : "")"
-                               asp-controller="Finance" asp-action="Claims">المطالبات المالية</a>
-                       
-                       <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
-                               asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
-                               asp-controller="Finance" asp-action="SaleTable">جدول البيع النهائي</a>
-                            <button type="button" class="nav-group-header @(expensesSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#expensesSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
-                                <span>المصروفات</span>
+                    @if (canFinance)
+                    {
+                        <div class="nav-group">
+                            <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
+                                <span>المالية <span class="tag tag-warning">قيد التنفيذ</span></span>
                                 <span class="nav-group-caret">▾</span>
                             </button>
-                            <div class="collapse @(expensesSubActive ? "show" : "")" id="expensesSubGroup">
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")" style="padding-right:24px;"
-                                   asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
-                                   asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
-                            </div>     <span class="nav-item disabled">الرواتب <span class="tag tag-muted">قادمة</span></span>
+                            <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Claims" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="Claims">المطالبات المالية</a>
+
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="SaleTable">جدول البيع النهائي</a>
+                                <button type="button" class="nav-group-header @(expensesSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#expensesSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
+                                    <span>المصروفات</span>
+                                    <span class="nav-group-caret">▾</span>
+                                </button>
+                                <div class="collapse @(expensesSubActive ? "show" : "")" id="expensesSubGroup">
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")" style="padding-right:24px;"
+                                       asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
+                                       asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
+                                </div>     <span class="nav-item disabled">الرواتب <span class="tag tag-muted">قادمة</span></span>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
                                    asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
                             </div>
