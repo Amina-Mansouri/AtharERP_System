@@ -201,12 +201,12 @@ else
                                         </td>
                                         <td style="padding:9px 10px; font-size:11px;">
                                             <details>
-                                                <summary style="cursor:pointer; display:inline; @(item.Task.DelayDays > 0 ? "color:#c94a42;" : "")">@item.Task.Title</summary>
+                                                <summary style="cursor:pointer; display:inline; @(item.Task.EffectiveDelayDays > 0 ? "color:#c94a42;" : "")">@item.Task.Title</summary>
                                                 <div style="margin-top:3px; margin-right:14px; font-size:10px; color:#8a83a0;">↳ البند: @item.Todo.Item</div>
                                             </details>
-                                            @if (item.Task.DelayDays > 0)
+                                            @if (item.Task.EffectiveDelayDays > 0)
                                             {
-                                                <span title="متأخرة عن تاريخ نهاية المهمة نفسها بمقدار @(item.Task.DelayDays) يوم" style="display:inline-block; margin-right:6px; background:#fdecea; color:#c94a42; border:1px solid #f3cfc9; border-radius:5px; padding:1px 6px; font-size:9px; font-weight:600; cursor:help;">⚠ متأخرة @(item.Task.DelayDays) يوم</span>
+                                                <span title="متأخرة عن تاريخ نهاية المهمة نفسها بمقدار @(item.Task.EffectiveDelayDays) يوم" style="display:inline-block; margin-right:6px; background:#fdecea; color:#c94a42; border:1px solid #f3cfc9; border-radius:5px; padding:1px 6px; font-size:9px; font-weight:600; cursor:help;">⚠ متأخرة @(item.Task.EffectiveDelayDays) يوم</span>
                                             }
                                         </td>
                                         <td style="padding:9px 10px; font-size:11px; text-align:center; color:#8a83a0;">@proposal.Revision</td>

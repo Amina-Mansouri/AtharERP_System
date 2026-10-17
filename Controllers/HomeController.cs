@@ -72,7 +72,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CurrentUser = user;
             ViewBag.MyProjectsCount = activeAssignments.Where(a => a.Stage != null).Select(a => a.Stage!.ProjectId).Distinct().Count();
             ViewBag.MyAssignmentsCount = activeAssignments.Count;
-            ViewBag.DelayedAssignmentsCount = activeAssignments.Count(a => a.Tasks.Any(t => t.DelayDays > 0));
+            ViewBag.DelayedAssignmentsCount = activeAssignments.Count(a => a.Tasks.Any(t => t.EffectiveDelayDays > 0));
             ViewBag.AvgCompletion = myTasks.Any() ? Math.Round(myTasks.Average(t => t.CompletionPercentage), 0) : 0;
             ViewBag.MyAssignmentsList = activeAssignments;
             ViewBag.OpenTasks = openTasks;
@@ -195,9 +195,9 @@ namespace AtharERP_System.Controllers
                 var allAssignments = await assignmentsQuery.ToListAsync();
 
                 ViewBag.TotalAssignments = allAssignments.Count;
-                ViewBag.PendingAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.DelayDays > 0));
-                ViewBag.InProgressAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.DelayDays > 0));
-                ViewBag.OverdueAssignmentsCount = allAssignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.DelayDays > 0));
+                ViewBag.PendingAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+                ViewBag.InProgressAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+                ViewBag.OverdueAssignmentsCount = allAssignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.EffectiveDelayDays > 0));
                 ViewBag.CompletedAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Completed);
                 ViewBag.CancelledAssignments = allAssignments.Count(a => a.Status == AssignmentStatus.Cancelled);
             }

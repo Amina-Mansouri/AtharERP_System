@@ -46,9 +46,21 @@ namespace AtharERP_System.Models.Entities
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ التسليم الفعلي")]
         public DateTime? ActualDeliveryDate { get; set; }
-
         [Display(Name = "أيام التأخير")]
         public int DelayDays { get; set; }
+
+        // حساب حيّ: يعكس DelayDays المسجَّل عند التسليم الفعلي، أو التأخير الحالي الحيّ إن لم تُسلَّم المهمة بعد وتجاوزت موعدها
+        [NotMapped]
+        public int EffectiveDelayDays
+        {
+            get
+            {
+                if (DelayDays > 0) return DelayDays;
+                if (Status != ProjectTaskStatus.Completed && PlannedEndDate.HasValue && PlannedEndDate.Value.Date < DateTime.UtcNow.Date)
+                    return (DateTime.UtcNow.Date - PlannedEndDate.Value.Date).Days;
+                return 0;
+            }
+        }
 
         [Display(Name = "أيام التسليم المبكر")]
         public int EarlyDeliveryDays { get; set; }

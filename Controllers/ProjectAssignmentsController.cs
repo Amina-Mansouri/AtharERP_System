@@ -95,10 +95,10 @@ namespace AtharERP_System.Controllers
             var assignments = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
 
             ViewBag.TotalAssignments = assignments.Count;
-            ViewBag.PendingAssignments = assignments.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.DelayDays > 0));
-            ViewBag.InProgressAssignments = assignments.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.DelayDays > 0));
+            ViewBag.PendingAssignments = assignments.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+            ViewBag.InProgressAssignments = assignments.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
             ViewBag.CompletedAssignments = assignments.Count(a => a.Status == AssignmentStatus.Completed);
-            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.DelayDays > 0));
+            ViewBag.OverdueAssignments = assignments.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.EffectiveDelayDays > 0));
 
             var tasksInScope = assignments.SelectMany(a => a.Tasks).ToList();
             ViewBag.ReworkCount = tasksInScope.Sum(t => t.RejectionCount);

@@ -35,9 +35,9 @@
     <div class="stat-item"><span class="kicker">الحالة</span><span class="stat-value">@statusLabels.FirstOrDefault(x => x.Value == Model.Status.ToString()).Label</span></div>
     <div class="stat-item"><span class="kicker">نسبة الإنجاز</span><span class="stat-value">@Model.CompletionPercentage.ToString("N0")%</span></div>
     <div class="stat-item"><span class="kicker">الوزن</span><span class="stat-value">@Model.Weight.ToString("N0")%</span></div>
-    @if (Model.DelayDays > 0)
+    @if (Model.EffectiveDelayDays > 0)
     {
-        <div class="stat-item"><span class="kicker">التأخير</span><span class="stat-value" style="color:#c94a42;">@Model.DelayDays يوم</span></div>
+        <div class="stat-item"><span class="kicker">التأخير</span><span class="stat-value" style="color:#c94a42;">@Model.EffectiveDelayDays يوم</span></div>
     }
     @if (Model.EarlyDeliveryDays > 0)
     {
