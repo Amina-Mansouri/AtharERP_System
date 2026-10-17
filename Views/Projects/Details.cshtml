@@ -1061,8 +1061,15 @@ else
                         _ => ("#8a83a0", "rgba(138,131,160,.16)")
                     };
 
-                    <div style="display:flex; gap:0; margin-bottom:8px;">
-                        <div style="width:180px; flex-shrink:0;"></div>
+                    <div style="display:flex; justify-content:flex-end; gap:6px; margin-bottom:10px;">
+                        <button type="button" class="btn-line" onclick="adjustTimelineZoom(-25)" style="height:28px; padding:0 10px; font-size:12px;">－</button>
+                        <button type="button" class="btn-line" onclick="adjustTimelineZoom(0)" style="height:28px; padding:0 10px; font-size:11px;">إعادة ضبط</button>
+                        <button type="button" class="btn-line" onclick="adjustTimelineZoom(25)" style="height:28px; padding:0 10px; font-size:12px;">＋</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <div id="timelineZoomInner" data-zoom="100" style="min-width:100%;">
+                            <div style="display:flex; gap:0; margin-bottom:8px;">
+                                <div style="width:180px; flex-shrink:0;"></div>
                         <div style="flex:1; position:relative; height:16px;">
                             <span style="position:absolute; right:0; font-size:10.5px; color:#8a83a0;">@minDate.ToString("yyyy/MM/dd")</span>
                             <span style="position:absolute; left:0; font-size:10.5px; color:#8a83a0;">@maxDate.ToString("yyyy/MM/dd")</span>
@@ -1114,11 +1121,13 @@ else
                                             <span class="stat-sub" style="font-size:10px;">لا توجد تواريخ محددة</span>
                                         </div>
                                     }
-                                </div>
-                                <span style="font-size:11px; font-weight:700; color:@barColor; flex-shrink:0; width:34px; text-align:center;">@completionStr%</span>
-                                <span class="tag @StageTagClass(stage.Status)" style="flex-shrink:0;">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span>
+                                                </div>
+                                        <span style="font-size:11px; font-weight:700; color:@barColor; flex-shrink:0; width:34px; text-align:center;">@completionStr%</span>
+                                        <span class="tag @StageTagClass(stage.Status)" style="flex-shrink:0;">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span>
+                                    </div>
+                                }
                             </div>
-                        }
+                        </div>
                     </div>
                 }
             </div>
@@ -1296,7 +1305,16 @@ else
 </style>
         <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>
-                function toggleParentDependentFields() {
+        function adjustTimelineZoom(delta) {
+            var el = document.getElementById('timelineZoomInner');
+            if (!el) return;
+            var current = parseInt(el.getAttribute('data-zoom') || '100', 10);
+            var next = delta === 0 ? 100 : Math.max(100, Math.min(400, current + delta));
+            el.setAttribute('data-zoom', next);
+            el.style.minWidth = next + '%';
+        }
+
+        function toggleParentDependentFields() {
             var parentSelect = document.getElementById('parentProjectSelect');
             var typeSelect = document.getElementById('typeSelect');
             var typeHidden = document.getElementById('typeHidden');
