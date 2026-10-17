@@ -42,22 +42,23 @@ namespace AtharERP_System.Controllers
         // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
         // ============================================
         [RequirePermission("Projects.Assignments.View")]
-        public async Task<IActionResult> Overview(int? projectId, int? stageId, string? taskFilter, string? docFilter)
+        public async Task<IActionResult> Overview(int? projectId, int? subProjectId, int? stageId, string? taskFilter, string? docFilter)
         {
-            
+
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
                 .Where(tm => tm.UserId == CurrentUserId)
                 .Select(tm => tm.ProjectId)
                 .ToListAsync();
 
-            var accessibleProjectsQuery = _context.Projects.AsQueryable();
+            var accessibleProjectsQuery = _context.Projects.Where(p => p.ParentProjectId == null).AsQueryable();
             if (!canViewAll)
             {
                 accessibleProjectsQuery = accessibleProjectsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
             }
             ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.ProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
             ViewBag.StageId = stageId;
             ViewBag.TaskFilter = string.IsNullOrEmpty(taskFilter) ? "all" : taskFilter;
             ViewBag.DocFilter = string.IsNullOrEmpty(docFilter) ? "all" : docFilter;
@@ -65,10 +66,18 @@ namespace AtharERP_System.Controllers
             if (!projectId.HasValue)
             {
                 ViewBag.Stages = new List<ProjectStage>();
+                ViewBag.SubProjects = new List<Project>();
                 return View(new List<ProjectAssignment>());
             }
 
-            var project = await _context.Projects.FindAsync(projectId.Value);
+            ViewBag.SubProjects = await _context.Projects
+                .Where(p => p.ParentProjectId == projectId.Value)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            var effectiveProjectId = subProjectId ?? projectId.Value;
+
+            var project = await _context.Projects.FindAsync(effectiveProjectId);
             if (project == null)
                 return NotFound();
 
@@ -77,7 +86,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             ViewBag.Stages = await _context.ProjectStages
-                .Where(s => s.ProjectId == projectId.Value)
+                .Where(s => s.ProjectId == effectiveProjectId)
                 .OrderBy(s => s.Sequence)
                 .ToListAsync();
 
@@ -87,7 +96,7 @@ namespace AtharERP_System.Controllers
 .Include(a => a.Tasks).ThenInclude(t => t.Todos)
 .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(p => p.PreparedBy)
 .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(p => p.Reviews)
-.Where(a => a.ProjectId == projectId.Value);
+.Where(a => a.ProjectId == effectiveProjectId);
 
             if (stageId.HasValue)
                 query = query.Where(a => a.StageId == stageId.Value);

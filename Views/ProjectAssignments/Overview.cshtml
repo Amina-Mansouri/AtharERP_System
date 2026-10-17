@@ -5,8 +5,10 @@
 @{
     ViewData["Title"] = "مراجعة التكليفات";
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
     var stages = ViewBag.Stages as List<ProjectStage> ?? new List<ProjectStage>();
     var selectedProjectId = ViewBag.ProjectId as int?;
+    var selectedSubProjectId = ViewBag.SubProjectId as int?;
     var selectedStageId = ViewBag.StageId as int?;
     var docFilter = ViewBag.DocFilter as string ?? "all";
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
@@ -55,7 +57,7 @@
     <form method="get" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:8px;">
             <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع</label>
-            <select name="projectId" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
+            <select name="projectId" onchange="var sp=this.form.querySelector('[name=subProjectId]'); if(sp) sp.value=''; this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
                 <option value="">-- اختر مشروعاً --</option>
                 @foreach (var p in projects)
                 {
@@ -63,6 +65,19 @@
                 }
             </select>
         </div>
+        @if (selectedProjectId.HasValue && subProjects.Any())
+        {
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع الفرعي</label>
+                <select name="subProjectId" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
+                    <option value="">-- المشروع الرئيسي نفسه --</option>
+                    @foreach (var sp in subProjects)
+                    {
+                        <option value="@sp.Id" selected="@(selectedSubProjectId == sp.Id)">@sp.Code - @sp.Name</option>
+                    }
+                </select>
+            </div>
+        }
         @if (selectedProjectId.HasValue)
         {
             <div style="display:flex; align-items:center; gap:8px;">
@@ -226,12 +241,12 @@ else
                                             }
                                             @if (proposal.Status == ProposalStatus.Submitted && awaitingSupervisor && isStageSupervisor)
                                             {
-                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId"
+                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-subProjectId="@selectedSubProjectId"
                                                    style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">مراجعة المشرف</a>
                                             }
                                             else if (proposal.Status == ProposalStatus.Submitted && awaitingManager && canReview)
                                             {
-                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId"
+                                                <a asp-controller="DesignProposals" asp-action="Review" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-subProjectId="@selectedSubProjectId"
                                                    style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">الاعتماد النهائي</a>
                                             }
                                             @{
@@ -247,7 +262,7 @@ else
                                             }
                                             @if (canDeleteThisProposal)
                                             {
-                                                <form method="post" asp-controller="DesignProposals" asp-action="DeleteProposal" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" style="display:inline;" onsubmit="return confirm('حذف هذا الإصدار نهائيًا من قاعدة البيانات مع أي إشعارات مرتبطة به؟ لا يمكن التراجع عن هذا الإجراء.');">
+                                                <form method="post" asp-controller="DesignProposals" asp-action="DeleteProposal" asp-route-id="@proposal.Id" asp-route-projectId="@selectedProjectId" asp-route-stageId="@selectedStageId" asp-route-subProjectId="@selectedSubProjectId" style="display:inline;" onsubmit="return confirm('حذف هذا الإصدار نهائيًا من قاعدة البيانات مع أي إشعارات مرتبطة به؟ لا يمكن التراجع عن هذا الإجراء.');">
                                                     @Html.AntiForgeryToken()
                                                     <button type="submit" style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; border:1px solid #c94a42; background:#fff; color:#c94a42; font-size:10.5px; cursor:pointer; margin-right:4px;">حذف</button>
                                                 </form>

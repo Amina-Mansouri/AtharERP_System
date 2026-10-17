@@ -178,12 +178,13 @@ namespace AtharERP_System.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Review(
-     int id,
-     ProposalStatus status,
-     string? notes,
-     int? projectId,
-          int? stageId,
-     string? taskFilter)
+int id,
+ProposalStatus status,
+string? notes,
+int? projectId,
+   int? stageId,
+int? subProjectId,
+string? taskFilter)
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
@@ -199,7 +200,7 @@ namespace AtharERP_System.Controllers
             if (proposal.Status != ProposalStatus.Submitted)
             {
                 TempData["Error"] = "تم اتخاذ قرار نهائي على هذا المستند مسبقاً";
-                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, subProjectId, taskFilter });
             }
 
             var supervisorId = proposal.TaskTodo.Task.Stage?.AssignedEngineerId;
@@ -265,6 +266,7 @@ ProposalStatus status,
 string? notes,
 int? projectId,
 int? stageId,
+int? subProjectId,
 string? taskFilter,
 IFormFile? attachment)
         {
@@ -283,7 +285,7 @@ IFormFile? attachment)
             if (proposal.Status != ProposalStatus.Submitted)
             {
                 TempData["Error"] = "تم اتخاذ قرار نهائي على هذا المستند مسبقاً";
-                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, subProjectId, taskFilter });
             }
 
             var todo = proposal.TaskTodo;
@@ -550,7 +552,7 @@ IFormFile? attachment)
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteProposal(int id, int? projectId, int? stageId, string? taskFilter)
+        public async Task<IActionResult> DeleteProposal(int id, int? projectId, int? stageId, int? subProjectId, string? taskFilter)
         {
             var proposal = await _context.DesignProposals
                 .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
