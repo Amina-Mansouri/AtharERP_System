@@ -95,7 +95,6 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> ActivateTemplate(
                 int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
                 decimal? area, decimal? pricePerMeter,
-                int? disciplineDepartmentId, decimal? kpiWeight,
                 List<int>? selectedTaskIds, string? extraTasks)
         {
             var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
@@ -150,9 +149,6 @@ namespace AtharERP_System.Controllers
                 Name = template.Name,
                 Weight = weight,
                 Area = area,
-
-                DisciplineDepartmentId = disciplineDepartmentId,
-                KpiWeight = kpiWeight,
                 AssignedEngineerId = string.IsNullOrEmpty(assignedEngineerId) ? null : assignedEngineerId,
                 Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
                 Status = StageStatus.New,
@@ -238,7 +234,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,DisciplineDepartmentId,KpiWeight,Weight")] ProjectStage model)
+      [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,Weight")] ProjectStage model)
         {
             var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
@@ -289,9 +285,6 @@ namespace AtharERP_System.Controllers
             stage.WorkDocumentation = model.WorkDocumentation;
             stage.Area = model.Area;
     
-            stage.DisciplineDepartmentId = model.DisciplineDepartmentId;
-            stage.KpiWeight = model.KpiWeight;
-
             var allStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
             await _calc.SyncStageRedesignPercentageAsync(stage.Id);
             foreach (var s in allStages)
@@ -358,12 +351,6 @@ namespace AtharERP_System.Controllers
         .Where(u => u.IsActive)
          .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
          .ToListAsync();
-
-           ViewBag.Disciplines = await _context.Departments
-           .Where(d => d.ParentDepartment != null && d.ParentDepartment.Name == "الإدارة الفنية" && d.IsActive)
-            .OrderBy(d => d.Name)
-            .ToListAsync();
-
         }
         private async Task EnsureTeamMembershipAsync(int projectId, string userId)
         {

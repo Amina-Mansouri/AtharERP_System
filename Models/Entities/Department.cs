@@ -37,7 +37,10 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [Display(Name = "يُستخدم كمصدر لتخصصات قوالب المراحل")]
+        public bool IsStageDisciplinesParent { get; set; } = false;
+
         public virtual ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
-       
+
     }
 }

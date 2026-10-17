@@ -162,9 +162,9 @@ namespace AtharERP_System.Controllers
             ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.StageDisciplines = await _context.Departments
-            .Where(d => d.ParentDepartment != null && d.ParentDepartment.Name == "الإدارة الفنية" && d.IsActive)
-            .OrderBy(d => d.Name)
-            .ToListAsync();
+   .Where(d => d.ParentDepartment != null && d.ParentDepartment.IsStageDisciplinesParent && d.IsActive)
+   .OrderBy(d => d.Name)
+   .ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
             await LoadDropdownsAsync(id);

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AtharERP_System.Models.Entities
 {
@@ -17,6 +18,12 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "الترتيب")]
         public int Order { get; set; }
+
+        [Display(Name = "التخصص")]
+        public int? DisciplineDepartmentId { get; set; }
+
+        [ForeignKey("DisciplineDepartmentId")]
+        public virtual Department? Discipline { get; set; }
 
         public virtual ICollection<StageTemplateTask> DefaultTasks { get; set; } = new List<StageTemplateTask>();
     }

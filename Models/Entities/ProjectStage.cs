@@ -27,17 +27,6 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "الوزن (% من المشروع)")]
         public decimal Weight { get; set; }
 
-        [Display(Name = "التخصص")]
-        public int? DisciplineDepartmentId { get; set; }
-
-        [ForeignKey("DisciplineDepartmentId")]
-        public virtual Department? DisciplineDepartment { get; set; }
-
-        // وزن مستقل تماماً عن Weight أعلاه — يُدخَل يدوياً لكل مرحلة، يختلف حسب نوع المشروع، يُستخدم لاحقاً في حساب KPI
-        [Column(TypeName = "decimal(5,2)")]
-        [Display(Name = "وزن التخصص (KPI)")]
-        public decimal? KpiWeight { get; set; }
-
         [Display(Name = "الحالة")]
         public StageStatus Status { get; set; } = StageStatus.New;
 

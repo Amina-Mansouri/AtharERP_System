@@ -15,23 +15,33 @@ namespace AtharERP_System.Controllers
             _context = context;
         }
 
+        private async Task<List<Department>> LoadStageDisciplinesAsync()
+        {
+            return await _context.Departments
+                .Where(d => d.ParentDepartment != null && d.ParentDepartment.IsStageDisciplinesParent && d.IsActive)
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+        }
+
         [RequirePermission("Projects.Stages.Manage")]
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.Disciplines = await LoadStageDisciplinesAsync();
             return View();
         }
 
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string name, string? tasks)
+        public async Task<IActionResult> Create(string name, string? tasks, int? disciplineDepartmentId)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 ViewBag.Error = "اسم القالب مطلوب";
                 ViewBag.PostedName = name;
                 ViewBag.PostedTasks = tasks;
+                ViewBag.Disciplines = await LoadStageDisciplinesAsync();
                 return View();
             }
 
@@ -39,7 +49,8 @@ namespace AtharERP_System.Controllers
             {
                 Name = name.Trim(),
                 IsActive = true,
-                Order = await _context.StageTemplates.CountAsync() + 1
+                Order = await _context.StageTemplates.CountAsync() + 1,
+                DisciplineDepartmentId = disciplineDepartmentId
             };
             _context.StageTemplates.Add(template);
             await _context.SaveChangesAsync();
@@ -76,13 +87,14 @@ namespace AtharERP_System.Controllers
             if (template == null)
                 return NotFound();
 
+            ViewBag.Disciplines = await LoadStageDisciplinesAsync();
             return View(template);
         }
 
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string name, string? tasks, bool isActive)
+        public async Task<IActionResult> Edit(int id, string name, string? tasks, bool isActive, int? disciplineDepartmentId)
         {
             var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
@@ -90,6 +102,7 @@ namespace AtharERP_System.Controllers
 
             template.Name = name.Trim();
             template.IsActive = isActive;
+            template.DisciplineDepartmentId = disciplineDepartmentId;
 
             _context.StageTemplateTasks.RemoveRange(template.DefaultTasks);
 
@@ -123,6 +136,7 @@ namespace AtharERP_System.Controllers
         {
             var templates = await _context.StageTemplates
                 .Include(t => t.DefaultTasks)
+                .Include(t => t.Discipline)
                 .OrderBy(t => t.Order)
                 .ToListAsync();
 

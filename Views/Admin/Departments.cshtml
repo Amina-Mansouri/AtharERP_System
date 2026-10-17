@@ -108,7 +108,7 @@
 
                 <div style="display:flex; gap:8px; margin-top:13px; padding-top:12px; border-top:1px solid #f1f0f6;">
                     <button type="button" class="btn-line" style="flex:1;"
-                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower(), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.StampImagePath)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Code)))'>
+                            onclick='openDeptModal(@selected.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Name)), @(selected.ParentDepartmentId?.ToString() ?? "null"), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Description)), @selected.IsActive.ToString().ToLower(), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.StampImagePath)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(selected.Code)), @selected.IsStageDisciplinesParent.ToString().ToLower())'>
                         تعديل
                     </button>
                     <form method="post" asp-action="DeleteDepartment" asp-route-id="@selected.Id" onsubmit="return confirm('حذف هذا العنصر؟')" style="flex:1;">
@@ -159,6 +159,11 @@
                         <input type="hidden" name="IsActive" value="false" />
                         <label for="dept-isActive" style="font-size:11.5px;">نشطة</label>
                     </div>
+                    <div id="dept-disciplines-wrapper" style="display:none; align-items:center; gap:8px;">
+                        <input type="checkbox" name="IsStageDisciplinesParent" id="dept-disciplines" value="true" />
+                        <input type="hidden" name="IsStageDisciplinesParent" value="false" />
+                        <label for="dept-disciplines" style="font-size:11.5px;">يُستخدم كمصدر لتخصصات قوالب المراحل</label>
+                    </div>
                     <div>
                         <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">ختم الإدارة (اختياري)</div>
                         <div id="dept-current-stamp"></div>
@@ -175,23 +180,29 @@
 
 @section Scripts {
     <script>
-        function openDeptModal(id, name, parentId, description, isActive, stampPath, code) {
+        function openDeptModal(id, name, parentId, description, isActive, stampPath, code, isDisciplinesParent) {
             const form = document.getElementById('deptForm');
             const isEdit = id !== undefined && id !== null;
+            const isTopLevel = parentId === undefined || parentId === null || parentId === '';
             form.action = isEdit ? '@Url.Action("EditDepartment")' : '@Url.Action("CreateDepartment")';
             document.getElementById('dept-id').value = id ?? '';
             document.getElementById('dept-name').value = name ?? '';
             document.getElementById('dept-parent').value = (parentId !== undefined && parentId !== null) ? parentId : '';
             document.getElementById('dept-description').value = description ?? '';
             document.getElementById('dept-code').value = code ?? '';
-            document.getElementById('dept-modal-title').textContent = isEdit ? 'تعديل' : ((parentId !== undefined && parentId !== null) ? 'قسم تابع جديد' : 'إدارة جديدة');
+            document.getElementById('dept-modal-title').textContent = isEdit ? 'تعديل' : (!isTopLevel ? 'قسم تابع جديد' : 'إدارة جديدة');
             document.getElementById('dept-active-wrapper').style.display = isEdit ? 'flex' : 'none';
+            document.getElementById('dept-disciplines-wrapper').style.display = isTopLevel ? 'flex' : 'none';
             if (isEdit) {
                 document.getElementById('dept-isActive').checked = !!isActive;
             }
+            document.getElementById('dept-disciplines').checked = !!isDisciplinesParent;
             var stampDiv = document.getElementById('dept-current-stamp');
             stampDiv.innerHTML = stampPath ? ('<img src="' + stampPath + '" style="max-width:80px; max-height:80px; display:block; margin-bottom:5px;" />') : '';
             new bootstrap.Modal(document.getElementById('deptModal')).show();
         }
+        document.getElementById('dept-parent').addEventListener('change', function() {
+            document.getElementById('dept-disciplines-wrapper').style.display = this.value ? 'none' : 'flex';
+        });
     </script>
 }

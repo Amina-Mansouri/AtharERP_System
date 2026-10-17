@@ -64,7 +64,7 @@ namespace AtharERP_System.Data
 
                 foreach (var (name, children) in departmentTree)
                 {
-                    var parent = new Department { Name = name, IsActive = true, CreatedAt = DateTime.UtcNow };
+                    var parent = new Department { Name = name, IsActive = true, CreatedAt = DateTime.UtcNow, IsStageDisciplinesParent = name == "الإدارة الفنية" };
                     context.Departments.Add(parent);
                     await context.SaveChangesAsync();
 

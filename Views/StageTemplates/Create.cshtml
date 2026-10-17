@@ -1,4 +1,5 @@
-﻿@{
+﻿@using AtharERP_System.Models.Entities
+@{
     ViewData["Title"] = "قالب مرحلة جديد";
     string? error = ViewBag.Error as string;
     string postedName = ViewBag.PostedName as string ?? "";
@@ -20,6 +21,16 @@
             <div class="col-md-6 mb-3">
                 <label class="form-label">اسم القالب</label>
                 <input type="text" name="name" class="form-control" required value="@postedName" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">التخصص</label>
+                <select name="disciplineDepartmentId" class="form-select">
+                    <option value="">-- غير محدد --</option>
+                    @foreach (var d in (ViewBag.Disciplines as List<Department> ?? new List<Department>()))
+                    {
+                        <option value="@d.Id" selected="@(ViewBag.PostedDisciplineId as int? == d.Id)">@d.Name</option>
+                    }
+                </select>
             </div>
         </div>
 

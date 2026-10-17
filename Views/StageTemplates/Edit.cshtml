@@ -15,6 +15,16 @@
                 <label class="form-label">اسم القالب</label>
                 <input type="text" name="name" class="form-control" value="@Model.Name" required />
             </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">التخصص</label>
+                <select name="disciplineDepartmentId" class="form-select">
+                    <option value="">-- غير محدد --</option>
+                    @foreach (var d in (ViewBag.Disciplines as List<Department> ?? new List<Department>()))
+                    {
+                        <option value="@d.Id" selected="@(Model.DisciplineDepartmentId == d.Id)">@d.Name</option>
+                    }
+                </select>
+            </div>
             <div class="col-md-6 mb-3 form-check form-switch" style="margin-top:32px;">
                 <input type="checkbox" name="isActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
                 <input type="hidden" name="isActive" value="false" />

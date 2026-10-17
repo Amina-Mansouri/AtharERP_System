@@ -780,7 +780,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description,Code")] Department model, IFormFile? stampImage)
+        public async Task<IActionResult> CreateDepartment([Bind("Name,ParentDepartmentId,Description,Code,IsStageDisciplinesParent")] Department model, IFormFile? stampImage)
         {
             if (!ModelState.IsValid)
             {
@@ -812,7 +812,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive,Code")] Department model, IFormFile? stampImage)
+        public async Task<IActionResult> EditDepartment(int id, [Bind("Name,ParentDepartmentId,Description,IsActive,Code,IsStageDisciplinesParent")] Department model, IFormFile? stampImage)
         {
             var department = await _context.Departments.FindAsync(id);
             if (department == null)
@@ -834,6 +834,7 @@ namespace AtharERP_System.Controllers
             department.Description = model.Description;
             department.IsActive = model.IsActive;
             department.Code = model.Code;
+            department.IsStageDisciplinesParent = model.IsStageDisciplinesParent;
 
             if (stampImage != null && stampImage.Length > 0)
             {
@@ -876,10 +877,10 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Departments");
             }
 
-            var hasStages = await _context.ProjectStages.AnyAsync(s => s.DisciplineDepartmentId == id);
-            if (hasStages)
+            var hasTemplates = await _context.StageTemplates.AnyAsync(t => t.DisciplineDepartmentId == id);
+            if (hasTemplates)
             {
-                TempData["Error"] = "لا يمكن حذف القسم لاستخدامه كتخصص لمرحلة مشروع واحدة أو أكثر";
+                TempData["Error"] = "لا يمكن حذف القسم لاستخدامه كتخصص لقالب مرحلة واحد أو أكثر";
                 return RedirectToAction("Departments");
             }
 
