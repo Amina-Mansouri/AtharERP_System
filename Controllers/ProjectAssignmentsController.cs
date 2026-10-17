@@ -556,8 +556,7 @@ List<int>? taskIds)
         public async Task<IActionResult> ManageTasks(int id, int? taskId = null)
         {
             var assignment = await _context.ProjectAssignments
-    .Include(a => a.Stage).ThenInclude(s => s!.Project)
-    .Include(a => a.Stage).ThenInclude(s => s!.DisciplineDepartment)
+        .Include(a => a.Stage).ThenInclude(s => s!.Project)
     .Include(a => a.Engineers).ThenInclude(e => e.User)
     .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals)
     .FirstOrDefaultAsync(a => a.Id == id);
@@ -574,6 +573,9 @@ List<int>? taskIds)
             ViewBag.IsSysAdmin = User.IsInRole("مدير النظام");
             ViewBag.CanManageTasks = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.SelectedTaskId = taskId;
+            ViewBag.StageDiscipline = assignment.Stage != null
+                ? await _context.StageTemplates.Include(t => t.Discipline).Where(t => t.Name == assignment.Stage.Name).Select(t => t.Discipline).FirstOrDefaultAsync()
+                : null;
 
             return View(assignment);
         }

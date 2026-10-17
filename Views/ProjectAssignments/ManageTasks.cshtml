@@ -134,9 +134,9 @@
                                     <input type="hidden" name="todoId" value="@todo.Id" />
                                     <input type="hidden" name="assignmentId" value="@Model.Id" />
                                     <div style="height:30px; display:flex; align-items:center; font-size:10.5px; font-weight:600;" title="التصنيف تلقائي حسب تخصص المرحلة">
-                                        @if (Model.Stage?.DisciplineDepartment != null)
+                                        @if (ViewBag.StageDiscipline is Department stageDiscipline)
                                         {
-                                            <span>@Model.Stage.DisciplineDepartment.Code</span>
+                                            <span>@stageDiscipline.Code</span>
                                         }
                                         else
                                         {

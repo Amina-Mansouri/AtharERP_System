@@ -94,9 +94,9 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Upload(int todoId, IFormFile file, FileCategory fileCategory, int? assignmentId)
         {
             var todo = await _context.TaskTodos
-                .Include(t => t.Task).ThenInclude(task => task.Project)
-                .Include(t => t.Task).ThenInclude(task => task.Stage!).ThenInclude(s => s.DisciplineDepartment)
-                .FirstOrDefaultAsync(t => t.Id == todoId);
+      .Include(t => t.Task).ThenInclude(task => task.Project)
+      .Include(t => t.Task).ThenInclude(task => task.Stage)
+      .FirstOrDefaultAsync(t => t.Id == todoId);
             if (todo == null)
                 return NotFound();
 
@@ -126,7 +126,10 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "الرجاء اختيار ملف";
                 return BackToTask();
             }
-            var classification = task.Stage?.DisciplineDepartment?.Code;
+            var stageDiscipline = task.Stage != null
+     ? await _context.StageTemplates.Include(t => t.Discipline).Where(t => t.Name == task.Stage.Name).Select(t => t.Discipline).FirstOrDefaultAsync()
+     : null;
+            var classification = stageDiscipline?.Code;
             if (string.IsNullOrWhiteSpace(classification))
             {
                 TempData["Error"] = "لم يُحدَّد قسم/تخصص لمرحلة هذا التكليف بعد — يُرجى تحديد ذلك من بيانات المرحلة أولاً قبل رفع مستند";

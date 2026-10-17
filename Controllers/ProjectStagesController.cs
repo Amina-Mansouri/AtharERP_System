@@ -61,10 +61,9 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var stages = await _context.ProjectStages
-                .Include(s => s.AssignedEngineer)
-                .Include(s => s.DisciplineDepartment)
-                .Include(s => s.Assignments)
-                .Where(s => s.ProjectId == projectId.Value)
+     .Include(s => s.AssignedEngineer)
+     .Include(s => s.Assignments)
+     .Where(s => s.ProjectId == projectId.Value)
                 .OrderBy(s => s.Sequence)
                 .ToListAsync();
 
@@ -75,8 +74,9 @@ namespace AtharERP_System.Controllers
             var totalStageWeight = stages.Sum(s => s.Weight);
             ViewBag.WeightSum = totalStageWeight;
             ViewBag.WeightedCompletion = totalStageWeight > 0
-                ? Math.Round(stages.Sum(s => s.Weight * s.CompletionPercentage) / totalStageWeight, 1)
-                : 0;
+     ? Math.Round(stages.Sum(s => s.Weight * s.CompletionPercentage) / totalStageWeight, 1)
+     : 0;
+            ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.Discipline).ToListAsync();
             return View(stages);
         }
 
