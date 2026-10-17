@@ -97,6 +97,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(4);
+});
 
 var app = builder.Build();
 
@@ -119,6 +123,7 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 

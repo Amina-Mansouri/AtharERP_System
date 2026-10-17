@@ -1147,6 +1147,16 @@ button:focus-visible {
             color: var(--sys-text);
         }
 
+        .app-subbar .app-crumb .crumb-link {
+            color: var(--sys-text-light);
+            text-decoration: none;
+        }
+
+            .app-subbar .app-crumb .crumb-link:hover {
+                color: var(--sys-primary);
+                text-decoration: underline;
+            }
+
     .app-subbar .app-crumb-dept {
         font-size: 11px;
         color: #a8a2bd;

@@ -4,6 +4,44 @@
 @inject PermissionService PermissionService
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@functions {
+    public class NavTrailEntry
+    {
+        public string Title { get; set; } = "";
+        public string Url { get; set; } = "";
+    }
+}
+@{
+    var navTrail = new List<NavTrailEntry>();
+    if (SignInManager.IsSignedIn(User) && Context.Request.Method == "GET" && ViewData["HideNav"] as bool? != true)
+    {
+        var currentUrl = Context.Request.Path + Context.Request.QueryString;
+        var currentTitle = (ViewData["PageTitle"] as string) ?? (ViewData["Title"] as string) ?? "صفحة";
+
+        var storedTrail = Context.Session.GetString("NavTrail");
+        if (!string.IsNullOrEmpty(storedTrail))
+        {
+            try { navTrail = System.Text.Json.JsonSerializer.Deserialize<List<NavTrailEntry>>(storedTrail) ?? new List<NavTrailEntry>(); }
+            catch { navTrail = new List<NavTrailEntry>(); }
+        }
+
+        var existingIndex = navTrail.FindIndex(e => e.Url == currentUrl);
+        if (existingIndex >= 0)
+        {
+            navTrail = navTrail.Take(existingIndex + 1).ToList();
+        }
+        else
+        {
+            navTrail.Add(new NavTrailEntry { Title = currentTitle, Url = currentUrl });
+            if (navTrail.Count > 8)
+            {
+                navTrail = navTrail.Skip(navTrail.Count - 8).ToList();
+            }
+        }
+
+        Context.Session.SetString("NavTrail", System.Text.Json.JsonSerializer.Serialize(navTrail));
+    }
+}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -365,12 +403,25 @@
                         رجوع
                     </button>
                     <div class="app-crumb">
-                        @if (!string.IsNullOrEmpty(ViewData["Kicker"] as string))
+                        @if (navTrail.Any())
                         {
-                            <span>@ViewData["Kicker"]</span>
-                            <span class="crumb-sep">/</span>
+                            @for (int i = 0; i < navTrail.Count; i++)
+                            {
+                                if (i == navTrail.Count - 1)
+                                {
+                                    <span class="crumb-leaf">@navTrail[i].Title</span>
+                                }
+                                else
+                                {
+                                    <a href="@navTrail[i].Url" class="crumb-link">@navTrail[i].Title</a>
+                                    <span class="crumb-sep">/</span>
+                                }
+                            }
                         }
-                        <span class="crumb-leaf">@(ViewData["PageTitle"] as string ?? ViewData["Title"] as string)</span>
+                        else
+                        {
+                            <span class="crumb-leaf">@(ViewData["PageTitle"] as string ?? ViewData["Title"] as string)</span>
+                        }
                     </div>
                 </div>
                 <div class="app-content-body cs">
