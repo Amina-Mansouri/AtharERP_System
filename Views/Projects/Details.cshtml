@@ -1067,7 +1067,7 @@ else
                         <button type="button" class="btn-line" onclick="adjustTimelineZoom(25)" style="height:28px; padding:0 10px; font-size:12px;">＋</button>
                     </div>
                     <div style="overflow-x:auto;">
-                        <div id="timelineZoomInner" data-zoom="100" style="min-width:100%;">
+                        <div id="timelineZoomInner" data-zoom="100" style="zoom:1;">
                             <div style="display:flex; gap:0; margin-bottom:8px;">
                                 <div style="width:180px; flex-shrink:0;"></div>
                         <div style="flex:1; position:relative; height:16px;">
@@ -1309,9 +1309,9 @@ else
             var el = document.getElementById('timelineZoomInner');
             if (!el) return;
             var current = parseInt(el.getAttribute('data-zoom') || '100', 10);
-            var next = delta === 0 ? 100 : Math.max(100, Math.min(400, current + delta));
+            var next = delta === 0 ? 100 : Math.max(50, Math.min(250, current + delta));
             el.setAttribute('data-zoom', next);
-            el.style.minWidth = next + '%';
+            el.style.zoom = (next / 100);
         }
 
         function toggleParentDependentFields() {
