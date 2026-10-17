@@ -101,7 +101,7 @@ namespace AtharERP_System.Controllers
             _context.ProjectAssignments.Add(assignment);
             await _context.SaveChangesAsync();
 
-            _context.ProjectTasks.Add(new ProjectTask
+            var redesignTask = new ProjectTask
             {
                 ProjectId = stage.ProjectId,
                 StageId = stage.Id,
@@ -114,6 +114,14 @@ namespace AtharERP_System.Controllers
                 PlannedEndDate = plannedEndDate,
                 CreatedAt = DateTime.UtcNow,
                 CreatedById = CurrentUserId
+            };
+            _context.ProjectTasks.Add(redesignTask);
+            await _context.SaveChangesAsync();
+
+            _context.TaskTodos.Add(new TaskTodo
+            {
+                TaskId = redesignTask.Id,
+                Item = redesignTaskTitle
             });
 
             foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
