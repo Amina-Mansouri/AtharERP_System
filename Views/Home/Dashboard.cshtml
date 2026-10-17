@@ -193,8 +193,8 @@
     @if (canViewModule05)
     {
         var avgDurationByStage = ViewBag.AvgDurationByStageName as List<(string Name, double AvgDays)> ?? new();
-        var mostDelayedStages = ViewBag.MostDelayedStages as List<(string StageName, string ProjectName, int DelayDays)> ?? new();
-        var mostReworkedStages = ViewBag.MostReworkedStages as List<(string StageName, string ProjectName, int ReworkCount)> ?? new();
+        var mostDelayedStages = ViewBag.MostDelayedStages as List<(string StageName, string ProjectName, int ProjectId, int DelayDays)> ?? new();
+        var mostReworkedStages = ViewBag.MostReworkedStages as List<(string StageName, string ProjectName, int ProjectId, int ReworkCount)> ?? new();
         double maxAvgDays = avgDurationByStage.Any() ? avgDurationByStage.Max(x => x.AvgDays) : 1;
         int maxDelayDays = mostDelayedStages.Any() ? mostDelayedStages.Max(x => x.DelayDays) : 1;
         int maxRework = mostReworkedStages.Any() ? mostReworkedStages.Max(x => x.ReworkCount) : 1;
@@ -231,7 +231,7 @@
                 @foreach (var s in mostDelayedStages)
                 {
                     <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
-                        <span>@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></span>
+                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@s.ProjectId" asp-route-tab="pane-stages" asp-route-openStage="@s.StageName" style="color:inherit; text-decoration:none;">@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></a>
                         <span class="cell-num" style="color:#c94a42;">@s.DelayDays يوم</span>
                     </div>
                     <div class="progress-hair" style="height:4px; margin-bottom:8px;">
@@ -250,9 +250,10 @@
                 @foreach (var s in mostReworkedStages)
                 {
                     <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
-                        <span>@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></span>
+                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@s.ProjectId" asp-route-tab="pane-stages" asp-route-openStage="@s.StageName" style="color:inherit; text-decoration:none;">@s.StageName <span style="color:var(--sys-text-light);">(@s.ProjectName)</span></a>
                         <span class="cell-num" style="color:#c9700f;">@s.ReworkCount</span>
                     </div>
+                    
                     <div class="progress-hair" style="height:4px; margin-bottom:8px;">
                         <span style="width:@((s.ReworkCount * 100 / maxRework).ToString("F0"))%; background:#c9700f;"></span>
                     </div>
