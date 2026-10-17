@@ -558,7 +558,7 @@ List<int>? taskIds)
             var assignment = await _context.ProjectAssignments
         .Include(a => a.Stage).ThenInclude(s => s!.Project)
     .Include(a => a.Engineers).ThenInclude(e => e.User)
-    .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals)
+    .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(dp => dp.Reviews)
     .FirstOrDefaultAsync(a => a.Id == id);
 
             if (assignment == null)

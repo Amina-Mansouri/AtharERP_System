@@ -109,8 +109,8 @@
                             <span class="tag tag-danger">عاجلة</span>
                         }
                     </div>
-                    <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 40px; gap:8px; padding:8px 0; font-size:10.5px; color:#8a83a0; font-weight:600; border-bottom:1px solid #f1f0f6;">
-                        <div>نص البند</div><div>التصنيف</div><div>نوع الملف</div><div>رفع مستند</div><div>الحالة</div><div></div>
+                                      <div style="display:grid; grid-template-columns:minmax(140px,2fr) 80px 80px minmax(150px,1fr) 95px 95px 95px 32px; gap:8px; padding:8px 0; font-size:10.5px; color:#8a83a0; font-weight:600; border-bottom:1px solid #f1f0f6;">
+                        <div>نص البند</div><div>التصنيف</div><div>نوع الملف</div><div>رفع مستند</div><div>تاريخ الرفع</div><div>تاريخ المراجعة</div><div>الحالة</div><div></div>
                     </div>
 
                     @if (!t.Todos.Any())
@@ -126,7 +126,7 @@
                             bool isTodoApproved = latestDoc != null && latestDoc.Status == ProposalStatus.Approved;
                             string statusLabel = !docs.Any() ? "بانتظار الرفع" : (isTodoApproved ? "مكتمل" : "قيد المراجعة");
                             string statusClass = !docs.Any() ? "tag-warning" : (isTodoApproved ? "tag-success" : "tag-accent");
-                            <div style="display:grid; grid-template-columns:minmax(160px,2fr) 100px 100px minmax(160px,1fr) 110px 40px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #f6f5fa;">
+                            <div style="display:grid; grid-template-columns:minmax(140px,2fr) 80px 80px minmax(150px,1fr) 95px 95px 95px 32px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #f6f5fa;">
                                 <div style="font-size:12px; font-weight:500;">@todo.Item</div>
 
                                 <form method="post" asp-controller="DesignProposals" asp-action="Upload" enctype="multipart/form-data" style="display:contents;">
@@ -154,7 +154,10 @@
                                         <input type="file" name="file" required style="font-size:10px; max-width:110px;" />
                                         <button type="submit" style="height:28px; padding:0 8px; border:none; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; white-space:nowrap;">رفع</button>
                                     </div>
-                                </form>
+                                                              </form>
+
+                                <div style="font-size:10.5px; color:#5a5370;">@(latestDoc?.SubmittedDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                                <div style="font-size:10.5px; color:#5a5370;">@(latestDoc?.Reviews.OrderByDescending(r => r.ReviewDate).FirstOrDefault()?.ReviewDate.ToString("yyyy-MM-dd") ?? "-")</div>
 
                                 <div><span class="tag @statusClass">@statusLabel</span></div>
 
