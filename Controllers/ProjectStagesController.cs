@@ -37,7 +37,7 @@ namespace AtharERP_System.Controllers
         // تتبّع مراحل مشروع (اختيار مشروع → إحصائيات مراحله)
         // ============================================
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
-        public async Task<IActionResult> Overview(int? projectId)
+        public async Task<IActionResult> Overview(int? projectId, int? subProjectId)
         {
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
@@ -45,25 +45,36 @@ namespace AtharERP_System.Controllers
                 .Select(tm => tm.ProjectId)
                 .ToListAsync();
 
-            var accessibleProjectsQuery = _context.Projects.AsQueryable();
+            var accessibleProjectsQuery = _context.Projects.Where(p => p.ParentProjectId == null).AsQueryable();
             if (!canViewAll)
             {
                 accessibleProjectsQuery = accessibleProjectsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
             }
             ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.ProjectId = projectId;
+            ViewBag.SubProjectId = subProjectId;
 
             if (!projectId.HasValue)
+            {
+                ViewBag.SubProjects = new List<Project>();
                 return View(new List<ProjectStage>());
+            }
 
-            var canAccessThisProject = canViewAll || await _context.Projects.AnyAsync(p => p.Id == projectId.Value && (p.CreatedById == CurrentUserId)) || myProjectIds.Contains(projectId.Value);
+            ViewBag.SubProjects = await _context.Projects
+                .Where(p => p.ParentProjectId == projectId.Value)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            var effectiveProjectId = subProjectId ?? projectId.Value;
+
+            var canAccessThisProject = canViewAll || await _context.Projects.AnyAsync(p => p.Id == effectiveProjectId && (p.CreatedById == CurrentUserId)) || myProjectIds.Contains(effectiveProjectId);
             if (!canAccessThisProject)
                 return Forbid();
 
             var stages = await _context.ProjectStages
      .Include(s => s.AssignedEngineer)
      .Include(s => s.Assignments)
-     .Where(s => s.ProjectId == projectId.Value)
+     .Where(s => s.ProjectId == effectiveProjectId)
                 .OrderBy(s => s.Sequence)
                 .ToListAsync();
 
