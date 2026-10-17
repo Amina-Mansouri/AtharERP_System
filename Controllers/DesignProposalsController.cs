@@ -203,15 +203,19 @@ namespace AtharERP_System.Controllers
             var existingReview = await _context.ProposalReviews.FirstOrDefaultAsync(r => r.DesignProposalId == proposal.Id);
             var isSupervisorPhase = existingReview == null && !string.IsNullOrEmpty(supervisorId);
 
+            var canManageTasks = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+
             if (isSupervisorPhase)
             {
-                if (CurrentUserId != supervisorId)
+                if (CurrentUserId != supervisorId && !(canManageTasks && await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId)))
                     return Forbid();
             }
-            else if (!await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage") || !await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId))
+            else if (!canManageTasks || !await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId))
             {
                 return Forbid();
             }
+
+            ViewBag.CanDeleteProposal = canManageTasks;
 
             var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
@@ -538,6 +542,30 @@ IFormFile? attachment)
                 .Select(a => a.Status)
                 .FirstOrDefaultAsync();
             return status == AssignmentStatus.Cancelled;
+        }
+
+        [RequirePermission("Projects.Tasks.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteProposal(int id, int? projectId, int? stageId, string? taskFilter)
+        {
+            var proposal = await _context.DesignProposals.FirstOrDefaultAsync(p => p.Id == id);
+            if (proposal == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId))
+                return Forbid();
+
+            var relatedNotifications = await _context.Notifications
+                .Where(n => n.EntityType == "DesignProposal" && n.EntityId == proposal.Id)
+                .ToListAsync();
+            _context.Notifications.RemoveRange(relatedNotifications);
+
+            _context.DesignProposals.Remove(proposal);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم حذف هذا الإصدار والإشعارات المرتبطة به بنجاح";
+            return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
         }
 
         [HttpGet]

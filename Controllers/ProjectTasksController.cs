@@ -514,7 +514,7 @@ namespace AtharERP_System.Controllers
 
             return this.RedirectKeepingTab("Edit", new { id = taskId });
         }
-        [Authorize]
+        [RequirePermission("Projects.Tasks.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveTodo(int id, int taskId, int? assignmentId)
@@ -523,7 +523,7 @@ namespace AtharERP_System.Controllers
             if (task == null)
                 return NotFound();
 
-            if (!await IsTaskWorkerAsync(task))
+            if (!await _permissionService.CanAccessProjectAsync(User, task.ProjectId))
                 return Forbid();
 
             IActionResult BackToTask() => assignmentId.HasValue

@@ -45,6 +45,18 @@
     </div>
 </div>
 
+@if (ViewBag.CanDeleteProposal as bool? ?? false)
+{
+    <div class="d-flex justify-content-end mb-2">
+        <form method="post" asp-action="DeleteProposal" asp-route-id="@proposal?.Id" onsubmit="return confirm('حذف هذا الإصدار نهائيًا من قاعدة البيانات مع أي إشعارات مرتبطة به؟ لا يمكن التراجع عن هذا الإجراء.');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="projectId" value="@projectId" />
+            <input type="hidden" name="stageId" value="@stageId" />
+            <input type="hidden" name="taskFilter" value="@taskFilter" />
+            <button type="submit" class="btn-line" style="color:#c94a42;">حذف هذا الإصدار نهائيًا</button>
+        </form>
+    </div>
+}
 <div class="athar-card mt-3">
     <form method="post" asp-action="Review" asp-route-id="@proposal?.Id" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
