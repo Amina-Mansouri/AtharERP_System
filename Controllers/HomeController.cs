@@ -76,6 +76,9 @@ namespace AtharERP_System.Controllers
             ViewBag.AvgCompletion = myTasks.Any() ? Math.Round(myTasks.Average(t => t.CompletionPercentage), 0) : 0;
             ViewBag.MyAssignmentsList = activeAssignments;
             ViewBag.OpenTasks = openTasks;
+            ViewBag.EarlyDeliveryCount = myTasks.Count(t => t.EarlyDeliveryDays > 0);
+            ViewBag.LateDeliveryCount = myTasks.Count(t => t.EffectiveDelayDays > 0);
+            ViewBag.OnTimeDeliveryCount = myTasks.Count(t => t.EarlyDeliveryDays == 0 && t.EffectiveDelayDays == 0);
             ViewBag.CompletedAssignmentsCount = myAssignments.Count(a => a.Status == AssignmentStatus.Completed);
 
             var completedTasks = myTasks.Where(t => t.Status == ProjectTaskStatus.Completed).ToList();
