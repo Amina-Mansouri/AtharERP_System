@@ -1118,6 +1118,39 @@ namespace AtharERP_System.Migrations
                     b.ToTable("Permissions");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PersonalChecklistItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsChecked")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ProjectAssignmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectAssignmentId");
+
+                    b.ToTable("PersonalChecklistItems");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -3032,6 +3065,17 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PersonalChecklistItem", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectAssignment", "ProjectAssignment")
+                        .WithMany()
+                        .HasForeignKey("ProjectAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectAssignment");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Project", b =>

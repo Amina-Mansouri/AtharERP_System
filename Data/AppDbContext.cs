@@ -30,6 +30,7 @@ namespace AtharERP_System.Data
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; } = null!;
         public DbSet<ProjectAssignmentSubtask> ProjectAssignmentSubtasks { get; set; } = null!;
         public DbSet<AssignmentEngineer> AssignmentEngineers { get; set; } = null!;
+        public DbSet<PersonalChecklistItem> PersonalChecklistItems { get; set; } = null!;
         public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; } = null!;
         public DbSet<ProjectDocument> ProjectDocuments { get; set; } = null!;
         public DbSet<ProjectTimeline> ProjectTimelines { get; set; } = null!;

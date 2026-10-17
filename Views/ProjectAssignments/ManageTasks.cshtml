@@ -184,7 +184,47 @@
         }
     </div>
 </div>
+<div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-top:12px;">
+    <div style="font-size:13.5px; font-weight:700; margin-bottom:10px;">قائمتي الشخصية</div>
 
+    <form method="post" asp-controller="ProjectAssignments" asp-action="AddChecklistItem" style="display:flex; gap:8px; margin-bottom:10px;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="assignmentId" value="@Model.Id" />
+        <input type="text" name="text" placeholder="أضيفي عنصرًا..." required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:12px;" />
+        <button type="submit" style="height:32px; padding:0 16px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:12px; font-weight:600;">إضافة</button>
+    </form>
+
+    @{
+        var myChecklist = ViewBag.MyChecklist as List<PersonalChecklistItem> ?? new List<PersonalChecklistItem>();
+    }
+    @if (!myChecklist.Any())
+    {
+        <div style="padding:10px 0; text-align:center; color:#8a83a0; font-size:12px;">لا توجد عناصر بعد</div>
+    }
+    else
+    {
+        <div style="display:grid; gap:6px;">
+            @foreach (var item in myChecklist)
+            {
+                <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #f6f5fa;">
+                    <form method="post" asp-controller="ProjectAssignments" asp-action="ToggleChecklistItem" style="display:contents;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <input type="hidden" name="assignmentId" value="@Model.Id" />
+                        <input type="checkbox" class="chk-gold" checked="@item.IsChecked" onchange="this.form.submit()" />
+                    </form>
+                    <span style="flex:1; font-size:12px; text-decoration:@(item.IsChecked ? "line-through" : "none"); color:@(item.IsChecked ? "#8a83a0" : "inherit");">@item.Text</span>
+                    <form method="post" asp-controller="ProjectAssignments" asp-action="DeleteChecklistItem" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <input type="hidden" name="assignmentId" value="@Model.Id" />
+                        <button type="submit" style="border:none; background:none; color:#c94a42; font-size:13px; cursor:pointer;">×</button>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+</div>
 @section Scripts {
     <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>

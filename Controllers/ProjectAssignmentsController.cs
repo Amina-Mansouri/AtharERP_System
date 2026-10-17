@@ -574,10 +574,61 @@ List<int>? taskIds)
             ViewBag.CanManageTasks = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.SelectedTaskId = taskId;
             ViewBag.StageDiscipline = assignment.Stage != null
-                ? await _context.StageTemplates.Include(t => t.Discipline).Where(t => t.Name == assignment.Stage.Name).Select(t => t.Discipline).FirstOrDefaultAsync()
-                : null;
+      ? await _context.StageTemplates.Include(t => t.Discipline).Where(t => t.Name == assignment.Stage.Name).Select(t => t.Discipline).FirstOrDefaultAsync()
+      : null;
+
+            ViewBag.MyChecklist = await _context.PersonalChecklistItems
+                .Where(c => c.ProjectAssignmentId == id && c.UserId == CurrentUserId)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
 
             return View(assignment);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddChecklistItem(int assignmentId, string text)
+        {
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                _context.PersonalChecklistItems.Add(new PersonalChecklistItem
+                {
+                    ProjectAssignmentId = assignmentId,
+                    UserId = CurrentUserId,
+                    Text = text.Trim()
+                });
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("ManageTasks", new { id = assignmentId });
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleChecklistItem(int id, int assignmentId)
+        {
+            var item = await _context.PersonalChecklistItems.FirstOrDefaultAsync(c => c.Id == id && c.UserId == CurrentUserId);
+            if (item != null)
+            {
+                item.IsChecked = !item.IsChecked;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("ManageTasks", new { id = assignmentId });
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteChecklistItem(int id, int assignmentId)
+        {
+            var item = await _context.PersonalChecklistItems.FirstOrDefaultAsync(c => c.Id == id && c.UserId == CurrentUserId);
+            if (item != null)
+            {
+                _context.PersonalChecklistItems.Remove(item);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("ManageTasks", new { id = assignmentId });
         }
 
         // إنهاء مباشر لتكليف قديم/مؤرشف — لمدير النظام فقط، يتجاوز سلسلة المراجعة والاعتماد المعتادة
