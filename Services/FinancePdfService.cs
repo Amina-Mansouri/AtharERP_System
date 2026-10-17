@@ -28,7 +28,7 @@ namespace AtharERP_System.Services
                     {
                         page.Size(PageSizes.A4.Landscape());
                         page.Margin(25);
-                        page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(9));
+                        page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(9));
                         page.ContentFromRightToLeft();
 
                         page.Header().Column(header =>
@@ -245,7 +245,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A5);
                     page.Margin(28);
-                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -356,7 +356,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A5);
                     page.Margin(28);
-                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -474,7 +474,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(25);
-                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(9));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(9));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -601,7 +601,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>

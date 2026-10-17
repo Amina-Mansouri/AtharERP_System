@@ -32,7 +32,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontFamily("Tahoma").FontSize(10.5f));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10.5f));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>

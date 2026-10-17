@@ -10,6 +10,12 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var fontsFolder = Path.Combine(builder.Environment.WebRootPath, "fonts");
+using (var regularFont = File.OpenRead(Path.Combine(fontsFolder, "NotoSansArabic-Regular.ttf")))
+    QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("AtharArabic", regularFont);
+using (var boldFont = File.OpenRead(Path.Combine(fontsFolder, "NotoSansArabic-Bold.ttf")))
+    QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("AtharArabic", boldFont);
+
 // قاعدة البيانات PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
