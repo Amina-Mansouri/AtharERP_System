@@ -128,7 +128,7 @@ namespace AtharERP_System.Controllers
 
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Engineers).ThenInclude(e => e.User)
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Subtasks)
-               .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Tasks)
+                .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(dp => dp.PreparedBy)
                .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.FinancialRecords)
                 .Include(p => p.Stages).ThenInclude(s => s.Assignments).ThenInclude(a => a.FinancialClaims)
                .Include(p => p.Tasks)
