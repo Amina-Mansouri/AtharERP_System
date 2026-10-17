@@ -62,6 +62,7 @@ namespace AtharERP_System.Controllers
             var myAssignmentIds = myAssignments.Select(a => a.Id).ToList();
             var myTasks = await _context.ProjectTasks
                 .Include(t => t.Todos)
+                .Include(t => t.Project)
                 .Where(t => t.ProjectAssignmentId.HasValue && myAssignmentIds.Contains(t.ProjectAssignmentId.Value))
                 .ToListAsync();
 
