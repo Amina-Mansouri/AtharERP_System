@@ -158,13 +158,16 @@
 
                                 <div><span class="tag @statusClass">@statusLabel</span></div>
 
-                                <form method="post" asp-controller="ProjectTasks" asp-action="RemoveTodo" style="display:contents;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@todo.Id" />
-                                    <input type="hidden" name="taskId" value="@t.Id" />
-                                    <input type="hidden" name="assignmentId" value="@Model.Id" />
-                                    <button type="submit" style="border:none; background:none; color:#c94a42; font-size:14px; cursor:pointer;">×</button>
-                                </form>
+                                @if (ViewBag.CanManageTasks as bool? ?? false)
+                                {
+                                    <form method="post" asp-controller="ProjectTasks" asp-action="RemoveTodo" style="display:contents;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@todo.Id" />
+                                        <input type="hidden" name="taskId" value="@t.Id" />
+                                        <input type="hidden" name="assignmentId" value="@Model.Id" />
+                                        <button type="submit" style="border:none; background:none; color:#c94a42; font-size:14px; cursor:pointer;">×</button>
+                                    </form>
+                                }
                             </div>
                         }
                     }

@@ -215,7 +215,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
             }
 
-            ViewBag.CanDeleteProposal = canManageTasks;
+            ViewBag.CanDeleteProposal = canManageTasks || (isSupervisorPhase && CurrentUserId == supervisorId);
 
             var reviewer = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
@@ -544,16 +544,31 @@ IFormFile? attachment)
             return status == AssignmentStatus.Cancelled;
         }
 
-        [RequirePermission("Projects.Tasks.Manage")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteProposal(int id, int? projectId, int? stageId, string? taskFilter)
         {
-            var proposal = await _context.DesignProposals.FirstOrDefaultAsync(p => p.Id == id);
+            var proposal = await _context.DesignProposals
+                .Include(p => p.TaskTodo).ThenInclude(td => td.Task).ThenInclude(t => t!.Stage)
+                .FirstOrDefaultAsync(p => p.Id == id);
             if (proposal == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId))
+            if (proposal.Status != ProposalStatus.Submitted)
+            {
+                TempData["Error"] = "لا يمكن حذف مستند تم اتخاذ قرار نهائي عليه (معتمد أو مرفوض) — الحذف متاح فقط للمستندات قيد المراجعة";
+                return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, taskFilter });
+            }
+
+            var supervisorId = proposal.TaskTodo.Task.Stage?.AssignedEngineerId;
+            var existingReview = await _context.ProposalReviews.FirstOrDefaultAsync(r => r.DesignProposalId == proposal.Id);
+            var isSupervisorPhase = existingReview == null && !string.IsNullOrEmpty(supervisorId);
+            var canManageTasks = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
+
+            var canDelete = (canManageTasks || (isSupervisorPhase && CurrentUserId == supervisorId))
+                && await _permissionService.CanAccessProjectAsync(User, proposal.ProjectId);
+            if (!canDelete)
                 return Forbid();
 
             var relatedNotifications = await _context.Notifications

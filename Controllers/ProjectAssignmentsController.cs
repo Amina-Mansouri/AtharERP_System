@@ -572,6 +572,7 @@ List<int>? taskIds)
                 return Forbid();
 
             ViewBag.IsSysAdmin = User.IsInRole("مدير النظام");
+            ViewBag.CanManageTasks = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.SelectedTaskId = taskId;
 
             return View(assignment);
