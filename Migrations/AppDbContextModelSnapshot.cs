@@ -570,6 +570,9 @@ namespace AtharERP_System.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsStageDisciplinesParent")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1436,12 +1439,6 @@ namespace AtharERP_System.Migrations
                     b.Property<decimal>("CompletionPercentage")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<int?>("DisciplineDepartmentId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal?>("KpiWeight")
-                        .HasColumnType("decimal(5,2)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1480,8 +1477,6 @@ namespace AtharERP_System.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedEngineerId");
-
-                    b.HasIndex("DisciplineDepartmentId");
 
                     b.HasIndex("ProjectId", "Sequence");
 
@@ -2464,6 +2459,9 @@ namespace AtharERP_System.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("DisciplineDepartmentId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -2476,6 +2474,8 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DisciplineDepartmentId");
 
                     b.ToTable("StageTemplates");
                 });
@@ -3145,10 +3145,6 @@ namespace AtharERP_System.Migrations
                         .HasForeignKey("AssignedEngineerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AtharERP_System.Models.Entities.Department", "DisciplineDepartment")
-                        .WithMany()
-                        .HasForeignKey("DisciplineDepartmentId");
-
                     b.HasOne("AtharERP_System.Models.Entities.Project", "Project")
                         .WithMany("Stages")
                         .HasForeignKey("ProjectId")
@@ -3156,8 +3152,6 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("AssignedEngineer");
-
-                    b.Navigation("DisciplineDepartment");
 
                     b.Navigation("Project");
                 });
@@ -3560,6 +3554,15 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("ProjectStage");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.StageTemplate", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.Department", "Discipline")
+                        .WithMany()
+                        .HasForeignKey("DisciplineDepartmentId");
+
+                    b.Navigation("Discipline");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.StageTemplateTask", b =>

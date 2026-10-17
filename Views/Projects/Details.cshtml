@@ -639,13 +639,16 @@ else
                                                         <select name="assignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
                                                     </div>
                                                     <div style="margin-bottom:6px;">
-                                                        <select name="assignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
-                                                            <option value="">-- المهندس المشرف --</option>
-                                                            @foreach (var eng in engineers)
-                                                            {
-                                                                <option value="@eng.Id" selected="@(isFailedTemplate && failedEngineerId == eng.Id)">@eng.FullName</option>
-                                                            }
-                                                        </select>
+                                                            <div>
+                                                                <label style="font-size:10px; color:#8a83a0;">المهندس المشرف</label>
+                                                                <select name="AssignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
+                                                                    <option value="">-- المهندس المشرف --</option>
+                                                                    @foreach (var eng in engineers)
+                                                                    {
+                                                                        <option value="@eng.Id" selected="@(usedStage.AssignedEngineerId == eng.Id)">@eng.FullName</option>
+                                                                    }
+                                                                </select>
+                                                            </div>
                                                     </div>
                                                     <div style="display:grid; gap:4px; margin-bottom:6px;">
                                                         @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
