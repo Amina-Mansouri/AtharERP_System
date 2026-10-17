@@ -54,9 +54,10 @@ namespace AtharERP_System.Controllers
             return View(requests);
         }
 
-        [RequirePermission("Supply.Approve")]
+        [RequirePermission("Supply.Approve", "Supply.View")]
         public async Task<IActionResult> AllRequests(int? projectId, int? subProjectId, int? materialCategoryId)
         {
+            ViewBag.CanApprove = await _permissionService.HasPermissionAsync(User, "Supply.Approve");
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
                 .Where(tm => tm.UserId == CurrentUserId)

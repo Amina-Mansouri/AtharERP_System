@@ -73,14 +73,23 @@
     </form>
 </div>
 
+@{
+    var canApprove = ViewBag.CanApprove as bool? ?? false;
+}
 <form method="post" asp-action="ExportSelectedPdf" id="exportForm">
     @Html.AntiForgeryToken()
-    <div style="margin-bottom:10px;">
-        <button type="submit" class="btn-line btn-line-accent">🖨 طباعة المحدد كملف واحد</button>
-    </div>
-    <div class="data-table" style="--cols: 36px 1fr 1fr 1.2fr 1fr 90px 90px 1fr 1fr 130px;">
+    @if (canApprove)
+    {
+        <div style="margin-bottom:10px;">
+            <button type="submit" class="btn-line btn-line-accent">🖨 طباعة المحدد كملف واحد</button>
+        </div>
+    }
+    <div class="data-table" style="--cols: @(canApprove ? "36px " : "")1fr 1fr 1.2fr 1fr 90px 90px 1fr 1fr 130px;">
         <div class="data-table-head">
-            <div class="cell"></div>
+            @if (canApprove)
+            {
+                <div class="cell"></div>
+            }
             <div class="cell">المشروع</div>
             <div class="cell">الموقع</div>
             <div class="cell">المادة</div>
@@ -101,7 +110,10 @@
             {
                 anyRows = true;
                 <div class="data-table-row">
-                    <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+                    @if (canApprove)
+                    {
+                        <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+                    }
                     <div class="cell"><a asp-controller="Sites" asp-action="Details" asp-route-id="@r.Site?.ProjectId">@r.Site?.Project?.Name</a></div>
                     <div class="cell"><a asp-controller="SiteSupplyRequests" asp-action="Index" asp-route-siteId="@r.SiteId">@r.Site?.Name</a></div>
                     <div class="cell">
