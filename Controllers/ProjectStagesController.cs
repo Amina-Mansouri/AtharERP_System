@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,19 +17,22 @@ namespace AtharERP_System.Controllers
         private readonly NotificationService _notify;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly PermissionService _permissionService;
+        private readonly AuditService _audit;
 
         public ProjectStagesController(
             AppDbContext context,
             ProjectCalculationService calc,
             NotificationService notify,
             UserManager<ApplicationUser> userManager,
-            PermissionService permissionService)
+            PermissionService permissionService,
+            AuditService audit)
         {
             _context = context;
             _calc = calc;
             _notify = notify;
             _userManager = userManager;
             _permissionService = permissionService;
+            _audit = audit;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -376,6 +380,68 @@ namespace AtharERP_System.Controllers
                     JoinedAt = DateTime.UtcNow
                 });
             }
+        }
+        // أرشفة مباشرة لمرحلة كاملة — لمدير النظام فقط، تُنهي كل تكليفاتها غير المكتملة/الملغاة تلقائياً وترحّلها للمالية
+        [Authorize(Roles = "مدير النظام")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ArchiveStage(int id)
+        {
+            var stage = await _context.ProjectStages
+                .Include(s => s.Assignments).ThenInclude(a => a.Tasks)
+                .Include(s => s.Assignments).ThenInclude(a => a.Engineers)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (stage == null)
+                return NotFound();
+
+            if (stage.Status == StageStatus.Completed)
+            {
+                TempData["Error"] = "المرحلة مكتملة بالفعل";
+                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            }
+
+            if (!stage.Assignments.Any())
+            {
+                TempData["Error"] = "لا يمكن أرشفة مرحلة لم تُضَف لها أي تكليفات بعد";
+                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            }
+
+            var assignmentsToComplete = stage.Assignments
+                .Where(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
+                .ToList();
+
+            var missingEngineerAssignment = assignmentsToComplete.FirstOrDefault(a => !a.Engineers.Any());
+            if (missingEngineerAssignment != null)
+            {
+                TempData["Error"] = $"لا يمكن أرشفة المرحلة — التكليف \"{missingEngineerAssignment.AssignmentType}\" بدون مهندسة مرتبطة به";
+                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            }
+
+            var today = DateTime.UtcNow.Date;
+            foreach (var assignment in assignmentsToComplete)
+            {
+                foreach (var task in assignment.Tasks)
+                {
+                    task.Status = ProjectTaskStatus.Completed;
+                    task.CompletionPercentage = 100;
+                    if (!task.ActualDeliveryDate.HasValue)
+                        task.ActualDeliveryDate = today;
+                }
+                assignment.Status = AssignmentStatus.Completed;
+            }
+            await _context.SaveChangesAsync();
+
+            foreach (var assignment in assignmentsToComplete)
+            {
+                await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
+            }
+            await _calc.RecalculateStageAsync(id);
+
+            await _audit.LogAsync(CurrentUserId, "ArchiveStage", nameof(ProjectStage), id.ToString(), $"أرشفة مرحلة مباشرة بواسطة مدير النظام — تم إنهاء {assignmentsToComplete.Count} تكليف(ات) تلقائياً وترحيلها للمالية");
+
+            TempData["Success"] = $"تم أرشفة المرحلة، وإنهاء {assignmentsToComplete.Count} تكليف(ات) مرتبطة بها تلقائياً وترحيلها للمالية";
+            return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
         }
     }
 }

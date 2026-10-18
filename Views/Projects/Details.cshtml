@@ -4,6 +4,7 @@
 @inject PermissionService PermissionService
 @{
     var isNew = Model.Id == 0;
+    var isSysAdmin = User.IsInRole("مدير النظام");
     ViewData["Title"] = isNew ? "مشروع جديد" : $"تفاصيل المشروع - {Model.Name}";
     var canEdit = ViewBag.CanEdit as bool? ?? false;
     var canViewClient = ViewBag.CanViewClient as bool? ?? false;
@@ -525,6 +526,13 @@ else
                                         <form method="post" asp-controller="ProjectStages" asp-action="Delete" asp-route-id="@stage.Id" onsubmit="return confirm('حذف هذه المرحلة سيحذف تكليفاتها أيضاً. متابعة؟');" style="display:inline;">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c94a42; white-space:nowrap;">حذف</button>
+                                        </form>
+                                    }
+                                    @if (isSysAdmin && stage.Status != StageStatus.Completed)
+                                    {
+                                        <form method="post" asp-controller="ProjectStages" asp-action="ArchiveStage" asp-route-id="@stage.Id" onsubmit="return confirm('سيُنهى جميع تكليفات هذه المرحلة غير المكتملة مباشرة بدون المرور بالمراجعات، وتُرحَّل فوراً للمالية. إن كانت آخر مرحلة ناقصة، سيكتمل المشروع بالكامل تلقائياً. هل تريدين المتابعة؟');" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c9a15a; white-space:nowrap;">أرشفة</button>
                                         </form>
                                     }
                                 </div>
