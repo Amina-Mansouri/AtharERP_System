@@ -2,20 +2,32 @@
 @model StageTemplate
 @{
     ViewData["Title"] = "تعديل قالب مرحلة";
+    string? error = ViewBag.Error as string;
+    var postedTaskNames = ViewBag.PostedTaskNames as List<string>;
+    var postedTaskWeights = ViewBag.PostedTaskWeights as List<decimal?>;
+    var existingTasksData = postedTaskNames != null
+        ? postedTaskNames.Select((n, i) => new { name = n, weight = postedTaskWeights != null && i < postedTaskWeights.Count ? postedTaskWeights[i] : null })
+        : Model.DefaultTasks.OrderBy(t => t.Order).Select(t => new { name = t.TaskName, weight = t.DefaultWeight });
+    var existingTasksJson = System.Text.Json.JsonSerializer.Serialize(existingTasksData);
 }
 
 <h1 class="athar-page-title">تعديل قالب: @Model.Name</h1>
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger mt-3">@error</div>
+}
 
 <div class="athar-card mt-3">
     <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-5 mb-3">
                 <label class="form-label">اسم القالب</label>
                 <input type="text" name="name" class="form-control" value="@Model.Name" required />
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">التخصص</label>
                 <select name="disciplineDepartmentId" class="form-select">
                     <option value="">-- غير محدد --</option>
@@ -25,7 +37,11 @@
                     }
                 </select>
             </div>
-            <div class="col-md-6 mb-3 form-check form-switch" style="margin-top:32px;">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">الوزن الافتراضي للمرحلة %</label>
+                <input type="number" step="0.01" min="0" max="100" name="defaultWeight" class="form-control" value="@Model.DefaultWeight" />
+            </div>
+            <div class="col-md-6 mb-3 form-check form-switch">
                 <input type="checkbox" name="isActive" value="true" class="form-check-input" id="isActive" checked="@Model.IsActive" />
                 <input type="hidden" name="isActive" value="false" />
                 <label class="form-check-label" for="isActive">نشط</label>
@@ -34,8 +50,9 @@
 
         <div class="row">
             <div class="col-md-12 mb-3">
-                <label class="form-label">المهام الافتراضية (سطر لكل مهمة — استبدال كامل القائمة الحالية)</label>
-                <textarea name="tasks" class="form-control" rows="8">@string.Join("\n", Model.DefaultTasks.OrderBy(t => t.Order).Select(t => t.TaskName))</textarea>
+                <label class="form-label">المهام الافتراضية (اسم + وزن افتراضي لكل مهمة)</label>
+                <div id="taskRows" style="display:grid; gap:6px; margin-bottom:8px;"></div>
+                <button type="button" class="btn athar-btn-outline" onclick="addTaskRow()">+ إضافة مهمة</button>
             </div>
         </div>
 
@@ -43,3 +60,54 @@
         <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+            var existingTasks = @Html.Raw(existingTasksJson);
+
+        function addTaskRow(name, weight) {
+            var wrap = document.getElementById('taskRows');
+            var row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '8px';
+
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.name = 'taskNames';
+            nameInput.className = 'form-control';
+            nameInput.placeholder = 'اسم المهمة';
+            nameInput.required = true;
+            nameInput.style.flex = '2';
+            nameInput.value = name || '';
+
+            var weightInput = document.createElement('input');
+            weightInput.type = 'number';
+            weightInput.step = '0.01';
+            weightInput.min = '0';
+            weightInput.max = '100';
+            weightInput.name = 'taskWeights';
+            weightInput.className = 'form-control';
+            weightInput.placeholder = 'الوزن %';
+            weightInput.style.flex = '1';
+            weightInput.value = (weight != null ? weight : '');
+
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn-line';
+            delBtn.style.color = '#c94a42';
+            delBtn.textContent = 'حذف';
+            delBtn.onclick = function() { row.remove(); };
+
+            row.appendChild(nameInput);
+            row.appendChild(weightInput);
+            row.appendChild(delBtn);
+            wrap.appendChild(row);
+        }
+
+        if (existingTasks.length > 0) {
+            existingTasks.forEach(function(t) { addTaskRow(t.name, t.weight); });
+        } else {
+            addTaskRow();
+        }
+    </script>
+}

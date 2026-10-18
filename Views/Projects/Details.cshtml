@@ -634,7 +634,7 @@ else
                                                     <input type="hidden" name="projectId" value="@Model.Id" />
                                                     <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
                                                     <div style="margin-bottom:6px;">
-                                                        <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                        <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : tpl.DefaultWeight)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                                                     </div>
                                                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
                                                         <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" value="@(isFailedTemplate ? failedArea : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
@@ -661,7 +661,7 @@ else
                                                             <div style="display:flex; align-items:center; gap:5px;">
                                                                 <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked />
                                                                 <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
-                                                                <input type="number" step="0.01" min="0" max="100" name="taskWeight_@t.Id" placeholder="الوزن %" style="width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
+                                                                <input type="number" step="0.01" min="0" max="100" name="taskWeight_@t.Id" placeholder="الوزن %" value="@t.DefaultWeight" style="width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
                                                             </div>
                                                         }
                                                     </div>

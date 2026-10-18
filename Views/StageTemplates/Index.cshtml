@@ -14,10 +14,11 @@
     </div>
 </div>
 
-<div class="data-table" style="--cols: minmax(0,1.2fr) 1fr 90px 80px 150px">
+<div class="data-table" style="--cols: minmax(0,1.2fr) 1fr 90px 90px 80px 150px">
     <div class="data-table-head">
         <div class="cell">اسم القالب</div>
         <div class="cell">التخصص</div>
+        <div class="cell">الوزن الافتراضي</div>
         <div class="cell">المهام الافتراضية</div>
         <div class="cell">نشط</div>
         <div class="cell"></div>
@@ -33,6 +34,7 @@
             <div class="data-table-row">
                 <div class="cell">@tpl.Name</div>
                 <div class="cell">@(tpl.Discipline?.Name ?? "-")</div>
+                <div class="cell cell-num">@(tpl.DefaultWeight.HasValue ? tpl.DefaultWeight.Value.ToString("N0") + "%" : "-")</div>
                 <div class="cell cell-num">@tpl.DefaultTasks.Count</div>
                 <div class="cell">
                     @if (tpl.IsActive)

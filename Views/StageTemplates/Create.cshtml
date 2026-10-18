@@ -3,7 +3,12 @@
     ViewData["Title"] = "قالب مرحلة جديد";
     string? error = ViewBag.Error as string;
     string postedName = ViewBag.PostedName as string ?? "";
-    string postedTasks = ViewBag.PostedTasks as string ?? "";
+    decimal? postedDefaultWeight = ViewBag.PostedDefaultWeight as decimal?;
+    var postedTaskNames = ViewBag.PostedTaskNames as List<string> ?? new List<string>();
+    var postedTaskWeights = ViewBag.PostedTaskWeights as List<decimal?> ?? new List<decimal?>();
+    var existingTasksJson = System.Text.Json.JsonSerializer.Serialize(
+        postedTaskNames.Select((n, i) => new { name = n, weight = i < postedTaskWeights.Count ? postedTaskWeights[i] : null })
+    );
 }
 
 <h1 class="athar-page-title">إنشاء قالب مرحلة جديد</h1>
@@ -18,11 +23,11 @@
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-5 mb-3">
                 <label class="form-label">اسم القالب</label>
                 <input type="text" name="name" class="form-control" required value="@postedName" />
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
                 <label class="form-label">التخصص</label>
                 <select name="disciplineDepartmentId" class="form-select">
                     <option value="">-- غير محدد --</option>
@@ -32,12 +37,17 @@
                     }
                 </select>
             </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">الوزن الافتراضي للمرحلة %</label>
+                <input type="number" step="0.01" min="0" max="100" name="defaultWeight" class="form-control" value="@postedDefaultWeight" />
+            </div>
         </div>
 
         <div class="row">
             <div class="col-md-12 mb-3">
-                <label class="form-label">المهام الافتراضية (سطر لكل مهمة)</label>
-                <textarea name="tasks" class="form-control" rows="6">@postedTasks</textarea>
+                <label class="form-label">المهام الافتراضية (اسم + وزن افتراضي لكل مهمة)</label>
+                <div id="taskRows" style="display:grid; gap:6px; margin-bottom:8px;"></div>
+                <button type="button" class="btn athar-btn-outline" onclick="addTaskRow()">+ إضافة مهمة</button>
             </div>
         </div>
 
@@ -45,3 +55,52 @@
         <a asp-action="Index" class="btn athar-btn-outline">إلغاء</a>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        function addTaskRow(name, weight) {
+            var wrap = document.getElementById('taskRows');
+            var row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '8px';
+
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.name = 'taskNames';
+            nameInput.className = 'form-control';
+            nameInput.placeholder = 'اسم المهمة';
+            nameInput.required = true;
+            nameInput.style.flex = '2';
+            nameInput.value = name || '';
+
+            var weightInput = document.createElement('input');
+            weightInput.type = 'number';
+            weightInput.step = '0.01';
+            weightInput.min = '0';
+            weightInput.max = '100';
+            weightInput.name = 'taskWeights';
+            weightInput.className = 'form-control';
+            weightInput.placeholder = 'الوزن %';
+            weightInput.style.flex = '1';
+            weightInput.value = (weight != null ? weight : '');
+
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn-line';
+            delBtn.style.color = '#c94a42';
+            delBtn.textContent = 'حذف';
+            delBtn.onclick = function() { row.remove(); };
+
+            row.appendChild(nameInput);
+            row.appendChild(weightInput);
+            row.appendChild(delBtn);
+            wrap.appendChild(row);
+        }
+                var existingTasks = @Html.Raw(existingTasksJson);
+        if (existingTasks.length > 0) {
+                existingTasks.forEach(function (t) { addTaskRow(t.name, t.weight); });
+                } else {
+                    addTaskRow();
+                }
+    </script>
+}

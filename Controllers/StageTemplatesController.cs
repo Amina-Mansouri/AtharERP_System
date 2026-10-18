@@ -34,13 +34,25 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string name, string? tasks, int? disciplineDepartmentId)
+        public async Task<IActionResult> Create(string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, int? disciplineDepartmentId)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 ViewBag.Error = "اسم القالب مطلوب";
                 ViewBag.PostedName = name;
-                ViewBag.PostedTasks = tasks;
+                ViewBag.Disciplines = await LoadStageDisciplinesAsync();
+                return View();
+            }
+
+            var totalTaskWeight = taskWeights?.Where(w => w.HasValue).Sum(w => w!.Value) ?? 0;
+            if (defaultWeight.HasValue && totalTaskWeight > defaultWeight.Value)
+            {
+                ViewBag.Error = $"مجموع أوزان المهام الافتراضية ({totalTaskWeight:N2}%) يتجاوز الوزن الافتراضي للمرحلة ({defaultWeight:N2}%)";
+                ViewBag.PostedName = name;
+                ViewBag.PostedDefaultWeight = defaultWeight;
+                ViewBag.PostedDisciplineId = disciplineDepartmentId;
+                ViewBag.PostedTaskNames = taskNames;
+                ViewBag.PostedTaskWeights = taskWeights;
                 ViewBag.Disciplines = await LoadStageDisciplinesAsync();
                 return View();
             }
@@ -50,24 +62,26 @@ namespace AtharERP_System.Controllers
                 Name = name.Trim(),
                 IsActive = true,
                 Order = await _context.StageTemplates.CountAsync() + 1,
-                DisciplineDepartmentId = disciplineDepartmentId
+                DisciplineDepartmentId = disciplineDepartmentId,
+                DefaultWeight = defaultWeight
             };
             _context.StageTemplates.Add(template);
             await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrWhiteSpace(tasks))
+            if (taskNames != null)
             {
                 var order = 1;
-                foreach (var line in tasks.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                for (int i = 0; i < taskNames.Count; i++)
                 {
-                    var taskName = line.Trim();
+                    var taskName = taskNames[i]?.Trim();
                     if (string.IsNullOrEmpty(taskName)) continue;
 
                     _context.StageTemplateTasks.Add(new StageTemplateTask
                     {
                         StageTemplateId = template.Id,
                         TaskName = taskName,
-                        Order = order
+                        Order = order,
+                        DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null
                     });
                     order++;
                 }
@@ -76,7 +90,7 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = $"تمت إضافة قالب {template.Name} بنجاح";
             return RedirectToAction("Index", "StageTemplates");
-        
+
         }
 
         [RequirePermission("Projects.Stages.Manage")]
@@ -94,31 +108,47 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string name, string? tasks, bool isActive, int? disciplineDepartmentId)
+        public async Task<IActionResult> Edit(int id, string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, bool isActive, int? disciplineDepartmentId)
         {
             var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
                 return NotFound();
 
+            var totalTaskWeight = taskWeights?.Where(w => w.HasValue).Sum(w => w!.Value) ?? 0;
+            if (defaultWeight.HasValue && totalTaskWeight > defaultWeight.Value)
+            {
+                ViewBag.Error = $"مجموع أوزان المهام الافتراضية ({totalTaskWeight:N2}%) يتجاوز الوزن الافتراضي للمرحلة ({defaultWeight:N2}%)";
+                ViewBag.Disciplines = await LoadStageDisciplinesAsync();
+                template.Name = name;
+                template.DefaultWeight = defaultWeight;
+                template.DisciplineDepartmentId = disciplineDepartmentId;
+                template.IsActive = isActive;
+                ViewBag.PostedTaskNames = taskNames;
+                ViewBag.PostedTaskWeights = taskWeights;
+                return View(template);
+            }
+
             template.Name = name.Trim();
             template.IsActive = isActive;
             template.DisciplineDepartmentId = disciplineDepartmentId;
+            template.DefaultWeight = defaultWeight;
 
             _context.StageTemplateTasks.RemoveRange(template.DefaultTasks);
 
-            if (!string.IsNullOrWhiteSpace(tasks))
+            if (taskNames != null)
             {
                 var order = 1;
-                foreach (var line in tasks.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                for (int i = 0; i < taskNames.Count; i++)
                 {
-                    var taskName = line.Trim();
+                    var taskName = taskNames[i]?.Trim();
                     if (string.IsNullOrEmpty(taskName)) continue;
 
                     _context.StageTemplateTasks.Add(new StageTemplateTask
                     {
                         StageTemplateId = template.Id,
                         TaskName = taskName,
-                        Order = order
+                        Order = order,
+                        DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null
                     });
                     order++;
                 }

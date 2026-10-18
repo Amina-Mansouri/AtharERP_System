@@ -2492,6 +2492,9 @@ namespace AtharERP_System.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("DefaultWeight")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int?>("DisciplineDepartmentId")
                         .HasColumnType("integer");
 
@@ -2520,6 +2523,9 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("DefaultWeight")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<int>("Order")
                         .HasColumnType("integer");

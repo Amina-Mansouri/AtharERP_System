@@ -20,5 +20,9 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "الترتيب")]
         public int Order { get; set; }
+
+        [Column(TypeName = "decimal(5,2)")]
+        [Display(Name = "الوزن الافتراضي %")]
+        public decimal? DefaultWeight { get; set; }
     }
 }
