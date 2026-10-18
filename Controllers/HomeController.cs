@@ -233,10 +233,10 @@ namespace AtharERP_System.Controllers
                     .ToList();
 
                 ViewBag.MostDelayedStages = allStagesForAnalytics
-      .Where(s => s.PlannedEndDate.HasValue && s.Status != StageStatus.New)
-      .Select(s => (StageName: s.Name, ProjectName: s.Project.Name, ProjectId: s.ProjectId, DelayDays: ((s.ActualDeliveryDate ?? DateTime.UtcNow.Date) - s.PlannedEndDate!.Value).Days))
-      .Where(x => x.DelayDays > 0)
-      .OrderByDescending(x => x.DelayDays)
+.Where(s => s.PlannedEndDate.HasValue && s.Status != StageStatus.New && !(s.Status == StageStatus.Completed && !s.ActualDeliveryDate.HasValue))
+.Select(s => (StageName: s.Name, ProjectName: s.Project.Name, ProjectId: s.ProjectId, DelayDays: ((s.ActualDeliveryDate ?? DateTime.UtcNow.Date) - s.PlannedEndDate!.Value).Days))
+.Where(x => x.DelayDays > 0)
+.OrderByDescending(x => x.DelayDays)
       .Take(5)
       .ToList();
 
