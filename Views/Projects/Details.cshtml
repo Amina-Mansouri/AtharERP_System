@@ -1197,66 +1197,9 @@ else
         {
             <div class="tab-pane fade" id="pane-subprojects">
                 <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المشاريع الفرعية</div>
-                    @if (!Model.ChildProjects.Any())
-                    {
-                        <div class="stat-sub">لا توجد مشاريع فرعية</div>
-                    }
-                    else
-                    {
-                        <div style="display:grid; gap:6px;">
-                            @foreach (var child in Model.ChildProjects)
-                            {
-                                var hasStages = child.Stages.Any();
-                                var projKey = "proj-" + child.Id;
-                                <div style="border:1px solid #ecebf2; border-radius:8px; padding:8px 10px;">
-                                    <div style="display:flex; align-items:center; gap:6px;">
-                                        @if (hasStages)
-                                        {
-                                            <span data-target="@projKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px;">▾</span>
-                                        }
-                                        <a asp-action="Details" asp-route-id="@child.Id" style="font-size:12px; font-weight:600; text-decoration:underline; color:inherit;">@child.Code - @child.Name</a>
-                                        <span class="tag">@child.Stages.Count مرحلة</span>
-                                    </div>
-                                    @if (hasStages)
-                                    {
-                                        <div style="display:grid; gap:5px; margin-top:6px; padding-right:22px;" data-parent-key="@projKey">
-                                            @foreach (var stage in child.Stages.OrderBy(s => s.Sequence))
-                                            {
-                                                var hasTasks = stage.Tasks.Any();
-                                                var stageKey = "stage-" + stage.Id;
-                                                <div>
-                                                    <div style="display:flex; align-items:center; gap:6px;">
-                                                        @if (hasTasks)
-                                                        {
-                                                            <span data-target="@stageKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; font-weight:700; color:#5a5370; background:#f1f0f6; border-radius:5px; width:16px; height:16px;">▾</span>
-                                                        }
-                                                        <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11.5px; text-decoration:underline; color:inherit;">@stage.Name</a>
-                                                        <span class="tag">@stage.Tasks.Count مهمة</span>
-                                                        @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
-                                                        {
-                                                            <span class="tag tag-accent" style="font-size:9px;">🔁</span>
-                                                        }
-                                                    </div>
-                                                    @if (hasTasks)
-                                                    {
-                                                        <div style="display:grid; gap:3px; margin-top:4px; padding-right:20px;" data-parent-key="@stageKey">
-                                                            @foreach (var t in stage.Tasks)
-                                                            {
-                                                                <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11px; color:inherit; text-decoration:none; display:block;">↳ @t.Title</a>
-                                                            }
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
+              
 
-                    <div style="margin-top:16px; padding-top:14px; border-top:1px dashed #ecebf2;">
+                    <div style="margin-bottom:16px; padding-bottom:14px; border-bottom:1px dashed #ecebf2;">
                         <div style="font-size:13px; font-weight:600; margin-bottom:8px;">+ إضافة مبنى جديد</div>
                         @{
                             var lastSubHere = lastSubProjectByParent.ContainsKey(Model.Id) ? lastSubProjectByParent[Model.Id] : null;
@@ -1291,7 +1234,7 @@ else
                                     <label style="font-size:11px; color:#8a83a0;">اسم المبنى</label>
                                     <input type="text" name="Name" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                                 </div>
-                                                               <div>
+                                <div>
                                     <label style="font-size:11px; color:#8a83a0;">نطاق المشروع</label>
                                     <input type="text" value="مشروع فرعي" disabled style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; font-size:12px; padding:0 8px; background:#f6f5fa; color:#6b6680;" />
                                 </div>
@@ -1350,6 +1293,65 @@ else
                             </div>
                         </form>
                     </div>
+
+                          <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المشاريع الفرعية</div>
+                    @if (!Model.ChildProjects.Any())
+                    {
+                        <div class="stat-sub">لا توجد مشاريع فرعية</div>
+                    }
+                    else
+                    {
+                        <div style="display:grid; gap:6px;">
+                            @foreach (var child in Model.ChildProjects)
+                            {
+                                var hasStages = child.Stages.Any();
+                                var projKey = "proj-" + child.Id;
+                                <div style="border:1px solid #ecebf2; border-radius:8px; padding:8px 10px;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        @if (hasStages)
+                                        {
+                                            <span data-target="@projKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px;">▾</span>
+                                        }
+                                        <a asp-action="Details" asp-route-id="@child.Id" style="font-size:12px; font-weight:600; text-decoration:underline; color:inherit;">@child.Code - @child.Name</a>
+                                        <span class="tag">@child.Stages.Count مرحلة</span>
+                                    </div>
+                                    @if (hasStages)
+                                    {
+                                        <div style="display:grid; gap:5px; margin-top:6px; padding-right:22px;" data-parent-key="@projKey">
+                                            @foreach (var stage in child.Stages.OrderBy(s => s.Sequence))
+                                            {
+                                                var hasTasks = stage.Tasks.Any();
+                                                var stageKey = "stage-" + stage.Id;
+                                                <div>
+                                                    <div style="display:flex; align-items:center; gap:6px;">
+                                                        @if (hasTasks)
+                                                        {
+                                                            <span data-target="@stageKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; font-weight:700; color:#5a5370; background:#f1f0f6; border-radius:5px; width:16px; height:16px;">▾</span>
+                                                        }
+                                                        <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11.5px; text-decoration:underline; color:inherit;">@stage.Name</a>
+                                                        <span class="tag">@stage.Tasks.Count مهمة</span>
+                                                        @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
+                                                        {
+                                                            <span class="tag tag-accent" style="font-size:9px;">🔁</span>
+                                                        }
+                                                    </div>
+                                                    @if (hasTasks)
+                                                    {
+                                                        <div style="display:grid; gap:3px; margin-top:4px; padding-right:20px;" data-parent-key="@stageKey">
+                                                            @foreach (var t in stage.Tasks)
+                                                            {
+                                                                <a asp-controller="ProjectTasks" asp-action="Edit" asp-route-id="@t.Id" style="font-size:11px; color:inherit; text-decoration:none; display:block;">↳ @t.Title</a>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         }
