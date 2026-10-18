@@ -154,6 +154,8 @@ namespace AtharERP_System.Controllers
 List<string>? engineerIds,
 List<int>? taskIds)
         {
+            model.AssignmentType ??= string.Empty;
+
             var project = await _context.Projects.FindAsync(model.ProjectId);
             if (project == null)
                 return NotFound();

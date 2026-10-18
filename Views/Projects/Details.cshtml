@@ -788,9 +788,8 @@ else
                     </select>
                 </div>
 
-                <div class="data-table" style="--cols: minmax(0,1.2fr) 100px 170px 140px 90px 150px">
+                             <div class="data-table" style="--cols: minmax(0,1.4fr) 170px 140px 90px 150px">
                     <div class="data-table-head">
-                        <div class="cell">التكليف</div>
                         <div class="cell">المرحلة</div>
                         <div class="cell">المهندسات</div>
                         <div class="cell">التسعير</div>
@@ -806,19 +805,30 @@ else
                         @foreach (var item in allAssignments)
                         {
                             var a = item.Assignment;
-                            <div class="data-table-row" data-stage="@item.Stage.Id">
+                                                       <div class="data-table-row" data-stage="@item.Stage.Id">
                                 <div class="cell">
-                                    @a.AssignmentType
-                                    @if (a.IsUrgent)
-                                    {
-                                        <span class="tag tag-danger">مستعجل</span>
-                                    }
-                                    @if (a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
-                                    {
-                                        <span class="tag tag-warning">⚠ توجد مهمة محظورة</span>
-                                    }
+                                    <div style="display:flex; align-items:center; gap:5px;">
+                                        <span>@item.Stage.Name</span>
+                                        @if (!string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent || a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
+                                        {
+                                            <span data-bs-toggle="collapse" data-bs-target="#assignmentNotes-@a.Id" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="تفاصيل إضافية">▾</span>
+                                        }
+                                    </div>
+                                    <div class="collapse" id="assignmentNotes-@a.Id" style="margin-top:4px;">
+                                        @if (!string.IsNullOrWhiteSpace(a.AssignmentType))
+                                        {
+                                            <div class="stat-sub">@a.AssignmentType</div>
+                                        }
+                                        @if (a.IsUrgent)
+                                        {
+                                            <span class="tag tag-danger">مستعجل</span>
+                                        }
+                                        @if (a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
+                                        {
+                                            <span class="tag tag-warning">⚠ توجد مهمة محظورة</span>
+                                        }
+                                    </div>
                                 </div>
-                                <div class="cell">@item.Stage.Name</div>
                                 <div class="cell">
                                     @foreach (var eng in a.Engineers)
                                     {
