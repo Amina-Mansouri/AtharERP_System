@@ -1250,8 +1250,7 @@ namespace AtharERP_System.Migrations
 
                     b.Property<string>("AssignmentType")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");

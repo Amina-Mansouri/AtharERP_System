@@ -246,11 +246,11 @@
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
                                    asp-controller="Projects" asp-action="Index">المشاريع</a>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
-                                   asp-controller="ProjectStages" asp-action="Overview">مراحل المشروع</a>
+                                   asp-controller="ProjectStages" asp-action="Overview">مراحل المشاريع</a>
                                 @if (canViewAssignments)
                                 {
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
-                                       asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشروع</a>
+                                       asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشاريع</a>
                                 }
                             </div>
                         </div>
