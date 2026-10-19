@@ -245,12 +245,20 @@
                                 <div class="nav-subgroup-title">المشاريع والتكليفات</div>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projects" ? "active" : "")"
                                    asp-controller="Projects" asp-action="Index">المشاريع</a>
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
-                                   asp-controller="ProjectStages" asp-action="Overview">مراحل المشاريع</a>
+                                @if (!isDesignEngineer)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
+                                       asp-controller="ProjectStages" asp-action="Overview">مراحل المشاريع</a>
+                                }
                                 @if (canViewAssignments)
                                 {
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
                                        asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشاريع</a>
+                                }
+                                @if (isDesignEngineer)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
+                                       asp-controller="ProjectAssignments" asp-action="MyAssignments">التكليفات</a>
                                 }
                             </div>
                         </div>
