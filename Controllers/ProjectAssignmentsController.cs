@@ -67,7 +67,30 @@ namespace AtharERP_System.Controllers
             {
                 ViewBag.Stages = new List<ProjectStage>();
                 ViewBag.SubProjects = new List<Project>();
-                return View(new List<ProjectAssignment>());
+
+                var accessibleAllProjectIdsQuery = _context.Projects.AsQueryable();
+                if (!canViewAll)
+                {
+                    accessibleAllProjectIdsQuery = accessibleAllProjectIdsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
+                }
+                var accessibleAllProjectIds = await accessibleAllProjectIdsQuery.Select(p => p.Id).ToListAsync();
+
+                var allAssignmentsFlat = await _context.ProjectAssignments
+                    .Include(a => a.Project)
+                    .Include(a => a.Stage)
+                    .Include(a => a.Engineers).ThenInclude(e => e.User)
+                    .Include(a => a.Tasks)
+                    .Where(a => accessibleAllProjectIds.Contains(a.ProjectId))
+                    .OrderByDescending(a => a.CreatedAt)
+                    .ToListAsync();
+
+                ViewBag.TotalAssignments = allAssignmentsFlat.Count;
+                ViewBag.PendingAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+                ViewBag.InProgressAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+                ViewBag.CompletedAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.Completed);
+                ViewBag.OverdueAssignments = allAssignmentsFlat.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+
+                return View(allAssignmentsFlat);
             }
 
             ViewBag.SubProjects = await _context.Projects

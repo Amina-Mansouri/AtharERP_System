@@ -58,7 +58,7 @@
         <div style="display:flex; align-items:center; gap:8px;">
             <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع</label>
             <select name="projectId" onchange="var sp=this.form.querySelector('[name=subProjectId]'); if(sp) sp.value=''; this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
-                <option value="">-- اختر مشروعاً --</option>
+                <option value="">-- عرض الكل --</option>
                 @foreach (var p in projects)
                 {
                     <option value="@p.Id" selected="@(selectedProjectId == p.Id)">@p.Code - @p.Name</option>
@@ -116,10 +116,67 @@
 
 @if (!selectedProjectId.HasValue)
 {
-    <div class="stat-sub">اختاري مشروعاً لعرض إحصائيات تكليفاته</div>
+    <div class="stat-strip stat-strip-text">
+        <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@ViewBag.TotalAssignments</span></div>
+        <div class="stat-item"><span class="kicker">معلّقة</span><span class="stat-value">@ViewBag.PendingAssignments</span></div>
+        <div class="stat-item"><span class="kicker">قيد التنفيذ</span><span class="stat-value">@ViewBag.InProgressAssignments</span></div>
+        <div class="stat-item"><span class="kicker">متأخرة</span><span class="stat-value" style="color:#c94a42;">@ViewBag.OverdueAssignments</span></div>
+        <div class="stat-item"><span class="kicker">مكتملة</span><span class="stat-value" style="color:#2f8a57;">@ViewBag.CompletedAssignments</span></div>
+    </div>
+    <div class="data-table" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr) 100px 90px">
+        <div class="data-table-head">
+            <div class="cell">المشروع</div>
+            <div class="cell">المرحلة</div>
+            <div class="cell">التكليف</div>
+            <div class="cell">المهندسون</div>
+            <div class="cell">الحالة</div>
+            <div class="cell"></div>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مضافة بعد</div></div>
+        }
+        else
+        {
+            @foreach (var a in Model)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@(a.Project?.Name ?? "-")</div>
+                    <div class="cell">@(a.Stage?.Name ?? "-")</div>
+                    <div class="cell">
+                        @(string.IsNullOrWhiteSpace(a.AssignmentType) ? "-" : a.AssignmentType)
+                        @if (a.IsUrgent)
+                        {
+                            <span class="tag tag-danger">مستعجل</span>
+                        }
+                        @if (a.IsRedesign)
+                        {
+                            <span class="tag tag-accent">🔁</span>
+                        }
+                    </div>
+                    <div class="cell">
+                        @if (!a.Engineers.Any())
+                        {
+                            <span class="stat-sub">-</span>
+                        }
+                        else
+                        {
+                            @foreach (var eng in a.Engineers)
+                            {
+                                <span class="stat-sub">• @eng.User.FullName</span>
+                            }
+                        }
+                    </div>
+                    <div class="cell"><span class="tag @assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
+                    <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+                </div>
+            }
+        }
+    </div>
 }
 else
 {
+
     <div class="stat-strip stat-strip-text">
         <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@totalAssignmentsCount</span></div>
         <div class="stat-item"><span class="kicker">متوسط نسبة الإنجاز @(selectedStageId.HasValue ? "(المرحلة)" : "(المشروع)")</span><span class="stat-value">@avgCompletionInScope.ToString("N1")%</span></div>
