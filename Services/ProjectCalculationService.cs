@@ -133,8 +133,9 @@ namespace AtharERP_System.Services
                     var daysRemaining = project.PlannedEndDate.HasValue
                         ? (int?)(project.PlannedEndDate.Value.Date - DateTime.UtcNow.Date).Days
                         : null;
+                    var isOverdue = daysRemaining.HasValue && daysRemaining.Value < 0;
                     var isAtRisk = daysRemaining.HasValue && daysRemaining.Value <= 30 && project.CompletionPercentage < 70;
-                    project.Status = isAtRisk ? ProjectStatus.Delayed : ProjectStatus.InProgress;
+                    project.Status = (isOverdue || isAtRisk) ? ProjectStatus.Delayed : ProjectStatus.InProgress;
                 }
             }
 
