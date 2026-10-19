@@ -807,14 +807,14 @@ else
                             var a = item.Assignment;
                                                        <div class="data-table-row" data-stage="@item.Stage.Id">
                                 <div class="cell">
-                                    <div style="display:flex; align-items:center; gap:5px;">
+                                                                      <div style="display:flex; align-items:center; gap:5px;">
                                         <span>@item.Stage.Name</span>
                                         @if (!string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent || a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
                                         {
-                                            <span data-bs-toggle="collapse" data-bs-target="#assignmentNotes-@a.Id" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="تفاصيل إضافية">▾</span>
+                                            <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="تفاصيل إضافية">▾</span>
                                         }
                                     </div>
-                                    <div class="collapse" id="assignmentNotes-@a.Id" style="margin-top:4px;">
+                                    <div id="assignmentNotes-@a.Id" hidden style="margin-top:4px;">
                                         @if (!string.IsNullOrWhiteSpace(a.AssignmentType))
                                         {
                                             <div class="stat-sub">@a.AssignmentType</div>
