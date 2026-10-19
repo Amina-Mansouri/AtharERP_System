@@ -57,46 +57,65 @@ namespace AtharERP_System.Controllers
             ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.ProjectId = projectId;
             ViewBag.SubProjectId = subProjectId;
+            ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.Discipline).ToListAsync();
+
+            List<ProjectStage> stages;
 
             if (!projectId.HasValue)
             {
                 ViewBag.SubProjects = new List<Project>();
-                return View(new List<ProjectStage>());
+
+                var accessibleProjectIdsQuery = _context.Projects.AsQueryable();
+                if (!canViewAll)
+                {
+                    accessibleProjectIdsQuery = accessibleProjectIdsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
+                }
+                var accessibleProjectIds = await accessibleProjectIdsQuery.Select(p => p.Id).ToListAsync();
+
+                stages = await _context.ProjectStages
+                    .Include(s => s.AssignedEngineer)
+                    .Include(s => s.Assignments)
+                    .Include(s => s.Project)
+                    .Where(s => accessibleProjectIds.Contains(s.ProjectId))
+                    .OrderBy(s => s.Project.Name).ThenBy(s => s.Sequence)
+                    .ToListAsync();
             }
+            else
+            {
+                ViewBag.SubProjects = await _context.Projects
+                    .Where(p => p.ParentProjectId == projectId.Value)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
 
-            ViewBag.SubProjects = await _context.Projects
-                .Where(p => p.ParentProjectId == projectId.Value)
-                .OrderBy(p => p.Name)
-                .ToListAsync();
+                var effectiveProjectId = subProjectId ?? projectId.Value;
 
-            var effectiveProjectId = subProjectId ?? projectId.Value;
+                var canAccessThisProject = canViewAll || await _context.Projects.AnyAsync(p => p.Id == effectiveProjectId && (p.CreatedById == CurrentUserId)) || myProjectIds.Contains(effectiveProjectId);
+                if (!canAccessThisProject)
+                    return Forbid();
 
-            var canAccessThisProject = canViewAll || await _context.Projects.AnyAsync(p => p.Id == effectiveProjectId && (p.CreatedById == CurrentUserId)) || myProjectIds.Contains(effectiveProjectId);
-            if (!canAccessThisProject)
-                return Forbid();
-
-            var stages = await _context.ProjectStages
-     .Include(s => s.AssignedEngineer)
-     .Include(s => s.Assignments)
-     .Where(s => s.ProjectId == effectiveProjectId)
-                .OrderBy(s => s.Sequence)
-                .ToListAsync();
-
+                stages = await _context.ProjectStages
+         .Include(s => s.AssignedEngineer)
+         .Include(s => s.Assignments)
+         .Include(s => s.Project)
+         .Where(s => s.ProjectId == effectiveProjectId)
+                    .OrderBy(s => s.Sequence)
+                    .ToListAsync();
+            }
             ViewBag.TotalStages = stages.Count;
             ViewBag.CompletedStages = stages.Count(s => s.Status == StageStatus.Completed);
             ViewBag.InProgressStages = stages.Count(s => s.Status == StageStatus.InProgress);
             ViewBag.DelayedStages = stages.Count(s => s.Status == StageStatus.Delayed);
             var totalStageWeight = stages.Sum(s => s.Weight);
-            ViewBag.WeightSum = totalStageWeight;
+            var distinctProjectCount = stages.Select(s => s.ProjectId).Distinct().Count();
+            ViewBag.WeightSum = distinctProjectCount > 0 ? totalStageWeight / distinctProjectCount : 0;
             ViewBag.WeightedCompletion = totalStageWeight > 0
      ? Math.Round(stages.Sum(s => s.Weight * s.CompletionPercentage) / totalStageWeight, 1)
      : 0;
-            ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.Discipline).ToListAsync();
             return View(stages);
         }
 
 
-      
+
         // ============================================
         // تفعيل قالب مرحلة جاهز (بند P1) مع اختيار مهامه الافتراضية + مهام إضافية
 

@@ -11,7 +11,6 @@
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
 
     List<(string Label, int Value, string Color)>? stageSlices = null;
-    if (selectedProjectId.HasValue)
     {
         var totalStagesCountForChart = (int)ViewBag.TotalStages;
         var completedStagesCountForChart = (int)ViewBag.CompletedStages;
@@ -46,7 +45,7 @@
         <div style="display:flex; align-items:center; gap:8px;">
             <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع</label>
             <select name="projectId" onchange="var sp=this.form.querySelector('[name=subProjectId]'); if(sp) sp.value=''; this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
-                <option value="">-- اختر مشروعاً --</option>
+                <option value="">-- عرض الكل --</option>
                 @foreach (var p in projects)
                 {
                     <option value="@p.Id" selected="@(selectedProjectId == p.Id)">@p.Code - @p.Name</option>
@@ -76,55 +75,50 @@
     }
 </div>
 
-@if (!selectedProjectId.HasValue)
-{
-    <div class="stat-sub">اختاري مشروعاً لعرض إحصائيات مراحله</div>
-}
-else
-{
-    <div class="stat-strip stat-strip-text">
-        <div class="stat-item"><span class="kicker">عدد المراحل</span><span class="stat-value">@ViewBag.TotalStages</span></div>
-        <div class="stat-item"><span class="kicker">إجمالي أوزان المراحل</span><span class="stat-value">@(((decimal)ViewBag.WeightSum).ToString("N0"))%</span></div>
-        <div class="stat-item"><span class="kicker">نسبة الإنجاز الحالية</span><span class="stat-value">@(((decimal)ViewBag.WeightedCompletion).ToString("N1"))%</span></div>
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">عدد المراحل</span><span class="stat-value">@ViewBag.TotalStages</span></div>
+    <div class="stat-item"><span class="kicker">إجمالي أوزان المراحل</span><span class="stat-value">@(((decimal)ViewBag.WeightSum).ToString("N0"))%</span></div>
+    <div class="stat-item"><span class="kicker">نسبة الإنجاز الحالية</span><span class="stat-value">@(((decimal)ViewBag.WeightedCompletion).ToString("N1"))%</span></div>
+</div>
+<div class="data-table" style="--cols: 30px minmax(0,1fr) minmax(0,1fr) 56px 90px 128px 84px 104px 92px 84px">
+    <div class="data-table-head">
+        <div class="cell">ت</div>
+        <div class="cell">المشروع</div>
+        <div class="cell">المرحلة</div>
+        <div class="cell">الوزن</div>
+        <div class="cell">التخصص</div>
+        <div class="cell">المهندس المشرف</div>
+        <div class="cell">التكليفات</div>
+        <div class="cell">نسبة الإنجاز</div>
+        <div class="cell">الحالة</div>
+        <div class="cell"></div>
     </div>
-    <div class="data-table" style="--cols: 30px minmax(0,1.2fr) 56px 90px 128px 84px 104px 92px 84px">
-        <div class="data-table-head">
-            <div class="cell">ت</div>
-            <div class="cell">المرحلة</div>
-            <div class="cell">الوزن</div>
-            <div class="cell">التخصص</div>
-            <div class="cell">المهندس المشرف</div>
-            <div class="cell">التكليفات</div>
-            <div class="cell">نسبة الإنجاز</div>
-            <div class="cell">الحالة</div>
-            <div class="cell"></div>
-        </div>
-        @if (!Model.Any())
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
+    }
+    else
+    {
+        @foreach (var stage in Model)
         {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
-        }
-        else
-        {
-            @foreach (var stage in Model)
-            {
-                <div class="data-table-row">
-                    <div class="cell cell-num">@stage.Sequence</div>
-                    <div class="cell">
-                        @stage.Name
-                        @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
-                        {
-                            <span class="tag tag-accent" style="font-size:9px;">🔁</span>
-                        }
-                    </div>
-                    <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
-                    <div class="cell">@(stageTemplates.FirstOrDefault(t => t.Name == stage.Name)?.Discipline?.Name ?? "-")</div>
-                    <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
-                    <div class="cell cell-num">@stage.Assignments.Count</div>
-                    <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
-                    <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
-                    <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@stage.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+            <div class="data-table-row">
+                <div class="cell cell-num">@stage.Sequence</div>
+                <div class="cell">@(stage.Project?.Name ?? "-")</div>
+                <div class="cell">
+                    @stage.Name
+                    @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
+                    {
+                        <span class="tag tag-accent" style="font-size:9px;">🔁</span>
+                    }
                 </div>
-            }
+                <div class="cell cell-num">@stage.Weight.ToString("N0")%</div>
+                <div class="cell">@(stageTemplates.FirstOrDefault(t => t.Name == stage.Name)?.Discipline?.Name ?? "-")</div>
+                <div class="cell">@(stage.AssignedEngineer?.FullName ?? "-")</div>
+                <div class="cell cell-num">@stage.Assignments.Count</div>
+                <div class="cell cell-num">@stage.CompletionPercentage.ToString("N0")%</div>
+                <div class="cell"><span class="tag @StageTagClass(stage.Status)">@stageStatusLabels.FirstOrDefault(x => x.Value == stage.Status.ToString()).Label</span></div>
+                <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@stage.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+            </div>
         }
-    </div>
-}
+    }
+</div>
