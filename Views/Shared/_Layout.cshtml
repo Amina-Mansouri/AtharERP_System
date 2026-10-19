@@ -25,7 +25,8 @@
             catch { navTrail = new List<NavTrailEntry>(); }
         }
 
-        var existingIndex = navTrail.FindIndex(e => e.Url == currentUrl);
+        var currentPath = Context.Request.Path.ToString();
+        var existingIndex = navTrail.FindIndex(e => e.Url.Split('?')[0] == currentPath);
         if (existingIndex >= 0)
         {
             navTrail = navTrail.Take(existingIndex + 1).ToList();
