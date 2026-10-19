@@ -809,12 +809,27 @@ else
                                 <div class="cell">
                                                                       <div style="display:flex; align-items:center; gap:5px;">
                                         <span>@item.Stage.Name</span>
-                                        @if (!string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent || a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
+                                                                               @if (a.Tasks.Any() || !string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent)
                                         {
-                                            <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="تفاصيل إضافية">▾</span>
+                                            <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="عرض المهام">▾</span>
                                         }
                                     </div>
-                                    <div id="assignmentNotes-@a.Id" hidden style="margin-top:4px;">
+                                                                     <div id="assignmentNotes-@a.Id" hidden style="margin-top:4px;">
+                                        @if (a.Tasks.Any())
+                                        {
+                                            <div style="display:grid; gap:2px; margin-bottom:4px;">
+                                                @foreach (var t in a.Tasks)
+                                                {
+                                                    <div style="font-size:10.5px;">
+                                                        • @t.Title
+                                                        @if (t.Status == ProjectTaskStatus.Blocked)
+                                                        {
+                                                            <span class="tag tag-warning" style="font-size:9px;">محظورة</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
                                         @if (!string.IsNullOrWhiteSpace(a.AssignmentType))
                                         {
                                             <div class="stat-sub">@a.AssignmentType</div>
@@ -822,10 +837,6 @@ else
                                         @if (a.IsUrgent)
                                         {
                                             <span class="tag tag-danger">مستعجل</span>
-                                        }
-                                        @if (a.Tasks.Any(t => t.Status == ProjectTaskStatus.Blocked))
-                                        {
-                                            <span class="tag tag-warning">⚠ توجد مهمة محظورة</span>
                                         }
                                     </div>
                                 </div>
