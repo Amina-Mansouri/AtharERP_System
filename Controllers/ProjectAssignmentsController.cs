@@ -437,9 +437,18 @@ List<int>? taskIds)
             var linkedTasksCount = taskIds.Count;
 
             var dependencyLinks = await _context.TaskDependencies
-                .Where(d => taskIds.Contains(d.TaskId) || taskIds.Contains(d.DependsOnTaskId))
-                .ToListAsync();
+        .Where(d => taskIds.Contains(d.TaskId) || taskIds.Contains(d.DependsOnTaskId))
+        .ToListAsync();
             _context.TaskDependencies.RemoveRange(dependencyLinks);
+
+            var todoIds = await _context.TaskTodos.Where(td => taskIds.Contains(td.TaskId)).Select(td => td.Id).ToListAsync();
+            var proposalIds = await _context.DesignProposals.Where(p => todoIds.Contains(p.TaskTodoId)).Select(p => p.Id).ToListAsync();
+            var relatedNotifications = await _context.Notifications
+                .Where(n => (n.EntityType == "ProjectAssignment" && n.EntityId == id)
+                         || (n.EntityType == "ProjectTask" && taskIds.Contains(n.EntityId))
+                         || (n.EntityType == "DesignProposal" && proposalIds.Contains(n.EntityId)))
+                .ToListAsync();
+            _context.Notifications.RemoveRange(relatedNotifications);
 
             _context.ProjectAssignments.Remove(assignment);
             await _context.SaveChangesAsync();

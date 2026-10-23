@@ -15,17 +15,20 @@ namespace AtharERP_System.Controllers
         private readonly ProjectCalculationService _calc;
         private readonly NotificationService _notify;
         private readonly PermissionService _permissionService;
+        private readonly AuditService _audit;
 
         public ProjectTasksController(
             AppDbContext context,
             ProjectCalculationService calc,
             NotificationService notify,
-            PermissionService permissionService)
+            PermissionService permissionService,
+            AuditService audit)
         {
             _context = context;
             _calc = calc;
             _notify = notify;
             _permissionService = permissionService;
+            _audit = audit;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -412,7 +415,54 @@ namespace AtharERP_System.Controllers
             return this.RedirectKeepingTab("Edit", new { id });
         }
 
-       
+
+        // إنهاء مهمة مباشرة — لمدير النظام فقط، بغض النظر عن مسؤول المرحلة
+        [Authorize(Roles = "مدير النظام")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForceCompleteTask(int id)
+        {
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == id);
+            if (task == null)
+                return NotFound();
+
+            if (task.Status == ProjectTaskStatus.Completed)
+            {
+                TempData["Error"] = "المهمة مكتملة بالفعل";
+                return this.RedirectKeepingTab("Edit", new { id });
+            }
+
+            task.Status = ProjectTaskStatus.Completed;
+            task.CompletionPercentage = 100;
+            if (!task.ActualDeliveryDate.HasValue)
+                task.ActualDeliveryDate = DateTime.UtcNow.Date;
+
+            await _context.SaveChangesAsync();
+
+            if (task.StageId.HasValue)
+                await _calc.RecalculateStageAsync(task.StageId.Value);
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                var assignment = await _context.ProjectAssignments.Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == task.ProjectAssignmentId.Value);
+                if (assignment != null)
+                {
+                    var activeTasks = assignment.Tasks.Where(t => t.Status != ProjectTaskStatus.Blocked).ToList();
+                    if (activeTasks.Any() && activeTasks.All(t => t.CompletionPercentage >= 100) && assignment.Status != AssignmentStatus.Completed)
+                    {
+                        assignment.Status = AssignmentStatus.Completed;
+                        await _context.SaveChangesAsync();
+                        await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
+                    }
+                }
+            }
+
+            await _audit.LogAsync(CurrentUserId, "ForceCompleteTask", nameof(ProjectTask), id.ToString(), "إنهاء مهمة مباشرة بواسطة مدير النظام");
+
+            TempData["Success"] = "تم إنهاء المهمة مباشرة";
+            return this.RedirectKeepingTab("Edit", new { id });
+        }
+
         // ============================================
         // قائمة To-Do - مسموح للمكلَّف بالمهمة نفسها فقط
         // ============================================

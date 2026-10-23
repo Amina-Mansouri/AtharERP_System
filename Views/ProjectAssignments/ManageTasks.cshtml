@@ -72,7 +72,7 @@
                   onsubmit="return confirm('سيُنهى هذا التكليف مباشرة بدون المرور بالمراجعات، ويُرحَّل فوراً للمالية. هل تريدين المتابعة؟');">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="btn-line" style="color:#c9a15a; border-color:#c9a15a;">إنهاء مباشر (أرشفة)</button>
+                <button type="submit" class="btn-line" style="color:#c9a15a; border-color:#c9a15a;">إنهاء تكليف</button>
             </form>
         </div>
     }

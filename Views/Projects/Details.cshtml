@@ -532,7 +532,7 @@ else
                                     {
                                         <form method="post" asp-controller="ProjectStages" asp-action="ArchiveStage" asp-route-id="@stage.Id" onsubmit="return confirm('سيُنهى جميع تكليفات هذه المرحلة غير المكتملة مباشرة بدون المرور بالمراجعات، وتُرحَّل فوراً للمالية. إن كانت آخر مرحلة ناقصة، سيكتمل المشروع بالكامل تلقائياً. هل تريدين المتابعة؟');" style="display:inline;">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c9a15a; white-space:nowrap;">أرشفة</button>
+                                            <button type="submit" class="btn-line" style="height:22px; padding:0 6px; font-size:10px; color:#c9a15a; white-space:nowrap;">إنهاء مرحلة</button>
                                         </form>
                                     }
                                 </div>
