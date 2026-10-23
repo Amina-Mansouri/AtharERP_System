@@ -128,7 +128,7 @@ namespace AtharERP_System.Controllers
             [ValidateAntiForgeryToken]
         public async Task<IActionResult> ActivateTemplate(
                 int projectId, int stageTemplateId, decimal weight, string? assignedEngineerId,
-                decimal? area, decimal? pricePerMeter,
+                decimal? area, decimal? pricePerMeter, int? sequence,
                 List<int>? selectedTaskIds, string? extraTasks)
         {
             var project = await _context.Projects.Include(p => p.Stages).FirstOrDefaultAsync(p => p.Id == projectId);
@@ -147,6 +147,7 @@ namespace AtharERP_System.Controllers
                 TempData["FailedWeight"] = weight.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 TempData["FailedArea"] = area?.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 TempData["FailedPricePerMeter"] = pricePerMeter?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                TempData["FailedSequence"] = sequence?.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 TempData["FailedEngineerId"] = assignedEngineerId;
                 TempData["FailedExtraTasks"] = extraTasks;
                 return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
@@ -184,7 +185,7 @@ namespace AtharERP_System.Controllers
                 Weight = weight,
                 Area = area,
                 AssignedEngineerId = string.IsNullOrEmpty(assignedEngineerId) ? null : assignedEngineerId,
-                Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
+                Sequence = sequence ?? (project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1),
                 Status = StageStatus.New,
                 CompletionPercentage = 0,
                 ActualCost = 0,

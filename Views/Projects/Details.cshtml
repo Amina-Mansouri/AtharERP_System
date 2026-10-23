@@ -36,6 +36,9 @@
     decimal? failedPricePerMeter = failedPricePerMeterStr != null ? decimal.Parse(failedPricePerMeterStr, System.Globalization.CultureInfo.InvariantCulture) : (decimal?)null;
     var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
     var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
+    var failedSequenceStr = TempData.Peek("FailedSequence") as string;
+    int? failedSequence = failedSequenceStr != null ? int.Parse(failedSequenceStr) : (int?)null;
+    var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
 
     var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
@@ -652,10 +655,19 @@ else
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="projectId" value="@Model.Id" />
                                                     <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
-                                                    <div style="margin-bottom:6px;">
-                                                        <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : tpl.DefaultWeight)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                    @{
+                                                        var suggestedSequence = isFailedTemplate && failedSequence.HasValue ? failedSequence.Value : (Model.Stages.Any() ? Model.Stages.Max(s => s.Sequence) + 1 : 1);
+                                                    }
+                                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                        <div>
+                                                            <label style="font-size:10px; color:#8a83a0;">الوزن %</label>
+                                                            <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : tpl.DefaultWeight)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                        </div>
+                                                        <div>
+                                                            <label style="font-size:10px; color:#8a83a0;">الترتيب</label>
+                                                            <input type="number" step="1" min="1" name="sequence" required value="@suggestedSequence" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                        </div>
                                                     </div>
-                                                  
                                                     <div style="margin-bottom:6px;">
                                                         <div class="stat-sub">التخصص: @(tpl.Discipline?.Name ?? "غير محدَّد لهذا القالب")</div>
                                                     </div>
@@ -694,7 +706,7 @@ else
                                                     <form method="post" asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@usedStage.Id" style="margin-top:8px; border:1px solid #ecebf2; border-radius:8px; padding:8px; background:#faf9fc;">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="Name" value="@usedStage.Name" />
-                                                        <input type="hidden" name="Sequence" value="@usedStage.Sequence" />
+
                                                         <input type="hidden" name="PlannedStartDate" value="@(usedStage.PlannedStartDate?.ToString("yyyy-MM-dd"))" />
                                                         <input type="hidden" name="PlannedEndDate" value="@(usedStage.PlannedEndDate?.ToString("yyyy-MM-dd"))" />
                                                         <input type="hidden" name="ActualDeliveryDate" value="@(usedStage.ActualDeliveryDate?.ToString("yyyy-MM-dd"))" />
@@ -712,11 +724,12 @@ else
                                                                 <div class="stat-sub">مقفل — أوزان بقية المراحل وصلت 100%</div>
                                                             }
                                                         </div>
-                                                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-                                                                <div>
-                                                                    <label style="font-size:10px; color:#8a83a0;">المساحة (م²)</label>
-                                                                    <input type="number" step="0.01" min="0" name="Area" value="@usedStage.Area" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                                                </div>
+                                                                  <input type="hidden" name="Area" value="@usedStage.Area" />
+                                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+                                                            <div>
+                                                                <label style="font-size:10px; color:#8a83a0;">الترتيب</label>
+                                                                <input type="number" step="1" min="1" name="Sequence" required value="@usedStage.Sequence" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
+                                                            </div>
                                                             <div>
                                                                 <label style="font-size:10px; color:#8a83a0;">المهندس المشرف</label>
                                                                 <select name="AssignedEngineerId" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; font-size:11px;">
