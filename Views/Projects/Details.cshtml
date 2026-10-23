@@ -1235,8 +1235,11 @@ else
               
 
                     <div style="margin-bottom:16px; padding-bottom:14px; border-bottom:1px dashed #ecebf2;">
-                        <div style="font-size:13px; font-weight:600; margin-bottom:8px;">+ إضافة مبنى جديد</div>
-                        @{
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button type="button" class="btn-line btn-line-accent" onclick="var f=document.getElementById('addBuildingForm'); f.hidden = !f.hidden;">+ إضافة مبنى جديد</button>
+                        </div>
+                        <div id="addBuildingForm" hidden style="margin-top:10px;">
+                            @{
                             var lastSubHere = lastSubProjectByParent.ContainsKey(Model.Id) ? lastSubProjectByParent[Model.Id] : null;
                             var parentTypeLabel = Model.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == Model.Type.Value.ToString()).Label : "-";
                             var parentCategoryLabel = Model.ProjectCategory?.DisplayName ?? "-";
@@ -1323,10 +1326,11 @@ else
                                 }
                             </div>
 
-                            <div>
-                                <button type="submit" class="btn-line btn-line-accent">+ إضافة المبنى</button>
-                            </div>
-                        </form>
+                                <div>
+                                    <button type="submit" class="btn-line btn-line-accent">+ إضافة المبنى</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
 
                           <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">المشاريع الفرعية</div>

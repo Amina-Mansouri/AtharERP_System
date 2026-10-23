@@ -218,6 +218,13 @@ namespace AtharERP_System.Controllers
 
             if (!ModelState.IsValid)
             {
+                if (model.Scope == ProjectScope.Sub && model.ParentProjectId.HasValue)
+                {
+                    var firstError = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault();
+                    TempData["Error"] = firstError ?? "تعذّر إضافة المبنى — تحقّقي من البيانات المدخلة";
+                    return RedirectToAction("Details", new { id = model.ParentProjectId.Value, tab = "pane-subprojects" });
+                }
+
                 await LoadDropdownsAsync();
                 ViewBag.CanEdit = true;
                 ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
