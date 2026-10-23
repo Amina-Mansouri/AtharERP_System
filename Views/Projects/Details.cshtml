@@ -1236,11 +1236,14 @@ else
                                 var lastSubHere = lastSubProjectByParent.ContainsKey(Model.Id) ? lastSubProjectByParent[Model.Id] : null;
                                 var parentTypeLabel = Model.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == Model.Type.Value.ToString()).Label : "-";
                                 var parentCategoryLabel = Model.ProjectCategory?.DisplayName ?? "-";
-                                var nextBuildingSeq = Model.ChildProjects
-      .Select(c => int.TryParse(c.Code.Split('-').LastOrDefault(), out var n) ? n : 0)
-      .DefaultIfEmpty(0)
-      .Max() + 1;
-                                var suggestedBuildingCode = $"{Model.Code}-{Model.Name}-{nextBuildingSeq}";
+                                var childNumericSuffixes = Model.ChildProjects
+       .Select(c => c.Code.Split('-').LastOrDefault() ?? "")
+       .Where(s => int.TryParse(s, out _))
+       .ToList();
+                                var maxSuffix = childNumericSuffixes.OrderByDescending(s => int.Parse(s)).FirstOrDefault();
+                                var buildingSeqPadWidth = maxSuffix != null ? maxSuffix.Length : 3;
+                                var nextBuildingSeq = (maxSuffix != null ? int.Parse(maxSuffix) : 0) + 1;
+                                var suggestedBuildingCode = $"{Model.Code}-{Model.Name}-{nextBuildingSeq.ToString("D" + buildingSeqPadWidth)}";
                             }
                             <form method="post" asp-controller="Projects" asp-action="Create">
                                 @Html.AntiForgeryToken()
