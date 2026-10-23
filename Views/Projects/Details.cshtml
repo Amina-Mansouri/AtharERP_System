@@ -178,8 +178,7 @@
             }
             <div style="margin-bottom:8px;">
                 <label style="font-size:11px; color:#8a83a0;">رمز المشروع</label>
-                <input type="text" name="Code" value="@(string.IsNullOrEmpty(Model.Code) ? (ViewBag.SuggestedProjectCode as string ?? "") : Model.Code)" placeholder="رمز المشروع" dir="auto" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                @if (!string.IsNullOrEmpty(lastCode))
+                <input type="text" name="Code" value="@(string.IsNullOrEmpty(Model.Code) ? (ViewBag.SuggestedProjectCode as string ?? "") : Model.Code)" placeholder="رمز المشروع" dir="ltr" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px; text-align:left;" />                @if (!string.IsNullOrEmpty(lastCode))
                 {
                     <div class="stat-sub" style="margin-top:3px;">آخر رمز مسجَّل: @lastCode</div>
                 }
@@ -348,7 +347,7 @@ else
                     @Html.AntiForgeryToken()
                     <div style="margin-bottom:8px;">
                         <label style="font-size:11px; color:#8a83a0;">@(Model.Scope == ProjectScope.Sub ? "رقم المبنى" : "رمز المشروع")</label>
-                        <input type="text" name="Code" value="@Model.Code" required disabled dir="auto" class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                        <input type="text" name="Code" value="@Model.Code" required disabled dir="ltr" class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px; text-align:left;" />
                     </div>
                     <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
@@ -1255,7 +1254,7 @@ else
 
                                 <div style="margin-bottom:8px;">
                                     <label style="font-size:11px; color:#8a83a0;">رقم المبنى</label>
-                                    <input type="text" name="Code" value="@suggestedBuildingCode" required dir="auto" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                    <input type="text" name="Code" value="@suggestedBuildingCode" required dir="ltr" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px; text-align:left;" />
                                     @if (!string.IsNullOrEmpty(lastSubHere))
                                     {
                                         <div class="stat-sub" style="margin-top:4px;">آخر مبنى أُضيف تحت هذا المشروع: @lastSubHere</div>
