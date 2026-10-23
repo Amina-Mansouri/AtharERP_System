@@ -655,7 +655,7 @@ else
                                                     <input type="hidden" name="projectId" value="@Model.Id" />
                                                     <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
                                                     @{
-                                                        var suggestedSequence = isFailedTemplate && failedSequence.HasValue ? failedSequence.Value : (Model.Stages.Any() ? Model.Stages.Max(s => s.Sequence) + 1 : 1);
+                                                        var suggestedSequence = isFailedTemplate && failedSequence.HasValue ? failedSequence.Value : tpl.Order;
                                                     }
                                                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
                                                         <div>
