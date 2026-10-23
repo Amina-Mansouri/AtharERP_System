@@ -185,6 +185,8 @@ namespace AtharERP_System.Controllers
 .Include(t => t.Stage).ThenInclude(s => s.Project)
 .Include(t => t.ProjectAssignment).ThenInclude(a => a!.Engineers).ThenInclude(e => e.User)
 .Include(t => t.ProjectAssignment).ThenInclude(a => a!.Tasks)
+.Include(t => t.ProjectAssignment).ThenInclude(a => a!.FinancialRecords)
+.Include(t => t.ProjectAssignment).ThenInclude(a => a!.FinancialClaims)
 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)

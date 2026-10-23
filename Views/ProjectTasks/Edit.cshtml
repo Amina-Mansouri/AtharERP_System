@@ -81,6 +81,7 @@
                 @if (Model.ProjectAssignment != null)
                 {
                     var asg = Model.ProjectAssignment;
+                    var pricingLocked = asg.FinancialRecords.Any(r => r.IsCleared) || asg.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0);
                     <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px; margin-bottom:10px; background:#faf9fd;">
                         <div style="font-size:11.5px; font-weight:700; margin-bottom:8px;">بيانات التكليف</div>
                         <form method="post" asp-controller="ProjectAssignments" asp-action="EditDates" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end;">
@@ -104,6 +105,32 @@
                                 <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ</button>
                             }
                         </form>
+
+                        @if (canManage && !pricingLocked)
+                        {
+                            <form method="post" asp-controller="ProjectAssignments" asp-action="EditPricing" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; margin-top:8px; padding-top:8px; border-top:1px dashed #e4e2ec;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@asg.Id" />
+                                <input type="hidden" name="projectId" value="@asg.ProjectId" />
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">المساحة</label>
+                                    <input type="number" step="0.01" min="0" name="Area" value="@asg.Area" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">سعر (م) التكليف</label>
+                                    <input type="number" step="0.01" min="0" name="PricePerMeter" value="@asg.PricePerMeter" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <div>
+                                    <label style="font-size:10.5px; color:#8a83a0;">سعر (م) البيع</label>
+                                    <input type="number" step="0.01" min="0" name="SalePricePerMeter" value="@asg.SalePricePerMeter" style="width:100%; height:30px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11.5px;" />
+                                </div>
+                                <button type="submit" class="btn-line btn-line-accent" style="height:30px;">حفظ التسعير</button>
+                            </form>
+                        }
+                        @if (pricingLocked)
+                        {
+                            <div class="stat-sub" style="margin-top:6px;">مُسوّى ماليًا — التسعير مقفل عن التعديل</div>
+                        }
                     </div>
                 }
 
