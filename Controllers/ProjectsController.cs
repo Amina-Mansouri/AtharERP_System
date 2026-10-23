@@ -656,17 +656,21 @@ namespace AtharERP_System.Controllers
 
         private async Task<string> GenerateSuggestedMainProjectCodeAsync()
         {
-            var existingPSeqs = await _context.Projects
+            var existingCodes = await _context.Projects
                 .Where(p => p.Scope == ProjectScope.Main && p.Code.StartsWith("P-"))
                 .Select(p => p.Code)
                 .ToListAsync();
 
-            var maxPSeq = existingPSeqs
-                .Select(c => int.TryParse(c.Split('-').ElementAtOrDefault(1), out var n) ? n : 0)
-                .DefaultIfEmpty(0)
-                .Max();
+            var numericSuffixes = existingCodes
+                .Select(c => c.Split('-').ElementAtOrDefault(1) ?? "")
+                .Where(s => int.TryParse(s, out _))
+                .ToList();
 
-            return $"P-{maxPSeq + 1}-";
+            var maxSuffix = numericSuffixes.OrderByDescending(s => int.Parse(s)).FirstOrDefault();
+            var padWidth = maxSuffix != null ? maxSuffix.Length : 3;
+            var nextSeq = (maxSuffix != null ? int.Parse(maxSuffix) : 0) + 1;
+
+            return $"P-{nextSeq.ToString("D" + padWidth)}-";
         }
 
         private async Task<string> GenerateProjectCodeAsync()
