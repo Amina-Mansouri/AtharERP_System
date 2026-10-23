@@ -314,7 +314,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id,
-           [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite,ProjectCategoryId")] Project model)
+           [Bind("Name,Description,ClientId,ParentProjectId,Scope,Type,Code,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,AutoTransferToSite,ProjectCategoryId")] Project model)
         {
             var project = await _context.Projects.FindAsync(id);
             if (project == null)
@@ -332,11 +332,20 @@ namespace AtharERP_System.Controllers
             {
                 ModelState.AddModelError(string.Empty, "تاريخ التسليم المتفق عليه يجب أن يكون بعد تاريخ البدء");
             }
+
+            if (string.IsNullOrWhiteSpace(model.Code))
+            {
+                ModelState.AddModelError(string.Empty, "رمز المشروع/رقم المبنى مطلوب");
+            }
+            else if (model.Code != project.Code && await _context.Projects.AnyAsync(p => p.Code == model.Code && p.Id != id))
+            {
+                ModelState.AddModelError(string.Empty, "هذا الرمز/الرقم مستخدم بالفعل من مشروع آخر، اختاري رمزاً مختلفاً");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadDropdownsAsync(id);
                 model.Id = id;
-                model.Code = project.Code;
                 ViewBag.CanEdit = true;
                 ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
                 ViewBag.Engineers = new List<ApplicationUser>();
@@ -363,6 +372,7 @@ namespace AtharERP_System.Controllers
                 model.ActualDeliveryDate = null;
             }
 
+            project.Code = model.Code;
             project.Name = model.Name;
             project.Description = model.Description;
             project.ClientId = model.ClientId;

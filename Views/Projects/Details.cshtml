@@ -346,6 +346,10 @@ else
 
                 <form method="post" asp-action="Edit" asp-route-id="@Model.Id" id="projectDataForm">
                     @Html.AntiForgeryToken()
+                    <div style="margin-bottom:8px;">
+                        <label style="font-size:11px; color:#8a83a0;">@(Model.Scope == ProjectScope.Sub ? "رقم المبنى" : "رمز المشروع")</label>
+                        <input type="text" name="Code" value="@Model.Code" required disabled class="proj-editable" style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                    </div>
                     <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:8px;">
                         <div>
                             <label style="font-size:11px; color:#8a83a0;">اسم المشروع</label>
@@ -1229,23 +1233,28 @@ else
                         </div>
                         <div id="addBuildingForm" hidden style="margin-top:10px;">
                             @{
-                            var lastSubHere = lastSubProjectByParent.ContainsKey(Model.Id) ? lastSubProjectByParent[Model.Id] : null;
-                            var parentTypeLabel = Model.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == Model.Type.Value.ToString()).Label : "-";
-                            var parentCategoryLabel = Model.ProjectCategory?.DisplayName ?? "-";
-                        }
-                        <form method="post" asp-controller="Projects" asp-action="Create">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="Scope" value="Sub" />
-                            <input type="hidden" name="ParentProjectId" value="@Model.Id" />
-                            <input type="hidden" name="ClientId" value="@Model.ClientId" />
-                            <input type="hidden" name="Type" value="@(Model.Type?.ToString() ?? "")" />
-                            <input type="hidden" name="ProjectCategoryId" value="@(Model.ProjectCategoryId?.ToString() ?? "")" />
+                                var lastSubHere = lastSubProjectByParent.ContainsKey(Model.Id) ? lastSubProjectByParent[Model.Id] : null;
+                                var parentTypeLabel = Model.Type.HasValue ? typeLabels.FirstOrDefault(x => x.Value == Model.Type.Value.ToString()).Label : "-";
+                                var parentCategoryLabel = Model.ProjectCategory?.DisplayName ?? "-";
+                                var nextBuildingSeq = Model.ChildProjects
+      .Select(c => int.TryParse(c.Code.Split('-').LastOrDefault(), out var n) ? n : 0)
+      .DefaultIfEmpty(0)
+      .Max() + 1;
+                                var suggestedBuildingCode = $"{Model.Code}-{Model.Name}-{nextBuildingSeq}";
+                            }
+                            <form method="post" asp-controller="Projects" asp-action="Create">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Scope" value="Sub" />
+                                <input type="hidden" name="ParentProjectId" value="@Model.Id" />
+                                <input type="hidden" name="ClientId" value="@Model.ClientId" />
+                                <input type="hidden" name="Type" value="@(Model.Type?.ToString() ?? "")" />
+                                <input type="hidden" name="ProjectCategoryId" value="@(Model.ProjectCategoryId?.ToString() ?? "")" />
 
-                            <div style="display:grid; grid-template-columns:160px 1fr; gap:10px; align-items:center; margin-bottom:8px;">
-                                <div>
-                                    <label style="font-size:11px; color:#8a83a0;">رقم المبنى</label>
-                                    <input type="text" name="Code" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
-                                </div>
+                                <div style="display:grid; grid-template-columns:160px 1fr; gap:10px; align-items:center; margin-bottom:8px;">
+                                    <div>
+                                        <label style="font-size:11px; color:#8a83a0;">رقم المبنى</label>
+                                        <input type="text" name="Code" value="@suggestedBuildingCode" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
+                                    </div>
                                 @if (!string.IsNullOrEmpty(lastSubHere))
                                 {
                                     <div class="stat-sub">آخر مبنى أُضيف تحت هذا المشروع: @lastSubHere</div>
