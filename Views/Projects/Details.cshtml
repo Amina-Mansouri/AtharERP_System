@@ -636,10 +636,7 @@ else
                                                     <div style="margin-bottom:6px;">
                                                         <input type="number" step="0.01" min="0" max="100" name="weight" placeholder="الوزن %" required value="@(isFailedTemplate ? failedWeight : tpl.DefaultWeight)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
                                                     </div>
-                                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-                                                        <input type="number" step="0.01" min="0" name="area" placeholder="المساحة (م²)" value="@(isFailedTemplate ? failedArea : null)" style="width:100%; height:28px; border:1px solid #e4e2ec; border-radius:7px; padding:0 8px; font-size:11px;" />
-                                                    
-                                                    </div>
+                                                  
                                                     <div style="margin-bottom:6px;">
                                                         <div class="stat-sub">التخصص: @(tpl.Discipline?.Name ?? "غير محدَّد لهذا القالب")</div>
                                                     </div>

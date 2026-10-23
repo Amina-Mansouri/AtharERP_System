@@ -174,8 +174,8 @@ namespace AtharERP_System.Controllers
                     return Fail("كل تكليف (مهمة) مختار يجب أن يكون له وزن أكبر من صفر");
             }
 
-            if (selectedTasksWeightTotal > weight)
-                return Fail($"مجموع أوزان المهام المختارة ({selectedTasksWeightTotal}%) يتجاوز وزن المرحلة ({weight}%)");
+            if (selectedTasksWeightTotal > 100)
+                return Fail($"مجموع أوزان المهام المختارة ({selectedTasksWeightTotal}%) يتجاوز 100%");
 
             var stage = new ProjectStage
             {
@@ -187,7 +187,9 @@ namespace AtharERP_System.Controllers
                 Sequence = project.Stages.Any() ? project.Stages.Max(s => s.Sequence) + 1 : 1,
                 Status = StageStatus.New,
                 CompletionPercentage = 0,
-                ActualCost = 0
+                ActualCost = 0,
+                PlannedStartDate = project.PlannedStartDate,
+                PlannedEndDate = project.PlannedEndDate
             };
 
             _context.ProjectStages.Add(stage);

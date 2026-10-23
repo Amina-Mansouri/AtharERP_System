@@ -45,9 +45,9 @@ namespace AtharERP_System.Controllers
             }
 
             var totalTaskWeight = taskWeights?.Where(w => w.HasValue).Sum(w => w!.Value) ?? 0;
-            if (defaultWeight.HasValue && totalTaskWeight > defaultWeight.Value)
+            if (totalTaskWeight > 100)
             {
-                ViewBag.Error = $"مجموع أوزان المهام الافتراضية ({totalTaskWeight:N2}%) يتجاوز الوزن الافتراضي للمرحلة ({defaultWeight:N2}%)";
+                ViewBag.Error = $"مجموع أوزان المهام الافتراضية ({totalTaskWeight:N2}%) يتجاوز 100%";
                 ViewBag.PostedName = name;
                 ViewBag.PostedDefaultWeight = defaultWeight;
                 ViewBag.PostedDisciplineId = disciplineDepartmentId;
@@ -115,9 +115,9 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             var totalTaskWeight = taskWeights?.Where(w => w.HasValue).Sum(w => w!.Value) ?? 0;
-            if (defaultWeight.HasValue && totalTaskWeight > defaultWeight.Value)
+            if (totalTaskWeight > 100)
             {
-                ViewBag.Error = $"مجموع أوزان المهام الافتراضية ({totalTaskWeight:N2}%) يتجاوز الوزن الافتراضي للمرحلة ({defaultWeight:N2}%)";
+                ViewBag.Error = $"مجموع أوزان المهام الافتراضية ({totalTaskWeight:N2}%) يتجاوز 100%";
                 ViewBag.Disciplines = await LoadStageDisciplinesAsync();
                 template.Name = name;
                 template.DefaultWeight = defaultWeight;
