@@ -202,6 +202,7 @@ namespace AtharERP_System.Controllers
         {
             await LoadDropdownsAsync();
             ViewBag.LastProjectCode = await _context.Projects.OrderByDescending(p => p.Id).Select(p => p.Code).FirstOrDefaultAsync();
+            ViewBag.SuggestedProjectCode = await GenerateSuggestedMainProjectCodeAsync();
             ViewBag.CanEdit = true;
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Finance.Costs.View");
             ViewBag.Engineers = new List<ApplicationUser>();
@@ -251,6 +252,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
                 ViewBag.Engineers = new List<ApplicationUser>();
                 ViewBag.Documents = new List<ProjectDocument>();
+                ViewBag.SuggestedProjectCode = await GenerateSuggestedMainProjectCodeAsync();
                 return View("Details", model);
             }
 
@@ -650,6 +652,21 @@ namespace AtharERP_System.Controllers
                 .GroupBy(p => p.ParentProjectId!.Value)
                 .Select(g => new { ParentId = g.Key, Last = g.OrderByDescending(x => x.Id).First() })
                                 .ToDictionaryAsync(x => x.ParentId, x => x.Last.Code);
+        }
+
+        private async Task<string> GenerateSuggestedMainProjectCodeAsync()
+        {
+            var existingPSeqs = await _context.Projects
+                .Where(p => p.Scope == ProjectScope.Main && p.Code.StartsWith("P-"))
+                .Select(p => p.Code)
+                .ToListAsync();
+
+            var maxPSeq = existingPSeqs
+                .Select(c => int.TryParse(c.Split('-').ElementAtOrDefault(1), out var n) ? n : 0)
+                .DefaultIfEmpty(0)
+                .Max();
+
+            return $"P-{maxPSeq + 1}-";
         }
 
         private async Task<string> GenerateProjectCodeAsync()
