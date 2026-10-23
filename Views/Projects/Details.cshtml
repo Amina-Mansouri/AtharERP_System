@@ -806,10 +806,7 @@ else
                                 <div class="cell">
                                                                       <div style="display:flex; align-items:center; gap:5px;">
                                         <span>@item.Stage.Name</span>
-                                        @{
-                                            var canEditThisPricing = canManageAssignments && !(a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0));
-                                        }
-                                        @if (a.Tasks.Any() || !string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent || canEditThisPricing)
+                                        @if (a.Tasks.Any() || !string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent)
                                         {
                                             <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="عرض التفاصيل">▾</span>
                                         }
@@ -837,30 +834,6 @@ else
                                         @if (a.IsUrgent)
                                         {
                                             <span class="tag tag-danger">مستعجل</span>
-                                        }
-                                        @if (canEditThisPricing)
-                                        {
-                                            <div style="margin-top:8px; padding-top:8px; border-top:1px solid #f1f0f6;">
-                                                <div style="font-size:10px; font-weight:600; color:#5a5370; margin-bottom:4px;">تعديل التسعير</div>
-                                                <form method="post" asp-controller="ProjectAssignments" asp-action="EditPricing" style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; align-items:end;">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@a.Id" />
-                                                    <input type="hidden" name="projectId" value="@Model.Id" />
-                                                    <div>
-                                                        <label style="font-size:9px; color:#8a83a0;">المساحة</label>
-                                                        <input type="number" step="0.01" min="0" name="Area" value="@a.Area" placeholder="مساحة" style="width:100%; height:24px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
-                                                    </div>
-                                                    <div>
-                                                        <label style="font-size:9px; color:#8a83a0;">سعر (م) التكليف</label>
-                                                        <input type="number" step="0.01" min="0" name="PricePerMeter" value="@a.PricePerMeter" placeholder="سعر تكليف" style="width:100%; height:24px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
-                                                    </div>
-                                                    <div>
-                                                        <label style="font-size:9px; color:#8a83a0;">سعر (م) البيع</label>
-                                                        <input type="number" step="0.01" min="0" name="SalePricePerMeter" value="@a.SalePricePerMeter" placeholder="سعر بيع" style="width:100%; height:24px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
-                                                    </div>
-                                                    <button type="submit" style="grid-column:1/-1; height:24px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px;">حفظ</button>
-                                                </form>
-                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -898,49 +871,12 @@ else
                                     }
                                 </div>
                                 <div class="cell" style="font-size:10.5px;">
-                                    @{
-                                        var pricingLocked = a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0);
-                                    }
-                                    @if (canManageAssignments && !pricingLocked)
+                                    <div>م: @(a.Area?.ToString("N1") ?? "-")</div>
+                                    <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
+                                    <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                                    @if (a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0))
                                     {
-                                        <form method="post" asp-controller="ProjectAssignments" asp-action="EditPricing" style="display:grid; gap:3px;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@a.Id" />
-                                            <input type="hidden" name="projectId" value="@Model.Id" />
-                                            <div>
-                                                <label style="font-size:9px; color:#8a83a0;">المساحة</label>
-                                                <input type="number" step="0.01" min="0" name="Area" value="@a.Area" placeholder="مساحة" style="width:100%; height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
-                                            </div>
-                                            <div>
-                                                <label style="font-size:9px; color:#8a83a0;">سعر (م) التكليف</label>
-                                                <input type="number" step="0.01" min="0" name="PricePerMeter" value="@a.PricePerMeter" placeholder="سعر تكليف" style="width:100%; height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
-                                            </div>
-                                            <div>
-                                                <label style="font-size:9px; color:#8a83a0;">سعر (م) البيع</label>
-                                                <input type="number" step="0.01" min="0" name="SalePricePerMeter" value="@a.SalePricePerMeter" placeholder="سعر بيع" style="width:100%; height:22px; border:1px solid #e4e2ec; border-radius:5px; font-size:10px; padding:0 4px;" />
-                                            </div>
-                                            <button type="submit" style="height:20px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:9.5px;">حفظ</button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <div>م: @(a.Area?.ToString("N1") ?? "-")</div>
-                                        <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
-                                        <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
-                                        @if (pricingLocked)
-                                        {
-                                            <span class="tag tag-warning" style="font-size:9px;">مُسوّى — مقفل</span>
-                                        }
-
-                                        <div class="cell" style="font-size:10.5px;">
-                                            <div>م: @(a.Area?.ToString("N1") ?? "-")</div>
-                                            <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
-                                            <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
-                                            @if (!canEditThisPricing && (a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0)))
-                                            {
-                                                <span class="tag tag-warning" style="font-size:9px;">مُسوّى — مقفل</span>
-                                            }
-                                        </div>
+                                        <span class="tag tag-warning" style="font-size:9px;">مُسوّى — مقفل</span>
                                     }
                                 </div>
                                      <div class="cell">
