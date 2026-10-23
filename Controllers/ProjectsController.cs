@@ -201,7 +201,11 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Create()
         {
             await LoadDropdownsAsync();
-            ViewBag.LastProjectCode = await _context.Projects.OrderByDescending(p => p.Id).Select(p => p.Code).FirstOrDefaultAsync();
+            ViewBag.LastProjectCode = await _context.Projects
+       .Where(p => p.Scope == ProjectScope.Main)
+       .OrderByDescending(p => p.Id)
+       .Select(p => p.Code)
+       .FirstOrDefaultAsync();
             ViewBag.SuggestedProjectCode = await GenerateSuggestedMainProjectCodeAsync();
             ViewBag.CanEdit = true;
             ViewBag.CanViewCosts = await _permissionService.HasPermissionAsync(User, "Finance.Costs.View");
