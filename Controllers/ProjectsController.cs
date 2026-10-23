@@ -16,19 +16,22 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly AuditService _audit;
         private readonly ProjectCalculationService _calc;
+        private readonly SiteCalculationService _siteCalc;
 
         public ProjectsController(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             PermissionService permissionService,
             AuditService audit,
-            ProjectCalculationService calc)
+            ProjectCalculationService calc,
+            SiteCalculationService siteCalc)
         {
             _context = context;
             _userManager = userManager;
             _permissionService = permissionService;
             _audit = audit;
             _calc = calc;
+            _siteCalc = siteCalc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -139,19 +142,37 @@ namespace AtharERP_System.Controllers
 
             if (!await CanAccessProjectAsync(project))
                 return Forbid();
+            // تجميع حي (بدون تكرار بيانات) لمهام وبيانات المشاريع الفرعية — دائمًا من مستوى المشروع الرئيسي
+            // حتى لو كنا نعرض مشروعًا فرعيًا حاليًا (القسم 2.2)
+            var rootProject = (project.Scope == ProjectScope.Sub && project.ParentProjectId.HasValue)
+                ? await _context.Projects.Include(p => p.ChildProjects).FirstOrDefaultAsync(p => p.Id == project.ParentProjectId.Value)
+                : project;
 
-            // تجميع حي (بدون تكرار بيانات) لمهام المشاريع الفرعية داخل المشروع الرئيسي (القسم 2.2)
-            if (project.Scope == ProjectScope.Main && project.ChildProjects.Any())
+            if (rootProject != null)
             {
-                var childIds = project.ChildProjects.Select(c => c.Id).ToList();
-                var aggregatedTasks = await _context.ProjectTasks
-               .Where(t => childIds.Contains(t.ProjectId))
-               .ToListAsync();
+                var childIds = rootProject.ChildProjects.Select(c => c.Id).ToList();
+                if (childIds.Any())
+                {
+                    var aggregatedTasks = await _context.ProjectTasks
+                        .Where(t => childIds.Contains(t.ProjectId))
+                        .ToListAsync();
+                    ViewBag.AggregatedSubProjectTasks = aggregatedTasks;
+                }
 
-                ViewBag.AggregatedSubProjectTasks = aggregatedTasks;
-                ViewBag.AggregatedActualCost = project.ActualCost + await _context.Projects
-                    .Where(p => childIds.Contains(p.Id))
-                    .SumAsync(p => p.ActualCost);
+                var childrenCost = childIds.Any() ? await _context.Projects.Where(p => childIds.Contains(p.Id)).SumAsync(p => p.ActualCost) : 0;
+                var childrenBudget = childIds.Any() ? await _context.Projects.Where(p => childIds.Contains(p.Id)).SumAsync(p => p.Budget ?? 0) : 0;
+
+                ViewBag.AggregatedActualCost = rootProject.ActualCost + childrenCost;
+                ViewBag.AggregatedBudget = (rootProject.Budget ?? 0) + childrenBudget;
+
+                var allProjectIdsForExpenses = new List<int> { rootProject.Id };
+                allProjectIdsForExpenses.AddRange(childIds);
+                ViewBag.AggregatedProjectExpenses = await _context.ProjectExpenses
+                    .Where(e => e.ProjectId.HasValue && allProjectIdsForExpenses.Contains(e.ProjectId.Value) && e.SiteId == null)
+                    .SumAsync(e => e.Amount);
+
+                var siteCostBreakdown = await _siteCalc.CalculateProjectSiteCostsBreakdownAsync(allProjectIdsForExpenses);
+                ViewBag.AggregatedSiteCosts = siteCostBreakdown.Total;
             }
 
             ViewBag.CanViewClient = await CanViewClientAsync();

@@ -16,6 +16,9 @@
     var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
     var stageTemplates = ViewBag.StageTemplates as List<StageTemplate> ?? new List<StageTemplate>();
     var aggregatedActualCost = ViewBag.AggregatedActualCost as decimal?;
+    var aggregatedBudget = ViewBag.AggregatedBudget as decimal?;
+    var aggregatedProjectExpenses = ViewBag.AggregatedProjectExpenses as decimal? ?? 0;
+    var aggregatedSiteCosts = ViewBag.AggregatedSiteCosts as decimal? ?? 0;
     var clients = ViewBag.Clients as List<Client> ?? new List<Client>();
     var parentProjects = ViewBag.ParentProjects as List<Project> ?? new List<Project>();
     var projectCategories = ViewBag.ProjectCategories as List<ProjectCategory> ?? new List<ProjectCategory>();
@@ -95,8 +98,21 @@
             </div>
             @if (canViewCosts)
             {
+                               var totalCostDisplay = aggregatedActualCost ?? Model.ActualCost;
+                var totalSaleDisplay = aggregatedBudget ?? Model.Budget ?? 0;
+                var totalExpensesDisplay = aggregatedProjectExpenses + aggregatedSiteCosts;
+                var netProfitDisplay = totalSaleDisplay - totalCostDisplay - totalExpensesDisplay;
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--sys-row-line);">
+                    <span class="kicker">إجمالي سعر البيع</span><span class="stat-value" style="font-size:13px;">@(totalSaleDisplay.ToString("N0")) د.ل</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--sys-row-line);">
+                    <span class="kicker">إجمالي سعر التكلفة</span><span class="stat-value" style="font-size:13px;">@(totalCostDisplay.ToString("N0")) د.ل</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--sys-row-line);">
+                    <span class="kicker">مصروفات المشروع</span><span class="stat-value" style="font-size:13px;">@(totalExpensesDisplay.ToString("N0")) د.ل</span>
+                </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px;">
-                    <span class="kicker">التكلفة الفعلية</span><span class="stat-value" style="font-size:13px;">@((aggregatedActualCost ?? Model.ActualCost).ToString("N0")) د.ل</span>
+                    <span class="kicker">صافي الربح</span><span class="stat-value" style="font-size:13px; color:@(netProfitDisplay >= 0 ? "#2f8a57" : "#c94a42");">@(netProfitDisplay.ToString("N0")) د.ل</span>
                 </div>
             }
         </div>
