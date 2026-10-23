@@ -444,10 +444,10 @@ List<int>? taskIds)
             var todoIds = await _context.TaskTodos.Where(td => taskIds.Contains(td.TaskId)).Select(td => td.Id).ToListAsync();
             var proposalIds = await _context.DesignProposals.Where(p => todoIds.Contains(p.TaskTodoId)).Select(p => p.Id).ToListAsync();
             var relatedNotifications = await _context.Notifications
-                .Where(n => (n.EntityType == "ProjectAssignment" && n.EntityId == id)
-                         || (n.EntityType == "ProjectTask" && taskIds.Contains(n.EntityId))
-                         || (n.EntityType == "DesignProposal" && proposalIds.Contains(n.EntityId)))
-                .ToListAsync();
+     .Where(n => (n.EntityType == "ProjectAssignment" && n.EntityId == id)
+              || (n.EntityType == "ProjectTask" && n.EntityId.HasValue && taskIds.Contains(n.EntityId.Value))
+              || (n.EntityType == "DesignProposal" && n.EntityId.HasValue && proposalIds.Contains(n.EntityId.Value)))
+     .ToListAsync();
             _context.Notifications.RemoveRange(relatedNotifications);
 
             _context.ProjectAssignments.Remove(assignment);
