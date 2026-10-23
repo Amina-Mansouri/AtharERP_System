@@ -657,12 +657,17 @@ namespace AtharERP_System.Controllers
         private async Task<string> GenerateSuggestedMainProjectCodeAsync()
         {
             var existingCodes = await _context.Projects
-                .Where(p => p.Scope == ProjectScope.Main && p.Code.StartsWith("P-"))
+                .Where(p => p.Scope == ProjectScope.Main && p.Code.StartsWith("P("))
                 .Select(p => p.Code)
                 .ToListAsync();
 
             var numericSuffixes = existingCodes
-                .Select(c => c.Split('-').ElementAtOrDefault(1) ?? "")
+                .Select(c =>
+                {
+                    var start = c.IndexOf('(');
+                    var end = c.IndexOf(')');
+                    return (start >= 0 && end > start) ? c.Substring(start + 1, end - start - 1) : "";
+                })
                 .Where(s => int.TryParse(s, out _))
                 .ToList();
 
@@ -670,7 +675,7 @@ namespace AtharERP_System.Controllers
             var padWidth = maxSuffix != null ? maxSuffix.Length : 3;
             var nextSeq = (maxSuffix != null ? int.Parse(maxSuffix) : 0) + 1;
 
-            return $"P-{nextSeq.ToString("D" + padWidth)}-";
+            return $"P({nextSeq.ToString("D" + padWidth)}) - ";
         }
 
         private async Task<string> GenerateProjectCodeAsync()

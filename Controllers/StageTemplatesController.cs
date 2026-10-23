@@ -34,12 +34,13 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, int? disciplineDepartmentId)
+        public async Task<IActionResult> Create(string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, int? disciplineDepartmentId, int order = 1)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 ViewBag.Error = "اسم القالب مطلوب";
                 ViewBag.PostedName = name;
+                ViewBag.PostedOrder = order;
                 ViewBag.Disciplines = await LoadStageDisciplinesAsync();
                 return View();
             }
@@ -51,6 +52,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.PostedName = name;
                 ViewBag.PostedDefaultWeight = defaultWeight;
                 ViewBag.PostedDisciplineId = disciplineDepartmentId;
+                ViewBag.PostedOrder = order;
                 ViewBag.PostedTaskNames = taskNames;
                 ViewBag.PostedTaskWeights = taskWeights;
                 ViewBag.Disciplines = await LoadStageDisciplinesAsync();
@@ -61,7 +63,7 @@ namespace AtharERP_System.Controllers
             {
                 Name = name.Trim(),
                 IsActive = true,
-                Order = await _context.StageTemplates.CountAsync() + 1,
+                Order = order,
                 DisciplineDepartmentId = disciplineDepartmentId,
                 DefaultWeight = defaultWeight
             };
@@ -108,7 +110,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, bool isActive, int? disciplineDepartmentId)
+        public async Task<IActionResult> Edit(int id, string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, bool isActive, int? disciplineDepartmentId, int order = 1)
         {
             var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
@@ -123,6 +125,7 @@ namespace AtharERP_System.Controllers
                 template.DefaultWeight = defaultWeight;
                 template.DisciplineDepartmentId = disciplineDepartmentId;
                 template.IsActive = isActive;
+                template.Order = order;
                 ViewBag.PostedTaskNames = taskNames;
                 ViewBag.PostedTaskWeights = taskWeights;
                 return View(template);
@@ -132,6 +135,7 @@ namespace AtharERP_System.Controllers
             template.IsActive = isActive;
             template.DisciplineDepartmentId = disciplineDepartmentId;
             template.DefaultWeight = defaultWeight;
+            template.Order = order;
 
             _context.StageTemplateTasks.RemoveRange(template.DefaultTasks);
 
