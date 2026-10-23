@@ -35,10 +35,9 @@
     decimal? failedArea = failedAreaStr != null ? decimal.Parse(failedAreaStr, System.Globalization.CultureInfo.InvariantCulture) : (decimal?)null;
     decimal? failedPricePerMeter = failedPricePerMeterStr != null ? decimal.Parse(failedPricePerMeterStr, System.Globalization.CultureInfo.InvariantCulture) : (decimal?)null;
     var failedEngineerId = TempData.Peek("FailedEngineerId") as string;
-    var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
+     var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var failedSequenceStr = TempData.Peek("FailedSequence") as string;
     int? failedSequence = failedSequenceStr != null ? int.Parse(failedSequenceStr) : (int?)null;
-    var failedExtraTasks = TempData.Peek("FailedExtraTasks") as string;
     var typeLabels = EnumDisplayHelper.GetDisplayList<ProjectType>();
 
     var priorityLabels = EnumDisplayHelper.GetDisplayList<Priority>();
