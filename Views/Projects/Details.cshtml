@@ -743,53 +743,64 @@ else
                                                         <button type="submit" style="width:100%; height:28px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:11px; font-weight:600;">حفظ تعديلات المرحلة</button>
                                                     </form>
                                                 }
-                                                <div style="margin-top:8px; display:grid; gap:5px;">
-                                                    @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                                <div style="margin-top:8px;">
+                                                    @if (canManageStages && usedStage.Status != StageStatus.Completed)
                                                     {
-                                                        var existingTask = usedStage.Tasks.FirstOrDefault(pt => pt.Title == t.TaskName);
-                                                        <div style="display:flex; align-items:center; gap:6px; border:1px solid #ecebf2; border-radius:7px; padding:5px 8px; background:#fff;">
-                                                            @if (existingTask != null)
-                                                            {
-                                                                <input type="checkbox" class="chk-gold" checked disabled />
-                                                                <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
-                                                                <span class="stat-sub">@existingTask.Weight.ToString("N0")%</span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <form method="post" asp-controller="ProjectTasks" asp-action="Create" style="display:flex; align-items:center; gap:6px; flex:1;">
-                                                                    @Html.AntiForgeryToken()
-                                                                    <input type="hidden" name="StageId" value="@usedStage.Id" />
-                                                                    <input type="hidden" name="Title" value="@t.TaskName" />
-                                                                    <input type="checkbox" disabled style="opacity:.4;" />
-                                                                    <span style="font-size:10.5px; color:#8a83a0; flex:1;">@t.TaskName</span>
-                                                                    <input type="number" step="0.01" min="0" max="100" name="Weight" placeholder="الوزن %" required style="width:60px; height:24px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
-                                                                    <button type="submit" style="height:24px; padding:0 8px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px; white-space:nowrap;">+ إضافة</button>
-                                                                </form>
-                                                            }
-                                                                                                               </div>
-                                                                                                      }
-                                                    @foreach (var extraTask in usedStage.Tasks.Where(pt => !tpl.DefaultTasks.Any(dt => dt.TaskName == pt.Title)))
-                                                    {
-                                                        <div style="display:flex; align-items:center; gap:6px; border:1px solid #ecebf2; border-radius:7px; padding:5px 8px; background:#fff;">
-                                                            <input type="checkbox" class="chk-gold" checked disabled />
-                                                            <span style="font-size:10.5px; color:#5a5370; flex:1;">@extraTask.Title</span>
-                                                            <span class="tag tag-accent" style="font-size:9px;">إضافية</span>
-                                                            <span class="stat-sub">@extraTask.Weight.ToString("N0")%</span>
-                                                        </div>
-                                                    }
-                                                    @{
-                                                        var remainingStageWeight = usedStage.Weight - usedStage.Tasks.Sum(t => t.Weight);
-                                                    }
-                                                    @if (remainingStageWeight > 0)
-                                                    {
-                                                        <form method="post" asp-controller="ProjectTasks" asp-action="Create" style="display:flex; align-items:center; gap:6px; border:1px dashed #c9c2e6; border-radius:7px; padding:5px 8px; background:#faf9fc; margin-top:4px;">
+                                                        var existingExtraTasksForStage = usedStage.Tasks.Where(pt => !tpl.DefaultTasks.Any(dt => dt.TaskName == pt.Title)).ToList();
+                                                        var extraTasksJsonForStage = System.Text.Json.JsonSerializer.Serialize(existingExtraTasksForStage.Select(t => new { name = t.Title, weight = t.Weight }));
+                                                        <form method="post" asp-controller="ProjectStages" asp-action="SyncStageTasks" style="border:1px solid #ecebf2; border-radius:8px; padding:8px; background:#faf9fc;">
                                                             @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="StageId" value="@usedStage.Id" />
-                                                            <input type="text" name="Title" placeholder="اسم مهمة جديدة" required style="flex:1; height:24px; border:1px solid #e4e2ec; border-radius:5px; padding:0 6px; font-size:10.5px;" />
-                                                            <input type="number" step="0.01" min="0" max="@remainingStageWeight" name="Weight" placeholder="الوزن %" required style="width:60px; height:24px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
-                                                            <button type="submit" style="height:24px; padding:0 8px; border:none; border-radius:5px; background:#7b6bd6; color:#fff; font-size:10px; white-space:nowrap;">+ إضافة مهمة جديدة</button>
+                                                            <input type="hidden" name="stageId" value="@usedStage.Id" />
+                                                            <input type="hidden" name="stageTemplateId" value="@tpl.Id" />
+                                                            <div style="display:grid; gap:4px; margin-bottom:6px;">
+                                                                @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                                                {
+                                                                    var existingTask = usedStage.Tasks.FirstOrDefault(pt => pt.Title == t.TaskName);
+                                                                    var isProtected = existingTask != null && (existingTask.Status == ProjectTaskStatus.Completed || existingTask.ProjectAssignmentId.HasValue);
+                                                                    <div style="display:flex; align-items:center; gap:5px;">
+                                                                        <input type="checkbox" class="chk-gold" name="selectedTaskIds" value="@t.Id" checked="@(existingTask != null)" />
+                                                                        <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName @(isProtected ? "🔒" : "")</span>
+                                                                        <input type="number" step="0.01" min="0" max="100" name="taskWeight_@t.Id" placeholder="الوزن %" value="@(existingTask?.Weight ?? t.DefaultWeight)" style="width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;" />
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                            <div id="extraTaskRows_@tpl.Id" style="display:grid; gap:4px; margin-bottom:6px;"></div>
+                                                            <button type="button" class="btn-line" style="height:22px; padding:0 8px; font-size:10px; margin-bottom:6px;" onclick="addExtraTaskRow('extraTaskRows_@tpl.Id')">+ مهمة إضافية</button>
+                                                            <button type="submit" style="width:100%; height:26px; border:none; border-radius:7px; background:#7b6bd6; color:#fff; font-size:10.5px; font-weight:600;">حفظ مهام المرحلة</button>
+                                                            <div class="stat-sub" style="margin-top:4px;">يجب أن يساوي مجموع كل الأوزان (القالب + الإضافية) 100% بالضبط. 🔒 = لا يمكن إلغاؤها (مكتملة أو مرتبطة بتكليف).</div>
                                                         </form>
-                                                        <div class="stat-sub" style="margin-top:2px;">الوزن المتبقي القابل للتوزيع: @remainingStageWeight.ToString("N0")%</div>
+                                                        <script>
+                                                                                                (function () {
+                                                                                                    var existingExtra = @Html.Raw(extraTasksJsonForStage);
+                                                                                                    existingExtra.forEach(function (t) { addExtraTaskRow('extraTaskRows_@tpl.Id', t.name, t.weight); });
+                                                                                                })();
+                                                        </script>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div style="display:grid; gap:5px;">
+                                                            @foreach (var t in tpl.DefaultTasks.OrderBy(x => x.Order))
+                                                            {
+                                                                var existingTask = usedStage.Tasks.FirstOrDefault(pt => pt.Title == t.TaskName);
+                                                                if (existingTask != null)
+                                                                {
+                                                                    <div style="display:flex; align-items:center; gap:6px; border:1px solid #ecebf2; border-radius:7px; padding:5px 8px; background:#fff;">
+                                                                        <input type="checkbox" class="chk-gold" checked disabled />
+                                                                        <span style="font-size:10.5px; color:#5a5370; flex:1;">@t.TaskName</span>
+                                                                        <span class="stat-sub">@existingTask.Weight.ToString("N0")%</span>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                            @foreach (var extraTask in usedStage.Tasks.Where(pt => !tpl.DefaultTasks.Any(dt => dt.TaskName == pt.Title)))
+                                                            {
+                                                                <div style="display:flex; align-items:center; gap:6px; border:1px solid #ecebf2; border-radius:7px; padding:5px 8px; background:#fff;">
+                                                                    <input type="checkbox" class="chk-gold" checked disabled />
+                                                                    <span style="font-size:10.5px; color:#5a5370; flex:1;">@extraTask.Title</span>
+                                                                    <span class="tag tag-accent" style="font-size:9px;">إضافية</span>
+                                                                    <span class="stat-sub">@extraTask.Weight.ToString("N0")%</span>
+                                                                </div>
+                                                            }
+                                                        </div>
                                                     }
                                                 </div>
                                             }
@@ -1416,6 +1427,42 @@ else
 </style>
         <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>
+        function addExtraTaskRow(containerId, name, weight) {
+            name = name || '';
+            weight = (weight === undefined || weight === null) ? '' : weight;
+            var container = document.getElementById(containerId);
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:5px;';
+
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.name = 'extraTaskNames';
+            nameInput.placeholder = 'اسم مهمة إضافية';
+            nameInput.value = name;
+            nameInput.style.cssText = 'flex:1; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 6px; font-size:10px;';
+
+            var weightInput = document.createElement('input');
+            weightInput.type = 'number';
+            weightInput.step = '0.01';
+            weightInput.min = '0';
+            weightInput.max = '100';
+            weightInput.name = 'extraTaskWeights';
+            weightInput.placeholder = 'الوزن %';
+            weightInput.value = weight;
+            weightInput.style.cssText = 'width:60px; height:22px; border:1px solid #e4e2ec; border-radius:5px; padding:0 4px; font-size:10px;';
+
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.textContent = 'حذف';
+            delBtn.style.cssText = 'height:22px; padding:0 6px; border:none; border-radius:5px; background:#f1dede; color:#c94a42; font-size:9.5px;';
+            delBtn.onclick = function () { row.remove(); };
+
+            row.appendChild(nameInput);
+            row.appendChild(weightInput);
+            row.appendChild(delBtn);
+            container.appendChild(row);
+        }
+
         function adjustTimelineZoom(delta) {
             var el = document.getElementById('timelineZoomInner');
             if (!el) return;

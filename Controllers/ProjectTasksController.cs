@@ -149,9 +149,9 @@ namespace AtharERP_System.Controllers
             }
 
             var otherTasksWeightTotal = stage.Tasks.Where(t => !IsTaskFrozen(t)).Sum(t => t.Weight);
-            if (otherTasksWeightTotal + model.Weight > stage.Weight)
+            if (otherTasksWeightTotal + model.Weight > 100)
             {
-                TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
+                TempData["Error"] = $"سيتجاوز مجموع أوزان مهام المرحلة 100% (المجموع الحالي: {otherTasksWeightTotal:N0}%)";
                 return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 

@@ -350,6 +350,161 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SyncStageTasks(
+    int stageId, int stageTemplateId,
+    List<int>? selectedTaskIds,
+    List<string>? extraTaskNames, List<decimal?>? extraTaskWeights)
+        {
+            var stage = await _context.ProjectStages
+                .Include(s => s.Tasks)
+                .FirstOrDefaultAsync(s => s.Id == stageId);
+            if (stage == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, stage.ProjectId))
+                return Forbid();
+
+            if (stage.Status == StageStatus.Completed)
+            {
+                TempData["Error"] = "لا يمكن تعديل مهام مرحلة مكتملة";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
+            }
+
+            var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == stageTemplateId);
+            if (template == null)
+                return NotFound();
+
+            IActionResult Fail(string error)
+            {
+                TempData["Error"] = error;
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
+            }
+
+            var taskWeights = new Dictionary<int, decimal>();
+            decimal selectedTotal = 0;
+            if (selectedTaskIds != null)
+            {
+                foreach (var tId in selectedTaskIds)
+                {
+                    decimal.TryParse(Request.Form[$"taskWeight_{tId}"], out var w);
+                    if (w <= 0)
+                        return Fail("كل مهمة مختارة من القالب يجب أن يكون لها وزن أكبر من صفر");
+                    taskWeights[tId] = w;
+                    selectedTotal += w;
+                }
+            }
+
+            var extraRows = new List<(string Name, decimal Weight)>();
+            if (extraTaskNames != null)
+            {
+                for (int i = 0; i < extraTaskNames.Count; i++)
+                {
+                    var name = extraTaskNames[i]?.Trim();
+                    if (string.IsNullOrEmpty(name)) continue;
+                    var w = (extraTaskWeights != null && i < extraTaskWeights.Count) ? (extraTaskWeights[i] ?? 0) : 0;
+                    if (w <= 0)
+                        return Fail($"المهمة الإضافية \"{name}\" يجب أن يكون لها وزن أكبر من صفر");
+                    extraRows.Add((name, w));
+                }
+            }
+
+            var combinedTotal = selectedTotal + extraRows.Sum(r => r.Weight);
+            if (combinedTotal != 100)
+                return Fail($"مجموع أوزان المهام (القالب + الإضافية) يجب أن يساوي 100% بالضبط (المجموع الحالي: {combinedTotal}%)");
+
+            var skippedNotes = new List<string>();
+
+            foreach (var defaultTask in template.DefaultTasks)
+            {
+                var existingTask = stage.Tasks.FirstOrDefault(t => t.Title == defaultTask.TaskName);
+                var isSelected = taskWeights.ContainsKey(defaultTask.Id);
+
+                if (isSelected)
+                {
+                    if (existingTask != null)
+                    {
+                        existingTask.Weight = taskWeights[defaultTask.Id];
+                    }
+                    else
+                    {
+                        _context.ProjectTasks.Add(new ProjectTask
+                        {
+                            ProjectId = stage.ProjectId,
+                            StageId = stage.Id,
+                            Title = defaultTask.TaskName,
+                            Weight = taskWeights[defaultTask.Id],
+                            Status = ProjectTaskStatus.NotStarted,
+                            Priority = TaskPriority.Medium,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedById = CurrentUserId
+                        });
+                    }
+                }
+                else if (existingTask != null)
+                {
+                    if (existingTask.Status == ProjectTaskStatus.Completed || existingTask.ProjectAssignmentId.HasValue)
+                    {
+                        skippedNotes.Add(existingTask.Title);
+                    }
+                    else
+                    {
+                        _context.ProjectTasks.Remove(existingTask);
+                    }
+                }
+            }
+
+            var templateTaskNames = template.DefaultTasks.Select(t => t.TaskName).ToHashSet();
+            var existingExtraTasks = stage.Tasks.Where(t => !templateTaskNames.Contains(t.Title)).ToList();
+
+            foreach (var row in extraRows)
+            {
+                var existingExtra = existingExtraTasks.FirstOrDefault(t => t.Title == row.Name);
+                if (existingExtra != null)
+                {
+                    existingExtra.Weight = row.Weight;
+                    existingExtraTasks.Remove(existingExtra);
+                }
+                else
+                {
+                    _context.ProjectTasks.Add(new ProjectTask
+                    {
+                        ProjectId = stage.ProjectId,
+                        StageId = stage.Id,
+                        Title = row.Name,
+                        Weight = row.Weight,
+                        Status = ProjectTaskStatus.NotStarted,
+                        Priority = TaskPriority.Medium,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedById = CurrentUserId
+                    });
+                }
+            }
+
+            foreach (var removedExtra in existingExtraTasks)
+            {
+                if (removedExtra.Status == ProjectTaskStatus.Completed || removedExtra.ProjectAssignmentId.HasValue)
+                {
+                    skippedNotes.Add(removedExtra.Title);
+                }
+                else
+                {
+                    _context.ProjectTasks.Remove(removedExtra);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await _calc.RecalculateStageAsync(stage.Id);
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectStage), stage.Id.ToString(), $"مزامنة مهام مرحلة: {stage.Name}");
+
+            TempData["Success"] = skippedNotes.Any()
+                ? $"تم حفظ مهام المرحلة — تعذّر إلغاء: {string.Join("، ", skippedNotes)} (مكتملة أو مرتبطة بتكليف)"
+                : "تم حفظ مهام المرحلة بنجاح";
+            return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
+        }
+
+        [RequirePermission("Projects.Stages.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var stage = await _context.ProjectStages.Include(s => s.Assignments).FirstOrDefaultAsync(s => s.Id == id);
