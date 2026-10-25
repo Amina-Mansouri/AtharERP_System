@@ -306,6 +306,76 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            if (user.Id == _userManager.GetUserId(User))
+            {
+                TempData["Error"] = "لا يمكنك حذف حسابك الخاص";
+                return RedirectToAction("Users");
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "مدير النظام"))
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("مدير النظام");
+                if (admins.Count(u => u.Id != user.Id) == 0)
+                {
+                    TempData["Error"] = "لا يمكن حذف آخر مدير نظام في النظام";
+                    return RedirectToAction("Users");
+                }
+            }
+
+            var blockingReasons = new List<string>();
+
+            if (await _context.Projects.AnyAsync(p => p.CreatedById == id)) blockingReasons.Add("أنشأت مشاريع");
+            if (await _context.ProjectStages.AnyAsync(s => s.AssignedEngineerId == id)) blockingReasons.Add("مُسندة لها مراحل مشاريع كمشرفة");
+            if (await _context.ProjectTasks.AnyAsync(t => t.CreatedById == id)) blockingReasons.Add("أنشأت مهام مشاريع");
+            if (await _context.AssignmentEngineers.AnyAsync(a => a.UserId == id)) blockingReasons.Add("مرتبطة بتكليفات مشاريع");
+            if (await _context.ProjectTeamMembers.AnyAsync(m => m.UserId == id)) blockingReasons.Add("عضوة في فريق مشروع");
+            if (await _context.ProjectDocuments.AnyAsync(d => d.UploadedById == id)) blockingReasons.Add("رفعت مستندات مشاريع");
+            if (await _context.AuditLogs.AnyAsync(a => a.UserId == id)) blockingReasons.Add("لها سجل نشاط سابق في النظام");
+            if (await _context.SiteDailyReports.AnyAsync(r => r.CreatedById == id)) blockingReasons.Add("أنشأت تقارير يومية لمواقع");
+            if (await _context.SiteQualityChecks.AnyAsync(q => q.CheckedById == id || q.ApprovedById == id)) blockingReasons.Add("لها فحوصات جودة مواقع");
+            if (await _context.SiteSafetyChecks.AnyAsync(s => s.CheckedById == id)) blockingReasons.Add("لها فحوصات سلامة مواقع");
+            if (await _context.SiteSupplyRequests.AnyAsync(r => r.RequestedById == id)) blockingReasons.Add("لها طلبات توريد مواقع");
+            if (await _context.SiteCorrespondences.AnyAsync(c => c.SentById == id)) blockingReasons.Add("لها مراسلات مواقع");
+            if (await _context.SiteMaintenances.AnyAsync(m => m.ResponsibleId == id)) blockingReasons.Add("مسؤولة عن صيانة مواقع");
+            if (await _context.EmployeeDocuments.AnyAsync(d => d.UserId == id || d.UploadedById == id)) blockingReasons.Add("لها مستندات موظف مرفوعة");
+            if (await _context.ContractHistories.AnyAsync(c => c.UserId == id)) blockingReasons.Add("لها سجل عقود سابقة");
+            if (await _context.DesignProposals.AnyAsync(p => p.PreparedById == id)) blockingReasons.Add("أعدّت مقترحات تصميم");
+            if (await _context.ProposalReviews.AnyAsync(r => r.ReviewedById == id)) blockingReasons.Add("راجعت مقترحات تصميم");
+            if (await _context.FinancialClaims.AnyAsync(c => c.CreatedById == id)) blockingReasons.Add("أنشأت مطالبات مالية");
+            if (await _context.TechnicalRequests.AnyAsync(t => t.RequestedById == id)) blockingReasons.Add("لها طلبات فنية");
+            if (await _context.Custodies.AnyAsync(c => c.HolderId == id)) blockingReasons.Add("بعهدتها عهدة");
+            if (await _context.DocumentRevisions.AnyAsync(d => d.PreparedById == id)) blockingReasons.Add("أعدّت مراجعات مستندات");
+            if (await _context.FinancialRecords.AnyAsync(f => f.EngineerId == id)) blockingReasons.Add("لها سجلات مالية كمهندسة");
+            if (await _context.SiteManagers.AnyAsync(m => m.UserId == id)) blockingReasons.Add("مديرة موقع");
+            if (await _context.ClaimPayments.AnyAsync(p => p.CreatedById == id)) blockingReasons.Add("سجّلت دفعات مطالبات");
+
+            if (blockingReasons.Any())
+            {
+                TempData["Error"] = $"لا يمكن حذف {user.FullName} — مرتبطة بعمليات في النظام: {string.Join("، ", blockingReasons)}";
+                return RedirectToAction("Users");
+            }
+
+            var deletedName = user.FullName;
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["Error"] = string.Join(" — ", result.Errors.Select(e => e.Description));
+                return RedirectToAction("Users");
+            }
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف موظف", "ApplicationUser", id, $"تم حذف الموظف {deletedName}");
+            TempData["Success"] = $"تم حذف {deletedName} نهائيًا";
+            return RedirectToAction("Users");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetUserPassword(string id, string newPassword)
         {
             var user = await _userManager.FindByIdAsync(id);

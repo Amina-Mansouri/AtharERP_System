@@ -38,10 +38,15 @@
         <h1>@Model.FullName</h1>
     </div>
     <div class="page-head-actions">
-        <form method="post" asp-action="ToggleUserStatus" asp-route-id="@Model.Id" class="d-inline"
+              <form method="post" asp-action="ToggleUserStatus" asp-route-id="@Model.Id" class="d-inline"
               onsubmit="return confirm('هل أنت متأكد؟');">
             @Html.AntiForgeryToken()
                       <button type="submit" class="btn-line" style="@(Model.IsActive ? "color:#c94a42; border-color:#c94a42;" : "color:#2f8a57; border-color:#2f8a57;")">@(Model.IsActive ? "تعطيل الحساب" : "تفعيل الحساب")</button>
+        </form>
+        <form method="post" asp-action="DeleteUser" asp-route-id="@Model.Id" class="d-inline"
+              onsubmit="return confirm('حذف نهائي لا يمكن التراجع عنه. هل أنت متأكدة من حذف هذا الموظف؟');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-line" style="color:#c94a42; border-color:#c94a42;">حذف الموظف</button>
         </form>
      
     </div>
