@@ -36,16 +36,14 @@ namespace AtharERP_System.Services
 
             var wasCompleted = stage.Status == StageStatus.Completed;
 
+           
             // المهام المحظورة، أو التابعة لتكليف معلَّق/ملغى، تُستبعد كلياً من الحساب — لا تعرقل نسبة إنجاز باقي المهام
-            var activeTasks = stage.Tasks.Where(t => !IsTaskFrozen(t)).ToList(); 
-            var totalWeight = activeTasks.Sum(t => t.Weight);
+            var activeTasks = stage.Tasks.Where(t => !IsTaskFrozen(t)).ToList();
             var completedWeight = activeTasks
                 .Where(t => t.Status == ProjectTaskStatus.Completed)
                 .Sum(t => t.Weight);
 
-            stage.CompletionPercentage = totalWeight > 0
-                ? Math.Round((completedWeight / totalWeight) * 100, 2)
-                : 0;
+            stage.CompletionPercentage = Math.Round(completedWeight, 2);
 
             var allStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == stage.ProjectId).ToListAsync();
             ApplyAutomaticStageStatus(stage, allStages);

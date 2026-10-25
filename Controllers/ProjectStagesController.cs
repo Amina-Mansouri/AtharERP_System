@@ -175,8 +175,8 @@ namespace AtharERP_System.Controllers
                     return Fail("كل تكليف (مهمة) مختار يجب أن يكون له وزن أكبر من صفر");
             }
 
-            if (selectedTasksWeightTotal > 100)
-                return Fail($"مجموع أوزان المهام المختارة ({selectedTasksWeightTotal}%) يتجاوز 100%");
+            if (selectedTasksWeightTotal != 100)
+                return Fail($"مجموع أوزان المهام المختارة يجب أن يساوي 100% بالضبط (المجموع الحالي: {selectedTasksWeightTotal}%)");
 
             var stage = new ProjectStage
             {
