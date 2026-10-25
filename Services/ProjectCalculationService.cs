@@ -114,9 +114,7 @@ namespace AtharERP_System.Services
             var totalWeight = project.Stages.Sum(s => s.Weight);
             var weightedSum = project.Stages.Sum(s => s.Weight * s.CompletionPercentage);
 
-            project.CompletionPercentage = totalWeight > 0
-                ? Math.Round(weightedSum / totalWeight, 2)
-                : 0;
+            project.CompletionPercentage = Math.Round(weightedSum / 100, 2);
 
             // المشروع مكتمل فقط إذا: وزن كل مراحله المُعرَّفة أغلق 100% من المشروع، وكل مرحلة منها بحالة "مكتملة" فعلياً (لا نسبتها فقط)
             var isStageWeightFullyAllocated = totalWeight >= 100;
