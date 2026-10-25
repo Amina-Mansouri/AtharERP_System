@@ -142,15 +142,10 @@ namespace AtharERP_System.Controllers
 
             if (!await CanAccessProjectAsync(project))
                 return Forbid();
-            // تجميع حي (بدون تكرار بيانات) لمهام وبيانات المشاريع الفرعية — دائمًا من مستوى المشروع الرئيسي
-            // حتى لو كنا نعرض مشروعًا فرعيًا حاليًا (القسم 2.2)
-            var rootProject = (project.Scope == ProjectScope.Sub && project.ParentProjectId.HasValue)
-                ? await _context.Projects.Include(p => p.ChildProjects).FirstOrDefaultAsync(p => p.Id == project.ParentProjectId.Value)
-                : project;
-
-            if (rootProject != null)
+            // بيانات مالية في بطاقة "بيانات المشروع": عند الرئيسي تُجمَّع مع كل الفروع، وعند الفرعي تخصّه هو فقط (القسم 2.2)
+            if (project.Scope == ProjectScope.Main)
             {
-                var childIds = rootProject.ChildProjects.Select(c => c.Id).ToList();
+                var childIds = project.ChildProjects.Select(c => c.Id).ToList();
                 if (childIds.Any())
                 {
                     var aggregatedTasks = await _context.ProjectTasks
@@ -162,16 +157,28 @@ namespace AtharERP_System.Controllers
                 var childrenCost = childIds.Any() ? await _context.Projects.Where(p => childIds.Contains(p.Id)).SumAsync(p => p.ActualCost) : 0;
                 var childrenBudget = childIds.Any() ? await _context.Projects.Where(p => childIds.Contains(p.Id)).SumAsync(p => p.Budget ?? 0) : 0;
 
-                ViewBag.AggregatedActualCost = rootProject.ActualCost + childrenCost;
-                ViewBag.AggregatedBudget = (rootProject.Budget ?? 0) + childrenBudget;
+                ViewBag.AggregatedActualCost = project.ActualCost + childrenCost;
+                ViewBag.AggregatedBudget = (project.Budget ?? 0) + childrenBudget;
 
-                var allProjectIdsForExpenses = new List<int> { rootProject.Id };
+                var allProjectIdsForExpenses = new List<int> { project.Id };
                 allProjectIdsForExpenses.AddRange(childIds);
                 ViewBag.AggregatedProjectExpenses = await _context.ProjectExpenses
                     .Where(e => e.ProjectId.HasValue && allProjectIdsForExpenses.Contains(e.ProjectId.Value) && e.SiteId == null)
                     .SumAsync(e => e.Amount);
 
                 var siteCostBreakdown = await _siteCalc.CalculateProjectSiteCostsBreakdownAsync(allProjectIdsForExpenses);
+                ViewBag.AggregatedSiteCosts = siteCostBreakdown.Total;
+            }
+            else
+            {
+                ViewBag.AggregatedActualCost = project.ActualCost;
+                ViewBag.AggregatedBudget = project.Budget ?? 0;
+
+                ViewBag.AggregatedProjectExpenses = await _context.ProjectExpenses
+                    .Where(e => e.ProjectId == project.Id && e.SiteId == null)
+                    .SumAsync(e => e.Amount);
+
+                var siteCostBreakdown = await _siteCalc.CalculateProjectSiteCostsBreakdownAsync(new List<int> { project.Id });
                 ViewBag.AggregatedSiteCosts = siteCostBreakdown.Total;
             }
 
