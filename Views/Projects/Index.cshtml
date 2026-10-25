@@ -176,13 +176,13 @@
             var showToggle = !isNestedChild && project.ChildProjects.Any();
             if (showToggle) { nameCellStyle += "position:relative; padding-right:26px;"; }
             var parentIdAttr = isNestedChild ? project.ParentProjectId : (int?)null;
-            var rowStyle = isNestedChild ? "text-decoration:none; color:inherit; background:#faf9fc;" : "text-decoration:none; color:inherit;";
+            var rowStyle = isNestedChild ? "text-decoration:none; color:inherit; background:#faf9fc; display:none;" : "text-decoration:none; color:inherit;";
             <a asp-action="Details" asp-route-id="@project.Id" class="data-table-row" data-parent-id="@parentIdAttr" style="@rowStyle">
                 <div class="cell cell-num">@project.Code</div>
                 <div class="cell" style="@nameCellStyle">
                     @if (showToggle)
                     {
-                        <span data-target="@project.Id" aria-expanded="true" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="position:absolute; top:9px; right:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px;">▾</span>
+                        <span data-target="@project.Id" aria-expanded="false" onclick="event.preventDefault(); event.stopPropagation(); toggleProjectChildren(this);" style="position:absolute; top:9px; right:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px;">▸</span>
                     }
                     @if (isNestedChild)
                     {

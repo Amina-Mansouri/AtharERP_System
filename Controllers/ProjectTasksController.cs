@@ -276,10 +276,10 @@ namespace AtharERP_System.Controllers
             {
                 var stage = await _context.ProjectStages.Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment).FirstOrDefaultAsync(s => s.Id == task.StageId);
                 var otherTasksWeightTotal = stage!.Tasks.Where(t => t.Id != id && !IsTaskFrozen(t)).Sum(t => t.Weight);
-               
-                if (otherTasksWeightTotal + model.Weight > stage.Weight)
+
+                if (otherTasksWeightTotal + model.Weight > 100)
                 {
-                    TempData["Error"] = $"سيتجاوز مجموع أوزان مهام مرحلة \"{stage.Name}\" وزنها ({stage.Weight:N0}%)";
+                    TempData["Error"] = $"سيتجاوز مجموع أوزان مهام المرحلة 100% (المجموع الحالي: {otherTasksWeightTotal:N0}%)";
                     return this.RedirectKeepingTab("Edit", new { id });
                 }
 
