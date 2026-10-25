@@ -389,12 +389,31 @@ namespace AtharERP_System.Controllers
             project.PlannedStartDate = model.PlannedStartDate;
             project.PlannedEndDate = model.PlannedEndDate;
             project.ActualDeliveryDate = model.ActualDeliveryDate;
-            
+
             project.Priority = model.Priority;
             project.AutoTransferToSite = model.AutoTransferToSite;
 
             await _context.SaveChangesAsync();
-            await _calc.RecalculateProjectAsync(project.Id);
+
+            var projectStagesToSync = await _context.ProjectStages.Where(s => s.ProjectId == project.Id).ToListAsync();
+            if (projectStagesToSync.Any())
+            {
+                foreach (var s in projectStagesToSync)
+                {
+                    s.PlannedStartDate = project.PlannedStartDate;
+                    s.PlannedEndDate = project.PlannedEndDate;
+                }
+                await _context.SaveChangesAsync();
+
+                foreach (var s in projectStagesToSync)
+                {
+                    await _calc.RecalculateStageAsync(s.Id);
+                }
+            }
+            else
+            {
+                await _calc.RecalculateProjectAsync(project.Id);
+            }
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(Project), project.Id.ToString(), $"تعديل مشروع: {project.Name}");
 

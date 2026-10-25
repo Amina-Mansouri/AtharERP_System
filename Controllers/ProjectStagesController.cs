@@ -243,7 +243,7 @@ namespace AtharERP_System.Controllers
             }
 
             await _context.SaveChangesAsync();
-            await _calc.RecalculateProjectAsync(projectId);
+            await _calc.RecalculateStageAsync(stage.Id);
 
             TempData["Success"] = $"تم تفعيل مرحلة {template.Name} بنجاح — لا تنسي ضبط وزن المهام الإضافية (وزنها 0 افتراضياً) من شاشة كل مهمة";
             return this.RedirectKeepingTab("Details", "Projects", new { id = projectId });
@@ -374,6 +374,13 @@ namespace AtharERP_System.Controllers
             _context.TaskDependencies.RemoveRange(dependencyLinks);
 
             _context.ProjectStages.Remove(stage);
+            await _context.SaveChangesAsync();
+
+            var remainingStages = await _context.ProjectStages.Include(s => s.Tasks).Where(s => s.ProjectId == projectId).ToListAsync();
+            foreach (var s in remainingStages)
+            {
+                _calc.ApplyAutomaticStageStatus(s, remainingStages);
+            }
             await _context.SaveChangesAsync();
 
             await _calc.RecalculateProjectAsync(projectId);
