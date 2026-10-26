@@ -191,9 +191,10 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Claims(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
         {
             var effectiveProjectId = subProjectId ?? projectId;
+            var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
 
             ViewBag.Categories = await GetActiveCategoriesAsync();
-            ViewBag.Projects = await GetAccessibleMainProjectsAsync(categoryId);
+            ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
             ViewBag.CategoryId = categoryId;
             ViewBag.ProjectId = effectiveProjectId;
             ViewBag.MainProjectId = projectId;
@@ -202,19 +203,31 @@ namespace AtharERP_System.Controllers
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
-            if (!effectiveProjectId.HasValue)
-                return View(new List<FinancialClaim>());
+            List<int> targetProjectIds;
+            Project? project = null;
 
-            var project = await _context.Projects.FindAsync(effectiveProjectId.Value);
-            if (project == null)
-                return NotFound();
+            if (effectiveProjectId.HasValue)
+            {
+                project = await _context.Projects.FindAsync(effectiveProjectId.Value);
+                if (project == null)
+                    return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
-                return Forbid();
+                if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
+                    return Forbid();
+
+                targetProjectIds = new List<int> { effectiveProjectId.Value };
+            }
+            else
+            {
+                targetProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+            }
+
+            ViewBag.Project = project;
 
             var query = _context.FinancialClaims
                 .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == effectiveProjectId.Value);
+                .Include(c => c.Project)
+                .Where(c => targetProjectIds.Contains(c.ProjectId));
 
             if (dateFrom.HasValue)
                 query = query.Where(c => c.CreatedAt >= dateFrom.Value);
@@ -223,7 +236,6 @@ namespace AtharERP_System.Controllers
 
             var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
 
-            ViewBag.Project = project;
             return View(claims);
         }
 
