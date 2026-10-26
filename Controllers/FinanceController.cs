@@ -562,11 +562,11 @@ namespace AtharERP_System.Controllers
             return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
         }
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> ClaimPaymentsHistory(int claimId)
+             public async Task<IActionResult> ClaimPaymentsHistory(int claimId)
         {
             var claim = await _context.FinancialClaims
                 .Include(c => c.Project)
-                .Include(c => c.ProjectAssignment)
+                .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
                 .FirstOrDefaultAsync(c => c.Id == claimId);
             if (claim == null) return NotFound();
 
@@ -580,6 +580,36 @@ namespace AtharERP_System.Controllers
 
             ViewBag.Claim = claim;
             return View("ClaimPayments", payments);
+        }
+
+        [RequirePermission("Finance.Claims.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteClaimPayment(int id)
+        {
+            var payment = await _context.ClaimPayments.FindAsync(id);
+            if (payment == null) return NotFound();
+
+            var claim = await _context.FinancialClaims.FindAsync(payment.FinancialClaimId);
+            if (claim == null) return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, claim.ProjectId))
+                return Forbid();
+
+            claim.PaidAmount -= payment.Amount;
+            if (claim.PaidAmount < 0) claim.PaidAmount = 0;
+
+            if (claim.RealValue - claim.PaidAmount > 0)
+            {
+                claim.IsClientSettled = false;
+                claim.ClientSettledAt = null;
+            }
+
+            _context.ClaimPayments.Remove(payment);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم حذف الإيصال وإعادة قيمته إلى المطالبة";
+            return RedirectToAction("ClaimPaymentsHistory", new { claimId = claim.Id });
         }
 
         [RequirePermission("Finance.Sales.View")]
