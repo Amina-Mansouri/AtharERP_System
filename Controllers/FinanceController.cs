@@ -199,6 +199,7 @@ namespace AtharERP_System.Controllers
             ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
             ViewBag.CategoryId = categoryId;
             ViewBag.ProjectIds = projectIds;
+            ViewBag.ProjectId = singleProjectId;
             ViewBag.MainProjectId = singleProjectId;
             ViewBag.SubProjectIds = subProjectIds;
             ViewBag.SubProjects = singleProjectId.HasValue ? await GetSubProjectsAsync(singleProjectId) : new List<Project>();
@@ -606,10 +607,10 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var claims = await _context.FinancialClaims
-                .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == projectId)
-                .OrderBy(c => c.CreatedAt)
-                .ToListAsync();
+     .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+     .Where(c => c.ProjectId == projectId)
+     .OrderBy(c => c.CreatedAt)
+     .ToListAsync();
 
             if (!claims.Any())
             {

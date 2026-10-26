@@ -375,9 +375,24 @@ namespace AtharERP_System.Services
                             {
                                 c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().Text(project.Code).FontSize(13).Bold().FontColor("#221837");
-                                c.Item().PaddingTop(4).Text($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(9);
-                                c.Item().Text(ArabicDayName(DateTime.UtcNow)).FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(4).Text(t =>
+                                {
+                                    t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(9);
+                                });
+                                c.Item().Text(t =>
+                                {
+                                    t.Span("الموافق : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span(ArabicDayName(DateTime.UtcNow)).FontSize(8);
+                                });
                             });
+                        });
+                        header.Item().PaddingTop(8).Row(row =>
+                        {
+                            row.RelativeItem().Text("نوع الفاتورة :").FontSize(9.5f);
+                            row.RelativeItem().AlignCenter().Text("⬤ مبدئي").FontSize(9.5f);
+                            row.RelativeItem().AlignCenter().Text("○ نهائية").FontSize(9.5f);
+                            row.RelativeItem().AlignCenter().Text("○ عرض").FontSize(9.5f);
                         });
                         header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a");
                     });
@@ -395,10 +410,18 @@ namespace AtharERP_System.Services
                         {
                             col.Item().Text($"الشركة: {client.CompanyName}").FontSize(10);
                         }
-                        col.Item().Text(t =>
+                        col.Item().Row(row =>
                         {
-                            t.Span("المشروع: ").FontSize(10);
-                            t.Span(project.Name).FontSize(10).Bold();
+                            row.RelativeItem(3).Text(t =>
+                            {
+                                t.Span("المشروع: ").FontSize(10);
+                                t.Span(project.Name).FontSize(10).Bold();
+                            });
+                            row.RelativeItem(1).AlignLeft().Text(t =>
+                            {
+                                t.Span("رقم: ").FontSize(10);
+                                t.Span(project.Id.ToString()).FontSize(10).Bold();
+                            });
                         });
 
                         col.Item().PaddingTop(6).Table(table =>
@@ -411,7 +434,7 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
-                            HeaderCell(table, "#");
+                            HeaderCell(table, "الرقم");
                             HeaderCell(table, "بيانات المشروع");
                             HeaderCell(table, "المساحة");
                             HeaderCell(table, "سعر المتر");
@@ -420,40 +443,41 @@ namespace AtharERP_System.Services
                             int i = 1;
                             foreach (var claim in claims)
                             {
-                                DataCell(table, (i++).ToString());
-                                DataCell(table, claim.Description ?? claim.ProjectAssignment?.AssignmentType ?? "-");
+                                DataCell(table, (i++).ToString("D3"));
+                                DataCell(table, claim.ProjectAssignment?.Stage?.Name ?? "-");
                                 DataCell(table, (claim.Area ?? 0).ToString("N2"));
                                 DataCell(table, (claim.SalePricePerMeter ?? 0).ToString("N2"));
-                                DataCell(table, claim.RealValue.ToString("N0") + " د.ل");
+                                DataCell(table, claim.RealValue.ToString("N2") + " د.ل");
                             }
                         });
 
-                        col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-
-                        col.Item().Table(table =>
+                        col.Item().PaddingTop(10).AlignLeft().Width(170).Table(table =>
                         {
                             table.ColumnsDefinition(c =>
                             {
-                                c.RelativeColumn();
-                                c.RelativeColumn();
-                                c.RelativeColumn();
+                                c.RelativeColumn(1);
+                                c.RelativeColumn(1);
                             });
-                            HeaderCell(table, "الإجمالي");
-                            HeaderCell(table, "المدفوع");
-                            HeaderCell(table, "الباقي");
-
-                            DataCell(table, totalValue.ToString("N0") + " د.ل");
-                            DataCell(table, totalPaid.ToString("N0") + " د.ل");
-                            DataCell(table, totalRemaining.ToString("N0") + " د.ل");
+                            DataCell(table, "الإجمالي");
+                            DataCell(table, totalValue.ToString("N2") + " د.ل");
+                            DataCell(table, "المدفوع");
+                            DataCell(table, totalPaid > 0 ? totalPaid.ToString("N2") + " د.ل" : "-");
+                            DataCell(table, "الباقي");
+                            DataCell(table, totalRemaining > 0 ? totalRemaining.ToString("N2") + " د.ل" : "-");
                         });
 
                         col.Item().PaddingTop(30).Row(row =>
                         {
-                            row.RelativeItem();
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("يعتمد الإدارة الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
-                                c.Item().PaddingTop(18).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(9).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(24).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(24);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المالي").FontSize(9).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(24).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
                     });
