@@ -188,18 +188,20 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> Claims(int? categoryId, int? projectId, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> Claims(int? categoryId, List<int>? projectIds, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
         {
-            var effectiveProjectId = subProjectId ?? projectId;
+            projectIds ??= new List<int>();
+            var singleProjectId = projectIds.Count == 1 ? projectIds[0] : (int?)null;
+            var effectiveProjectId = subProjectId ?? singleProjectId;
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
 
             ViewBag.Categories = await GetActiveCategoriesAsync();
             ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
             ViewBag.CategoryId = categoryId;
-            ViewBag.ProjectId = effectiveProjectId;
-            ViewBag.MainProjectId = projectId;
+            ViewBag.ProjectIds = projectIds;
+            ViewBag.MainProjectId = singleProjectId;
             ViewBag.SubProjectId = subProjectId;
-            ViewBag.SubProjects = await GetSubProjectsAsync(projectId);
+            ViewBag.SubProjects = singleProjectId.HasValue ? await GetSubProjectsAsync(singleProjectId) : new List<Project>();
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
 
@@ -216,6 +218,15 @@ namespace AtharERP_System.Controllers
                     return Forbid();
 
                 targetProjectIds = new List<int> { effectiveProjectId.Value };
+            }
+            else if (projectIds.Any())
+            {
+                foreach (var pid in projectIds)
+                {
+                    if (!await _permissionService.CanAccessProjectAsync(User, pid))
+                        return Forbid();
+                }
+                targetProjectIds = projectIds;
             }
             else
             {
