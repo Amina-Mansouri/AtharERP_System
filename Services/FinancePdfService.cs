@@ -230,77 +230,111 @@ namespace AtharERP_System.Services
             DayOfWeek.Saturday => "السبت",
             _ => ""
         };
-        public byte[] GeneratePaymentReceipt(ClaimPayment payment)
+        public byte[] GeneratePaymentReceipt(ClaimPayment payment, List<ClaimPayment> previousPayments)
         {
             var claim = payment.FinancialClaim;
             var project = claim.Project;
             var client = project.Client;
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
-            var paidBefore = claim.PaidAmount - payment.Amount;
+            var paidBefore = previousPayments.Sum(p => p.Amount);
+            var remainingAtThisPayment = claim.RealValue - paidBefore - payment.Amount;
+            var stageName = claim.ProjectAssignment?.Stage?.Name ?? "-";
+
+            void ReceiptHeaderCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9.5f);
+
+            void ReceiptDataCell(TableDescriptor t, string text) =>
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
 
             return Document.Create(container =>
             {
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A5);
-                    page.Margin(28);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
+                    page.Margin(18);
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
                     {
                         if (hasLogo)
-                            header.Item().AlignCenter().Height(50).Image(logoPath).FitArea();
+                            header.Item().AlignCenter().Height(30).Image(logoPath).FitArea();
 
-                        header.Item().PaddingTop(8).Row(row =>
+                        header.Item().PaddingTop(4).Row(row =>
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("إيصال استلام نقدية").FontSize(16).Bold().FontColor("#221837");
-                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("إيصال استلام نقدية").FontSize(12).Bold().FontColor("#221837");
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7.5f).FontColor(Colors.Grey.Medium);
                             });
-                            row.ConstantItem(130).Border(1).BorderColor("#c9a15a").Padding(6).Column(c =>
+                            row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
                                 var receiptCode = $"{project.Code}-{payment.ReceiptNumber:D4}";
-                                c.Item().Text("رقم الإيصال").FontSize(8).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(receiptCode).FontSize(12).Bold().FontColor("#221837");
-                                c.Item().PaddingTop(4).Text($"{payment.PaidAt:yyyy-MM-dd}").FontSize(9);
+                                c.Item().Text("رقم الإيصال").FontSize(7.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(receiptCode).FontSize(11).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(2).Text($"{payment.PaidAt:yyyy-MM-dd}").FontSize(7.5f);
                             });
                         });
-                        header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a");
+                        header.Item().PaddingTop(4).BorderBottom(2).BorderColor("#c9a15a");
                     });
 
-                    page.Content().PaddingTop(18).Column(col =>
+                    page.Content().PaddingTop(8).Column(col =>
                     {
-                        col.Spacing(10);
+                        col.Spacing(5);
 
                         col.Item().Text(t =>
                         {
-                            t.Span("استلمنا من السيد/ة: ").FontSize(10.5f);
-                            t.Span(client?.Name ?? "-").FontSize(11).Bold();
+                            t.Span("استلمنا من السيد/ة: ").FontSize(9);
+                            t.Span(client?.Name ?? "-").FontSize(9).Bold();
                         });
                         if (!string.IsNullOrWhiteSpace(client?.CompanyName))
                         {
-                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(10);
+                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(9);
                         }
 
-                        col.Item().PaddingTop(6).Background("#f6f4fb").Padding(10).Column(c =>
+                        col.Item().PaddingTop(3).Background("#f6f4fb").Padding(6).Column(c =>
                         {
-                            c.Item().Text("مبلغاً وقدره").FontSize(9).FontColor(Colors.Grey.Medium);
-                            c.Item().Text($"{payment.Amount:N0} د.ل").FontSize(18).Bold().FontColor("#221837");
-                            c.Item().PaddingTop(4).Text($"فقط {NumberToArabicWords(payment.Amount)} دينار ليبي لا غير").FontSize(9.5f).FontColor(Colors.Grey.Darken2);
+                            c.Item().Text("مبلغاً وقدره").FontSize(8).FontColor(Colors.Grey.Medium);
+                            c.Item().Text($"{payment.Amount:N2} د.ل").FontSize(14).Bold().FontColor("#221837");
+                            c.Item().PaddingTop(2).Text($"فقط {NumberToArabicWords(payment.Amount)} دينار ليبي لا غير").FontSize(8).FontColor(Colors.Grey.Darken2);
                         });
 
                         col.Item().Text(t =>
                         {
-                            t.Span("وذلك عن: ").FontSize(10);
-                            t.Span($"{(claim.ProjectAssignment?.AssignmentType ?? "-")} — مشروع {project.Code} - {project.Name}").FontSize(10).Bold();
+                            t.Span("المرحلة: ").FontSize(9);
+                            t.Span(stageName).FontSize(9).Bold();
+                        });
+                        col.Item().Text(t =>
+                        {
+                            t.Span("وذلك عن: ").FontSize(9);
+                            t.Span($"{stageName} — مشروع {project.Code} - {project.Name}").FontSize(9).Bold();
                         });
 
-                        col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        col.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                        col.Item().Table(table =>
+                        if (previousPayments.Any())
+                        {
+                            col.Item().Text("الدفعات السابقة").FontSize(9.5f).Bold().FontColor("#221837");
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                });
+                                ReceiptHeaderCell(table, "تاريخ الدفعة");
+                                ReceiptHeaderCell(table, "المبلغ");
+
+                                foreach (var p in previousPayments)
+                                {
+                                    ReceiptDataCell(table, p.PaidAt.ToString("yyyy-MM-dd"));
+                                    ReceiptDataCell(table, p.Amount.ToString("N2") + " د.ل");
+                                }
+                            });
+                        }
+
+                        col.Item().PaddingTop(4).Table(table =>
                         {
                             table.ColumnsDefinition(c =>
                             {
@@ -309,34 +343,34 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
-                            HeaderCell(table, "الإجمالي");
-                            HeaderCell(table, "مدفوع سابقاً");
-                            HeaderCell(table, "هذه الدفعة");
-                            HeaderCell(table, "المتبقي");
+                            ReceiptHeaderCell(table, "الإجمالي");
+                            ReceiptHeaderCell(table, "مدفوع سابقاً");
+                            ReceiptHeaderCell(table, "هذه الدفعة");
+                            ReceiptHeaderCell(table, "المتبقي");
 
-                            DataCell(table, claim.RealValue.ToString("N0") + " د.ل");
-                            DataCell(table, paidBefore.ToString("N0") + " د.ل");
-                            DataCell(table, payment.Amount.ToString("N0") + " د.ل");
-                            DataCell(table, claim.RemainingAmount.ToString("N0") + " د.ل");
+                            ReceiptDataCell(table, claim.RealValue.ToString("N2") + " د.ل");
+                            ReceiptDataCell(table, paidBefore.ToString("N2") + " د.ل");
+                            ReceiptDataCell(table, payment.Amount.ToString("N2") + " د.ل");
+                            ReceiptDataCell(table, remainingAtThisPayment.ToString("N2") + " د.ل");
                         });
 
-                        col.Item().PaddingTop(30).Row(row =>
+                        col.Item().PaddingTop(12).Row(row =>
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("توقيع المستلم").FontSize(9).FontColor(Colors.Grey.Medium);
-                                c.Item().PaddingTop(18).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                                c.Item().AlignCenter().Text("توقيع المستلم").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
-                            row.ConstantItem(20);
+                            row.ConstantItem(18);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("الختم").FontSize(9).FontColor(Colors.Grey.Medium);
-                                c.Item().PaddingTop(18).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                                c.Item().AlignCenter().Text("الختم").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
                     });
 
-                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }

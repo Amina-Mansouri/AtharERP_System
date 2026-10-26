@@ -617,13 +617,20 @@ namespace AtharERP_System.Controllers
         {
             var payment = await _context.ClaimPayments
          .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
+         .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
          .FirstOrDefaultAsync(p => p.Id == paymentId);
             if (payment == null) return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, payment.FinancialClaim.ProjectId))
                 return Forbid();
 
-            var pdf = _pdfExport.GeneratePaymentReceipt(payment);
+            var previousPayments = await _context.ClaimPayments
+        .Where(p => p.FinancialClaimId == payment.FinancialClaimId
+            && (p.PaidAt < payment.PaidAt || (p.PaidAt == payment.PaidAt && p.Id < payment.Id)))
+        .OrderBy(p => p.PaidAt)
+        .ToListAsync();
+
+            var pdf = _pdfExport.GeneratePaymentReceipt(payment, previousPayments);
             return File(pdf, "application/pdf", $"إيصال-دفعة-{payment.Id}.pdf");
         }
 
