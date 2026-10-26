@@ -313,6 +313,7 @@ List<int>? taskIds)
             return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
         }
 
+      
         [RequirePermission("Projects.Assignments.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -338,9 +339,33 @@ List<int>? taskIds)
                 return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
             }
 
+            var engineerId = link.UserId;
+
+            var engineerFinancialRecords = await _context.FinancialRecords
+                .Where(f => f.ProjectAssignmentId == assignment.Id && f.EngineerId == engineerId)
+                .ToListAsync();
+
+            if (engineerFinancialRecords.Any(f => f.IsCleared))
+            {
+                TempData["Error"] = "تم صرف مستحقات هذه المهندسة على هذا التكليف ماليًا — لا يمكن حذفها منه";
+                return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
+            }
+
+            _context.FinancialRecords.RemoveRange(engineerFinancialRecords);
+
+            var relatedNotifications = await _context.Notifications
+                .Where(n => n.UserId == engineerId && n.EntityType == "ProjectAssignment" && n.EntityId == assignment.Id)
+                .ToListAsync();
+            _context.Notifications.RemoveRange(relatedNotifications);
+
             _context.AssignmentEngineers.Remove(link);
             await _context.SaveChangesAsync();
 
+            await _calc.RecalculateAssignmentFinanceAsync(assignment.Id);
+
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(ProjectAssignment), assignment.Id.ToString(), "حذف مهندسة من تكليف وإلغاء بياناتها المالية والإشعارات المرتبطة به");
+
+            TempData["Success"] = "تم حذف المهندسة من التكليف وإلغاء كل ما ارتبط بها فيه";
             return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
         }
 

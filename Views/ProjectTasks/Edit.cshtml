@@ -258,7 +258,24 @@
                         <div style="display:flex; gap:6px; flex-wrap:wrap;">
                             @foreach (var eng in Model.ProjectAssignment.Engineers)
                             {
-                                <span style="background:#f3f1fb; border:1px solid #e1defa; color:#5a5370; border-radius:20px; padding:4px 10px; font-size:11.5px;">@eng.User.FullName</span>
+                                var engCleared = Model.ProjectAssignment.FinancialRecords.Any(f => f.EngineerId == eng.UserId && f.IsCleared);
+                                var canRemoveEng = canManage && Model.ProjectAssignment.Engineers.Count > 1 && !engCleared;
+                                <span style="display:inline-flex; align-items:center; gap:5px; background:#f3f1fb; border:1px solid #e1defa; color:#5a5370; border-radius:20px; padding:4px 10px; font-size:11.5px;">
+                                    @eng.User.FullName
+                                    @if (canRemoveEng)
+                                    {
+                                        <form method="post" asp-controller="ProjectAssignments" asp-action="RemoveEngineer" style="display:inline;" onsubmit="return confirm('سيتم حذف هذه المهندسة من التكليف، مع إلغاء أي بيانات مالية أو إشعارات مرتبطة بها في هذا التكليف تحديدًا. هل أنت متأكدة؟');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@eng.Id" />
+                                            <input type="hidden" name="projectId" value="@Model.ProjectAssignment.ProjectId" />
+                                            <button type="submit" style="border:none; background:none; color:#c94a42; font-size:13px; cursor:pointer; padding:0; line-height:1;" title="حذف من التكليف">×</button>
+                                        </form>
+                                    }
+                                    else if (engCleared)
+                                    {
+                                        <span title="مُسوّاة ماليًا على هذا التكليف — لا يمكن حذفها" style="font-size:10px;">🔒</span>
+                                    }
+                                </span>
                             }
                         </div>
                     }
