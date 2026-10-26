@@ -33,15 +33,20 @@
                 }
             </select>
         </div>
-        <div style="min-width:220px;">
-            <label class="form-label" style="font-size:11px;">المشروع الرئيسي</label>
-            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- اختاري مشروعاً --</option>
+        <div style="min-width:220px; position:relative;">
+            <label class="form-label" style="font-size:11px;">المشروع الرئيسي (يمكن اختيار أكثر من واحد)</label>
+            <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleProjectsDropdown(event)">
+                <span>@(selectedProjectIds.Any() ? $"{selectedProjectIds.Count} مشروع مختار" : "-- اختاري مشاريع --")</span>
+            </div>
+            <div id="projectsDropdownPanel" hidden style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
                 @foreach (var p in projects)
                 {
-                    <option value="@p.Id" selected="@(mainProjectId == p.Id)">@p.Name</option>
+                    <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                        <input type="checkbox" name="projectIds" value="@p.Id" checked="@(selectedProjectIds.Contains(p.Id))" onchange="this.form.submit()" />
+                        @p.Name
+                    </label>
                 }
-            </select>
+            </div>
         </div>
         @if (mainProjectId.HasValue && subProjects.Any())
         {
@@ -83,6 +88,17 @@
 </div>
 
 <script>
+    function toggleProjectsDropdown(e) {
+        e.stopPropagation();
+        var panel = document.getElementById('projectsDropdownPanel');
+        panel.hidden = !panel.hidden;
+    }
+    document.addEventListener('click', function (e) {
+        var panel = document.getElementById('projectsDropdownPanel');
+        if (panel && !panel.hidden && !panel.contains(e.target)) {
+            panel.hidden = true;
+        }
+    });
     function applyQuarter() {
         const q = document.getElementById('quarterSelect').value;
         if (!q) return;
@@ -199,7 +215,7 @@
                     </div>
                     <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
                     <div class="cell">@(c.Project?.Name ?? "-")</div>
-                    <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
+                    <div class="cell">@(c.ProjectAssignment?.Stage?.Name ?? "-")</div>
                     <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
                     <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
                     <div class="cell cell-num">@c.Value.ToString("N0")</div>

@@ -225,9 +225,9 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
 
             var query = _context.FinancialClaims
-                .Include(c => c.ProjectAssignment)
-                .Include(c => c.Project)
-                .Where(c => targetProjectIds.Contains(c.ProjectId));
+      .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+      .Include(c => c.Project)
+      .Where(c => targetProjectIds.Contains(c.ProjectId));
 
             if (dateFrom.HasValue)
                 query = query.Where(c => c.CreatedAt >= dateFrom.Value);
