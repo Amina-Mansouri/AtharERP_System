@@ -136,22 +136,71 @@
 
 @if (Model.Any())
 {
-    <div class="athar-card" style="margin-bottom:12px;">
-        <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل</div>
-        <div style="display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap;">
-            <div style="max-width:220px;">
-                <canvas id="claimsDonut" height="150"></canvas>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <div>
-                    <span style="display:inline-block; width:10px; height:10px; background:#2e8b57; border-radius:2px; margin-left:6px;"></span>
-                    <span style="font-size:11px; color:#8a83a0;">المحقق</span>
-                    <div style="font-size:18px; font-weight:700; color:#2e8b57;">@Model.Sum(c => c.PaidAmount).ToString("N0")</div>
+    var settledArea = Model.Where(c => c.IsClientSettled).Sum(c => c.Area ?? 0);
+    var unsettledArea = Model.Where(c => !c.IsClientSettled).Sum(c => c.Area ?? 0);
+    var baseValueSum = Model.Sum(c => c.Value);
+    var redesignValueSum = Model.Sum(c => c.RedesignResult);
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+        <div class="athar-card" style="flex:1; min-width:280px;">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap;">
+                <div style="max-width:220px;">
+                    <canvas id="claimsDonut" height="150"></canvas>
                 </div>
-                <div>
-                    <span style="display:inline-block; width:10px; height:10px; background:#c94a42; border-radius:2px; margin-left:6px;"></span>
-                    <span style="font-size:11px; color:#8a83a0;">المستحق</span>
-                    <div style="font-size:18px; font-weight:700; color:#c94a42;">@Model.Sum(c => c.RemainingAmount).ToString("N0")</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                        <span style="display:inline-block; width:10px; height:10px; background:#2e8b57; border-radius:2px; margin-left:6px;"></span>
+                        <span style="font-size:11px; color:#8a83a0;">المحقق</span>
+                        <div style="font-size:18px; font-weight:700; color:#2e8b57;">@Model.Sum(c => c.PaidAmount).ToString("N0")</div>
+                    </div>
+                    <div>
+                        <span style="display:inline-block; width:10px; height:10px; background:#c94a42; border-radius:2px; margin-left:6px;"></span>
+                        <span style="font-size:11px; color:#8a83a0;">المستحق</span>
+                        <div style="font-size:18px; font-weight:700; color:#c94a42;">@Model.Sum(c => c.RemainingAmount).ToString("N0")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="athar-card" style="flex:1; min-width:280px;">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">المساحة المنفَّذة</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap;">
+                <div style="max-width:220px;">
+                    <canvas id="areaDonut" height="150"></canvas>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                        <span style="display:inline-block; width:10px; height:10px; background:#2e8b57; border-radius:2px; margin-left:6px;"></span>
+                        <span style="font-size:11px; color:#8a83a0;">مساحة محصَّلة (م²)</span>
+                        <div style="font-size:18px; font-weight:700; color:#2e8b57;">@settledArea.ToString("N0")</div>
+                    </div>
+                    <div>
+                        <span style="display:inline-block; width:10px; height:10px; background:#c94a42; border-radius:2px; margin-left:6px;"></span>
+                        <span style="font-size:11px; color:#8a83a0;">مساحة غير محصَّلة (م²)</span>
+                        <div style="font-size:18px; font-weight:700; color:#c94a42;">@unsettledArea.ToString("N0")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="athar-card" style="flex:1; min-width:280px;">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة إعادة التصميم</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap;">
+                <div style="max-width:220px;">
+                    <canvas id="redesignDonut" height="150"></canvas>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                        <span style="display:inline-block; width:10px; height:10px; background:#7b6bd6; border-radius:2px; margin-left:6px;"></span>
+                        <span style="font-size:11px; color:#8a83a0;">القيمة الأصلية</span>
+                        <div style="font-size:18px; font-weight:700; color:#7b6bd6;">@baseValueSum.ToString("N0")</div>
+                    </div>
+                    <div>
+                        <span style="display:inline-block; width:10px; height:10px; background:#e8a33d; border-radius:2px; margin-left:6px;"></span>
+                        <span style="font-size:11px; color:#8a83a0;">زيادة إعادة التصميم</span>
+                        <div style="font-size:18px; font-weight:700; color:#e8a33d;">@redesignValueSum.ToString("N0")</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -165,6 +214,40 @@
                 datasets: [{
                     data: [@Model.Sum(c => c.PaidAmount).ToString(System.Globalization.CultureInfo.InvariantCulture), @Model.Sum(c => c.RemainingAmount).ToString(System.Globalization.CultureInfo.InvariantCulture)],
                     backgroundColor: ['#2e8b57', '#c94a42']
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('areaDonut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['مساحة محصَّلة', 'مساحة غير محصَّلة'],
+                datasets: [{
+                    data: [@settledArea.ToString(System.Globalization.CultureInfo.InvariantCulture), @unsettledArea.ToString(System.Globalization.CultureInfo.InvariantCulture)],
+                    backgroundColor: ['#2e8b57', '#c94a42']
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => ctx.label + ': ' + ctx.raw.toLocaleString('en-US') + ' م²' } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('redesignDonut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['القيمة الأصلية', 'زيادة إعادة التصميم'],
+                datasets: [{
+                    data: [@baseValueSum.ToString(System.Globalization.CultureInfo.InvariantCulture), @redesignValueSum.ToString(System.Globalization.CultureInfo.InvariantCulture)],
+                    backgroundColor: ['#7b6bd6', '#e8a33d']
                 }]
             },
             options: {
