@@ -419,7 +419,7 @@ namespace AtharERP_System.Services
                         {
                             table.ColumnsDefinition(c =>
                             {
-                                c.ConstantColumn(24);
+                                c.ConstantColumn(34);
                                 c.RelativeColumn(3);
                                 c.RelativeColumn();
                                 c.RelativeColumn();
