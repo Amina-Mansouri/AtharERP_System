@@ -188,11 +188,11 @@ namespace AtharERP_System.Controllers
         }
 
         [RequirePermission("Finance.Sales.View")]
-        public async Task<IActionResult> Claims(int? categoryId, List<int>? projectIds, int? subProjectId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> Claims(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo)
         {
             projectIds ??= new List<int>();
+            subProjectIds ??= new List<int>();
             var singleProjectId = projectIds.Count == 1 ? projectIds[0] : (int?)null;
-            var effectiveProjectId = subProjectId ?? singleProjectId;
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
 
             ViewBag.Categories = await GetActiveCategoriesAsync();
@@ -200,7 +200,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CategoryId = categoryId;
             ViewBag.ProjectIds = projectIds;
             ViewBag.MainProjectId = singleProjectId;
-            ViewBag.SubProjectId = subProjectId;
+            ViewBag.SubProjectIds = subProjectIds;
             ViewBag.SubProjects = singleProjectId.HasValue ? await GetSubProjectsAsync(singleProjectId) : new List<Project>();
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
@@ -208,16 +208,30 @@ namespace AtharERP_System.Controllers
             List<int> targetProjectIds;
             Project? project = null;
 
-            if (effectiveProjectId.HasValue)
+            if (singleProjectId.HasValue)
             {
-                project = await _context.Projects.FindAsync(effectiveProjectId.Value);
+                project = await _context.Projects.FindAsync(singleProjectId.Value);
                 if (project == null)
                     return NotFound();
 
-                if (!await _permissionService.CanAccessProjectAsync(User, effectiveProjectId.Value))
+                if (!await _permissionService.CanAccessProjectAsync(User, singleProjectId.Value))
                     return Forbid();
 
-                targetProjectIds = new List<int> { effectiveProjectId.Value };
+                if (subProjectIds.Any())
+                {
+                    foreach (var spid in subProjectIds)
+                    {
+                        if (!await _permissionService.CanAccessProjectAsync(User, spid))
+                            return Forbid();
+                    }
+                    targetProjectIds = subProjectIds;
+                }
+                else
+                {
+                    var childIds = await _context.Projects.Where(p => p.ParentProjectId == singleProjectId.Value).Select(p => p.Id).ToListAsync();
+                    targetProjectIds = new List<int> { singleProjectId.Value };
+                    targetProjectIds.AddRange(childIds);
+                }
             }
             else if (projectIds.Any())
             {
