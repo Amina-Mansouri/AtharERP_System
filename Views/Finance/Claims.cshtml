@@ -6,6 +6,7 @@
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var projectId = ViewBag.ProjectId as int?;
     var mainProjectId = ViewBag.MainProjectId as int?;
+    var selectedProjectIds = ViewBag.ProjectIds as List<int> ?? new List<int>();
     var subProjectId = ViewBag.SubProjectId as int?;
     var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
     var project = ViewBag.Project as Project;
