@@ -92,12 +92,16 @@ namespace AtharERP_System.Controllers
             ViewBag.DateTo = dateTo;
             ViewBag.EngineerId = engineerId;
 
-            ViewBag.Engineers = await _context.FinancialRecords
-                .Where(r => accessibleProjectIds.Contains(r.ProjectId))
-                .Select(r => new { r.EngineerId, r.Engineer.FullName })
-                .Distinct()
+            var engineerRows = await _context.FinancialRecords
+     .Where(r => accessibleProjectIds.Contains(r.ProjectId))
+     .Select(r => new { r.EngineerId, r.Engineer.FullName })
+     .ToListAsync();
+
+            ViewBag.Engineers = engineerRows
+                .GroupBy(e => e.EngineerId)
+                .Select(g => g.First())
                 .OrderBy(e => e.FullName)
-                .ToListAsync();
+                .ToList();
 
             List<int> targetProjectIds;
             Project? project = null;
