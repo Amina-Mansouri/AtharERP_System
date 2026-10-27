@@ -24,7 +24,10 @@ namespace AtharERP_System.Services
                 t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
 
             void ClaimsDataCell(TableDescriptor t, string text) =>
-                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+     t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+
+            void ClaimsTotalCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8.5f);
 
             return Document.Create(container =>
             {
@@ -123,6 +126,22 @@ namespace AtharERP_System.Services
                                         ClaimsDataCell(table, c.RemainingAmount.ToString("N0"));
                                         ClaimsDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                                     }
+
+                                    var totalRealValue = section.Claims.Sum(c => c.RealValue);
+                                    var totalPaid = section.Claims.Sum(c => c.PaidAmount);
+                                    var totalRemaining = section.Claims.Sum(c => c.RemainingAmount);
+                                    ClaimsTotalCell(table, "الإجمالي");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, totalRealValue.ToString("N0"));
+                                    ClaimsTotalCell(table, totalPaid.ToString("N0"));
+                                    ClaimsTotalCell(table, totalRemaining.ToString("N0"));
+                                    ClaimsTotalCell(table, "-");
                                 }
                                 else
                                 {
@@ -160,6 +179,19 @@ namespace AtharERP_System.Services
                                         ClaimsDataCell(table, c.RemainingAmount.ToString("N0"));
                                         ClaimsDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                                     }
+
+                                    var totalRealValue = section.Claims.Sum(c => c.RealValue);
+                                    var totalPaid = section.Claims.Sum(c => c.PaidAmount);
+                                    var totalRemaining = section.Claims.Sum(c => c.RemainingAmount);
+                                    ClaimsTotalCell(table, "الإجمالي");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, totalRealValue.ToString("N0"));
+                                    ClaimsTotalCell(table, totalPaid.ToString("N0"));
+                                    ClaimsTotalCell(table, totalRemaining.ToString("N0"));
+                                    ClaimsTotalCell(table, "-");
                                 }
                             });
 
@@ -567,7 +599,10 @@ namespace AtharERP_System.Services
                 t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
 
             void ProfitDataCell(TableDescriptor t, string text) =>
-                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+
+            void ProfitTotalCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8.5f);
 
             return Document.Create(container =>
             {
@@ -642,6 +677,15 @@ namespace AtharERP_System.Services
                                 ProfitDataCell(table, c.RemainingAmount.ToString("N0"));
                                 ProfitDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                             }
+
+                            var totalRealValue = result.Claims.Sum(c => c.RealValue);
+                            var totalPaid = result.Claims.Sum(c => c.PaidAmount);
+                            var totalRemaining = result.Claims.Sum(c => c.RemainingAmount);
+                            ProfitTotalCell(table, "الإجمالي");
+                            ProfitTotalCell(table, totalRealValue.ToString("N0"));
+                            ProfitTotalCell(table, totalPaid.ToString("N0"));
+                            ProfitTotalCell(table, totalRemaining.ToString("N0"));
+                            ProfitTotalCell(table, "-");
                         });
 
                         col.Item().Text("جدول التكاليف").FontSize(11).Bold().FontColor("#221837");
