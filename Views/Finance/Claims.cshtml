@@ -44,7 +44,7 @@
                 {
                     <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
                         <input type="checkbox" name="projectIds" value="@p.Id" checked="@(selectedProjectIds.Contains(p.Id))" onchange="this.form.submit()" />
-                        @p.Name
+                        @($"{p.Name}({p.Code})")
                     </label>
                 }
             </div>
@@ -61,7 +61,7 @@
                     {
                         <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
                             <input type="checkbox" name="subProjectIds" value="@sp.Id" checked="@(selectedSubProjectIds.Contains(sp.Id))" onchange="this.form.submit()" />
-                            @sp.Name
+                            @($"{sp.Name}({sp.Code})")
                         </label>
                     }
                 </div>

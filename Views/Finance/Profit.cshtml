@@ -55,7 +55,7 @@
                 <option value="">-- كل المشاريع (الرئيسية) --</option>
                 @foreach (var p in projects)
                 {
-                    <option value="@p.Id" selected="@(mainProjectId == p.Id)">@p.Name</option>
+                    <option value="@p.Id" selected="@(mainProjectId == p.Id)">@p.Name(@p.Code)</option>
                 }
             </select>
         </div>
@@ -67,7 +67,7 @@
                     <option value="">-- المشروع الرئيسي نفسه --</option>
                     @foreach (var sp in subProjects)
                     {
-                        <option value="@sp.Id" selected="@(subProjectId == sp.Id)">@sp.Name</option>
+                        <option value="@sp.Id" selected="@(subProjectId == sp.Id)">@sp.Name(@sp.Code)</option>
                     }
                 </select>
             </div>

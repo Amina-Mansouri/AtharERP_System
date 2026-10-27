@@ -6,7 +6,8 @@
     var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
     var projectId = ViewBag.ProjectId as int?;
     var mainProjectId = ViewBag.MainProjectId as int?;
-    var subProjectId = ViewBag.SubProjectId as int?;
+    var selectedProjectIds = ViewBag.ProjectIds as List<int> ?? new List<int>();
+    var selectedSubProjectIds = ViewBag.SubProjectIds as List<int> ?? new List<int>();
     var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
     var project = ViewBag.Project as Project;
     var dateFrom = ViewBag.DateFrom as DateTime?;
@@ -33,27 +34,37 @@
                 }
             </select>
         </div>
-        <div style="min-width:220px;">
-            <label class="form-label" style="font-size:11px;">المشروع الرئيسي</label>
-            <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- اختاري مشروعاً --</option>
+        <div style="min-width:220px; position:relative;">
+            <label class="form-label" style="font-size:11px;">المشروع الرئيسي (يمكن اختيار أكثر من واحد)</label>
+            <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleProjectsDropdown(event)">
+                <span>@(selectedProjectIds.Any() ? $"{selectedProjectIds.Count} مشروع مختار" : "-- اختاري مشاريع --")</span>
+            </div>
+            <div id="projectsDropdownPanel" hidden class="athar-checkbox-dropdown-panel" style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
                 @foreach (var p in projects)
                 {
-                    <option value="@p.Id" selected="@(mainProjectId == p.Id)">@p.Name</option>
+                    <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                        <input type="checkbox" name="projectIds" value="@p.Id" checked="@(selectedProjectIds.Contains(p.Id))" onchange="this.form.submit()" />
+                        @($"{p.Name}({p.Code})")
+                    </label>
                 }
-            </select>
+            </div>
         </div>
         @if (mainProjectId.HasValue && subProjects.Any())
         {
-            <div style="min-width:200px;">
+            <div style="min-width:220px; position:relative;">
                 <label class="form-label" style="font-size:11px;">المشروع الفرعي</label>
-                <select name="subProjectId" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">-- المشروع الرئيسي نفسه --</option>
+                <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleDropdownPanel(event, 'subProjectsDropdownPanel')">
+                    <span>@(selectedSubProjectIds.Any() ? $"{selectedSubProjectIds.Count} مبنى مختار" : "-- الكل مع الرئيسي --")</span>
+                </div>
+                <div id="subProjectsDropdownPanel" hidden class="athar-checkbox-dropdown-panel" style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
                     @foreach (var sp in subProjects)
                     {
-                        <option value="@sp.Id" selected="@(subProjectId == sp.Id)">@sp.Name</option>
+                        <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                            <input type="checkbox" name="subProjectIds" value="@sp.Id" checked="@(selectedSubProjectIds.Contains(sp.Id))" onchange="this.form.submit()" />
+                            @($"{sp.Name}({sp.Code})")
+                        </label>
                     }
-                </select>
+                </div>
             </div>
         }
         <div>
@@ -83,6 +94,21 @@
 </div>
 
 <script>
+    function toggleDropdownPanel(e, panelId) {
+        e.stopPropagation();
+        var panel = document.getElementById(panelId);
+        panel.hidden = !panel.hidden;
+    }
+    function toggleProjectsDropdown(e) {
+        toggleDropdownPanel(e, 'projectsDropdownPanel');
+    }
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('.athar-checkbox-dropdown-panel').forEach(function (panel) {
+            if (!panel.hidden && !panel.contains(e.target)) {
+                panel.hidden = true;
+            }
+        });
+    });
     function applyQuarter() {
         const q = document.getElementById('quarterSelect').value;
         if (!q) return;
@@ -93,16 +119,20 @@
         document.getElementById('dateToInput').value = year + "-" + ends[q];
     }
 </script>
-
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-@if (projectId.HasValue && project != null)
-{
-    <form method="post" asp-action="ExportSaleTableSelectedPdf" target="_blank">
-        @Html.AntiForgeryToken()
+@{
+    var showProjectSpecificActions = projectId.HasValue && project != null;
+}
+
+<form method="post" asp-action="ExportSaleTableSelectedPdf" target="_blank">
+    @Html.AntiForgeryToken()
+
+    @if (showProjectSpecificActions)
+    {
         <input type="hidden" name="projectId" value="@projectId" />
         <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
         <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
@@ -110,9 +140,10 @@
         <div style="margin-bottom:8px;">
             <button type="submit" class="btn-line btn-line-accent">📑 تصدير المحدَّد (PDF)</button>
         </div>
+    }
 
-        @if (Model.Any())
-        {
+    @if (Model.Any())
+    {
             <div class="athar-card" style="margin-bottom:12px;">
                 <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">أثر النسب على إجمالي قيمة البيع</div>
                 <div style="max-width:320px; margin:0 auto;">
@@ -138,7 +169,7 @@
             </script>
         }
 
-        <div class="data-table data-table-compact" style="--cols: 32px 50px 1fr 1fr 55px 60px 65px 150px 60px 55px 65px 55px 60px 140px">
+    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 1fr 55px 60px 65px 150px 60px 55px 65px 55px 60px 140px">
             <div class="data-table-head">
         <div class="cell"></div>
         <div class="cell"><span>رقم المشروع</span></div>
@@ -165,18 +196,23 @@
                 @foreach (var c in Model)
                 {
                     <div class="data-table-row">
-                        <div class="cell"><input type="checkbox" name="claimIds" value="@c.Id" /></div>
-                        <div class="cell cell-num">@project.Code</div>
-                        <div class="cell">@project.Name</div>
+                    <div class="cell">
+                        @if (showProjectSpecificActions)
+                        {
+                            <input type="checkbox" name="claimIds" value="@c.Id" />
+                        }
+                    </div>
+                    <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
+                    <div class="cell">@(c.Project?.Name ?? "-")</div>
                         <div class="cell">@(c.ProjectAssignment?.AssignmentType ?? "-")</div>
                         <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
                         <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
                         <div class="cell cell-num">@c.Value.ToString("N0")</div>
                         <div class="cell" style="white-space:normal; overflow:visible; padding:4px 6px;">
-                            <form method="post" asp-action="UpdateClaimPercentages" style="display:flex; flex-direction:column; gap:2px;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@c.Id" />
-                                <input type="hidden" name="projectId" value="@projectId" />
+                        <form method="post" asp-action="UpdateClaimPercentages" style="display:flex; flex-direction:column; gap:2px;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <input type="hidden" name="projectId" value="@c.ProjectId" />
                                 <div style="display:flex; align-items:center; gap:3px;">
                                     <span style="font-size:8.5px; color:#8a83a0; width:26px;">نسبة 1</span>
                                     <input type="number" step="0.01" name="percent1" value="@c.SaleMarkupPercent1" class="claim-percent-input" data-claim-id="@c.Id" data-which="1" data-value="@c.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)" oninput="recalcClaimPercent(@c.Id)" style="width:46px; height:18px; font-size:9px; padding:0 3px; border:1px solid #e4e2ec; border-radius:4px;" />
@@ -236,4 +272,3 @@
         }
         document.querySelectorAll('.claim-percent-input[data-which="1"]').forEach(el => recalcClaimPercent(el.getAttribute('data-claim-id')));
     </script>
-}
