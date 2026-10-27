@@ -141,11 +141,11 @@ namespace AtharERP_System.Services
                 .FirstOrDefaultAsync();
 
             var roleIdsWithPermission = permissionId == null
-                ? new List<int>()
-                : await _context.RolePermissions
-                    .Where(rp => rp.PermissionId == permissionId.Value && rp.IsGranted)
-                    .Select(rp => rp.RoleId)
-                    .ToListAsync();
+      ? new List<string>()
+      : await _context.RolePermissions
+          .Where(rp => rp.PermissionId == permissionId.Value && rp.IsGranted)
+          .Select(rp => rp.RoleId)
+          .ToListAsync();
 
             var adminRoleIds = await _context.Roles
                 .Where(r => r.Name == "مدير النظام" && r.IsActive)
