@@ -13,7 +13,8 @@
     var dateFrom = ViewBag.DateFrom as DateTime?;
     var dateTo = ViewBag.DateTo as DateTime?;
     var contributions = ViewBag.EngineerContributions as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
-    var engineerSearch = ViewBag.EngineerSearch as string;
+    var engineerId = ViewBag.EngineerId as string;
+    var engineerOptions = ViewBag.Engineers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     ViewData["Title"] = "جدول التكاليف";
 }
 
@@ -70,8 +71,14 @@
             </div>
         }
         <div style="min-width:180px;">
-            <label class="form-label" style="font-size:11px;">بحث بالمهندسة</label>
-            <input type="text" name="engineerSearch" class="form-control form-control-sm" placeholder="اكتبي اسم المهندسة..." value="@engineerSearch" />
+            <label class="form-label" style="font-size:11px;">المهندسة (اختيارها يلغي فلتر المشروع والتاريخ)</label>
+            <select name="engineerId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var e in engineerOptions)
+                {
+                    <option value="@e.EngineerId" selected="@(engineerId == e.EngineerId)">@e.FullName</option>
+                }
+            </select>
         </div>
         <div>
             <label class="form-label" style="font-size:11px;">الربع</label>

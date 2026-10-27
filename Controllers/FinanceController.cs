@@ -72,12 +72,13 @@ namespace AtharERP_System.Controllers
         // جدول التكاليف — داخلي، لحساب مستحقات المهندسات
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> CostTable(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo, string? engineerSearch)
+        public async Task<IActionResult> CostTable(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo, string? engineerId)
         {
             projectIds ??= new List<int>();
             subProjectIds ??= new List<int>();
             var singleProjectId = projectIds.Count == 1 ? projectIds[0] : (int?)null;
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
+            var accessibleProjectIds = accessibleProjects.Select(p => p.Id).ToList();
 
             ViewBag.Categories = await GetActiveCategoriesAsync();
             ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
@@ -89,11 +90,23 @@ namespace AtharERP_System.Controllers
             ViewBag.SubProjects = singleProjectId.HasValue ? await GetSubProjectsAsync(singleProjectId) : new List<Project>();
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
+            ViewBag.EngineerId = engineerId;
+
+            ViewBag.Engineers = await _context.FinancialRecords
+                .Where(r => accessibleProjectIds.Contains(r.ProjectId))
+                .Select(r => new { r.EngineerId, r.Engineer.FullName })
+                .Distinct()
+                .OrderBy(e => e.FullName)
+                .ToListAsync();
 
             List<int> targetProjectIds;
             Project? project = null;
 
-            if (singleProjectId.HasValue)
+            if (!string.IsNullOrWhiteSpace(engineerId))
+            {
+                targetProjectIds = accessibleProjectIds;
+            }
+            else if (singleProjectId.HasValue)
             {
                 project = await _context.Projects.FindAsync(singleProjectId.Value);
                 if (project == null)
@@ -129,11 +142,10 @@ namespace AtharERP_System.Controllers
             }
             else
             {
-                targetProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+                targetProjectIds = accessibleProjectIds;
             }
 
             ViewBag.Project = project;
-            ViewBag.EngineerSearch = engineerSearch;
 
             var query = _context.FinancialRecords
     .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
@@ -141,12 +153,17 @@ namespace AtharERP_System.Controllers
     .Include(r => r.Project)
     .Where(r => targetProjectIds.Contains(r.ProjectId));
 
-            if (dateFrom.HasValue)
-                query = query.Where(r => r.CreatedAt >= dateFrom.Value);
-            if (dateTo.HasValue)
-                query = query.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
-            if (!string.IsNullOrWhiteSpace(engineerSearch))
-                query = query.Where(r => r.Engineer.FullName.Contains(engineerSearch));
+            if (!string.IsNullOrWhiteSpace(engineerId))
+            {
+                query = query.Where(r => r.EngineerId == engineerId);
+            }
+            else
+            {
+                if (dateFrom.HasValue)
+                    query = query.Where(r => r.CreatedAt >= dateFrom.Value);
+                if (dateTo.HasValue)
+                    query = query.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+            }
 
             var records = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
