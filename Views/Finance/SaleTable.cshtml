@@ -144,30 +144,37 @@
 
     @if (Model.Any())
     {
-            <div class="athar-card" style="margin-bottom:12px;">
-                <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">أثر النسب على إجمالي قيمة البيع</div>
-                <div style="max-width:320px; margin:0 auto;">
-                    <canvas id="saleBarChart" height="160"></canvas>
-                </div>
+        <div class="athar-card" style="margin-bottom:12px;">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">ملخص جدول البيع النهائي</div>
+            <div style="max-width:560px; margin:0 auto;">
+                <canvas id="saleBarChart" height="180"></canvas>
             </div>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-            <script>
-                            new Chart(document.getElementById('saleBarChart'), {
-                                type: 'bar',
-                                    data: {
-                                    labels: ['قيمة البيع', 'قيمة النسب'],
-                                    datasets: [{
-                                        data: [@Model.Sum(c => c.Value).ToString(System.Globalization.CultureInfo.InvariantCulture), @Model.Sum(c => c.ValueAfterPercentage).ToString(System.Globalization.CultureInfo.InvariantCulture)],
-                                        backgroundColor: ['#7b6bd6', '#c9a15a']
-                            }]
-                        },
-                        options: {
-                            plugins: { legend: { display: false } },
-                            scales: { y: { beginAtZero: true } }
-                        }
-                    });
-            </script>
-        }
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+        <script>
+                new Chart(document.getElementById('saleBarChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['قيمة البيع', 'القيمة بعد النسب', 'نسبة إعادة التصميم', 'المساحة', 'المحقق', 'المستحق'],
+                        datasets: [{
+                            data: [
+                                                            @Model.Sum(c => c.Value).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                            @Model.Sum(c => c.ValueAfterPercentage).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                            @Model.Sum(c => c.RedesignResult).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                            @Model.Sum(c => c.Area ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                            @Model.Sum(c => c.PaidAmount).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                            @Model.Sum(c => c.RemainingAmount).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                                                        ],
+                            backgroundColor: ['#7b6bd6', '#c9a15a', '#e0a040', '#4a90d9', '#2e8b57', '#c94a42']
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 10 } } } }
+                    }
+                });
+        </script>
+    }
 
     <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 1fr 55px 60px 65px 150px 60px 55px 65px 55px 60px 140px">
             <div class="data-table-head">
@@ -179,7 +186,7 @@
         <div class="cell"><span>سعر متر البيع</span></div>
         <div class="cell"><span>قيمة البيع</span></div>
         <div class="cell"><span>نسبة 1 / نسبة 2</span></div>
-        <div class="cell"><span>قيمة النسب</span></div>
+            <div class="cell"><span>القيمة بعد النسب</span></div>
         <div class="cell"><span>نسبة إعادة التصميم</span></div>
                 <div class="cell"><span>الإجمالي</span></div>
                 <div class="cell"><span>المحقق</span></div>
