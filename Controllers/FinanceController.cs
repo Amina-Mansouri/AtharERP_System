@@ -73,6 +73,97 @@ namespace AtharERP_System.Controllers
         }
 
         // ============================================
+        // لوحة المالية — ملخّص شامل لكل شاشات المالية
+        // ============================================
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> Dashboard(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo)
+        {
+            projectIds ??= new List<int>();
+            subProjectIds ??= new List<int>();
+            var singleProjectId = projectIds.Count == 1 ? projectIds[0] : (int?)null;
+            var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
+            var accessibleProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
+            ViewBag.CategoryId = categoryId;
+            ViewBag.ProjectIds = projectIds;
+            ViewBag.MainProjectId = singleProjectId;
+            ViewBag.SubProjectIds = subProjectIds;
+            ViewBag.SubProjects = singleProjectId.HasValue ? await GetSubProjectsAsync(singleProjectId) : new List<Project>();
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+
+            List<int> targetProjectIds;
+
+            if (singleProjectId.HasValue)
+            {
+                if (!await _permissionService.CanAccessProjectAsync(User, singleProjectId.Value))
+                    return Forbid();
+
+                if (subProjectIds.Any())
+                {
+                    foreach (var spid in subProjectIds)
+                    {
+                        if (!await _permissionService.CanAccessProjectAsync(User, spid))
+                            return Forbid();
+                    }
+                    targetProjectIds = subProjectIds;
+                }
+                else
+                {
+                    var childIds = await _context.Projects.Where(p => p.ParentProjectId == singleProjectId.Value).Select(p => p.Id).ToListAsync();
+                    targetProjectIds = new List<int> { singleProjectId.Value };
+                    targetProjectIds.AddRange(childIds);
+                }
+            }
+            else if (projectIds.Any())
+            {
+                foreach (var pid in projectIds)
+                {
+                    if (!await _permissionService.CanAccessProjectAsync(User, pid))
+                        return Forbid();
+                }
+                targetProjectIds = projectIds;
+            }
+            else
+            {
+                targetProjectIds = accessibleProjectIds;
+            }
+
+            var result = targetProjectIds.Any()
+                ? await _calc.CalculateProjectNetProfitAsync(targetProjectIds, dateFrom, dateTo)
+                : new ProjectCalculationService.ProjectNetProfitResult();
+
+            ViewBag.Result = result;
+
+            ViewBag.RecentPayments = await _context.ClaimPayments
+                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project)
+                .Where(p => targetProjectIds.Contains(p.FinancialClaim.ProjectId))
+                .OrderByDescending(p => p.PaidAt)
+                .Take(5)
+                .ToListAsync();
+
+            ViewBag.RecentClearances = await _context.FinancialRecords
+                .Include(r => r.Engineer)
+                .Include(r => r.Project)
+                .Where(r => targetProjectIds.Contains(r.ProjectId) && r.IsCleared)
+                .OrderByDescending(r => r.ClearedAt)
+                .Take(5)
+                .ToListAsync();
+
+            ViewBag.UnsettledClaimsCount = await _context.FinancialClaims
+                .Where(c => targetProjectIds.Contains(c.ProjectId) && !c.IsClientSettled)
+                .CountAsync();
+
+            ViewBag.UnpaidRewardsCount = await _context.FinancialRecords
+                .Where(r => targetProjectIds.Contains(r.ProjectId) && !r.IsCleared)
+                .CountAsync();
+
+            return View();
+        }
+
+        // ============================================
         // جدول التكاليف — داخلي، لحساب مستحقات المهندسات
         // ============================================
         [RequirePermission("Finance.Costs.View")]

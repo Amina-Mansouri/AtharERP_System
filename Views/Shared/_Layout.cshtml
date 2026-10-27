@@ -292,6 +292,8 @@
                                 <span class="nav-group-caret">▾</span>
                             </button>
                             <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="Dashboard">المالية</a>
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Claims" ? "active" : "")"
                                    asp-controller="Finance" asp-action="Claims">المطالبات المالية</a>
 

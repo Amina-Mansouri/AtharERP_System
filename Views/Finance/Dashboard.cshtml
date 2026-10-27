@@ -1,0 +1,262 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@{
+    var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
+    var categoryId = ViewBag.CategoryId as int?;
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var mainProjectId = ViewBag.MainProjectId as int?;
+    var selectedProjectIds = ViewBag.ProjectIds as List<int> ?? new List<int>();
+    var selectedSubProjectIds = ViewBag.SubProjectIds as List<int> ?? new List<int>();
+    var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
+    var result = ViewBag.Result as ProjectCalculationService.ProjectNetProfitResult ?? new ProjectCalculationService.ProjectNetProfitResult();
+    var recentPayments = ViewBag.RecentPayments as List<ClaimPayment> ?? new List<ClaimPayment>();
+    var recentClearances = ViewBag.RecentClearances as List<FinancialRecord> ?? new List<FinancialRecord>();
+    var unsettledClaimsCount = (int)(ViewBag.UnsettledClaimsCount ?? 0);
+    var unpaidRewardsCount = (int)(ViewBag.UnpaidRewardsCount ?? 0);
+    var treasury = result.RealizedNetProfit;
+    ViewData["Title"] = "المالية";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>لوحة المالية</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">نوع المشروع</label>
+            <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id" selected="@(categoryId == cat.Id)">@cat.DisplayName</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:220px; position:relative;">
+            <label class="form-label" style="font-size:11px;">المشروع الرئيسي (يمكن اختيار أكثر من واحد)</label>
+            <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleProjectsDropdown(event)">
+                <span>@(selectedProjectIds.Any() ? $"{selectedProjectIds.Count} مشروع مختار" : "-- اختاري مشاريع --")</span>
+            </div>
+            <div id="projectsDropdownPanel" hidden class="athar-checkbox-dropdown-panel" style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
+                @foreach (var p in projects)
+                {
+                    <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                        <input type="checkbox" name="projectIds" value="@p.Id" checked="@(selectedProjectIds.Contains(p.Id))" onchange="this.form.submit()" />
+                        @($"{p.Name}({p.Code})")
+                    </label>
+                }
+            </div>
+        </div>
+        @if (mainProjectId.HasValue && subProjects.Any())
+        {
+            <div style="min-width:220px; position:relative;">
+                <label class="form-label" style="font-size:11px;">المشروع الفرعي</label>
+                <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleDropdownPanel(event, 'subProjectsDropdownPanel')">
+                    <span>@(selectedSubProjectIds.Any() ? $"{selectedSubProjectIds.Count} مبنى مختار" : "-- الكل مع الرئيسي --")</span>
+                </div>
+                <div id="subProjectsDropdownPanel" hidden class="athar-checkbox-dropdown-panel" style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
+                    @foreach (var sp in subProjects)
+                    {
+                        <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                            <input type="checkbox" name="subProjectIds" value="@sp.Id" checked="@(selectedSubProjectIds.Contains(sp.Id))" onchange="this.form.submit()" />
+                            @($"{sp.Name}({sp.Code})")
+                        </label>
+                    }
+                </div>
+            </div>
+        }
+        <div>
+            <label class="form-label" style="font-size:11px;">الربع</label>
+            <select id="quarterSelect" class="form-select form-select-sm" onchange="applyQuarter()">
+                <option value="">-- تحديد يدوي --</option>
+                <option value="1">الربع الأول</option>
+                <option value="2">الربع الثاني</option>
+                <option value="3">الربع الثالث</option>
+                <option value="4">الربع الرابع</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">السنة</label>
+            <input type="number" id="quarterYear" class="form-control form-control-sm" value="@DateTime.UtcNow.Year" style="width:90px;" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" id="dateFromInput" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" id="dateToInput" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+<script>
+    function toggleDropdownPanel(e, panelId) {
+        e.stopPropagation();
+        var panel = document.getElementById(panelId);
+        panel.hidden = !panel.hidden;
+    }
+    function toggleProjectsDropdown(e) {
+        toggleDropdownPanel(e, 'projectsDropdownPanel');
+    }
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('.athar-checkbox-dropdown-panel').forEach(function (panel) {
+            if (!panel.hidden && !panel.contains(e.target)) {
+                panel.hidden = true;
+            }
+        });
+    });
+    function applyQuarter() {
+        const q = document.getElementById('quarterSelect').value;
+        if (!q) return;
+        const year = document.getElementById('quarterYear').value || new Date().getFullYear();
+        const starts = { "1": "01-01", "2": "04-01", "3": "07-01", "4": "10-01" };
+        const ends = { "1": "03-31", "2": "06-30", "3": "09-30", "4": "12-31" };
+        document.getElementById('dateFromInput').value = year + "-" + starts[q];
+        document.getElementById('dateToInput').value = year + "-" + ends[q];
+    }
+</script>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+    <div class="athar-card" style="flex:1; min-width:200px;">
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">المبيعات (محقَّق / مستحق)</div>
+        <div style="font-size:18px; font-weight:700; color:#221837;">@result.TotalSalesRealized.ToString("N0")</div>
+        <div style="font-size:11px; color:#8a83a0;">من إجمالي @result.TotalSalesAccrued.ToString("N0")</div>
+    </div>
+    <div class="athar-card" style="flex:1; min-width:200px;">
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">تكاليف المهام المصروفة</div>
+        <div style="font-size:18px; font-weight:700; color:#c94a42;">@result.TotalTaskCostsRealized.ToString("N0")</div>
+        <div style="font-size:11px; color:#8a83a0;">من إجمالي @result.TotalTaskCostsAccrued.ToString("N0")</div>
+    </div>
+    <div class="athar-card" style="flex:1; min-width:200px;">
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">المصروفات العامة + المواقع</div>
+        <div style="font-size:18px; font-weight:700; color:#c94a42;">@((result.TotalGeneralExpenses + result.SiteCosts).ToString("N0"))</div>
+    </div>
+    <div class="athar-card" style="flex:1; min-width:200px; border:2px solid #7b6bd6;">
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">الخزينة</div>
+        <div style="font-size:20px; font-weight:800; color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</div>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">توزيع المبيعات والتكاليف والخزينة</div>
+    <div style="max-width:480px; margin:0 auto;">
+        <canvas id="financeDashboardChart" height="160"></canvas>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+    new Chart(document.getElementById('financeDashboardChart'), {
+        type: 'bar',
+        data: {
+            labels: ['مبيعات محصَّلة', 'تكاليف مصروفة', 'مصروفات عامة + مواقع', 'الخزينة'],
+            datasets: [{
+                data: [
+                        @result.TotalSalesRealized.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        @result.TotalTaskCostsRealized.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        @((result.TotalGeneralExpenses + result.SiteCosts).ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    @treasury.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                ],
+                backgroundColor: ['#2e8b57', '#c94a42', '#e0a040', '#7b6bd6']
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+    <div class="athar-card" style="flex:1; min-width:320px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">آخر الدفعات المسجَّلة</div>
+        <div class="data-table data-table-compact" style="--cols: 80px 1fr 70px">
+            <div class="data-table-head">
+                <div class="cell">التاريخ</div>
+                <div class="cell">المشروع</div>
+                <div class="cell">المبلغ</div>
+            </div>
+            @if (!recentPayments.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد دفعات ضمن هذه الفلترة</div></div>
+            }
+            else
+            {
+                @foreach (var p in recentPayments)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
+                        <div class="cell">@(p.FinancialClaim?.Project?.Name ?? "-")</div>
+                        <div class="cell cell-num">@p.Amount.ToString("N0")</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    <div class="athar-card" style="flex:1; min-width:320px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">آخر عمليات صرف المكافآت</div>
+        <div class="data-table data-table-compact" style="--cols: 80px 1fr 1fr 70px">
+            <div class="data-table-head">
+                <div class="cell">التاريخ</div>
+                <div class="cell">المشروع</div>
+                <div class="cell">المهندسة</div>
+                <div class="cell">المبلغ</div>
+            </div>
+            @if (!recentClearances.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد عمليات صرف ضمن هذه الفلترة</div></div>
+            }
+            else
+            {
+                @foreach (var r in recentClearances)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@r.ClearedAt?.ToString("yyyy-MM-dd")</div>
+                        <div class="cell">@(r.Project?.Name ?? "-")</div>
+                        <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
+                        <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N0")</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
+    <a asp-action="Claims" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">المطالبات المالية</div>
+        @if (unsettledClaimsCount > 0)
+        {
+            <span class="tag tag-warning" style="margin-top:6px; display:inline-block;">@unsettledClaimsCount غير محصَّلة</span>
+        }
+    </a>
+    <a asp-action="SaleTable" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">جدول البيع النهائي</div>
+    </a>
+    <a asp-action="CostTable" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">جدول التكاليف</div>
+        @if (unpaidRewardsCount > 0)
+        {
+            <span class="tag tag-warning" style="margin-top:6px; display:inline-block;">@unpaidRewardsCount غير مصروفة</span>
+        }
+    </a>
+    <a asp-action="Expenses" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">المصروفات</div>
+    </a>
+    <a asp-action="Profit" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">الأرباح والخسائر</div>
+    </a>
+    <a asp-action="Receipts" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">سجل إيصالات الدفعات</div>
+    </a>
+    <a asp-action="EngineerReceipts" class="athar-card" style="text-decoration:none; color:inherit; display:block;">
+        <div style="font-size:12.5px; font-weight:600;">سجل إيصالات صرف المكافآت</div>
+    </a>
+</div>
