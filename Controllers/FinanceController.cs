@@ -428,9 +428,10 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             ViewBag.Project = project;
 
             var query = _context.ProjectExpenses
-                .Include(e => e.ExpenseCategory)
-                .Include(e => e.Site)
-                .Where(e => e.ProjectId.HasValue && targetProjectIds.Contains(e.ProjectId.Value));
+       .Include(e => e.ExpenseCategory)
+       .Include(e => e.Site)
+       .Include(e => e.Project)
+       .Where(e => e.ProjectId.HasValue && targetProjectIds.Contains(e.ProjectId.Value));
 
             if (dateFrom.HasValue)
                 query = query.Where(e => e.Date >= dateFrom.Value);

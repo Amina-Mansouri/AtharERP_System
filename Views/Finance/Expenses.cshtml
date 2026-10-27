@@ -167,8 +167,9 @@
         </script>
     }
 
-    <div class="data-table" style="--cols: 100px 1fr 1fr 90px 1fr 90px">
+    <div class="data-table" style="--cols: 1fr 100px 1fr 1fr 90px 1fr 90px">
         <div class="data-table-head">
+            <div class="cell">المشروع</div>
             <div class="cell">التاريخ</div>
             <div class="cell">التصنيف</div>
             <div class="cell">الموقع</div>
@@ -186,6 +187,7 @@
             @foreach (var e in Model)
             {
                 <div class="data-table-row">
+                    <div class="cell">@(e.Project != null ? $"{e.Project.Name}({e.Project.Code})" : "عام (بلا مشروع)")</div>
                     <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
                     <div class="cell">@e.ExpenseCategory?.NameAr</div>
                     <div class="cell">@(e.Site?.Name ?? "عام (بلا موقع)")</div>
