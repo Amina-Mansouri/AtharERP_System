@@ -72,7 +72,7 @@ namespace AtharERP_System.Controllers
         // جدول التكاليف — داخلي، لحساب مستحقات المهندسات
         // ============================================
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> CostTable(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> CostTable(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo, string? engineerSearch)
         {
             projectIds ??= new List<int>();
             subProjectIds ??= new List<int>();
@@ -133,6 +133,7 @@ namespace AtharERP_System.Controllers
             }
 
             ViewBag.Project = project;
+            ViewBag.EngineerSearch = engineerSearch;
 
             var query = _context.FinancialRecords
     .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
@@ -144,6 +145,8 @@ namespace AtharERP_System.Controllers
                 query = query.Where(r => r.CreatedAt >= dateFrom.Value);
             if (dateTo.HasValue)
                 query = query.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+            if (!string.IsNullOrWhiteSpace(engineerSearch))
+                query = query.Where(r => r.Engineer.FullName.Contains(engineerSearch));
 
             var records = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
 

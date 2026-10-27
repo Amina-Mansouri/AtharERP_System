@@ -13,6 +13,7 @@
     var dateFrom = ViewBag.DateFrom as DateTime?;
     var dateTo = ViewBag.DateTo as DateTime?;
     var contributions = ViewBag.EngineerContributions as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
+    var engineerSearch = ViewBag.EngineerSearch as string;
     ViewData["Title"] = "جدول التكاليف";
 }
 
@@ -68,6 +69,10 @@
                 </div>
             </div>
         }
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">بحث بالمهندسة</label>
+            <input type="text" name="engineerSearch" class="form-control form-control-sm" placeholder="اكتبي اسم المهندسة..." value="@engineerSearch" />
+        </div>
         <div>
             <label class="form-label" style="font-size:11px;">الربع</label>
             <select id="quarterSelect" class="form-select form-select-sm" onchange="applyQuarter()">
@@ -127,34 +132,47 @@
 }
 
 @{
-    var engineerTotals = new Dictionary<string, decimal>();
-    foreach (var r in Model)
+    var engineerNames = Model.Select(r => r.Engineer?.FullName ?? "-").Distinct().OrderBy(n => n).ToList();
+    var engineerReceived = new List<decimal>();
+    var engineerNotReceived = new List<decimal>();
+    foreach (var name in engineerNames)
     {
-        var engName = r.Engineer?.FullName ?? "-";
-        engineerTotals[engName] = engineerTotals.TryGetValue(engName, out var curVal) ? curVal + r.ValueAfterPercentage : r.ValueAfterPercentage;
+        engineerReceived.Add(Model.Where(r => (r.Engineer?.FullName ?? "-") == name && r.IsCleared).Sum(r => r.ValueAfterPercentage));
+        engineerNotReceived.Add(Model.Where(r => (r.Engineer?.FullName ?? "-") == name && !r.IsCleared).Sum(r => r.ValueAfterPercentage));
     }
 
-    if (engineerTotals.Any())
+    if (engineerNames.Any())
     {
         <div class="athar-card" style="margin-bottom:12px;">
-            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">استحقاق كل مهندسة</div>
-            <canvas id="engineerBarChart" height="@Math.Max(engineerTotals.Count * 35, 90)"></canvas>
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">ما استلمته وما لم تستلمه كل مهندسة</div>
+            <div style="overflow-x:auto;">
+                <canvas id="engineerBarChart" height="90" style="min-width:@(Math.Max(engineerNames.Count * 70, 300))px;"></canvas>
+            </div>
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
         <script>
             new Chart(document.getElementById('engineerBarChart'), {
                 type: 'bar',
                 data: {
-                    labels: @Json.Serialize(engineerTotals.Keys.ToArray()),
-                    datasets: [{
-                        data: @Json.Serialize(engineerTotals.Values.ToArray()),
-                        backgroundColor: '#7b6bd6'
-                    }]
+                    labels: @Json.Serialize(engineerNames),
+                    datasets: [
+                        {
+                            label: 'ما استلمته',
+                            data: @Json.Serialize(engineerReceived),
+                            backgroundColor: '#2e8b57',
+                            maxBarThickness: 18
+                        },
+                        {
+                            label: 'ما لم تستلمه',
+                            data: @Json.Serialize(engineerNotReceived),
+                            backgroundColor: '#c94a42',
+                            maxBarThickness: 18
+                        }
+                    ]
                 },
                 options: {
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true } }
+                    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         </script>
