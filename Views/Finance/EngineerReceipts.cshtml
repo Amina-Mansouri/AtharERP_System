@@ -3,6 +3,11 @@
 @{
     var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
     var categoryId = ViewBag.CategoryId as int?;
+    var projects = ViewBag.Projects as List<Project> ?? new List<Project>();
+    var mainProjectId = ViewBag.MainProjectId as int?;
+    var selectedProjectIds = ViewBag.ProjectIds as List<int> ?? new List<int>();
+    var selectedSubProjectIds = ViewBag.SubProjectIds as List<int> ?? new List<int>();
+    var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
     var engineerId = ViewBag.EngineerId as string;
     var engineerOptions = ViewBag.Engineers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     var dateFrom = ViewBag.DateFrom as DateTime?;
@@ -29,6 +34,39 @@
                 }
             </select>
         </div>
+        <div style="min-width:220px; position:relative;">
+            <label class="form-label" style="font-size:11px;">المشروع الرئيسي (يمكن اختيار أكثر من واحد)</label>
+            <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleProjectsDropdown(event)">
+                <span>@(selectedProjectIds.Any() ? $"{selectedProjectIds.Count} مشروع مختار" : "-- اختاري مشاريع --")</span>
+            </div>
+            <div id="projectsDropdownPanel" hidden class="athar-checkbox-dropdown-panel" style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
+                @foreach (var p in projects)
+                {
+                    <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                        <input type="checkbox" name="projectIds" value="@p.Id" checked="@(selectedProjectIds.Contains(p.Id))" onchange="this.form.submit()" />
+                        @($"{p.Name}({p.Code})")
+                    </label>
+                }
+            </div>
+        </div>
+        @if (mainProjectId.HasValue && subProjects.Any())
+        {
+            <div style="min-width:220px; position:relative;">
+                <label class="form-label" style="font-size:11px;">المشروع الفرعي</label>
+                <div class="form-select form-select-sm" style="cursor:pointer; user-select:none;" onclick="toggleDropdownPanel(event, 'subProjectsDropdownPanel')">
+                    <span>@(selectedSubProjectIds.Any() ? $"{selectedSubProjectIds.Count} مبنى مختار" : "-- الكل مع الرئيسي --")</span>
+                </div>
+                <div id="subProjectsDropdownPanel" hidden class="athar-checkbox-dropdown-panel" style="position:absolute; z-index:20; top:100%; right:0; left:0; background:#fff; border:1px solid #e4e2ec; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); max-height:220px; overflow-y:auto; padding:6px; margin-top:2px;">
+                    @foreach (var sp in subProjects)
+                    {
+                        <label style="display:flex; align-items:center; gap:6px; padding:4px 6px; font-size:12px; cursor:pointer;">
+                            <input type="checkbox" name="subProjectIds" value="@sp.Id" checked="@(selectedSubProjectIds.Contains(sp.Id))" onchange="this.form.submit()" />
+                            @($"{sp.Name}({sp.Code})")
+                        </label>
+                    }
+                </div>
+            </div>
+        }
         <div style="min-width:200px;">
             <label class="form-label" style="font-size:11px;">المهندسة</label>
             <select name="engineerId" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -51,12 +89,30 @@
     </form>
 </div>
 
+<script>
+    function toggleDropdownPanel(e, panelId) {
+        e.stopPropagation();
+        var panel = document.getElementById(panelId);
+        panel.hidden = !panel.hidden;
+    }
+    function toggleProjectsDropdown(e) {
+        toggleDropdownPanel(e, 'projectsDropdownPanel');
+    }
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('.athar-checkbox-dropdown-panel').forEach(function (panel) {
+            if (!panel.hidden && !panel.contains(e.target)) {
+                panel.hidden = true;
+            }
+        });
+    });
+</script>
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-<div class="data-table data-table-compact" style="--cols: 90px 1fr 1fr 1fr 90px 100px">
+<div class="data-table data-table-compact" style="--cols: 90px 1fr 1fr 1fr 90px 90px 100px">
     <div class="data-table-head">
         <div class="cell">تاريخ الصرف</div>
         <div class="cell">المشروع</div>
@@ -64,6 +120,7 @@
         <div class="cell">المهندسة</div>
         <div class="cell">المبلغ</div>
         <div class="cell">إيصال</div>
+        <div class="cell"></div>
     </div>
     @if (!Model.Any())
     {
@@ -81,6 +138,13 @@
                 <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N2")</div>
                 <div class="cell">
                     <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>
+                </div>
+                <div class="cell">
+                    <form method="post" asp-action="CancelRecordCleared" onsubmit="return confirm('سيُلغى هذا الصرف وتعود المكافأة إلى حالة غير مصروف. هل أنت متأكدة؟');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@r.Id" />
+                        <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">إلغاء الصرف</button>
+                    </form>
                 </div>
             </div>
         }

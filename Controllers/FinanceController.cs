@@ -223,7 +223,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelRecordCleared(int id, int projectId)
+        public async Task<IActionResult> CancelRecordCleared(int id)
         {
             var record = await _context.FinancialRecords.FindAsync(id);
             if (record == null)
@@ -242,20 +242,65 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = "تم إلغاء الصرف وإعادة الحالة إلى غير مصروف";
-            return RedirectToAction("CostTable", new { projectId });
+            return RedirectToAction("EngineerReceipts");
         }
 
         [RequirePermission("Finance.Costs.View")]
-        public async Task<IActionResult> EngineerReceipts(int? categoryId, string? engineerId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> EngineerReceipts(int? categoryId, List<int>? projectIds, List<int>? subProjectIds, string? engineerId, DateTime? dateFrom, DateTime? dateTo)
         {
+            projectIds ??= new List<int>();
+            subProjectIds ??= new List<int>();
+            var singleProjectId = projectIds.Count == 1 ? projectIds[0] : (int?)null;
             var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
             var accessibleProjectIds = accessibleProjects.Select(p => p.Id).ToList();
 
             ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
             ViewBag.CategoryId = categoryId;
+            ViewBag.ProjectIds = projectIds;
+            ViewBag.MainProjectId = singleProjectId;
+            ViewBag.SubProjectIds = subProjectIds;
+            ViewBag.SubProjects = singleProjectId.HasValue ? await GetSubProjectsAsync(singleProjectId) : new List<Project>();
             ViewBag.EngineerId = engineerId;
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
+
+            List<int> targetProjectIds;
+
+            if (singleProjectId.HasValue)
+            {
+                if (!await _permissionService.CanAccessProjectAsync(User, singleProjectId.Value))
+                    return Forbid();
+
+                if (subProjectIds.Any())
+                {
+                    foreach (var spid in subProjectIds)
+                    {
+                        if (!await _permissionService.CanAccessProjectAsync(User, spid))
+                            return Forbid();
+                    }
+                    targetProjectIds = subProjectIds;
+                }
+                else
+                {
+                    var childIds = await _context.Projects.Where(p => p.ParentProjectId == singleProjectId.Value).Select(p => p.Id).ToListAsync();
+                    targetProjectIds = new List<int> { singleProjectId.Value };
+                    targetProjectIds.AddRange(childIds);
+                }
+            }
+            else if (projectIds.Any())
+            {
+                foreach (var pid in projectIds)
+                {
+                    if (!await _permissionService.CanAccessProjectAsync(User, pid))
+                        return Forbid();
+                }
+                targetProjectIds = projectIds;
+            }
+            else
+            {
+                targetProjectIds = accessibleProjectIds;
+            }
 
             var engineerRows = await _context.FinancialRecords
                 .Where(r => accessibleProjectIds.Contains(r.ProjectId) && r.IsCleared)
@@ -272,7 +317,7 @@ namespace AtharERP_System.Controllers
                 .Include(r => r.Engineer)
                 .Include(r => r.Project)
                 .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
-                .Where(r => accessibleProjectIds.Contains(r.ProjectId) && r.IsCleared);
+                .Where(r => targetProjectIds.Contains(r.ProjectId) && r.IsCleared);
 
             if (!string.IsNullOrWhiteSpace(engineerId))
                 query = query.Where(r => r.EngineerId == engineerId);

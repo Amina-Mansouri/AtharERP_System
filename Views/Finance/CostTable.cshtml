@@ -241,21 +241,13 @@
                         <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
                         <div class="cell cell-num">@valueAfter.ToString("N0")</div>
                         <div class="cell">
-                            @if (r.IsCleared)
-                            {
-                                <div style="display:flex; flex-direction:column; gap:3px;">
-                                    <span class="tag tag-success">تم الصرف (@r.ClearedAt?.ToString("yyyy-MM-dd"))</span>
-                                    <div style="display:flex; gap:4px;">
-                                        <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line" style="font-size:10px;">📄 طباعة</a>
-                                        <form method="post" asp-action="CancelRecordCleared" onsubmit="return confirm('سيُلغى هذا الصرف وتعود المكافأة إلى حالة غير مصروف. هل أنت متأكدة؟');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@r.Id" />
-                                            <input type="hidden" name="projectId" value="@r.ProjectId" />
-                                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">إلغاء الصرف</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            }
+                        @if (r.IsCleared)
+                        {
+                            <div style="display:flex; flex-direction:column; gap:3px;">
+                                <span class="tag tag-success">تم الصرف (@r.ClearedAt?.ToString("yyyy-MM-dd"))</span>
+                                <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line" style="font-size:10px;">📄 طباعة</a>
+                            </div>
+                        }
                             else
                             {
                                 <form method="post" asp-action="MarkRecordCleared" onsubmit="return confirm('تأكيد صرف مستحقات هذه المهندسة عن هذا التكليف؟');">
