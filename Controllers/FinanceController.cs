@@ -59,6 +59,15 @@ namespace AtharERP_System.Controllers
             return await _context.ProjectCategories.Where(c => c.IsActive).OrderBy(c => c.Classification).ToListAsync();
         }
 
+        // اسم موحّد لملفات PDF الصادرة من المالية: اسم المشروع-رمزه-رمز الشاشة[-رقم تسلسلي]
+        private static string BuildFinanceDocFileName(Project project, string screenCode, string? number = null)
+        {
+            var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+            var safeName = string.Join("_", project.Name.Split(invalidChars));
+            var baseName = $"{safeName}-{project.Code}-{screenCode}";
+            return string.IsNullOrEmpty(number) ? $"{baseName}.pdf" : $"{baseName}-{number}.pdf";
+        }
+
         // ============================================
         // جدول التكاليف — داخلي، لحساب مستحقات المهندسات
         // ============================================
@@ -603,7 +612,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
      .ToListAsync();
 
             var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims) }, includePercentageColumns: true);
-            return File(pdf, "application/pdf", $"جدول-البيع-{project.Code}.pdf");
+            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "SAL"));
         }
 
         [RequirePermission("Finance.Sales.View")]
@@ -628,7 +637,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
       .ToListAsync();
 
             var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims) }, includePercentageColumns: false);
-            return File(pdf, "application/pdf", $"المطالبة-{project.Code}.pdf");
+            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "CLM"));
         }
 
         [RequirePermission("Finance.Claims.Manage")]
@@ -747,7 +756,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
         .ToListAsync();
 
             var pdf = _pdfExport.GeneratePaymentReceipt(payment, previousPayments);
-            return File(pdf, "application/pdf", $"إيصال-دفعة-{payment.Id}.pdf");
+            return File(pdf, "application/pdf", BuildFinanceDocFileName(payment.FinancialClaim.Project, "RCT", payment.ReceiptNumber.ToString()));
         }
 
         [RequirePermission("Finance.Sales.View")]
@@ -772,7 +781,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             }
 
             var pdf = _pdfExport.GenerateProjectInvoice(project, claims);
-            return File(pdf, "application/pdf", $"فاتورة-{project.Code}.pdf");
+            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "INV"));
         }
 
         [RequirePermission("Finance.Sales.View")]
@@ -787,7 +796,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             var result = await _calc.CalculateProjectNetProfitAsync(new List<int> { projectId }, dateFrom, dateTo);
 
             var pdf = _pdfExport.GenerateProjectProfitReport(project, result);
-            return File(pdf, "application/pdf", $"تقرير-الربح-{project.Code}.pdf");
+            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "PRF"));
         }
 
         [RequirePermission("Finance.Sales.View")]

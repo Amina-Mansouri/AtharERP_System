@@ -20,6 +20,12 @@ namespace AtharERP_System.Services
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
 
+            void ClaimsHeaderCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+
+            void ClaimsDataCell(TableDescriptor t, string text) =>
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+
             return Document.Create(container =>
             {
                 foreach (var section in sections)
@@ -33,104 +39,144 @@ namespace AtharERP_System.Services
 
                         page.Header().Column(header =>
                         {
-                            if (hasLogo)
-                                header.Item().AlignCenter().Height(45).Image(logoPath).FitArea();
-
-                            header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a")
-                                .PaddingBottom(5).AlignCenter().Text(title).FontSize(15).Bold().FontColor("#221837");
-
-                            header.Item().PaddingTop(6).Row(row =>
+                            header.Item().Row(row =>
                             {
-                                row.RelativeItem().Text($"المشروع: {section.Project.Code} - {section.Project.Name}");
-                                row.RelativeItem().AlignLeft().Text($"تاريخ التصدير: {DateTime.UtcNow:yyyy-MM-dd}");
+                                row.RelativeItem().Column(c =>
+                                {
+                                    if (hasLogo)
+                                        c.Item().Height(35).Image(logoPath).FitArea();
+                                    c.Item().PaddingTop(4).Text(title).FontSize(13).Bold().FontColor("#221837");
+                                    c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                                });
+                                row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(5).Column(c =>
+                                {
+                                    c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    c.Item().Text(section.Project.Code).FontSize(12).Bold().FontColor("#221837");
+                                    c.Item().PaddingTop(2).Text(t =>
+                                    {
+                                        t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                        t.Span($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(8);
+                                    });
+                                    c.Item().Text(t =>
+                                    {
+                                        t.Span("الموافق : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                        t.Span(ArabicDayName(DateTime.UtcNow)).FontSize(8);
+                                    });
+                                });
+                            });
+                            header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a");
+                            header.Item().PaddingTop(6).Text(t =>
+                            {
+                                t.Span("المشروع: ").FontSize(9);
+                                t.Span($"{section.Project.Code} - {section.Project.Name}").FontSize(9).Bold();
                             });
                         });
 
-                        page.Content().PaddingTop(10).Table(table =>
+                        page.Content().PaddingTop(10).Column(col =>
                         {
-                            if (includePercentageColumns)
-                            {
-                                table.ColumnsDefinition(c =>
-                                {
-                                    c.RelativeColumn(2);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(0.8f);
-                                    c.RelativeColumn(0.8f);
-                                    c.RelativeColumn(1.1f);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1.1f);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1.1f);
-                                    c.RelativeColumn(1.3f);
-                                });
-                                HeaderCell(table, "بيان التكليف");
-                                HeaderCell(table, "المساحة");
-                                HeaderCell(table, "سعر المتر");
-                                HeaderCell(table, "قيمة البيع");
-                                HeaderCell(table, "نسبة 1");
-                                HeaderCell(table, "نسبة 2");
-                                HeaderCell(table, "القيمة بعد النسبة");
-                                HeaderCell(table, "نسبة إعادة التصميم");
-                                HeaderCell(table, "الإجمالي بعد الزيادة");
-                                HeaderCell(table, "المدفوع");
-                                HeaderCell(table, "المبلغ المستحق");
-                                HeaderCell(table, "الحالة");
+                            col.Spacing(10);
 
-                                foreach (var c in section.Claims)
-                                {
-                                    DataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
-                                    DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
-                                    DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
-                                    DataCell(table, c.Value.ToString("N0"));
-                                    DataCell(table, c.SaleMarkupPercent1.HasValue ? c.SaleMarkupPercent1.Value.ToString("N1") + "%" : "-");
-                                    DataCell(table, c.SaleMarkupPercent2.HasValue ? c.SaleMarkupPercent2.Value.ToString("N1") + "%" : "-");
-                                    DataCell(table, c.ValueAfterPercentage.ToString("N0"));
-                                    DataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
-                                    DataCell(table, c.RealValue.ToString("N0"));
-                                    DataCell(table, c.PaidAmount.ToString("N0"));
-                                    DataCell(table, c.RemainingAmount.ToString("N0"));
-                                    DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
-                                }
-                            }
-                            else
+                            col.Item().Table(table =>
                             {
-                                table.ColumnsDefinition(c =>
+                                if (includePercentageColumns)
                                 {
-                                    c.RelativeColumn(2);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1.1f);
-                                    c.RelativeColumn(1);
-                                    c.RelativeColumn(1.1f);
-                                    c.RelativeColumn(1.3f);
-                                });
-                                HeaderCell(table, "بيان التكليف");
-                                HeaderCell(table, "المساحة");
-                                HeaderCell(table, "سعر المتر");
-                                HeaderCell(table, "قيمة البيع");
-                                HeaderCell(table, "نسبة إعادة التصميم");
-                                HeaderCell(table, "الإجمالي بعد الزيادة");
-                                HeaderCell(table, "المدفوع");
-                                HeaderCell(table, "المبلغ المستحق");
-                                HeaderCell(table, "الحالة");
+                                    table.ColumnsDefinition(c =>
+                                    {
+                                        c.RelativeColumn(2);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(0.8f);
+                                        c.RelativeColumn(0.8f);
+                                        c.RelativeColumn(1.1f);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1.1f);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1.1f);
+                                        c.RelativeColumn(1.3f);
+                                    });
+                                    ClaimsHeaderCell(table, "بيان التكليف");
+                                    ClaimsHeaderCell(table, "المساحة");
+                                    ClaimsHeaderCell(table, "سعر المتر");
+                                    ClaimsHeaderCell(table, "قيمة البيع");
+                                    ClaimsHeaderCell(table, "نسبة 1");
+                                    ClaimsHeaderCell(table, "نسبة 2");
+                                    ClaimsHeaderCell(table, "القيمة بعد النسبة");
+                                    ClaimsHeaderCell(table, "نسبة إعادة التصميم");
+                                    ClaimsHeaderCell(table, "الإجمالي بعد الزيادة");
+                                    ClaimsHeaderCell(table, "المدفوع");
+                                    ClaimsHeaderCell(table, "المبلغ المستحق");
+                                    ClaimsHeaderCell(table, "الحالة");
 
-                                foreach (var c in section.Claims)
-                                {
-                                    DataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
-                                    DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
-                                    DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
-                                    DataCell(table, c.Value.ToString("N0"));
-                                    DataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
-                                    DataCell(table, c.RealValue.ToString("N0"));
-                                    DataCell(table, c.PaidAmount.ToString("N0"));
-                                    DataCell(table, c.RemainingAmount.ToString("N0"));
-                                    DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
+                                    foreach (var c in section.Claims)
+                                    {
+                                        ClaimsDataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
+                                        ClaimsDataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
+                                        ClaimsDataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
+                                        ClaimsDataCell(table, c.Value.ToString("N0"));
+                                        ClaimsDataCell(table, c.SaleMarkupPercent1.HasValue ? c.SaleMarkupPercent1.Value.ToString("N1") + "%" : "-");
+                                        ClaimsDataCell(table, c.SaleMarkupPercent2.HasValue ? c.SaleMarkupPercent2.Value.ToString("N1") + "%" : "-");
+                                        ClaimsDataCell(table, c.ValueAfterPercentage.ToString("N0"));
+                                        ClaimsDataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
+                                        ClaimsDataCell(table, c.RealValue.ToString("N0"));
+                                        ClaimsDataCell(table, c.PaidAmount.ToString("N0"));
+                                        ClaimsDataCell(table, c.RemainingAmount.ToString("N0"));
+                                        ClaimsDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
+                                    }
                                 }
-                            }
+                                else
+                                {
+                                    table.ColumnsDefinition(c =>
+                                    {
+                                        c.RelativeColumn(2);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1.1f);
+                                        c.RelativeColumn(1);
+                                        c.RelativeColumn(1.1f);
+                                        c.RelativeColumn(1.3f);
+                                    });
+                                    ClaimsHeaderCell(table, "بيان التكليف");
+                                    ClaimsHeaderCell(table, "المساحة");
+                                    ClaimsHeaderCell(table, "سعر المتر");
+                                    ClaimsHeaderCell(table, "قيمة البيع");
+                                    ClaimsHeaderCell(table, "نسبة إعادة التصميم");
+                                    ClaimsHeaderCell(table, "الإجمالي بعد الزيادة");
+                                    ClaimsHeaderCell(table, "المدفوع");
+                                    ClaimsHeaderCell(table, "المبلغ المستحق");
+                                    ClaimsHeaderCell(table, "الحالة");
+
+                                    foreach (var c in section.Claims)
+                                    {
+                                        ClaimsDataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
+                                        ClaimsDataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
+                                        ClaimsDataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
+                                        ClaimsDataCell(table, c.Value.ToString("N0"));
+                                        ClaimsDataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
+                                        ClaimsDataCell(table, c.RealValue.ToString("N0"));
+                                        ClaimsDataCell(table, c.PaidAmount.ToString("N0"));
+                                        ClaimsDataCell(table, c.RemainingAmount.ToString("N0"));
+                                        ClaimsDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
+                                    }
+                                }
+                            });
+
+                            col.Item().PaddingTop(16).Row(row =>
+                            {
+                                row.RelativeItem().Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                    c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                                });
+                                row.ConstantItem(20);
+                                row.RelativeItem().Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("اعتماد المالي").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                    c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                                });
+                            });
                         });
 
                         page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
@@ -251,7 +297,7 @@ namespace AtharERP_System.Services
             {
                 container.Page(page =>
                 {
-                    page.Size(PageSizes.A5);
+                    page.Size(PageSizes.A4);
                     page.Margin(18);
                     page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
                     page.ContentFromRightToLeft();
@@ -394,7 +440,7 @@ namespace AtharERP_System.Services
             {
                 container.Page(page =>
                 {
-                    page.Size(PageSizes.A5);
+                    page.Size(PageSizes.A4);
                     page.Margin(18);
                     page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
                     page.ContentFromRightToLeft();
@@ -517,6 +563,12 @@ namespace AtharERP_System.Services
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
 
+            void ProfitHeaderCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+
+            void ProfitDataCell(TableDescriptor t, string text) =>
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+
             return Document.Create(container =>
             {
                 container.Page(page =>
@@ -528,16 +580,36 @@ namespace AtharERP_System.Services
 
                     page.Header().Column(header =>
                     {
-                        if (hasLogo)
-                            header.Item().AlignCenter().Height(45).Image(logoPath).FitArea();
-
-                        header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a")
-                            .PaddingBottom(5).AlignCenter().Text("تقرير الربح والخسارة").FontSize(15).Bold().FontColor("#221837");
-
-                        header.Item().PaddingTop(6).Row(row =>
+                        header.Item().Row(row =>
                         {
-                            row.RelativeItem().Text($"رقم المشروع: {project.Code} - {project.Name}");
-                            row.RelativeItem().AlignLeft().Text($"تاريخ التصدير: {DateTime.UtcNow:yyyy-MM-dd}");
+                            row.RelativeItem().Column(c =>
+                            {
+                                if (hasLogo)
+                                    c.Item().Height(35).Image(logoPath).FitArea();
+                                c.Item().PaddingTop(4).Text("تقرير الربح والخسارة").FontSize(13).Bold().FontColor("#221837");
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                            });
+                            row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(5).Column(c =>
+                            {
+                                c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(project.Code).FontSize(12).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(2).Text(t =>
+                                {
+                                    t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(8);
+                                });
+                                c.Item().Text(t =>
+                                {
+                                    t.Span("الموافق : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span(ArabicDayName(DateTime.UtcNow)).FontSize(8);
+                                });
+                            });
+                        });
+                        header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a");
+                        header.Item().PaddingTop(6).Text(t =>
+                        {
+                            t.Span("المشروع: ").FontSize(9);
+                            t.Span($"{project.Code} - {project.Name}").FontSize(9).Bold();
                         });
                     });
 
@@ -556,19 +628,19 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
-                            HeaderCell(table, "بيان التكليف");
-                            HeaderCell(table, "القيمة");
-                            HeaderCell(table, "المدفوع");
-                            HeaderCell(table, "المتبقي");
-                            HeaderCell(table, "الحالة");
+                            ProfitHeaderCell(table, "بيان التكليف");
+                            ProfitHeaderCell(table, "القيمة");
+                            ProfitHeaderCell(table, "المدفوع");
+                            ProfitHeaderCell(table, "المتبقي");
+                            ProfitHeaderCell(table, "الحالة");
 
                             foreach (var c in result.Claims)
                             {
-                                DataCell(table, c.ProjectAssignment?.AssignmentType ?? "-");
-                                DataCell(table, c.RealValue.ToString("N0"));
-                                DataCell(table, c.PaidAmount.ToString("N0"));
-                                DataCell(table, c.RemainingAmount.ToString("N0"));
-                                DataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
+                                ProfitDataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
+                                ProfitDataCell(table, c.RealValue.ToString("N0"));
+                                ProfitDataCell(table, c.PaidAmount.ToString("N0"));
+                                ProfitDataCell(table, c.RemainingAmount.ToString("N0"));
+                                ProfitDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
                             }
                         });
 
@@ -582,17 +654,17 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
-                            HeaderCell(table, "بيان التكليف");
-                            HeaderCell(table, "المهندس");
-                            HeaderCell(table, "القيمة");
-                            HeaderCell(table, "الحالة");
+                            ProfitHeaderCell(table, "بيان التكليف");
+                            ProfitHeaderCell(table, "المهندس");
+                            ProfitHeaderCell(table, "القيمة");
+                            ProfitHeaderCell(table, "الحالة");
 
                             foreach (var r in result.Records)
                             {
-                                DataCell(table, r.ProjectAssignment?.Stage?.Name ?? "-");
-                                DataCell(table, r.Engineer?.FullName ?? "-");
-                                DataCell(table, r.ValueAfterPercentage.ToString("N0"));
-                                DataCell(table, r.IsCleared ? "مصروف" : "غير مصروف");
+                                ProfitDataCell(table, r.ProjectAssignment?.Stage?.Name ?? "-");
+                                ProfitDataCell(table, r.Engineer?.FullName ?? "-");
+                                ProfitDataCell(table, r.ValueAfterPercentage.ToString("N0"));
+                                ProfitDataCell(table, r.IsCleared ? "مصروف" : "غير مصروف");
                             }
                         });
 
@@ -606,17 +678,17 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
-                            HeaderCell(table, "التصنيف");
-                            HeaderCell(table, "الوصف");
-                            HeaderCell(table, "التاريخ");
-                            HeaderCell(table, "المبلغ");
+                            ProfitHeaderCell(table, "التصنيف");
+                            ProfitHeaderCell(table, "الوصف");
+                            ProfitHeaderCell(table, "التاريخ");
+                            ProfitHeaderCell(table, "المبلغ");
 
                             foreach (var e in result.GeneralExpenseRows)
                             {
-                                DataCell(table, e.ExpenseCategory?.NameAr ?? "-");
-                                DataCell(table, e.Description ?? "-");
-                                DataCell(table, e.Date.ToString("yyyy-MM-dd"));
-                                DataCell(table, e.Amount.ToString("N0"));
+                                ProfitDataCell(table, e.ExpenseCategory?.NameAr ?? "-");
+                                ProfitDataCell(table, e.Description ?? "-");
+                                ProfitDataCell(table, e.Date.ToString("yyyy-MM-dd"));
+                                ProfitDataCell(table, e.Amount.ToString("N0"));
                             }
                         });
 
@@ -627,10 +699,25 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
-                            HeaderCell(table, "صافي الربح المستحق");
-                            HeaderCell(table, "صافي الربح المحصَّل");
-                            DataCell(table, result.AccruedNetProfit.ToString("N0") + " د.ل");
-                            DataCell(table, result.RealizedNetProfit.ToString("N0") + " د.ل");
+                            ProfitHeaderCell(table, "صافي الربح المستحق");
+                            ProfitHeaderCell(table, "صافي الربح المحصَّل");
+                            ProfitDataCell(table, result.AccruedNetProfit.ToString("N0") + " د.ل");
+                            ProfitDataCell(table, result.RealizedNetProfit.ToString("N0") + " د.ل");
+                        });
+
+                        col.Item().PaddingTop(16).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(20);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المالي").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
                         });
                     });
 
