@@ -59,6 +59,21 @@ namespace AtharERP_System.Models.Entities
         ClaimApproved = 17,
 
         [Display(Name = "مراسلة موقع جديدة")]
-        SiteCorrespondenceReceived = 18
+        SiteCorrespondenceReceived = 18,
+
+        [Display(Name = "دفعة مسجَّلة على مطالبة")]
+        ClaimPaymentRecorded = 19,
+
+        [Display(Name = "تحصيل مطالبة بالكامل")]
+        ClaimFullySettled = 20,
+
+        [Display(Name = "صرف مكافأة مهندسة")]
+        EngineerRewardPaid = 21,
+
+        [Display(Name = "إلغاء صرف مكافأة")]
+        EngineerRewardCancelled = 22,
+
+        [Display(Name = "حذف إيصال دفعة")]
+        ClaimPaymentDeleted = 23
     }
 }

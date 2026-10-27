@@ -130,6 +130,39 @@ namespace AtharERP_System.Services
 
             return teamIds.Union(adminIds).Distinct().ToList();
         }
-    }
 
+           
+        // مدير النظام + كل من يملك صلاحية مالية معيّنة (عبر دوره) — لإشعارات مالية حساسة لا يجب أن يراها فريق المشروع كاملاً
+        public async Task<List<string>> GetUsersWithPermissionOrAdminAsync(string permissionCode)
+        {
+            var permissionId = await _context.Permissions
+                .Where(p => p.Code == permissionCode && p.IsActive)
+                .Select(p => (int?)p.Id)
+                .FirstOrDefaultAsync();
+
+            var roleIdsWithPermission = permissionId == null
+                ? new List<int>()
+                : await _context.RolePermissions
+                    .Where(rp => rp.PermissionId == permissionId.Value && rp.IsGranted)
+                    .Select(rp => rp.RoleId)
+                    .ToListAsync();
+
+            var adminRoleIds = await _context.Roles
+                .Where(r => r.Name == "مدير النظام" && r.IsActive)
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            var relevantRoleIds = roleIdsWithPermission.Union(adminRoleIds).Distinct().ToList();
+
+            if (relevantRoleIds.Count == 0)
+                return new List<string>();
+
+            return await (from ur in _context.UserRoles
+                          join u in _context.Users on ur.UserId equals u.Id
+                          where relevantRoleIds.Contains(ur.RoleId) && u.IsActive
+                          select ur.UserId)
+                          .Distinct()
+                          .ToListAsync();
+        }
+    }
 }

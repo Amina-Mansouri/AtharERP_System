@@ -15,13 +15,15 @@ namespace AtharERP_System.Controllers
         private readonly ProjectCalculationService _calc;
         private readonly FinancePdfService _pdfExport;
         private readonly AuditService _audit;
-        public FinanceController(AppDbContext context, PermissionService permissionService, ProjectCalculationService calc, FinancePdfService pdfExport, AuditService audit)
+        private readonly NotificationService _notify;
+        public FinanceController(AppDbContext context, PermissionService permissionService, ProjectCalculationService calc, FinancePdfService pdfExport, AuditService audit, NotificationService notify)
         {
             _context = context;
             _permissionService = permissionService;
             _calc = calc;
             _pdfExport = pdfExport;
             _audit = audit;
+            _notify = notify;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -215,6 +217,7 @@ namespace AtharERP_System.Controllers
                 record.ReceiptNumber = nextReceiptNumber;
                 await _context.SaveChangesAsync();
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "صرف مكافأة مهندسة");
+                await _notify.NotifyAsync(record.EngineerId, $"تم صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل", NotificationEventType.EngineerRewardPaid, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
             }
 
             return RedirectToAction("CostTable", new { projectId });
@@ -239,6 +242,7 @@ namespace AtharERP_System.Controllers
                 record.ReceiptNumber = null;
                 await _context.SaveChangesAsync();
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "إلغاء صرف مكافأة مهندسة");
+                await _notify.NotifyAsync(record.EngineerId, $"تم إلغاء صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل وإعادتها إلى حالة غير مصروف", NotificationEventType.EngineerRewardCancelled, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
             }
 
             TempData["Success"] = "تم إلغاء الصرف وإعادة الحالة إلى غير مصروف";
@@ -859,6 +863,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var nextReceiptNumber = (await _context.ClaimPayments.MaxAsync(p => (int?)p.ReceiptNumber) ?? 0) + 1;
 
+            var becameFullySettled = false;
             claim.PaidAmount += amount;
             _context.ClaimPayments.Add(new ClaimPayment
             {
@@ -872,12 +877,23 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             {
                 claim.IsClientSettled = true;
                 claim.ClientSettledAt = DateTime.UtcNow;
+                becameFullySettled = true;
             }
             await _context.SaveChangesAsync();
+
+            var claimProject = await _context.Projects.FindAsync(claim.ProjectId);
+            var paymentRecipientIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.Claims.Manage");
+  
+            await _notify.NotifyManyAsync(paymentRecipientIds, $"تم تسجيل دفعة بقيمة {amount:N2} د.ل على مطالبة مشروع {claimProject?.Name}", NotificationEventType.ClaimPaymentRecorded, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", entityType: "FinancialClaim", entityId: claim.Id);
+            if (becameFullySettled)
+            {
+                await _notify.NotifyManyAsync(paymentRecipientIds, $"تم تحصيل المطالبة بالكامل لمشروع {claimProject?.Name}", NotificationEventType.ClaimFullySettled, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", entityType: "FinancialClaim", entityId: claim.Id);
+            }
 
             TempData["Success"] = "تم تسجيل الدفعة بنجاح";
             return RedirectToAction(returnAction == "Claims" ? "Claims" : "SaleTable", new { projectId });
         }
+
         [RequirePermission("Finance.Sales.View")]
              public async Task<IActionResult> ClaimPaymentsHistory(int claimId)
         {
@@ -924,6 +940,10 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             _context.ClaimPayments.Remove(payment);
             await _context.SaveChangesAsync();
+
+            var deletedPaymentProject = await _context.Projects.FindAsync(claim.ProjectId);
+            var deleteRecipientIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.Claims.Manage");
+            await _notify.NotifyManyAsync(deleteRecipientIds, $"تم حذف إيصال دفعة بقيمة {payment.Amount:N2} د.ل وإعادته إلى مطالبة مشروع {deletedPaymentProject?.Name}", NotificationEventType.ClaimPaymentDeleted, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", requiresAction: true, entityType: "FinancialClaim", entityId: claim.Id);
 
             TempData["Success"] = "تم حذف الإيصال وإعادة قيمته إلى المطالبة";
             return RedirectToAction("ClaimPaymentsHistory", new { claimId = claim.Id });
