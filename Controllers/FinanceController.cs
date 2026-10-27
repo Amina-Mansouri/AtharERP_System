@@ -126,10 +126,10 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
 
             var query = _context.FinancialRecords
-                .Include(r => r.ProjectAssignment)
-                .Include(r => r.Engineer)
-                .Include(r => r.Project)
-                .Where(r => targetProjectIds.Contains(r.ProjectId));
+    .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+    .Include(r => r.Engineer)
+    .Include(r => r.Project)
+    .Where(r => targetProjectIds.Contains(r.ProjectId));
 
             if (dateFrom.HasValue)
                 query = query.Where(r => r.CreatedAt >= dateFrom.Value);
@@ -249,9 +249,9 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
 
             var query = _context.FinancialClaims
-                .Include(c => c.ProjectAssignment)
-                .Include(c => c.Project)
-                .Where(c => targetProjectIds.Contains(c.ProjectId));
+     .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+     .Include(c => c.Project)
+     .Where(c => targetProjectIds.Contains(c.ProjectId));
 
             if (dateFrom.HasValue)
                 query = query.Where(c => c.CreatedAt >= dateFrom.Value);
@@ -597,10 +597,10 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             if (!await _permissionService.CanAccessProjectAsync(User, projectId)) return Forbid();
 
             var claims = await _context.FinancialClaims
-                .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+     .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+     .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
+     .OrderByDescending(c => c.CreatedAt)
+     .ToListAsync();
 
             var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims) }, includePercentageColumns: true);
             return File(pdf, "application/pdf", $"جدول-البيع-{project.Code}.pdf");
@@ -622,10 +622,10 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             if (!await _permissionService.CanAccessProjectAsync(User, projectId)) return Forbid();
 
             var claims = await _context.FinancialClaims
-                .Include(c => c.ProjectAssignment)
-                .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+      .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+      .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
+      .OrderByDescending(c => c.CreatedAt)
+      .ToListAsync();
 
             var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims) }, includePercentageColumns: false);
             return File(pdf, "application/pdf", $"المطالبة-{project.Code}.pdf");
@@ -812,9 +812,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
                 accessibleProjectIds = accessibleProjectIds.Where(id => projectIds.Contains(id)).ToList();
 
             var query = _context.ClaimPayments
-                .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
-                .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment)
-                .Where(p => accessibleProjectIds.Contains(p.FinancialClaim.ProjectId));
+      .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
+      .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+      .Where(p => accessibleProjectIds.Contains(p.FinancialClaim.ProjectId));
 
             if (dateFrom.HasValue) query = query.Where(p => p.PaidAt >= dateFrom.Value);
             if (dateTo.HasValue) query = query.Where(p => p.PaidAt <= dateTo.Value.AddDays(1).AddTicks(-1));

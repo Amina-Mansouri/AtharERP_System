@@ -80,7 +80,7 @@ namespace AtharERP_System.Services
 
                                 foreach (var c in section.Claims)
                                 {
-                                    DataCell(table, c.ProjectAssignment?.AssignmentType ?? "-");
+                                    DataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
                                     DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
                                     DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
                                     DataCell(table, c.Value.ToString("N0"));
@@ -120,7 +120,7 @@ namespace AtharERP_System.Services
 
                                 foreach (var c in section.Claims)
                                 {
-                                    DataCell(table, c.ProjectAssignment?.AssignmentType ?? "-");
+                                    DataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
                                     DataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
                                     DataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
                                     DataCell(table, c.Value.ToString("N0"));
@@ -589,7 +589,7 @@ namespace AtharERP_System.Services
 
                             foreach (var r in result.Records)
                             {
-                                DataCell(table, r.ProjectAssignment?.AssignmentType ?? "-");
+                                DataCell(table, r.ProjectAssignment?.Stage?.Name ?? "-");
                                 DataCell(table, r.Engineer?.FullName ?? "-");
                                 DataCell(table, r.ValueAfterPercentage.ToString("N0"));
                                 DataCell(table, r.IsCleared ? "مصروف" : "غير مصروف");

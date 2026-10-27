@@ -86,7 +86,7 @@
                 <div class="cell cell-num">@p.FinancialClaim.Project.Code</div>
                 <div class="cell">@p.FinancialClaim.Project.Name</div>
                 <div class="cell">@p.FinancialClaim.Project.Client.Name</div>
-                <div class="cell">@(p.FinancialClaim.ProjectAssignment?.AssignmentType ?? "-")</div>
+                <div class="cell">@(p.FinancialClaim.ProjectAssignment?.Stage?.Name ?? "-")</div>
                 <div class="cell cell-num">@p.Amount.ToString("N0")</div>
                 <div class="cell">
                     <a asp-action="ExportPaymentReceiptPdf" asp-route-paymentId="@p.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>

@@ -188,7 +188,7 @@
                 <div class="data-table-row">
                     <div class="cell cell-num">@(r.Project?.Code ?? "-")</div>
                     <div class="cell">@(r.Project?.Name ?? "-")</div>
-                    <div class="cell">@(r.ProjectAssignment?.AssignmentType ?? "-")</div>
+                    <div class="cell">@(r.ProjectAssignment?.Stage?.Name ?? "-")</div>
                     <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
                     <div class="cell cell-num">@(r.Area?.ToString("N1") ?? "-")</div>
                     <div class="cell cell-num">@(r.PricePerMeter?.ToString("N0") ?? "-")</div>
