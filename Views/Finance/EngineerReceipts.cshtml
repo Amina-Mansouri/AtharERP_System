@@ -1,0 +1,88 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<FinancialRecord>
+@{
+    var categories = ViewBag.Categories as List<ProjectCategory> ?? new List<ProjectCategory>();
+    var categoryId = ViewBag.CategoryId as int?;
+    var engineerId = ViewBag.EngineerId as string;
+    var engineerOptions = ViewBag.Engineers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
+    ViewData["Title"] = "سجل إيصالات صرف المكافآت";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المالية</span>
+        <h1>سجل إيصالات صرف المكافآت</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:160px;">
+            <label class="form-label" style="font-size:11px;">نوع المشروع</label>
+            <select name="categoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id" selected="@(categoryId == cat.Id)">@cat.DisplayName</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">المهندسة</label>
+            <select name="engineerId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var e in engineerOptions)
+                {
+                    <option value="@e.EngineerId" selected="@(engineerId == e.EngineerId)">@e.FullName</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="data-table data-table-compact" style="--cols: 90px 1fr 1fr 1fr 90px 100px">
+    <div class="data-table-head">
+        <div class="cell">تاريخ الصرف</div>
+        <div class="cell">المشروع</div>
+        <div class="cell">بيان التكليف</div>
+        <div class="cell">المهندسة</div>
+        <div class="cell">المبلغ</div>
+        <div class="cell">إيصال</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد عمليات صرف مسجَّلة ضمن هذا التصفية</div></div>
+    }
+    else
+    {
+        @foreach (var r in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@r.ClearedAt?.ToString("yyyy-MM-dd")</div>
+                <div class="cell">@(r.Project?.Code ?? "-") - @(r.Project?.Name ?? "-")</div>
+                <div class="cell">@(r.ProjectAssignment?.Stage?.Name ?? "-")</div>
+                <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
+                <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N2")</div>
+                <div class="cell">
+                    <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>
+                </div>
+            </div>
+        }
+    }
+</div>

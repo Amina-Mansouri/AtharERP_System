@@ -59,6 +59,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تاريخ الصرف")]
         public DateTime? ClearedAt { get; set; }
 
+        [Display(Name = "رقم الإيصال")]
+        public int? ReceiptNumber { get; set; }
+
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

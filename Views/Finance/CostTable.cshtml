@@ -19,6 +19,7 @@
 }
 
 <div class="page-head">
+<div class="page-head">
     <div>
         <span class="kicker">المالية</span>
         <h1>جدول التكاليف</h1>
@@ -185,59 +186,89 @@
         </script>
     }
 
-    <div class="data-table data-table-compact" style="--cols: 50px 1fr 1fr 1fr 55px 65px 65px 70px 65px 75px 110px">
-        <div class="data-table-head">
-            <div class="cell"><span>رقم المشروع</span></div>
-            <div class="cell"><span>المشروع</span></div>
-            <div class="cell"><span>بيان التكليف</span></div>
-            <div class="cell"><span>المهندسة</span></div>
-            <div class="cell"><span>مساحة التكليف</span></div>
-            <div class="cell"><span>سعر متر التكليف</span></div>
-            <div class="cell"><span>قيمة التكليف</span></div>
-            <div class="cell"><span>نسبة التكليف من المشروع</span></div>
-            <div class="cell"><span>تقييم الأداء</span></div>
-            <div class="cell"><span>استحقاق المهندسة</span></div>
-            <div class="cell"><span>الحالة</span></div>
-        </div>
-
-        @if (!Model.Any())
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مُرحَّلة إلى المالية بعد لهذا المشروع</div></div>
-        }
-        else
-        {
-            @foreach (var r in Model)
+        <div style="margin-bottom:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <a asp-action="EngineerReceipts" class="btn-line">🧾 سجل إيصالات الصرف</a>
+            @if (!string.IsNullOrWhiteSpace(engineerId))
             {
-                var valueAfter = r.ValueAfterPercentage;
-                var engineerContribution = contributions.TryGetValue(r.EngineerId, out var c) ? c : 0;
-                <div class="data-table-row">
-                    <div class="cell cell-num">@(r.Project?.Code ?? "-")</div>
-                    <div class="cell">@(r.Project?.Name ?? "-")</div>
-                    <div class="cell">@(r.ProjectAssignment?.Stage?.Name ?? "-")</div>
-                    <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
-                    <div class="cell cell-num">@(r.Area?.ToString("N1") ?? "-")</div>
-                    <div class="cell cell-num">@(r.PricePerMeter?.ToString("N0") ?? "-")</div>
-                    <div class="cell cell-num">@r.Value.ToString("N0")</div>
-                    <div class="cell cell-num">@engineerContribution.ToString("N1")%</div>
-                    <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
-                    <div class="cell cell-num">@valueAfter.ToString("N0")</div>
-                    <div class="cell">
-                        @if (r.IsCleared)
-                        {
-                            <span class="tag tag-success">تم الصرف (@r.ClearedAt?.ToString("yyyy-MM-dd"))</span>
-                        }
-                        else
-                        {
-                            <form method="post" asp-action="MarkRecordCleared" onsubmit="return confirm('تأكيد صرف مستحقات هذه المهندسة عن هذا التكليف؟');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@r.Id" />
-                                <input type="hidden" name="projectId" value="@r.ProjectId" />
-                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">صرف المكافأة</button>
-                            </form>
-                        }
-                    </div>
-                </div>
+                <button type="submit" form="engineerStatementForm" class="btn-line btn-line-accent">📑 طباعة كشف المحدَّد</button>
             }
-        }
-    </div>
-}
+        </div>
+        <form id="engineerStatementForm" method="post" asp-action="ExportEngineerStatementPdf" target="_blank">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="engineerId" value="@engineerId" />
+        </form>
+
+        <div class="data-table data-table-compact" style="--cols: @(!string.IsNullOrWhiteSpace(engineerId) ? "28px" : "0px") 50px 1fr 1fr 1fr 55px 65px 65px 70px 65px 75px 110px">
+            <div class="data-table-head">
+                <div class="cell"></div>
+                <div class="cell"><span>رقم المشروع</span></div>
+                <div class="cell"><span>المشروع</span></div>
+                <div class="cell"><span>بيان التكليف</span></div>
+                <div class="cell"><span>المهندسة</span></div>
+                <div class="cell"><span>مساحة التكليف</span></div>
+                <div class="cell"><span>سعر متر التكليف</span></div>
+                <div class="cell"><span>قيمة التكليف</span></div>
+                <div class="cell"><span>نسبة التكليف من المشروع</span></div>
+                <div class="cell"><span>تقييم الأداء</span></div>
+                <div class="cell"><span>استحقاق المهندسة</span></div>
+                <div class="cell"><span>الحالة</span></div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مُرحَّلة إلى المالية بعد لهذا المشروع</div></div>
+            }
+            else
+            {
+                @foreach (var r in Model)
+                {
+                    var valueAfter = r.ValueAfterPercentage;
+                    var engineerContribution = contributions.TryGetValue(r.EngineerId, out var c) ? c : 0;
+                    <div class="data-table-row">
+                        <div class="cell">
+                            @if (!string.IsNullOrWhiteSpace(engineerId))
+                            {
+                                <input type="checkbox" name="recordIds" value="@r.Id" form="engineerStatementForm" />
+                            }
+                        </div>
+                        <div class="cell cell-num">@(r.Project?.Code ?? "-")</div>
+                        <div class="cell">@(r.Project?.Name ?? "-")</div>
+                        <div class="cell">@(r.ProjectAssignment?.Stage?.Name ?? "-")</div>
+                        <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
+                        <div class="cell cell-num">@(r.Area?.ToString("N1") ?? "-")</div>
+                        <div class="cell cell-num">@(r.PricePerMeter?.ToString("N0") ?? "-")</div>
+                        <div class="cell cell-num">@r.Value.ToString("N0")</div>
+                        <div class="cell cell-num">@engineerContribution.ToString("N1")%</div>
+                        <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
+                        <div class="cell cell-num">@valueAfter.ToString("N0")</div>
+                        <div class="cell">
+                            @if (r.IsCleared)
+                            {
+                                <div style="display:flex; flex-direction:column; gap:3px;">
+                                    <span class="tag tag-success">تم الصرف (@r.ClearedAt?.ToString("yyyy-MM-dd"))</span>
+                                    <div style="display:flex; gap:4px;">
+                                        <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line" style="font-size:10px;">📄 طباعة</a>
+                                        <form method="post" asp-action="CancelRecordCleared" onsubmit="return confirm('سيُلغى هذا الصرف وتعود المكافأة إلى حالة غير مصروف. هل أنت متأكدة؟');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@r.Id" />
+                                            <input type="hidden" name="projectId" value="@r.ProjectId" />
+                                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">إلغاء الصرف</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="MarkRecordCleared" onsubmit="return confirm('تأكيد صرف مستحقات هذه المهندسة عن هذا التكليف؟');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <input type="hidden" name="projectId" value="@r.ProjectId" />
+                                    <button type="submit" class="btn-line btn-line-accent" style="font-size:10.5px;">صرف المكافأة</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }

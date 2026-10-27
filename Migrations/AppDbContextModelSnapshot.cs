@@ -888,6 +888,9 @@ namespace AtharERP_System.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("ReceiptNumber")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Value")
                         .HasColumnType("decimal(18,2)");
 

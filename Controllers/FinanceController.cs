@@ -14,12 +14,14 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly ProjectCalculationService _calc;
         private readonly FinancePdfService _pdfExport;
-        public FinanceController(AppDbContext context, PermissionService permissionService, ProjectCalculationService calc, FinancePdfService pdfExport)
+        private readonly AuditService _audit;
+        public FinanceController(AppDbContext context, PermissionService permissionService, ProjectCalculationService calc, FinancePdfService pdfExport, AuditService audit)
         {
             _context = context;
             _permissionService = permissionService;
             _calc = calc;
             _pdfExport = pdfExport;
+            _audit = audit;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -207,12 +209,133 @@ namespace AtharERP_System.Controllers
 
             if (!record.IsCleared)
             {
+                var nextReceiptNumber = (await _context.FinancialRecords.MaxAsync(r => (int?)r.ReceiptNumber) ?? 0) + 1;
                 record.IsCleared = true;
                 record.ClearedAt = DateTime.UtcNow;
+                record.ReceiptNumber = nextReceiptNumber;
                 await _context.SaveChangesAsync();
+                await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "صرف مكافأة مهندسة");
             }
 
             return RedirectToAction("CostTable", new { projectId });
+        }
+
+        [RequirePermission("Finance.Costs.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelRecordCleared(int id, int projectId)
+        {
+            var record = await _context.FinancialRecords.FindAsync(id);
+            if (record == null)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, record.ProjectId))
+                return Forbid();
+
+            if (record.IsCleared)
+            {
+                record.IsCleared = false;
+                record.ClearedAt = null;
+                record.ReceiptNumber = null;
+                await _context.SaveChangesAsync();
+                await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "إلغاء صرف مكافأة مهندسة");
+            }
+
+            TempData["Success"] = "تم إلغاء الصرف وإعادة الحالة إلى غير مصروف";
+            return RedirectToAction("CostTable", new { projectId });
+        }
+
+        [RequirePermission("Finance.Costs.View")]
+        public async Task<IActionResult> EngineerReceipts(int? categoryId, string? engineerId, DateTime? dateFrom, DateTime? dateTo)
+        {
+            var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
+            var accessibleProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+
+            ViewBag.Categories = await GetActiveCategoriesAsync();
+            ViewBag.CategoryId = categoryId;
+            ViewBag.EngineerId = engineerId;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+
+            var engineerRows = await _context.FinancialRecords
+                .Where(r => accessibleProjectIds.Contains(r.ProjectId) && r.IsCleared)
+                .Select(r => new { r.EngineerId, r.Engineer.FullName })
+                .ToListAsync();
+
+            ViewBag.Engineers = engineerRows
+                .GroupBy(e => e.EngineerId)
+                .Select(g => g.First())
+                .OrderBy(e => e.FullName)
+                .ToList();
+
+            var query = _context.FinancialRecords
+                .Include(r => r.Engineer)
+                .Include(r => r.Project)
+                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+                .Where(r => accessibleProjectIds.Contains(r.ProjectId) && r.IsCleared);
+
+            if (!string.IsNullOrWhiteSpace(engineerId))
+                query = query.Where(r => r.EngineerId == engineerId);
+            if (dateFrom.HasValue)
+                query = query.Where(r => r.ClearedAt >= dateFrom.Value);
+            if (dateTo.HasValue)
+                query = query.Where(r => r.ClearedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
+
+            var records = await query.OrderByDescending(r => r.ClearedAt).ToListAsync();
+            return View(records);
+        }
+
+        [RequirePermission("Finance.Costs.View")]
+        public async Task<IActionResult> ExportRecordReceiptPdf(int recordId)
+        {
+            var record = await _context.FinancialRecords
+                .Include(r => r.Engineer)
+                .Include(r => r.Project)
+                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+                .FirstOrDefaultAsync(r => r.Id == recordId);
+            if (record == null || !record.IsCleared)
+                return NotFound();
+
+            if (!await _permissionService.CanAccessProjectAsync(User, record.ProjectId))
+                return Forbid();
+
+            var pdf = _pdfExport.GenerateEngineerReceipt(record);
+            return File(pdf, "application/pdf", BuildFinanceDocFileName(record.Project, "ERC", (record.ReceiptNumber ?? record.Id).ToString()));
+        }
+
+        [RequirePermission("Finance.Costs.View")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExportEngineerStatementPdf(List<int> recordIds, string engineerId)
+        {
+            if (recordIds == null || !recordIds.Any())
+            {
+                TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
+                return RedirectToAction("CostTable", new { engineerId });
+            }
+
+            var records = await _context.FinancialRecords
+                .Include(r => r.Engineer)
+                .Include(r => r.Project)
+                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+                .Where(r => recordIds.Contains(r.Id))
+                .ToListAsync();
+
+            if (!records.Any())
+                return NotFound();
+
+            foreach (var r in records)
+            {
+                if (!await _permissionService.CanAccessProjectAsync(User, r.ProjectId))
+                    return Forbid();
+            }
+
+            var engineerName = records.First().Engineer?.FullName ?? "-";
+            var pdf = _pdfExport.GenerateEngineerStatement(engineerName, records);
+
+            var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+            var safeName = string.Join("_", engineerName.Split(invalidChars));
+            return File(pdf, "application/pdf", $"{safeName}-EST.pdf");
         }
 
         // ============================================
