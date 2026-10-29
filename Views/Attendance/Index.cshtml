@@ -1,0 +1,128 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<AttendanceDailyRecord>
+@{
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var departmentId = ViewBag.DepartmentId as int?;
+    var users = ViewBag.Users as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var userId = ViewBag.UserId as string;
+    var dateFrom = ViewBag.DateFrom as DateTime?;
+    var dateTo = ViewBag.DateTo as DateTime?;
+    ViewData["Title"] = "الحضور والانصراف";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>الحضور والانصراف</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">القسم</label>
+            <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var d in departments)
+                {
+                    <option value="@d.Id" selected="@(departmentId == d.Id)">@d.Name</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">الموظف</label>
+            <select name="userId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var u in users)
+                {
+                    <option value="@u.Id" selected="@(userId == u.Id)">@u.FullName</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="dateFrom" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="dateTo" class="form-control form-control-sm" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="athar-card" style="margin-bottom:12px;">
+    <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:12px;">
+        <div><strong>أيام حضور:</strong> @Model.Count(r => r.CheckIn.HasValue)</div>
+        <div style="color:#c94a42;"><strong>أيام تأخير:</strong> @Model.Count(r => r.LateMinutes > 0)</div>
+        <div style="color:#e0a040;"><strong>بانتظار اعتماد الإضافي:</strong> @Model.Count(r => r.OvertimeHours > 0 && r.OvertimeApproved == null)</div>
+    </div>
+</div>
+
+<div class="data-table data-table-compact" style="--cols: 90px 1fr 70px 70px 70px 70px 70px 150px">
+    <div class="data-table-head">
+        <div class="cell">التاريخ</div>
+        <div class="cell">الموظف</div>
+        <div class="cell">دخول</div>
+        <div class="cell">خروج</div>
+        <div class="cell">إجمالي الساعات</div>
+        <div class="cell">التأخير (د)</div>
+        <div class="cell">الإضافي (س)</div>
+        <div class="cell">اعتماد الإضافي</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد سجلات حضور ضمن هذه الفلترة</div></div>
+    }
+    else
+    {
+        @foreach (var r in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@r.Date.ToString("yyyy-MM-dd")</div>
+                <div class="cell">@(r.User?.FullName ?? "-")</div>
+                <div class="cell cell-num">@(r.CheckIn?.ToString("HH:mm") ?? "-")</div>
+                <div class="cell cell-num">@(r.CheckOut?.ToString("HH:mm") ?? "-")</div>
+                <div class="cell cell-num">@(r.TotalHours?.ToString("N2") ?? "-")</div>
+                <div class="cell cell-num" style="@(r.LateMinutes > 0 ? "color:#c94a42;" : "")">@r.LateMinutes.ToString("N0")</div>
+                <div class="cell cell-num">@(r.OvertimeHours > 0 ? r.OvertimeHours.ToString("N2") : "-")</div>
+                <div class="cell">
+                    @if (r.OvertimeHours <= 0)
+                    {
+                        <span>-</span>
+                    }
+                    else if (r.OvertimeApproved == true)
+                    {
+                        <span class="tag tag-success">معتمد (@r.OvertimeDecidedBy?.FullName)</span>
+                    }
+                    else if (r.OvertimeApproved == false)
+                    {
+                        <span class="tag" style="color:#c94a42;">مرفوض</span>
+                    }
+                    else
+                    {
+                        <div style="display:flex; gap:4px;">
+                            <form method="post" asp-action="DecideOvertime">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="true" />
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                            </form>
+                            <form method="post" asp-action="DecideOvertime">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="false" />
+                                <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

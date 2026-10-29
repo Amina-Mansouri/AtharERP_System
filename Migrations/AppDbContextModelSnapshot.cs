@@ -247,6 +247,91 @@ namespace AtharERP_System.Migrations
                     b.ToTable("AssignmentEngineers");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.AttendanceDailyRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CheckIn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CheckOut")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("EarlyLeaveMinutes")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<decimal>("LateMinutes")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<bool?>("OvertimeApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("OvertimeDecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OvertimeDecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("OvertimeHours")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("TotalHours")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OvertimeDecidedById");
+
+                    b.HasIndex("UserId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("AttendanceDailyRecords");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.AttendancePunch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ImportedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("PunchTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SourceTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceTransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "PunchTime");
+
+                    b.ToTable("AttendancePunches");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.AuditLog", b =>
                 {
                     b.Property<int>("Id")
@@ -2827,6 +2912,35 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("ProjectAssignment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.AttendanceDailyRecord", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "OvertimeDecidedBy")
+                        .WithMany()
+                        .HasForeignKey("OvertimeDecidedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OvertimeDecidedBy");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.AttendancePunch", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

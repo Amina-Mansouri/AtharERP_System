@@ -46,3 +46,8 @@ logs/
 
 ## Uploaded user files (documents/photos) - not part of source control
 wwwroot/uploads/
+
+## وكيل جسر الحضور (BioTime) — يحتوي كلمة مرور الجهاز ومفتاح سري، يبقى محليًا فقط ولا يُرفع لـ GitHub أبدًا
+AttendanceBridgeAgent/appsettings.json
+AttendanceBridgeAgent/state.json
+AttendanceBridgeAgent/publish/

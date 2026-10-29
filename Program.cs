@@ -62,6 +62,7 @@ builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<ProposalReviewPdfService>();
 builder.Services.AddScoped<SiteCorrespondencePdfService>();
 builder.Services.AddScoped<FinancePdfService>();
+builder.Services.AddScoped<AttendanceCalculationService>();
 builder.Services.AddHostedService<ContractLifecycleHostedService>();
 builder.Services.AddHostedService<ProjectDelayMonitorHostedService>();
 

@@ -116,6 +116,7 @@
             || await PermissionService.HasPermissionAsync(User, "Finance.Claims.Manage");
         bool canSupply = await PermissionService.HasPermissionAsync(User, "Supply.View");
         bool canSupplyApprove = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
+        bool canAttendance = await PermissionService.HasPermissionAsync(User, "HR.Attendance.View");
         string activeSystem = ViewContext.RouteData.Values["controller"]?.ToString() switch
         {
             "Admin" => "sys01",
@@ -124,6 +125,7 @@
             "Clients" => "sys07",
             "Finance" or "ClientRedesignRequests" or "GeneralExpenses" => "sys04",
             "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
+            "Attendance" => "sys06",
             _ => ""
         };
         bool expensesSubActive = (ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses")
@@ -338,17 +340,22 @@
                         </div>
                     }
 
-                    @if (canUsers)
+                    @if (canUsers || canAttendance)
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys06" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys06">
-                                <span>شؤون إدارية <span class="tag tag-warning">جزئية</span></span>
+                                <span>شؤون إدارية <span class="tag tag-warning">قيد التنفيذ</span></span>
                             <span class="nav-group-caret">▾</span>
                         </button>
-                        <div class="collapse @(activeSystem == "sys06" ? "show" : "")" id="sys06">
-                            <span class="nav-item disabled">الموارد البشرية <span class="tag tag-muted">قادمة</span></span>
-                            <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>            <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
-                        <span class="nav-item disabled">الحضور والانصراف <span class="tag tag-muted">قادمة</span></span>
+                            <div class="collapse @(activeSystem == "sys06" ? "show" : "")" id="sys06">
+                                <span class="nav-item disabled">الموارد البشرية <span class="tag tag-muted">قادمة</span></span>
+                                <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>            <div class="nav-subgroup-title">بقية النظام — لاحقاً</div>
+                                @if (canAttendance)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
+                                       asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
+                                }
+                               
                         <span class="nav-item disabled">الرواتب والخصومات <span class="tag tag-muted">قادمة</span></span>
                         <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
                                 <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>

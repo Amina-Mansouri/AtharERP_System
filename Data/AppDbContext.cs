@@ -64,6 +64,8 @@ namespace AtharERP_System.Data
         public DbSet<ProposalReview> ProposalReviews { get; set; } = null!;
         public DbSet<FinancialClaim> FinancialClaims { get; set; } = null!;
         public DbSet<ClaimPayment> ClaimPayments { get; set; } = null!;
+        public DbSet<AttendancePunch> AttendancePunches { get; set; } = null!;
+        public DbSet<AttendanceDailyRecord> AttendanceDailyRecords { get; set; } = null!;
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
         public DbSet<Custody> Custodies { get; set; } = null!;
         public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;
@@ -673,6 +675,37 @@ namespace AtharERP_System.Data
                 .WithMany()
                 .HasForeignKey(c => c.DepartmentId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // ========== بصمات الحضور الخام (AttendancePunch) ==========
+            builder.Entity<AttendancePunch>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<AttendancePunch>()
+                .HasIndex(a => a.SourceTransactionId)
+                .IsUnique();
+
+            builder.Entity<AttendancePunch>()
+                .HasIndex(a => new { a.UserId, a.PunchTime });
+
+            // ========== ملخص الحضور اليومي (AttendanceDailyRecord) ==========
+            builder.Entity<AttendanceDailyRecord>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<AttendanceDailyRecord>()
+                .HasOne(a => a.OvertimeDecidedBy)
+                .WithMany()
+                .HasForeignKey(a => a.OvertimeDecidedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<AttendanceDailyRecord>()
+                .HasIndex(a => new { a.UserId, a.Date })
+                .IsUnique();
 
             // ========== إصدارات ضبط الوثائق (DocumentRevision) ==========
             builder.Entity<DocumentRevision>()
