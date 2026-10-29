@@ -70,7 +70,7 @@ namespace AtharERP_System.Controllers
                     SourceTransactionId = p.SourceTransactionId
                 });
 
-                affectedDays.Add((userId, p.PunchTime.Date));
+                affectedDays.Add((userId, p.PunchTime.AddHours(2).Date));
                 imported++;
             }
 
