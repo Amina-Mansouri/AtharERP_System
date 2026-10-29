@@ -879,7 +879,7 @@ namespace AtharERP_System.Services
 
                             foreach (var c in result.Claims)
                             {
-                                ProfitDataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
+                                ProfitDataCell(table, c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-");
                                 ProfitDataCell(table, c.RealValue.ToString("N0"));
                                 ProfitDataCell(table, c.PaidAmount.ToString("N0"));
                                 ProfitDataCell(table, c.RemainingAmount.ToString("N0"));
