@@ -308,14 +308,12 @@
         }
         else
         {
-                        @{
-                var claimGroups = Model
-                    .GroupBy(c => c.ProjectAssignment != null && c.ProjectAssignment.StageId.HasValue
-                        ? $"g_{c.ProjectId}_{c.ProjectAssignment.StageId}"
-                        : $"s_{c.Id}")
-                    .ToList();
-            }
-            @foreach (var grp in claimGroups)
+            var claimGroups = Model
+                .GroupBy(c => c.ProjectAssignment != null && c.ProjectAssignment.StageId.HasValue
+                    ? $"g_{c.ProjectId}_{c.ProjectAssignment.StageId}"
+                    : $"s_{c.Id}")
+                .ToList();
+            foreach (var grp in claimGroups)
             {
                 var groupClaims = grp.ToList();
                 var isMerged = groupClaims.Count > 1;
