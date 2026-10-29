@@ -8,6 +8,7 @@ namespace AtharERP_System.Services
     // وقت الدوام الرسمي موحَّد حاليًا لكل الموظفين: 9:00 صباحًا – 4:00 عصرًا (7 ساعات)
     public class AttendanceCalculationService
     {
+        private static readonly TimeSpan OfficeUtcOffset = TimeSpan.FromHours(2); // توقيت ليبيا — ثابت، بلا توقيت صيفي
         private static readonly TimeSpan OfficialStart = new TimeSpan(9, 0, 0);
         private static readonly TimeSpan OfficialEnd = new TimeSpan(16, 0, 0);
         private const decimal OfficialWorkHours = 7m;
@@ -53,8 +54,8 @@ namespace AtharERP_System.Services
                         overtimeHours = Math.Round(totalHours.Value - OfficialWorkHours, 2);
                 }
 
-                var officialStartToday = dayStart.Add(OfficialStart);
-                var officialEndToday = dayStart.Add(OfficialEnd);
+                var officialStartToday = dayStart.Add(OfficialStart).Subtract(OfficeUtcOffset);
+                var officialEndToday = dayStart.Add(OfficialEnd).Subtract(OfficeUtcOffset);
 
                 if (checkIn > officialStartToday)
                     lateMinutes = Math.Round((decimal)(checkIn - officialStartToday).TotalMinutes, 2);

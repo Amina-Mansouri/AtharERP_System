@@ -86,8 +86,8 @@
             <div class="data-table-row">
                 <div class="cell">@r.Date.ToString("yyyy-MM-dd")</div>
                 <div class="cell">@(r.User?.FullName ?? "-")</div>
-                <div class="cell cell-num">@(r.CheckIn?.ToString("HH:mm") ?? "-")</div>
-                <div class="cell cell-num">@(r.CheckOut?.ToString("HH:mm") ?? "-")</div>
+                <div class="cell cell-num">@(r.CheckIn?.Add(TimeSpan.FromHours(2)).ToString("HH:mm") ?? "-")</div>
+                <div class="cell cell-num">@(r.CheckOut?.Add(TimeSpan.FromHours(2)).ToString("HH:mm") ?? "-")</div>
                 <div class="cell cell-num">@(r.TotalHours?.ToString("N2") ?? "-")</div>
                 <div class="cell cell-num" style="@(r.LateMinutes > 0 ? "color:#c94a42;" : "")">@r.LateMinutes.ToString("N0")</div>
                 <div class="cell cell-num">@(r.OvertimeHours > 0 ? r.OvertimeHours.ToString("N2") : "-")</div>
