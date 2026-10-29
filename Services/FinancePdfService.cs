@@ -167,17 +167,29 @@ namespace AtharERP_System.Services
                                     ClaimsHeaderCell(table, "المبلغ المستحق");
                                     ClaimsHeaderCell(table, "الحالة");
 
-                                    foreach (var c in section.Claims)
+                                    foreach (var grp in section.Claims.GroupBy(c => c.ProjectAssignment != null && c.ProjectAssignment.StageId.HasValue ? $"g_{c.ProjectId}_{c.ProjectAssignment.StageId}" : $"s_{c.Id}"))
                                     {
-                                        ClaimsDataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
-                                        ClaimsDataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
-                                        ClaimsDataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
-                                        ClaimsDataCell(table, c.Value.ToString("N0"));
-                                        ClaimsDataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
-                                        ClaimsDataCell(table, c.RealValue.ToString("N0"));
-                                        ClaimsDataCell(table, c.PaidAmount.ToString("N0"));
-                                        ClaimsDataCell(table, c.RemainingAmount.ToString("N0"));
-                                        ClaimsDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
+                                        var gc = grp.ToList();
+                                        var gArea = gc.Sum(x => x.Area ?? 0);
+                                        var gValue = gc.Sum(x => x.Value);
+                                        var gRedesign = gc.Sum(x => x.RedesignResult);
+                                        var gReal = gc.Sum(x => x.RealValue);
+                                        var gPaid = gc.Sum(x => x.PaidAmount);
+                                        var gRemaining = gc.Sum(x => x.RemainingAmount);
+                                        decimal? gPricePerMeter = gArea > 0 ? gValue / gArea : (decimal?)null;
+                                        decimal? gRedesignPct = gValue > 0 ? (gRedesign / gValue) * 100 : (decimal?)null;
+                                        var gAllSettled = gc.All(x => x.IsClientSettled);
+                                        var gAnySettled = gc.Any(x => x.IsClientSettled);
+
+                                        ClaimsDataCell(table, gc[0].ProjectAssignment?.Stage?.Name ?? "-");
+                                        ClaimsDataCell(table, gArea.ToString("N1"));
+                                        ClaimsDataCell(table, gPricePerMeter.HasValue ? gPricePerMeter.Value.ToString("N0") : "-");
+                                        ClaimsDataCell(table, gValue.ToString("N0"));
+                                        ClaimsDataCell(table, gRedesignPct.HasValue ? gRedesignPct.Value.ToString("N1") + "%" : "-");
+                                        ClaimsDataCell(table, gReal.ToString("N0"));
+                                        ClaimsDataCell(table, gPaid.ToString("N0"));
+                                        ClaimsDataCell(table, gRemaining.ToString("N0"));
+                                        ClaimsDataCell(table, gAllSettled ? "تم التحصيل" : (gAnySettled ? "تحصيل جزئي" : "بانتظار التحصيل"));
                                     }
 
                                     var totalRealValue = section.Claims.Sum(c => c.RealValue);

@@ -118,6 +118,18 @@
         document.getElementById('dateFromInput').value = year + "-" + starts[q];
         document.getElementById('dateToInput').value = year + "-" + ends[q];
     }
+    function toggleClaimGroup(groupKey, arrowId) {
+        document.querySelectorAll('.' + groupKey).forEach(function (row) {
+            row.style.display = row.style.display === 'none' ? '' : 'none';
+        });
+        var a = document.getElementById(arrowId);
+        if (a) a.textContent = a.textContent.trim() === '▸' ? '▾' : '▸';
+    }
+    function toggleClaimGroupCheck(masterCb, groupKey) {
+        document.querySelectorAll('.' + groupKey + '.claim-check').forEach(function (ch) {
+            ch.checked = masterCb.checked;
+        });
+    }
 </script>
 
 @if (TempData["Success"] != null)
@@ -296,41 +308,138 @@
         }
         else
         {
-            @foreach (var c in Model)
+                        @{
+                var claimGroups = Model
+                    .GroupBy(c => c.ProjectAssignment != null && c.ProjectAssignment.StageId.HasValue
+                        ? $"g_{c.ProjectId}_{c.ProjectAssignment.StageId}"
+                        : $"s_{c.Id}")
+                    .ToList();
+            }
+            @foreach (var grp in claimGroups)
             {
-                var remaining = c.RemainingAmount;
-                <div class="data-table-row">
+                var groupClaims = grp.ToList();
+                var isMerged = groupClaims.Count > 1;
+                var gKey = "grp_" + grp.Key;
+                var stageName = groupClaims[0].ProjectAssignment?.Stage?.Name ?? "-";
+                var gProject = groupClaims[0].Project;
+                var gArea = groupClaims.Sum(x => x.Area ?? 0);
+                var gValue = groupClaims.Sum(x => x.Value);
+                var gRedesign = groupClaims.Sum(x => x.RedesignResult);
+                var gReal = groupClaims.Sum(x => x.RealValue);
+                var gPaid = groupClaims.Sum(x => x.PaidAmount);
+                var gRemaining = groupClaims.Sum(x => x.RemainingAmount);
+                decimal? gPricePerMeter = gArea > 0 ? gValue / gArea : (decimal?)null;
+                decimal? gRedesignPct = gValue > 0 ? (gRedesign / gValue) * 100 : (decimal?)null;
+                var gAllSettled = groupClaims.All(x => x.IsClientSettled);
+                var gAnySettled = groupClaims.Any(x => x.IsClientSettled);
+
+                <div class="data-table-row" style="@(isMerged ? "background:#f8f7fc; font-weight:600;" : "")">
                     <div class="cell">
                         @if (showProjectSpecificActions)
                         {
-                            <input type="checkbox" name="claimIds" value="@c.Id" />
+                            if (isMerged)
+                            {
+                                <input type="checkbox" onchange="toggleClaimGroupCheck(this, '@gKey')" />
+                            }
+                            else
+                            {
+                                <input type="checkbox" name="claimIds" value="@groupClaims[0].Id" class="claim-check" />
+                            }
                         }
                     </div>
-                    <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
-                    <div class="cell">@(c.Project?.Name ?? "-")</div>
-                    <div class="cell">@(c.ProjectAssignment?.Stage?.Name ?? "-")</div>
-                    <div class="cell cell-num">@(c.Area?.ToString("N2") ?? "-")</div>
-                    <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N2") ?? "-")</div>
-                    <div class="cell cell-num">@c.Value.ToString("N2")</div>
-                    <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N2") + "%" ?? "-")</div>
-                    <div class="cell cell-num">@c.RealValue.ToString("N2")</div>
-                    <div class="cell cell-num">@c.PaidAmount.ToString("N2")</div>
-                    <div class="cell cell-num">@remaining.ToString("N2")</div>
+                    <div class="cell cell-num">@(gProject?.Code ?? "-")</div>
+                    <div class="cell">@(gProject?.Name ?? "-")</div>
                     <div class="cell">
-                        <a asp-action="ClaimPaymentsHistory" asp-route-claimId="@c.Id" style="font-size:9px; display:block; margin-bottom:3px;">سجل الدفعات</a>
-                        @if (c.IsClientSettled)
+                        @stageName
+                        @if (isMerged)
                         {
-                            <span class="tag tag-success">تم التحصيل (@c.ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
+                            <span id="arrow_@gKey" onclick="toggleClaimGroup('@gKey', 'arrow_@gKey')" style="cursor:pointer; margin-right:6px; color:#7b6bd6; font-size:10px;">▸</span>
+                        }
+                    </div>
+                    <div class="cell cell-num">@gArea.ToString("N2")</div>
+                    <div class="cell cell-num">@(gPricePerMeter.HasValue ? gPricePerMeter.Value.ToString("N2") : "-")</div>
+                    <div class="cell cell-num">@gValue.ToString("N2")</div>
+                    <div class="cell cell-num">@(gRedesignPct.HasValue ? gRedesignPct.Value.ToString("N2") + "%" : "-")</div>
+                    <div class="cell cell-num">@gReal.ToString("N2")</div>
+                    <div class="cell cell-num">@gPaid.ToString("N2")</div>
+                    <div class="cell cell-num">@gRemaining.ToString("N2")</div>
+                    <div class="cell">
+                        @if (isMerged)
+                        {
+                            if (gAllSettled)
+                            {
+                                <span class="tag tag-success">تم التحصيل بالكامل</span>
+                            }
+                            else if (gAnySettled)
+                            {
+                                <span class="tag">تحصيل جزئي</span>
+                            }
+                            else
+                            {
+                                <span class="tag" style="background:#f6f1e3; color:#9a7b2e;">بانتظار التحصيل</span>
+                            }
+                            <div style="font-size:9px; color:#8a83a0; margin-top:3px; font-weight:400;">اضغطي السهم لعرض التفاصيل والدفع</div>
                         }
                         else
                         {
-                            <div style="display:flex; gap:5px; align-items:center;">
-                                <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:100px; height:28px; font-size:12px; padding:0 6px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
-                                <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = c.Id, projectId = c.ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; height:28px; font-size:11px; justify-content:center;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
-                            </div>
+                            var remaining = groupClaims[0].RemainingAmount;
+                            <a asp-action="ClaimPaymentsHistory" asp-route-claimId="@groupClaims[0].Id" style="font-size:9px; display:block; margin-bottom:3px;">سجل الدفعات</a>
+                            if (groupClaims[0].IsClientSettled)
+                            {
+                                <span class="tag tag-success">تم التحصيل (@groupClaims[0].ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
+                            }
+                            else
+                            {
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@groupClaims[0].Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:100px; height:28px; font-size:12px; padding:0 6px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
+                                    <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = groupClaims[0].Id, projectId = groupClaims[0].ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; height:28px; font-size:11px; justify-content:center;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
+                                </div>
+                            }
                         }
                     </div>
                 </div>
+
+                @if (isMerged)
+                {
+                    foreach (var c in groupClaims)
+                    {
+                        var remaining = c.RemainingAmount;
+                        <div class="data-table-row @gKey" style="display:none; background:#fcfbfe;">
+                            <div class="cell">
+                                @if (showProjectSpecificActions)
+                                {
+                                    <input type="checkbox" name="claimIds" value="@c.Id" class="claim-check @gKey" />
+                                }
+                            </div>
+                            <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
+                            <div class="cell" style="padding-right:14px; color:#8a83a0; font-size:11px; font-weight:400;">
+                                ↳ @(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "تكليف #" + c.Id)
+                            </div>
+                            <div class="cell" style="font-size:11px; font-weight:400;"></div>
+                            <div class="cell cell-num" style="font-weight:400;">@(c.Area?.ToString("N2") ?? "-")</div>
+                            <div class="cell cell-num" style="font-weight:400;">@(c.SalePricePerMeter?.ToString("N2") ?? "-")</div>
+                            <div class="cell cell-num" style="font-weight:400;">@c.Value.ToString("N2")</div>
+                            <div class="cell cell-num" style="font-weight:400;">@(c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N2") + "%" : "-")</div>
+                            <div class="cell cell-num" style="font-weight:400;">@c.RealValue.ToString("N2")</div>
+                            <div class="cell cell-num" style="font-weight:400;">@c.PaidAmount.ToString("N2")</div>
+                            <div class="cell cell-num" style="font-weight:400;">@remaining.ToString("N2")</div>
+                            <div class="cell" style="font-weight:400;">
+                                <a asp-action="ClaimPaymentsHistory" asp-route-claimId="@c.Id" style="font-size:9px; display:block; margin-bottom:3px;">سجل الدفعات</a>
+                                @if (c.IsClientSettled)
+                                {
+                                    <span class="tag tag-success">تم التحصيل (@c.ClientSettledAt?.ToString("yyyy-MM-dd"))</span>
+                                }
+                                else
+                                {
+                                    <div style="display:flex; gap:5px; align-items:center;">
+                                        <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:100px; height:28px; font-size:12px; padding:0 6px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
+                                        <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = c.Id, projectId = c.ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; height:28px; font-size:11px; justify-content:center;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
             }
         }
     </div>
