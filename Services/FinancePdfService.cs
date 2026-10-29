@@ -113,7 +113,7 @@ namespace AtharERP_System.Services
 
                                     foreach (var c in section.Claims)
                                     {
-                                        ClaimsDataCell(table, c.ProjectAssignment?.Stage?.Name ?? "-");
+                                        ClaimsDataCell(table, c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-");
                                         ClaimsDataCell(table, c.Area.HasValue ? c.Area.Value.ToString("N1") : "-");
                                         ClaimsDataCell(table, c.SalePricePerMeter.HasValue ? c.SalePricePerMeter.Value.ToString("N0") : "-");
                                         ClaimsDataCell(table, c.Value.ToString("N0"));
@@ -457,7 +457,9 @@ namespace AtharERP_System.Services
         {
             var project = record.Project;
             var engineer = record.Engineer;
-            var stageName = record.ProjectAssignment?.Stage?.Name ?? "-";
+            var stageName = record.ProjectAssignment != null && record.ProjectAssignment.Tasks.Any()
+                ? string.Join("، ", record.ProjectAssignment.Tasks.Select(t => t.Title))
+                : "-";
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
             var amount = record.ValueAfterPercentage;
@@ -513,7 +515,7 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("المرحلة: ").FontSize(9);
+                            t.Span("التكليف: ").FontSize(9);
                             t.Span(stageName).FontSize(9).Bold();
                         });
                         col.Item().Text(t =>
@@ -614,7 +616,7 @@ namespace AtharERP_System.Services
                             foreach (var r in records)
                             {
                                 StatementDataCell(table, $"{r.Project.Code} - {r.Project.Name}");
-                                StatementDataCell(table, r.ProjectAssignment?.Stage?.Name ?? "-");
+                                StatementDataCell(table, r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-");
                                 StatementDataCell(table, r.ValueAfterPercentage.ToString("N0"));
                                 StatementDataCell(table, r.IsCleared ? "تم الاستلام" : "لم يُستلم بعد");
                             }
@@ -911,7 +913,7 @@ namespace AtharERP_System.Services
 
                             foreach (var r in result.Records)
                             {
-                                ProfitDataCell(table, r.ProjectAssignment?.Stage?.Name ?? "-");
+                                ProfitDataCell(table, r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-");
                                 ProfitDataCell(table, r.Engineer?.FullName ?? "-");
                                 ProfitDataCell(table, r.ValueAfterPercentage.ToString("N0"));
                                 ProfitDataCell(table, r.IsCleared ? "مصروف" : "غير مصروف");

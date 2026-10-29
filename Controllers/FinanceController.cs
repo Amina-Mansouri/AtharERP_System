@@ -247,10 +247,11 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
 
             var query = _context.FinancialRecords
-    .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
-    .Include(r => r.Engineer)
-    .Include(r => r.Project)
-    .Where(r => targetProjectIds.Contains(r.ProjectId));
+.Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+.Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
+.Include(r => r.Engineer)
+.Include(r => r.Project)
+.Where(r => targetProjectIds.Contains(r.ProjectId));
 
             if (!string.IsNullOrWhiteSpace(engineerId))
             {
@@ -409,10 +410,11 @@ namespace AtharERP_System.Controllers
                 .ToList();
 
             var query = _context.FinancialRecords
-                .Include(r => r.Engineer)
-                .Include(r => r.Project)
-                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
-                .Where(r => targetProjectIds.Contains(r.ProjectId) && r.IsCleared);
+      .Include(r => r.Engineer)
+      .Include(r => r.Project)
+      .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+      .Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
+      .Where(r => targetProjectIds.Contains(r.ProjectId) && r.IsCleared);
 
             if (!string.IsNullOrWhiteSpace(engineerId))
                 query = query.Where(r => r.EngineerId == engineerId);
@@ -429,10 +431,12 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> ExportRecordReceiptPdf(int recordId)
         {
             var record = await _context.FinancialRecords
-                .Include(r => r.Engineer)
-                .Include(r => r.Project)
-                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
-                .FirstOrDefaultAsync(r => r.Id == recordId);
+     .Include(r => r.Engineer)
+     .Include(r => r.Project)
+     .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+     .Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
+     .FirstOrDefaultAsync(r => r.Id == recordId);
+
             if (record == null || !record.IsCleared)
                 return NotFound();
 
@@ -455,11 +459,12 @@ namespace AtharERP_System.Controllers
             }
 
             var records = await _context.FinancialRecords
-                .Include(r => r.Engineer)
-                .Include(r => r.Project)
-                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
-                .Where(r => recordIds.Contains(r.Id))
-                .ToListAsync();
+     .Include(r => r.Engineer)
+     .Include(r => r.Project)
+     .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+     .Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
+     .Where(r => recordIds.Contains(r.Id))
+     .ToListAsync();
 
             if (!records.Any())
                 return NotFound();
@@ -545,9 +550,10 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
 
             var query = _context.FinancialClaims
-     .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
-     .Include(c => c.Project)
-     .Where(c => targetProjectIds.Contains(c.ProjectId));
+.Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+.Include(c => c.ProjectAssignment).ThenInclude(a => a.Tasks)
+.Include(c => c.Project)
+.Where(c => targetProjectIds.Contains(c.ProjectId));
 
             if (dateFrom.HasValue)
                 query = query.Where(c => c.CreatedAt >= dateFrom.Value);
@@ -894,6 +900,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var claims = await _context.FinancialClaims
      .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+     .Include(c => c.ProjectAssignment).ThenInclude(a => a.Tasks)
      .Where(c => c.ProjectId == projectId && claimIds.Contains(c.Id))
      .OrderByDescending(c => c.CreatedAt)
      .ToListAsync();

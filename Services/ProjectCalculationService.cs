@@ -424,12 +424,12 @@ namespace AtharERP_System.Services
 
         public async Task<ProjectNetProfitResult> CalculateProjectNetProfitAsync(List<int> projectIds, DateTime? dateFrom = null, DateTime? dateTo = null)
         {
-            var claimsQuery = _context.FinancialClaims.Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage).Include(c => c.Project).Where(c => projectIds.Contains(c.ProjectId));
+            var claimsQuery = _context.FinancialClaims.Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage).Include(c => c.ProjectAssignment).ThenInclude(a => a.Tasks).Include(c => c.Project).Where(c => projectIds.Contains(c.ProjectId));
             if (dateFrom.HasValue) claimsQuery = claimsQuery.Where(c => c.CreatedAt >= dateFrom.Value);
             if (dateTo.HasValue) claimsQuery = claimsQuery.Where(c => c.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
             var claims = await claimsQuery.OrderByDescending(c => c.CreatedAt).ToListAsync();
 
-            var recordsQuery = _context.FinancialRecords.Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage).Include(r => r.Engineer).Include(r => r.Project).Where(r => projectIds.Contains(r.ProjectId));
+            var recordsQuery = _context.FinancialRecords.Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage).Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks).Include(r => r.Engineer).Include(r => r.Project).Where(r => projectIds.Contains(r.ProjectId));
             if (dateFrom.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt >= dateFrom.Value);
             if (dateTo.HasValue) recordsQuery = recordsQuery.Where(r => r.CreatedAt <= dateTo.Value.AddDays(1).AddTicks(-1));
             var records = await recordsQuery.OrderByDescending(r => r.CreatedAt).ToListAsync();

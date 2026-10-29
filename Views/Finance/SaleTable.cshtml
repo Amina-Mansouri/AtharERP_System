@@ -211,7 +211,7 @@
                     </div>
                     <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
                     <div class="cell">@(c.Project?.Name ?? "-")</div>
-                    <div class="cell">@(c.ProjectAssignment?.Stage?.Name ?? "-")</div>
+                    <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
                         <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
                         <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
                         <div class="cell cell-num">@c.Value.ToString("N0")</div>
