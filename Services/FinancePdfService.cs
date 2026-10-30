@@ -134,14 +134,16 @@ namespace AtharERP_System.Services
                                     var totalPaid = section.Claims.Sum(c => c.PaidAmount);
                                     var totalRemaining = section.Claims.Sum(c => c.RemainingAmount);
                                     var totalMarkupNetEffect = section.Claims.Sum(c => c.MarkupNetEffect);
+                                    var totalValue = section.Claims.Sum(c => c.Value);
+                                    var totalValueAfterPercentage = section.Claims.Sum(c => c.ValueAfterPercentage);
                                     ClaimsTotalCell(table, "الإجمالي");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
-                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, totalValue.ToString("N0"));
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, totalMarkupNetEffect.ToString("+#,0.00;-#,0.00;0"));
-                                    ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, totalValueAfterPercentage.ToString("N0"));
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, totalRealValue.ToString("N0"));
                                     ClaimsTotalCell(table, totalPaid.ToString("N0"));

@@ -253,10 +253,10 @@
                     </div>
                 }
             <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
-                <div class="cell" style="grid-column:1/7;">الإجمالي</div>
-                <div class="cell"></div>
-                <div class="cell"></div>
-                <div class="cell cell-num">@Model.Sum(c => c.MarkupNetEffect).ToString("+#,0.00;-#,0.00;0")</div>
+            <div class="cell" style="grid-column:1/7;">الإجمالي</div>
+            <div class="cell cell-num">@Model.Sum(c => c.Value).ToString("N0")</div>
+            <div class="cell"></div>
+            <div class="cell cell-num">@Model.Sum(c => c.MarkupNetEffect).ToString("+#,0.00;-#,0.00;0")</div>
                 <div class="cell cell-num">@Model.Sum(c => c.ValueAfterPercentage).ToString("N0")</div>
                 <div class="cell"></div>
                 <div class="cell cell-num">@Model.Sum(c => c.RealValue).ToString("N0")</div>
