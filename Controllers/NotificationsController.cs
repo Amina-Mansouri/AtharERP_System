@@ -185,6 +185,23 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Dismiss(int id, string? returnFilter, string? returnEventType, string? returnPeriod)
+        {
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == CurrentUserId);
+
+            if (notification != null)
+            {
+                _context.Notifications.Remove(notification);
+                await _context.SaveChangesAsync();
+                _cache.Remove($"NavCounters_{CurrentUserId}");
+            }
+
+            return RedirectToAction("Index", new { filter = returnFilter, eventType = returnEventType, period = returnPeriod });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllAsRead(string? returnFilter, string? returnEventType, string? returnPeriod)
         {
             var unread = await _context.Notifications

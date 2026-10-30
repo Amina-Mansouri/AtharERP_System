@@ -464,6 +464,44 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Costs.View")]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExportRecordReceiptsSelectedPdf(List<int> recordIds)
+        {
+            if (recordIds == null || !recordIds.Any())
+            {
+                TempData["Error"] = "اختاري سطراً واحداً على الأقل للطباعة";
+                return RedirectToAction("EngineerReceipts");
+            }
+
+            var records = await _context.FinancialRecords
+                .Include(r => r.Engineer)
+                .Include(r => r.Project)
+                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
+                .Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
+                .Where(r => recordIds.Contains(r.Id) && r.IsCleared)
+                .ToListAsync();
+
+            if (!records.Any())
+                return NotFound();
+
+            if (records.Select(r => r.EngineerId).Distinct().Count() > 1)
+            {
+                TempData["Error"] = "لا يمكن طباعة إيصال مجمّع لأكثر من مهندسة في نفس الوقت — اختاري تكليفات مهندسة واحدة فقط";
+                return RedirectToAction("EngineerReceipts");
+            }
+
+            foreach (var rec in records)
+            {
+                if (!await _permissionService.CanAccessProjectAsync(User, rec.ProjectId))
+                    return Forbid();
+            }
+
+            var combinedPdf = _pdfExport.GenerateEngineerReceiptsCombined(records);
+            return File(combinedPdf, "application/pdf", BuildFinanceDocFileName(records.First().Project, "ERC"));
+        }
+
+        [RequirePermission("Finance.Costs.View")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ExportEngineerStatementPdf(List<int> recordIds, string engineerId)
         {
             if (recordIds == null || !recordIds.Any())

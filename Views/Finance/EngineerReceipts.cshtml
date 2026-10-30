@@ -111,9 +111,21 @@
 {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
-<div class="data-table data-table-compact" style="--cols: 90px 1fr 1fr 1fr 90px 90px 100px">
+<form id="combinedReceiptForm" method="post" asp-action="ExportRecordReceiptsSelectedPdf" target="_blank">
+    @Html.AntiForgeryToken()
+</form>
+<div style="margin-bottom:8px;">
+    <button type="submit" form="combinedReceiptForm" class="btn-line btn-line-accent">🖨 طباعة إيصال مجمّع للمُحدَّد</button>
+</div>
+
+<div class="data-table data-table-compact" style="--cols: 26px 90px 1fr 1fr 1fr 90px 90px 100px">
     <div class="data-table-head">
+        <div class="cell"></div>
         <div class="cell">تاريخ الصرف</div>
         <div class="cell">المشروع</div>
         <div class="cell">بيان التكليف</div>
@@ -131,6 +143,7 @@
         @foreach (var r in Model)
         {
             <div class="data-table-row">
+                <div class="cell"><input type="checkbox" name="recordIds" value="@r.Id" form="combinedReceiptForm" /></div>
                 <div class="cell">@r.ClearedAt?.ToString("yyyy-MM-dd")</div>
                 <div class="cell">@(r.Project?.Code ?? "-") - @(r.Project?.Name ?? "-")</div>
                 <div class="cell">@(r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
@@ -149,7 +162,7 @@
             </div>
         }
         <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
-            <div class="cell" style="grid-column:1/5;">الإجمالي</div>
+            <div class="cell" style="grid-column:1/6;">الإجمالي</div>
             <div class="cell cell-num">@Model.Sum(r => r.ValueAfterPercentage).ToString("N2")</div>
             <div class="cell"></div>
             <div class="cell"></div>
