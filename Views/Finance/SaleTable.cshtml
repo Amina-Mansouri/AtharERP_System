@@ -128,19 +128,18 @@
     var showProjectSpecificActions = projectId.HasValue && project != null;
 }
 
-<form method="post" asp-action="ExportSaleTableSelectedPdf" target="_blank">
-    @Html.AntiForgeryToken()
-
-    @if (showProjectSpecificActions)
-    {
+@if (showProjectSpecificActions)
+{
+    <form id="saleExportForm" method="post" asp-action="ExportSaleTableSelectedPdf" target="_blank">
+        @Html.AntiForgeryToken()
         <input type="hidden" name="projectId" value="@projectId" />
         <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
         <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
-
-        <div style="margin-bottom:8px;">
-            <button type="submit" class="btn-line btn-line-accent">📑 تصدير المحدَّد (PDF)</button>
-        </div>
-    }
+    </form>
+    <div style="margin-bottom:8px;">
+        <button type="submit" form="saleExportForm" class="btn-line btn-line-accent">📑 تصدير المحدَّد (PDF)</button>
+    </div>
+}
 
     @if (Model.Any())
     {
@@ -204,14 +203,13 @@
             {
                 @foreach (var c in Model)
                 {
-                    <div class="data-table-row">
-                    <div class="cell">
-                        @if (showProjectSpecificActions)
-                        {
-                            <input type="checkbox" name="claimIds" value="@c.Id" />
-                        }
-                    </div>
-                    <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
+            <div class="cell">
+                @if (showProjectSpecificActions)
+                {
+                    <input type="checkbox" name="claimIds" value="@c.Id" form="saleExportForm" />
+                }
+            </div>
+            <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
                     <div class="cell">@(c.Project?.Name ?? "-")</div>
                     <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
                         <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
@@ -263,14 +261,13 @@
                 <div class="cell cell-num">@Model.Sum(c => c.RealValue).ToString("N0")</div>
                 <div class="cell cell-num">@Model.Sum(c => c.PaidAmount).ToString("N0")</div>
                 <div class="cell cell-num">@Model.Sum(c => c.RemainingAmount).ToString("N0")</div>
-                <div class="cell"></div>
-            </div>
-        }
-        </div>
-    </form>
+        <div class="cell"></div>
+    </div>
+}
+</div>
 
-    <script>
-        function recalcClaimPercent(claimId) {
+<script>
+    function recalcClaimPercent(claimId) {
             const input1 = document.querySelector(`input[data-claim-id="${claimId}"][data-which="1"]`);
             const input2 = document.querySelector(`input[data-claim-id="${claimId}"][data-which="2"]`);
             const value = parseFloat(input1.getAttribute('data-value')) || 0;
