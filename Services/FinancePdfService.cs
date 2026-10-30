@@ -575,7 +575,7 @@ namespace AtharERP_System.Services
             }).GeneratePdf();
         }
 
-        public byte[] GenerateEngineerStatement(string engineerName, List<FinancialRecord> records)
+        public byte[] GenerateEngineerReceipt(FinancialRecord record)
         {
             var project = record.Project;
             var engineer = record.Engineer;
