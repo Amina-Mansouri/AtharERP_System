@@ -77,6 +77,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "توثيق العمل الدوري")]
         public string? WorkDocumentation { get; set; }
 
+        [Display(Name = "الرقم المرجعي لمستندات المطالبة")]
+        public int? InvoiceDocNumber { get; set; }
+
         public virtual ICollection<ClientRedesignRequest> RedesignRequests { get; set; } = new List<ClientRedesignRequest>();
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 

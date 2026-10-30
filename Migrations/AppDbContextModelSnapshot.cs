@@ -1568,6 +1568,9 @@ namespace AtharERP_System.Migrations
                     b.Property<decimal>("CompletionPercentage")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<int?>("InvoiceDocNumber")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)

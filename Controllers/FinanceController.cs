@@ -83,6 +83,21 @@ namespace AtharERP_System.Controllers
             return $"{project.Code}-INV-{project.InvoiceDocNumber:D4}";
         }
 
+        private async Task<string> GetOrAssignStageInvoiceDocNumberAsync(Project project, ProjectStage? stage)
+        {
+            if (stage == null)
+                return await GetOrAssignInvoiceDocNumberAsync(project);
+
+            if (!stage.InvoiceDocNumber.HasValue)
+            {
+                var maxProject = await _context.Projects.MaxAsync(p => (int?)p.InvoiceDocNumber) ?? 0;
+                var maxStage = await _context.ProjectStages.MaxAsync(s => (int?)s.InvoiceDocNumber) ?? 0;
+                stage.InvoiceDocNumber = Math.Max(maxProject, maxStage) + 1;
+                await _context.SaveChangesAsync();
+            }
+            return $"{project.Code}-INV-{stage.InvoiceDocNumber:D4}";
+        }
+
         private async Task<string> GetOrAssignProfitReportDocNumberAsync(Project project)
         {
             if (!project.ProfitReportDocNumber.HasValue)
@@ -480,7 +495,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var pdf = _pdfExport.GenerateEngineerReceipt(record);
-            return File(pdf, "application/pdf", BuildFinanceDocFileName(record.Project, "ERC", (record.ReceiptNumber ?? record.Id).ToString()));
+            return File(pdf, "application/pdf", $"{record.Project.Code}-PV-{(record.ReceiptNumber ?? record.Id):D4}.pdf");
         }
 
         [RequirePermission("Finance.Costs.View")]
@@ -518,7 +533,8 @@ namespace AtharERP_System.Controllers
             }
 
             var combinedPdf = _pdfExport.GenerateEngineerReceiptsCombined(records);
-            return File(combinedPdf, "application/pdf", BuildFinanceDocFileName(records.First().Project, "ERC"));
+            var combinedRefNumber = records.First().ReceiptNumber ?? records.First().Id;
+            return File(combinedPdf, "application/pdf", $"{records.First().Project.Code}-PV-{combinedRefNumber:D4}.pdf");
         }
 
         [RequirePermission("Finance.Costs.View")]
@@ -980,7 +996,8 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
      .OrderByDescending(c => c.CreatedAt)
      .ToListAsync();
 
-            var saleDocNumber = await GetOrAssignInvoiceDocNumberAsync(project);
+            var saleStage = claims.FirstOrDefault()?.ProjectAssignment?.Stage;
+            var saleDocNumber = await GetOrAssignStageInvoiceDocNumberAsync(project, saleStage);
             var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims, saleDocNumber) }, includePercentageColumns: true);
             return File(pdf, "application/pdf", $"{saleDocNumber}.pdf");
         }
@@ -1006,7 +1023,8 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
       .OrderByDescending(c => c.CreatedAt)
       .ToListAsync();
 
-            var claimsDocNumber = await GetOrAssignInvoiceDocNumberAsync(project);
+            var claimsStage = claims.FirstOrDefault()?.ProjectAssignment?.Stage;
+            var claimsDocNumber = await GetOrAssignStageInvoiceDocNumberAsync(project, claimsStage);
             var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims, claimsDocNumber) }, includePercentageColumns: false);
             return File(pdf, "application/pdf", $"{claimsDocNumber}.pdf");
         }
@@ -1147,7 +1165,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
         .ToListAsync();
 
             var pdf = _pdfExport.GeneratePaymentReceipt(payment, previousPayments);
-            return File(pdf, "application/pdf", BuildFinanceDocFileName(payment.FinancialClaim.Project, "RCT", payment.ReceiptNumber.ToString()));
+            return File(pdf, "application/pdf", $"{payment.FinancialClaim.Project.Code}-RV-{payment.ReceiptNumber:D4}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]
