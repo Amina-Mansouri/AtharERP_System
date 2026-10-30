@@ -439,6 +439,22 @@
                     }
                 }
             }
+            var totalsArea = Model.Sum(c => c.Area ?? 0);
+            var totalsValue = Model.Sum(c => c.Value);
+            var totalsReal = Model.Sum(c => c.RealValue);
+            var totalsPaid = Model.Sum(c => c.PaidAmount);
+            var totalsRemaining = Model.Sum(c => c.RemainingAmount);
+            <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
+                <div class="cell" style="grid-column:1/5;">الإجمالي</div>
+                <div class="cell cell-num">@totalsArea.ToString("N2")</div>
+                <div class="cell"></div>
+                <div class="cell cell-num">@totalsValue.ToString("N2")</div>
+                <div class="cell"></div>
+                <div class="cell cell-num">@totalsReal.ToString("N2")</div>
+                <div class="cell cell-num">@totalsPaid.ToString("N2")</div>
+                <div class="cell cell-num">@totalsRemaining.ToString("N2")</div>
+                <div class="cell"></div>
+            </div>
         }
     </div>
 </form>

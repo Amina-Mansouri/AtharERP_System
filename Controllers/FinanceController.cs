@@ -310,6 +310,13 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "صرف مكافأة مهندسة");
                 await _notify.NotifyAsync(record.EngineerId, $"تم صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل", NotificationEventType.EngineerRewardPaid, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
+
+                var payoutProject = await _context.Projects.FindAsync(record.ProjectId);
+                var payoutEngineer = await _context.Users.FindAsync(record.EngineerId);
+                var payoutAssignment = await _context.ProjectAssignments.Include(a => a.Stage).Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == record.ProjectAssignmentId);
+                var payoutStageLabel = payoutAssignment != null && payoutAssignment.Tasks.Any() ? string.Join("، ", payoutAssignment.Tasks.Select(t => t.Title)) : (payoutAssignment?.Stage?.Name ?? "-");
+                var payoutRecipientIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.Costs.Edit");
+                await _notify.NotifyManyAsync(payoutRecipientIds, $"تم صرف مكافأة بقيمة {record.ValueAfterPercentage:N2} د.ل للمهندسة {payoutEngineer?.FullName} عن مشروع {payoutProject?.Code} - {payoutProject?.Name} (المرحلة: {payoutStageLabel})", NotificationEventType.EngineerRewardPaid, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
             }
 
             return RedirectToAction("CostTable", new { projectId });
@@ -335,6 +342,13 @@ namespace AtharERP_System.Controllers
                 await _context.SaveChangesAsync();
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "إلغاء صرف مكافأة مهندسة");
                 await _notify.NotifyAsync(record.EngineerId, $"تم إلغاء صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل وإعادتها إلى حالة غير مصروف", NotificationEventType.EngineerRewardCancelled, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
+
+                var cancelProject = await _context.Projects.FindAsync(record.ProjectId);
+                var cancelEngineer = await _context.Users.FindAsync(record.EngineerId);
+                var cancelAssignment = await _context.ProjectAssignments.Include(a => a.Stage).Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == record.ProjectAssignmentId);
+                var cancelStageLabel = cancelAssignment != null && cancelAssignment.Tasks.Any() ? string.Join("، ", cancelAssignment.Tasks.Select(t => t.Title)) : (cancelAssignment?.Stage?.Name ?? "-");
+                var cancelRecipientIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.Costs.Edit");
+                await _notify.NotifyManyAsync(cancelRecipientIds, $"تم إلغاء صرف مكافأة بقيمة {record.ValueAfterPercentage:N2} د.ل للمهندسة {cancelEngineer?.FullName} عن مشروع {cancelProject?.Code} - {cancelProject?.Name} (المرحلة: {cancelStageLabel})", NotificationEventType.EngineerRewardCancelled, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id, requiresAction: true);
             }
 
             TempData["Success"] = "تم إلغاء الصرف وإعادة الحالة إلى غير مصروف";
@@ -982,11 +996,13 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var claimProject = await _context.Projects.FindAsync(claim.ProjectId);
             var paymentRecipientIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.Claims.Manage");
-  
-            await _notify.NotifyManyAsync(paymentRecipientIds, $"تم تسجيل دفعة بقيمة {amount:N2} د.ل على مطالبة مشروع {claimProject?.Name}", NotificationEventType.ClaimPaymentRecorded, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", entityType: "FinancialClaim", entityId: claim.Id);
+            var paymentAssignment = await _context.ProjectAssignments.Include(a => a.Stage).Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == claim.ProjectAssignmentId);
+            var paymentStageLabel = paymentAssignment != null && paymentAssignment.Tasks.Any() ? string.Join("، ", paymentAssignment.Tasks.Select(t => t.Title)) : (paymentAssignment?.Stage?.Name ?? "-");
+
+            await _notify.NotifyManyAsync(paymentRecipientIds, $"تم تسجيل دفعة بقيمة {amount:N2} د.ل على مطالبة مشروع {claimProject?.Code} - {claimProject?.Name} (المرحلة: {paymentStageLabel})", NotificationEventType.ClaimPaymentRecorded, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", entityType: "FinancialClaim", entityId: claim.Id);
             if (becameFullySettled)
             {
-                await _notify.NotifyManyAsync(paymentRecipientIds, $"تم تحصيل المطالبة بالكامل لمشروع {claimProject?.Name}", NotificationEventType.ClaimFullySettled, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", entityType: "FinancialClaim", entityId: claim.Id);
+                await _notify.NotifyManyAsync(paymentRecipientIds, $"تم تحصيل المطالبة بالكامل لمشروع {claimProject?.Code} - {claimProject?.Name} (المرحلة: {paymentStageLabel})", NotificationEventType.ClaimFullySettled, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", entityType: "FinancialClaim", entityId: claim.Id);
             }
 
             TempData["Success"] = "تم تسجيل الدفعة بنجاح";
@@ -1042,7 +1058,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var deletedPaymentProject = await _context.Projects.FindAsync(claim.ProjectId);
             var deleteRecipientIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.Claims.Manage");
-            await _notify.NotifyManyAsync(deleteRecipientIds, $"تم حذف إيصال دفعة بقيمة {payment.Amount:N2} د.ل وإعادته إلى مطالبة مشروع {deletedPaymentProject?.Name}", NotificationEventType.ClaimPaymentDeleted, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", requiresAction: true, entityType: "FinancialClaim", entityId: claim.Id);
+            var deletedPaymentAssignment = await _context.ProjectAssignments.Include(a => a.Stage).Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == claim.ProjectAssignmentId);
+            var deletedPaymentStageLabel = deletedPaymentAssignment != null && deletedPaymentAssignment.Tasks.Any() ? string.Join("، ", deletedPaymentAssignment.Tasks.Select(t => t.Title)) : (deletedPaymentAssignment?.Stage?.Name ?? "-");
+            await _notify.NotifyManyAsync(deleteRecipientIds, $"تم حذف إيصال دفعة بقيمة {payment.Amount:N2} د.ل وإعادته إلى مطالبة مشروع {deletedPaymentProject?.Code} - {deletedPaymentProject?.Name} (المرحلة: {deletedPaymentStageLabel})", NotificationEventType.ClaimPaymentDeleted, $"/Finance/ClaimPaymentsHistory?claimId={claim.Id}", requiresAction: true, entityType: "FinancialClaim", entityId: claim.Id);
 
             TempData["Success"] = "تم حذف الإيصال وإعادة قيمته إلى المطالبة";
             return RedirectToAction("ClaimPaymentsHistory", new { claimId = claim.Id });

@@ -417,6 +417,8 @@ namespace AtharERP_System.Services
             public decimal TotalTaskCostsAccrued { get; set; }
             public decimal TotalTaskCostsRealized { get; set; }
             public decimal TotalGeneralExpenses { get; set; }
+            public decimal TotalGeneralScopeExpenses { get; set; }
+            public decimal TotalProjectScopeExpenses { get; set; }
             public decimal SiteCosts { get; set; }
             public decimal AccruedNetProfit { get; set; }
             public decimal RealizedNetProfit { get; set; }
@@ -446,6 +448,8 @@ namespace AtharERP_System.Services
             if (dateTo.HasValue) expensesQuery = expensesQuery.Where(e => e.Date <= dateTo.Value);
             var generalExpenseRows = await expensesQuery.OrderByDescending(e => e.Date).ToListAsync();
             var totalGeneralExpenses = generalExpenseRows.Sum(e => e.Amount);
+            var totalGeneralScopeExpenses = generalExpenseRows.Where(e => e.ExpenseCategory.Scope == ExpenseCategoryScope.General).Sum(e => e.Amount);
+            var totalProjectScopeExpenses = generalExpenseRows.Where(e => e.ExpenseCategory.Scope == ExpenseCategoryScope.Project).Sum(e => e.Amount);
 
             var projectExpensesByCategory = generalExpenseRows
                 .GroupBy(e => e.ExpenseCategory.NameAr)
@@ -469,6 +473,8 @@ namespace AtharERP_System.Services
                 TotalTaskCostsAccrued = totalTaskCostsAccrued,
                 TotalTaskCostsRealized = totalTaskCostsRealized,
                 TotalGeneralExpenses = totalGeneralExpenses,
+                TotalGeneralScopeExpenses = totalGeneralScopeExpenses,
+                TotalProjectScopeExpenses = totalProjectScopeExpenses,
                 SiteCosts = siteCosts,
                 AccruedNetProfit = totalSalesAccrued - (totalTaskCostsAccrued + totalGeneralExpenses + siteCosts),
                 RealizedNetProfit = totalSalesRealized - (totalTaskCostsRealized + totalGeneralExpenses + siteCosts)

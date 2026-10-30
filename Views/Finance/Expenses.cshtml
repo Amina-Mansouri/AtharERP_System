@@ -203,6 +203,12 @@
                     </div>
                 </div>
             }
+            <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
+                <div class="cell" style="grid-column:1/5;">الإجمالي</div>
+                <div class="cell cell-num">@Model.Sum(e => e.Amount).ToString("N0")</div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+            </div>
         }
     </div>
 

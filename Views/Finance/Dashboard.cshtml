@@ -136,8 +136,16 @@
         <div style="font-size:11px; color:#8a83a0;">من إجمالي @result.TotalTaskCostsAccrued.ToString("N0")</div>
     </div>
     <div class="athar-card" style="flex:1; min-width:200px;">
-        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">المصروفات العامة + المواقع</div>
-        <div style="font-size:18px; font-weight:700; color:#c94a42;">@((result.TotalGeneralExpenses + result.SiteCosts).ToString("N0"))</div>
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">مصروفات عامة</div>
+        <div style="font-size:18px; font-weight:700; color:#c94a42;">@result.TotalGeneralScopeExpenses.ToString("N0")</div>
+    </div>
+    <div class="athar-card" style="flex:1; min-width:200px;">
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">مصروفات مشروع</div>
+        <div style="font-size:18px; font-weight:700; color:#c94a42;">@result.TotalProjectScopeExpenses.ToString("N0")</div>
+    </div>
+    <div class="athar-card" style="flex:1; min-width:200px;">
+        <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">مصروفات المواقع</div>
+        <div style="font-size:18px; font-weight:700; color:#c94a42;">@result.SiteCosts.ToString("N0")</div>
     </div>
     <div class="athar-card" style="flex:1; min-width:200px; border:2px solid #7b6bd6;">
         <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">الخزينة</div>
@@ -156,15 +164,17 @@
     new Chart(document.getElementById('financeDashboardChart'), {
         type: 'bar',
         data: {
-            labels: ['مبيعات محصَّلة', 'تكاليف مصروفة', 'مصروفات عامة + مواقع', 'الخزينة'],
+            labels: ['مبيعات محصَّلة', 'تكاليف مصروفة', 'مصروفات عامة', 'مصروفات مشروع', 'مصروفات المواقع', 'الخزينة'],
             datasets: [{
                 data: [
-                        @result.TotalSalesRealized.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        @result.TotalTaskCostsRealized.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        @((result.TotalGeneralExpenses + result.SiteCosts).ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                            @result.TotalSalesRealized.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            @result.TotalTaskCostsRealized.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            @result.TotalGeneralScopeExpenses.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            @result.TotalProjectScopeExpenses.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            @result.SiteCosts.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     @treasury.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 ],
-                backgroundColor: ['#2e8b57', '#c94a42', '#e0a040', '#7b6bd6']
+                backgroundColor: ['#2e8b57', '#c94a42', '#e0a040', '#d68f4c', '#9a6fb0', '#7b6bd6']
             }]
         },
         options: {
