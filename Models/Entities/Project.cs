@@ -106,6 +106,15 @@ namespace AtharERP_System.Models.Entities
         [ValidateNever]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
 
+        [Display(Name = "الرقم المرجعي للفاتورة")]
+        public int? InvoiceDocNumber { get; set; }
+
+        [Display(Name = "الرقم المرجعي لتقرير الربح والخسارة")]
+        public int? ProfitReportDocNumber { get; set; }
+
+        [Display(Name = "الرقم المرجعي لطلبات التوريد")]
+        public int? SupplyRequestDocNumber { get; set; }
+
         public virtual ICollection<ProjectStage> Stages { get; set; } = new List<ProjectStage>();
         public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
         public virtual ICollection<ProjectTeamMember> TeamMembers { get; set; } = new List<ProjectTeamMember>();

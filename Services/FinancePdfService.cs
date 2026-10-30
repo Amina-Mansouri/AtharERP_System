@@ -15,7 +15,7 @@ namespace AtharERP_System.Services
             _environment = environment;
         }
 
-        public byte[] GenerateClaimsReport(string title, List<(Project Project, List<FinancialClaim> Claims)> sections, bool includePercentageColumns)
+        public byte[] GenerateClaimsReport(string title, List<(Project Project, List<FinancialClaim> Claims, string DocNumber)> sections, bool includePercentageColumns)
         {
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
@@ -48,13 +48,13 @@ namespace AtharERP_System.Services
                                 {
                                     if (hasLogo)
                                         c.Item().Height(35).Image(logoPath).FitArea();
-                                    c.Item().PaddingTop(4).Text(title).FontSize(13).Bold().FontColor("#221837");
+                                    c.Item().PaddingTop(4).Text(title).FontSize(14).Bold().FontColor("#221837");
                                     c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 });
                                 row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(5).Column(c =>
                                 {
-                                    c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
-                                    c.Item().Text(section.Project.Code).FontSize(12).Bold().FontColor("#221837");
+                                    c.Item().Text("رقم مرجعي").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    c.Item().Text(section.DocNumber).FontSize(10).Bold().FontColor("#221837");
                                     c.Item().PaddingTop(2).Text(t =>
                                     {
                                         t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
@@ -355,7 +355,7 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("إيصال استلام نقدية").FontSize(12).Bold().FontColor("#221837");
+                                c.Item().Text("إيصال قبض").FontSize(14).Bold().FontColor("#221837");
                                 c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
@@ -503,7 +503,7 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("إيصال صرف مكافأة مجمّع").FontSize(12).Bold().FontColor("#221837");
+                                c.Item().Text("إذن صرف").FontSize(14).Bold().FontColor("#221837");
                                 c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
@@ -616,7 +616,7 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().Text("إيصال صرف مكافأة").FontSize(12).Bold().FontColor("#221837");
+                                c.Item().Text("إذن صرف").FontSize(14).Bold().FontColor("#221837");
                                 c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
@@ -801,7 +801,7 @@ namespace AtharERP_System.Services
             }).GeneratePdf();
         }
 
-        public byte[] GenerateProjectInvoice(Project project, List<FinancialClaim> claims)
+        public byte[] GenerateProjectInvoice(Project project, List<FinancialClaim> claims, string docNumber)
         {
             var client = project.Client;
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
@@ -839,8 +839,8 @@ namespace AtharERP_System.Services
                             });
                             row.ConstantItem(100).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
-                                c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(project.Code).FontSize(12).Bold().FontColor("#221837");
+                                c.Item().Text("رقم مرجعي").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(docNumber).FontSize(10).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(2).Text(t =>
                                 {
                                     t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
@@ -938,7 +938,7 @@ namespace AtharERP_System.Services
             }).GeneratePdf();
         }
 
-        public byte[] GenerateProjectProfitReport(Project project, ProjectCalculationService.ProjectNetProfitResult result)
+        public byte[] GenerateProjectProfitReport(Project project, ProjectCalculationService.ProjectNetProfitResult result, string docNumber)
         {
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
@@ -969,13 +969,13 @@ namespace AtharERP_System.Services
                             {
                                 if (hasLogo)
                                     c.Item().Height(35).Image(logoPath).FitArea();
-                                c.Item().PaddingTop(4).Text("تقرير الربح والخسارة").FontSize(13).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(4).Text("تقرير الربح والخسارة").FontSize(14).Bold().FontColor("#221837");
                                 c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(5).Column(c =>
                             {
-                                c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(project.Code).FontSize(12).Bold().FontColor("#221837");
+                                c.Item().Text("رقم مرجعي").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(docNumber).FontSize(10).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(2).Text(t =>
                                 {
                                     t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
@@ -1118,7 +1118,7 @@ namespace AtharERP_System.Services
             }).GeneratePdf();
         }
 
-        public byte[] GenerateSupplyRequestsPdf(List<SiteSupplyRequestItem> items)
+        public byte[] GenerateSupplyRequestsPdf(List<SiteSupplyRequestItem> items, string docNumber)
         {
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
@@ -1138,8 +1138,8 @@ namespace AtharERP_System.Services
                             header.Item().AlignCenter().Height(55).Image(logoPath).FitArea();
                         header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a")
                             .PaddingBottom(6).AlignCenter().Text("طلبات التوريد").FontSize(14).Bold().FontColor("#221837");
+                        header.Item().PaddingTop(4).AlignCenter().Text($"رقم مرجعي: {docNumber}").FontSize(8).FontColor(Colors.Grey.Medium);
                     });
-
                     page.Content().PaddingTop(15).Table(table =>
                     {
                         table.ColumnsDefinition(c =>

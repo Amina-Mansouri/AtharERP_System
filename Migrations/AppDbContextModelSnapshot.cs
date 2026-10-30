@@ -1280,6 +1280,9 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<int?>("InvoiceDocNumber")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1297,6 +1300,9 @@ namespace AtharERP_System.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("ProfitReportDocNumber")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("ProjectCategoryId")
                         .HasColumnType("integer");
 
@@ -1304,6 +1310,9 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SupplyRequestDocNumber")
                         .HasColumnType("integer");
 
                     b.Property<int?>("Type")

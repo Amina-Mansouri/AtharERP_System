@@ -72,6 +72,28 @@ namespace AtharERP_System.Controllers
             return string.IsNullOrEmpty(number) ? $"{baseName}.pdf" : $"{baseName}-{number}.pdf";
         }
 
+        private async Task<string> GetOrAssignInvoiceDocNumberAsync(Project project)
+        {
+            if (!project.InvoiceDocNumber.HasValue)
+            {
+                var next = (await _context.Projects.MaxAsync(p => (int?)p.InvoiceDocNumber) ?? 0) + 1;
+                project.InvoiceDocNumber = next;
+                await _context.SaveChangesAsync();
+            }
+            return $"{project.Code}-INV-{project.InvoiceDocNumber:D4}";
+        }
+
+        private async Task<string> GetOrAssignProfitReportDocNumberAsync(Project project)
+        {
+            if (!project.ProfitReportDocNumber.HasValue)
+            {
+                var next = (await _context.Projects.MaxAsync(p => (int?)p.ProfitReportDocNumber) ?? 0) + 1;
+                project.ProfitReportDocNumber = next;
+                await _context.SaveChangesAsync();
+            }
+            return $"{project.Code}-PNL-{project.ProfitReportDocNumber:D4}";
+        }
+
         // ============================================
         // لوحة المالية — ملخّص شامل لكل شاشات المالية
         // ============================================
@@ -958,8 +980,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
      .OrderByDescending(c => c.CreatedAt)
      .ToListAsync();
 
-            var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims) }, includePercentageColumns: true);
-            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "SAL"));
+            var saleDocNumber = await GetOrAssignInvoiceDocNumberAsync(project);
+            var pdf = _pdfExport.GenerateClaimsReport("جدول البيع النهائي", new() { (project, claims, saleDocNumber) }, includePercentageColumns: true);
+            return File(pdf, "application/pdf", $"{saleDocNumber}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]
@@ -983,8 +1006,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
       .OrderByDescending(c => c.CreatedAt)
       .ToListAsync();
 
-            var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims) }, includePercentageColumns: false);
-            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "CLM"));
+            var claimsDocNumber = await GetOrAssignInvoiceDocNumberAsync(project);
+            var pdf = _pdfExport.GenerateClaimsReport("المطالبة", new() { (project, claims, claimsDocNumber) }, includePercentageColumns: false);
+            return File(pdf, "application/pdf", $"{claimsDocNumber}.pdf");
         }
 
         [RequirePermission("Finance.Claims.Manage")]
@@ -1147,8 +1171,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
                 return RedirectToAction("Claims", new { projectId });
             }
 
-            var pdf = _pdfExport.GenerateProjectInvoice(project, claims);
-            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "INV"));
+            var invoiceDocNumber = await GetOrAssignInvoiceDocNumberAsync(project);
+            var pdf = _pdfExport.GenerateProjectInvoice(project, claims, invoiceDocNumber);
+            return File(pdf, "application/pdf", $"{invoiceDocNumber}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]
@@ -1162,8 +1187,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var result = await _calc.CalculateProjectNetProfitAsync(new List<int> { projectId }, dateFrom, dateTo);
 
-            var pdf = _pdfExport.GenerateProjectProfitReport(project, result);
-            return File(pdf, "application/pdf", BuildFinanceDocFileName(project, "PRF"));
+            var profitDocNumber = await GetOrAssignProfitReportDocNumberAsync(project);
+            var pdf = _pdfExport.GenerateProjectProfitReport(project, result, profitDocNumber);
+            return File(pdf, "application/pdf", $"{profitDocNumber}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]

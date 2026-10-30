@@ -27,6 +27,17 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
+        private async Task<string> GetOrAssignSupplyRequestDocNumberAsync(Project project)
+        {
+            if (!project.SupplyRequestDocNumber.HasValue)
+            {
+                var next = (await _context.Projects.MaxAsync(p => (int?)p.SupplyRequestDocNumber) ?? 0) + 1;
+                project.SupplyRequestDocNumber = next;
+                await _context.SaveChangesAsync();
+            }
+            return $"{project.Code}-SR-{project.SupplyRequestDocNumber:D4}";
+        }
+
         [RequirePermission("Supply.View")]
         public async Task<IActionResult> Index(int siteId, int? materialCategoryId)
         {
@@ -126,8 +137,10 @@ namespace AtharERP_System.Controllers
                     return Forbid();
             }
 
-            var pdf = _pdfExport.GenerateSupplyRequestsPdf(items);
-            return File(pdf, "application/pdf", "طلبات-توريد-مجمّعة.pdf");
+            var srProject = items.First().SiteSupplyRequest.Site.Project;
+            var srDocNumber = await GetOrAssignSupplyRequestDocNumberAsync(srProject);
+            var pdf = _pdfExport.GenerateSupplyRequestsPdf(items, srDocNumber);
+            return File(pdf, "application/pdf", $"{srDocNumber}.pdf");
         }
 
         [RequirePermission("Supply.Create")]
