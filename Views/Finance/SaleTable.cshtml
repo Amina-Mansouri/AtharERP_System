@@ -201,14 +201,15 @@
             }
             else
             {
-                @foreach (var c in Model)
-                {
-            <div class="cell">
-                @if (showProjectSpecificActions)
-                {
-                    <input type="checkbox" name="claimIds" value="@c.Id" form="saleExportForm" />
-                }
-            </div>
+        @foreach (var c in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">
+                    @if (showProjectSpecificActions)
+                    {
+                        <input type="checkbox" name="claimIds" value="@c.Id" form="saleExportForm" />
+                    }
+                </div>
             <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
                     <div class="cell">@(c.Project?.Name ?? "-")</div>
                     <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
