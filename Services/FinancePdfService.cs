@@ -91,6 +91,7 @@ namespace AtharERP_System.Services
                                         c.RelativeColumn(1);
                                         c.RelativeColumn(0.8f);
                                         c.RelativeColumn(0.8f);
+                                        c.RelativeColumn(1);
                                         c.RelativeColumn(1.1f);
                                         c.RelativeColumn(1);
                                         c.RelativeColumn(1.1f);
@@ -104,7 +105,8 @@ namespace AtharERP_System.Services
                                     ClaimsHeaderCell(table, "قيمة البيع");
                                     ClaimsHeaderCell(table, "نسبة 1");
                                     ClaimsHeaderCell(table, "نسبة 2");
-                                    ClaimsHeaderCell(table, "القيمة بعد النسبة");
+                                    ClaimsHeaderCell(table, "قيم النسب");
+                                    ClaimsHeaderCell(table, "قيمة البيع بعد النسب");
                                     ClaimsHeaderCell(table, "نسبة إعادة التصميم");
                                     ClaimsHeaderCell(table, "الإجمالي بعد الزيادة");
                                     ClaimsHeaderCell(table, "المدفوع");
@@ -119,6 +121,7 @@ namespace AtharERP_System.Services
                                         ClaimsDataCell(table, c.Value.ToString("N0"));
                                         ClaimsDataCell(table, c.SaleMarkupPercent1.HasValue ? c.SaleMarkupPercent1.Value.ToString("N1") + "%" : "-");
                                         ClaimsDataCell(table, c.SaleMarkupPercent2.HasValue ? c.SaleMarkupPercent2.Value.ToString("N1") + "%" : "-");
+                                        ClaimsDataCell(table, c.MarkupNetEffect.ToString("+#,0.00;-#,0.00;0"));
                                         ClaimsDataCell(table, c.ValueAfterPercentage.ToString("N0"));
                                         ClaimsDataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
                                         ClaimsDataCell(table, c.RealValue.ToString("N0"));
@@ -130,12 +133,14 @@ namespace AtharERP_System.Services
                                     var totalRealValue = section.Claims.Sum(c => c.RealValue);
                                     var totalPaid = section.Claims.Sum(c => c.PaidAmount);
                                     var totalRemaining = section.Claims.Sum(c => c.RemainingAmount);
+                                    var totalMarkupNetEffect = section.Claims.Sum(c => c.MarkupNetEffect);
                                     ClaimsTotalCell(table, "الإجمالي");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
+                                    ClaimsTotalCell(table, totalMarkupNetEffect.ToString("+#,0.00;-#,0.00;0"));
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, "-");
                                     ClaimsTotalCell(table, totalRealValue.ToString("N0"));

@@ -833,6 +833,12 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var expenses = await query.OrderByDescending(e => e.Date).ToListAsync();
 
+            var markupQuery = _context.FinancialClaims.Where(c => targetProjectIds.Contains(c.ProjectId));
+            if (dateFrom.HasValue) markupQuery = markupQuery.Where(c => c.CreatedAt >= dateFrom.Value);
+            if (dateTo.HasValue) markupQuery = markupQuery.Where(c => c.CreatedAt <= dateTo.Value);
+            var markupClaims = await markupQuery.ToListAsync();
+            ViewBag.SaleMarkupDeductionsTotal = markupClaims.Sum(c => c.MarkupResult1 + c.MarkupResult2);
+
             ViewBag.ExpenseCategories = await _context.ExpenseCategories.Where(c => c.IsActive && c.Scope == ExpenseCategoryScope.Project).OrderBy(c => c.NameAr).ToListAsync();
             ViewBag.Sites = singleProjectId.HasValue
                 ? await _context.Sites.Where(s => s.ProjectId == singleProjectId.Value).OrderBy(s => s.Name).ToListAsync()

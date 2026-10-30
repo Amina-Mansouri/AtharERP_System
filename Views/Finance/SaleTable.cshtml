@@ -155,17 +155,18 @@
                 new Chart(document.getElementById('saleBarChart'), {
                     type: 'bar',
                     data: {
-                        labels: ['قيمة البيع', 'القيمة بعد النسب', 'نسبة إعادة التصميم', 'المساحة', 'المحقق', 'المستحق'],
+                        labels: ['قيمة البيع', 'قيم النسب', 'قيمة البيع بعد النسب', 'نسبة إعادة التصميم', 'المساحة', 'المحقق', 'المستحق'],
                         datasets: [{
                             data: [
-                                                            @Model.Sum(c => c.Value).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                            @Model.Sum(c => c.ValueAfterPercentage).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                            @Model.Sum(c => c.RedesignResult).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                            @Model.Sum(c => c.Area ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                            @Model.Sum(c => c.PaidAmount).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                            @Model.Sum(c => c.RemainingAmount).ToString(System.Globalization.CultureInfo.InvariantCulture)
-                                                        ],
-                            backgroundColor: ['#7b6bd6', '#c9a15a', '#e0a040', '#4a90d9', '#2e8b57', '#c94a42']
+                                                                            @Model.Sum(c => c.Value).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                                            @Model.Sum(c => c.MarkupNetEffect).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                                            @Model.Sum(c => c.ValueAfterPercentage).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                                            @Model.Sum(c => c.RedesignResult).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                                            @Model.Sum(c => c.Area ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                                            @Model.Sum(c => c.PaidAmount).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                                                            @Model.Sum(c => c.RemainingAmount).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                                                                        ],
+                            backgroundColor: ['#7b6bd6', '#9a6fb0', '#c9a15a', '#e0a040', '#4a90d9', '#2e8b57', '#c94a42']
                         }]
                     },
                     options: {
@@ -176,7 +177,7 @@
         </script>
     }
 
-    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 1fr 55px 60px 65px 150px 60px 55px 65px 55px 60px 140px">
+    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 1fr 55px 60px 65px 150px 65px 60px 55px 65px 55px 60px 140px">
             <div class="data-table-head">
         <div class="cell"></div>
         <div class="cell"><span>رقم المشروع</span></div>
@@ -185,8 +186,9 @@
         <div class="cell"><span>مساحة التكليف</span></div>
         <div class="cell"><span>سعر متر البيع</span></div>
         <div class="cell"><span>قيمة البيع</span></div>
-        <div class="cell"><span>نسبة 1 / نسبة 2</span></div>
-            <div class="cell"><span>القيمة بعد النسب</span></div>
+            <div class="cell"><span>نسبة 1 / نسبة 2</span></div>
+            <div class="cell"><span>قيم النسب</span></div>
+            <div class="cell"><span>قيمة البيع بعد النسب</span></div>
         <div class="cell"><span>نسبة إعادة التصميم</span></div>
                 <div class="cell"><span>الإجمالي</span></div>
                 <div class="cell"><span>المحقق</span></div>
@@ -233,8 +235,9 @@
                                 <button type="submit" class="btn-line btn-line-accent" style="font-size:8px; height:16px; padding:0 5px; align-self:flex-start;">حفظ</button>
                             </form>
                         </div>
-                        <div class="cell cell-num">@c.ValueAfterPercentage.ToString("N0")</div>
-                        <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
+                    <div class="cell cell-num" style="color:@(c.MarkupNetEffect < 0 ? "#c94a42" : (c.MarkupNetEffect > 0 ? "#2e8b57" : "inherit"));">@(c.MarkupNetEffect.ToString("+#,0.00;-#,0.00;0"))</div>
+                    <div class="cell cell-num">@c.ValueAfterPercentage.ToString("N0")</div>
+                    <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
                         <div class="cell cell-num">@c.RealValue.ToString("N0")</div>
                         <div class="cell cell-num">@c.PaidAmount.ToString("N0")</div>
                         <div class="cell cell-num">@c.RemainingAmount.ToString("N0")</div>
@@ -250,18 +253,19 @@
                         </div>
                     </div>
                 }
-                <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
-                    <div class="cell" style="grid-column:1/7;">الإجمالي</div>
-                    <div class="cell"></div>
-                    <div class="cell"></div>
-                    <div class="cell cell-num">@Model.Sum(c => c.ValueAfterPercentage).ToString("N0")</div>
-                    <div class="cell"></div>
-                    <div class="cell cell-num">@Model.Sum(c => c.RealValue).ToString("N0")</div>
-                    <div class="cell cell-num">@Model.Sum(c => c.PaidAmount).ToString("N0")</div>
-                    <div class="cell cell-num">@Model.Sum(c => c.RemainingAmount).ToString("N0")</div>
-                    <div class="cell"></div>
-                </div>
-            }
+            <div class="data-table-row" style="font-weight:700; background:var(--sys-bg);">
+                <div class="cell" style="grid-column:1/7;">الإجمالي</div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell cell-num">@Model.Sum(c => c.MarkupNetEffect).ToString("+#,0.00;-#,0.00;0")</div>
+                <div class="cell cell-num">@Model.Sum(c => c.ValueAfterPercentage).ToString("N0")</div>
+                <div class="cell"></div>
+                <div class="cell cell-num">@Model.Sum(c => c.RealValue).ToString("N0")</div>
+                <div class="cell cell-num">@Model.Sum(c => c.PaidAmount).ToString("N0")</div>
+                <div class="cell cell-num">@Model.Sum(c => c.RemainingAmount).ToString("N0")</div>
+                <div class="cell"></div>
+            </div>
+        }
         </div>
     </form>
 

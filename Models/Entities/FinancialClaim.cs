@@ -59,9 +59,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "المدفوع")]
         public decimal PaidAmount { get; set; }
 
-        // القيمة الحقيقية المستحقة/المحصَّلة فعلياً من العميل = قيمة البيع + زيادة إعادة التصميم فقط (بلا تأثير نسبة1/نسبة2 الإعلاميتين)
+        // القيمة الحقيقية المستحقة/المحصَّلة فعلياً من العميل = قيمة البيع بعد خصم نسبة1 ونسبة2 + زيادة إعادة التصميم
         [NotMapped]
-        public decimal RealValue => Value + RedesignResult;
+        public decimal RealValue => ValueAfterPercentage;
 
         [NotMapped]
         [Display(Name = "المتبقي")]
@@ -79,8 +79,13 @@ namespace AtharERP_System.Models.Entities
         public decimal RedesignResult => Value * (RedesignIncreasePercentage ?? 0) / 100;
 
         [NotMapped]
-        [Display(Name = "قيمة البيع بعد النسبة")]
+        [Display(Name = "قيمة البيع بعد النسب")]
         public decimal ValueAfterPercentage => Value - MarkupResult1 - MarkupResult2 + RedesignResult;
+
+        // المبلغ الفعلي الناتج عن نسبة1+نسبة2 بإشارته: موجب = زيادة على القيمة، سالب = نقصان منها
+        [NotMapped]
+        [Display(Name = "قيم النسب")]
+        public decimal MarkupNetEffect => -(MarkupResult1 + MarkupResult2);
 
         [Display(Name = "مرحّلة إلى المالية")]
         public bool IsTransferredToFinance { get; set; }
