@@ -166,10 +166,11 @@
             });
         </script>
     }
+}
 
-    @{
-        var saleMarkupTotal = ViewBag.SaleMarkupDeductionsTotal as decimal? ?? 0;
-    }
+@{
+    var saleMarkupTotal = ViewBag.SaleMarkupDeductionsTotal as decimal? ?? 0;
+}
     @if (saleMarkupTotal != 0)
     {
         <div class="athar-card" style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
