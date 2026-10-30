@@ -11,9 +11,9 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 var builder = WebApplication.CreateBuilder(args);
 
 var fontsFolder = Path.Combine(builder.Environment.WebRootPath, "fonts");
-using (var regularFont = File.OpenRead(Path.Combine(fontsFolder, "NotoSansArabic-Regular.ttf")))
+using (var regularFont = File.OpenRead(Path.Combine(fontsFolder, "Cairo-Regular.ttf")))
     QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("AtharArabic", regularFont);
-using (var boldFont = File.OpenRead(Path.Combine(fontsFolder, "NotoSansArabic-Bold.ttf")))
+using (var boldFont = File.OpenRead(Path.Combine(fontsFolder, "Cairo-Bold.ttf")))
     QuestPDF.Drawing.FontManager.RegisterFontWithCustomName("AtharArabic", boldFont);
 
 // قاعدة البيانات PostgreSQL

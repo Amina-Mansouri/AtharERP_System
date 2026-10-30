@@ -28,7 +28,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(11));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(12));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -37,7 +37,7 @@ namespace AtharERP_System.Services
                             header.Item().AlignCenter().Height(60).Image(logoPath).FitArea();
 
                         header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a")
-                            .PaddingBottom(6).AlignCenter().Text("نموذج مراجعة").FontSize(18).Bold().FontColor("#221837");
+                            .PaddingBottom(6).AlignCenter().Text("نموذج مراجعة").FontSize(14).Bold().FontColor("#221837");
                     });
 
                     page.Content().PaddingTop(15).Column(col =>
@@ -110,7 +110,7 @@ namespace AtharERP_System.Services
                         });
                     });
 
-                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(10).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }

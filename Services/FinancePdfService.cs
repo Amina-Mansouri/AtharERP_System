@@ -21,13 +21,13 @@ namespace AtharERP_System.Services
             var hasLogo = File.Exists(logoPath);
 
             void ClaimsHeaderCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
 
             void ClaimsDataCell(TableDescriptor t, string text) =>
-     t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+     t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
             void ClaimsTotalCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8.5f);
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8);
 
             return Document.Create(container =>
             {
@@ -37,7 +37,7 @@ namespace AtharERP_System.Services
                     {
                         page.Size(PageSizes.A4.Landscape());
                         page.Margin(25);
-                        page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(9));
+                        page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                         page.ContentFromRightToLeft();
 
                         page.Header().Column(header =>
@@ -70,8 +70,8 @@ namespace AtharERP_System.Services
                             header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a");
                             header.Item().PaddingTop(6).Text(t =>
                             {
-                                t.Span("المشروع: ").FontSize(9);
-                                t.Span($"{section.Project.Code} - {section.Project.Name}").FontSize(9).Bold();
+                                t.Span("المشروع: ").FontSize(10);
+                                t.Span($"{section.Project.Code} - {section.Project.Name}").FontSize(10).Bold();
                             });
                         });
 
@@ -211,13 +211,13 @@ namespace AtharERP_System.Services
                             {
                                 row.RelativeItem().Column(c =>
                                 {
-                                    c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                    c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
                                     c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                                 });
                                 row.ConstantItem(20);
                                 row.RelativeItem().Column(c =>
                                 {
-                                    c.Item().AlignCenter().Text("اعتماد المالي").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                    c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                     c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                                 });
                             });
@@ -332,10 +332,10 @@ namespace AtharERP_System.Services
             var stageName = claim.ProjectAssignment?.Stage?.Name ?? "-";
 
             void ReceiptHeaderCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9.5f);
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
 
             void ReceiptDataCell(TableDescriptor t, string text) =>
-                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
             return Document.Create(container =>
             {
@@ -343,7 +343,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(18);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -356,14 +356,14 @@ namespace AtharERP_System.Services
                             row.RelativeItem().Column(c =>
                             {
                                 c.Item().Text("إيصال استلام نقدية").FontSize(12).Bold().FontColor("#221837");
-                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
                                 var receiptCode = $"{project.Code}-{payment.ReceiptNumber:D4}";
-                                c.Item().Text("رقم الإيصال").FontSize(7.5f).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(receiptCode).FontSize(11).Bold().FontColor("#221837");
-                                c.Item().PaddingTop(2).Text($"{payment.PaidAt:yyyy-MM-dd}").FontSize(7.5f);
+                                c.Item().Text("رقم الإيصال").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(receiptCode).FontSize(12).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(2).Text($"{payment.PaidAt:yyyy-MM-dd}").FontSize(8);
                             });
                         });
                         header.Item().PaddingTop(4).BorderBottom(2).BorderColor("#c9a15a");
@@ -375,12 +375,12 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("استلمنا من السيد/ة: ").FontSize(9);
-                            t.Span(client?.Name ?? "-").FontSize(9).Bold();
+                            t.Span("استلمنا من السيد/ة: ").FontSize(10);
+                            t.Span(client?.Name ?? "-").FontSize(10).Bold();
                         });
                         if (!string.IsNullOrWhiteSpace(client?.CompanyName))
                         {
-                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(9);
+                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(10);
                         }
 
                         col.Item().PaddingTop(3).Background("#f6f4fb").Padding(6).Column(c =>
@@ -392,20 +392,20 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("المرحلة: ").FontSize(9);
-                            t.Span(stageName).FontSize(9).Bold();
+                            t.Span("المرحلة: ").FontSize(10);
+                            t.Span(stageName).FontSize(10).Bold();
                         });
                         col.Item().Text(t =>
                         {
-                            t.Span("وذلك عن: ").FontSize(9);
-                            t.Span($"{stageName} — مشروع {project.Code} - {project.Name}").FontSize(9).Bold();
+                            t.Span("وذلك عن: ").FontSize(10);
+                            t.Span($"{stageName} — مشروع {project.Code} - {project.Name}").FontSize(10).Bold();
                         });
 
                         col.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
                         if (previousPayments.Any())
                         {
-                            col.Item().Text("الدفعات السابقة").FontSize(9.5f).Bold().FontColor("#221837");
+                            col.Item().Text("الدفعات السابقة").FontSize(10).Bold().FontColor("#221837");
                             col.Item().Table(table =>
                             {
                                 table.ColumnsDefinition(c =>
@@ -448,18 +448,24 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("توقيع المستلم").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("توقيع المستلم").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
-                            row.ConstantItem(18);
+                            row.ConstantItem(14);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("الختم").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(14);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
                     });
-                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }
@@ -473,11 +479,11 @@ namespace AtharERP_System.Services
             var receiptCode = string.Join("، ", records.Select(r => r.ReceiptNumber?.ToString("D4") ?? r.Id.ToString()));
 
             void ReceiptHeaderCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
             void ReceiptDataCell(TableDescriptor t, string text) =>
-                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
             void ReceiptTotalCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8.5f);
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8);
 
             return Document.Create(container =>
             {
@@ -485,7 +491,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(18);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -498,13 +504,13 @@ namespace AtharERP_System.Services
                             row.RelativeItem().Column(c =>
                             {
                                 c.Item().Text("إيصال صرف مكافأة مجمّع").FontSize(12).Bold().FontColor("#221837");
-                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
-                                c.Item().Text("أرقام الإيصالات").FontSize(7.5f).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(receiptCode).FontSize(9).Bold().FontColor("#221837");
-                                c.Item().PaddingTop(2).Text($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(7.5f);
+                                c.Item().Text("أرقام الإيصالات").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(receiptCode).FontSize(10).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(2).Text($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(8);
                             });
                         });
                         header.Item().PaddingTop(4).BorderBottom(2).BorderColor("#c9a15a");
@@ -516,8 +522,8 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("صرفنا إلى السيد/ة: ").FontSize(9);
-                            t.Span(engineer?.FullName ?? "-").FontSize(9).Bold();
+                            t.Span("صرفنا إلى السيد/ة: ").FontSize(10);
+                            t.Span(engineer?.FullName ?? "-").FontSize(10).Bold();
                         });
 
                         col.Item().PaddingTop(3).Background("#f6f4fb").Padding(6).Column(c =>
@@ -558,19 +564,25 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("توقيع المستلمة").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("توقيع المستلمة").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
-                            row.ConstantItem(18);
+                            row.ConstantItem(14);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("الختم").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(14);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
                     });
 
-                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }
@@ -592,7 +604,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(18);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -605,14 +617,14 @@ namespace AtharERP_System.Services
                             row.RelativeItem().Column(c =>
                             {
                                 c.Item().Text("إيصال صرف مكافأة").FontSize(12).Bold().FontColor("#221837");
-                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
                                 var receiptCode = $"{project.Code}-{record.ReceiptNumber:D4}";
-                                c.Item().Text("رقم الإيصال").FontSize(7.5f).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(receiptCode).FontSize(11).Bold().FontColor("#221837");
-                                c.Item().PaddingTop(2).Text($"{record.ClearedAt:yyyy-MM-dd}").FontSize(7.5f);
+                                c.Item().Text("رقم الإيصال").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(receiptCode).FontSize(12).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(2).Text($"{record.ClearedAt:yyyy-MM-dd}").FontSize(8);
                             });
                         });
                         header.Item().PaddingTop(4).BorderBottom(2).BorderColor("#c9a15a");
@@ -624,8 +636,8 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("صرفنا إلى السيد/ة: ").FontSize(9);
-                            t.Span(engineer?.FullName ?? "-").FontSize(9).Bold();
+                            t.Span("صرفنا إلى السيد/ة: ").FontSize(10);
+                            t.Span(engineer?.FullName ?? "-").FontSize(10).Bold();
                         });
 
                         col.Item().PaddingTop(3).Background("#f6f4fb").Padding(6).Column(c =>
@@ -637,32 +649,38 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("التكليف: ").FontSize(9);
-                            t.Span(stageName).FontSize(9).Bold();
+                            t.Span("التكليف: ").FontSize(10);
+                            t.Span(stageName).FontSize(10).Bold();
                         });
                         col.Item().Text(t =>
                         {
-                            t.Span("وذلك عن: ").FontSize(9);
-                            t.Span($"{stageName} — مشروع {project.Code} - {project.Name}").FontSize(9).Bold();
+                            t.Span("وذلك عن: ").FontSize(10);
+                            t.Span($"{stageName} — مشروع {project.Code} - {project.Name}").FontSize(10).Bold();
                         });
 
                         col.Item().PaddingTop(12).Row(row =>
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("توقيع المستلمة").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("توقيع المستلمة").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
-                            row.ConstantItem(18);
+                            row.ConstantItem(14);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("الختم").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(14);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
                     });
 
-                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }
@@ -675,13 +693,13 @@ namespace AtharERP_System.Services
             var totalNotReceived = records.Where(r => !r.IsCleared).Sum(r => r.ValueAfterPercentage);
 
             void StatementHeaderCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
 
             void StatementDataCell(TableDescriptor t, string text) =>
-                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
             void StatementTotalCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8.5f);
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8);
 
             return Document.Create(container =>
             {
@@ -689,7 +707,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(25);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(9));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -766,13 +784,13 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                             row.ConstantItem(20);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("اعتماد المالي").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
@@ -793,10 +811,10 @@ namespace AtharERP_System.Services
             var totalRemaining = claims.Sum(c => c.RemainingAmount);
 
             void InvoiceHeaderCell(TableDescriptor t, string text) =>
-           t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9.5f);
+           t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
 
             void InvoiceDataCell(TableDescriptor t, string text) =>
-                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+                t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
             return Document.Create(container =>
             {
@@ -804,7 +822,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(18);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8.5f));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -817,21 +835,21 @@ namespace AtharERP_System.Services
                             row.RelativeItem().Column(c =>
                             {
                                 c.Item().Text("فاتورة").FontSize(12).Bold().FontColor("#221837");
-                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                             row.ConstantItem(100).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
-                                c.Item().Text("رقم المشروع").FontSize(7.5f).FontColor(Colors.Grey.Medium);
-                                c.Item().Text(project.Code).FontSize(11).Bold().FontColor("#221837");
+                                c.Item().Text("رقم المشروع").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(project.Code).FontSize(12).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(2).Text(t =>
                                 {
-                                    t.Span("التاريخ : ").FontSize(7.5f).FontColor(Colors.Grey.Medium);
-                                    t.Span($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(7.5f);
+                                    t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(8);
                                 });
                                 c.Item().Text(t =>
                                 {
-                                    t.Span("الموافق : ").FontSize(7.5f).FontColor(Colors.Grey.Medium);
-                                    t.Span(ArabicDayName(DateTime.UtcNow)).FontSize(7.5f);
+                                    t.Span("الموافق : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span(ArabicDayName(DateTime.UtcNow)).FontSize(8);
                                 });
                             });
                         });
@@ -844,17 +862,17 @@ namespace AtharERP_System.Services
 
                         col.Item().Text(t =>
                         {
-                            t.Span("السادة: ").FontSize(9);
-                            t.Span(client?.Name ?? "-").FontSize(9).Bold();
+                            t.Span("السادة: ").FontSize(10);
+                            t.Span(client?.Name ?? "-").FontSize(10).Bold();
                         });
                         if (!string.IsNullOrWhiteSpace(client?.CompanyName))
                         {
-                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(9);
+                            col.Item().Text($"الشركة: {client.CompanyName}").FontSize(10);
                         }
                         col.Item().Text(t =>
                         {
-                            t.Span("المشروع: ").FontSize(9);
-                            t.Span(project.Name).FontSize(9).Bold();
+                            t.Span("المشروع: ").FontSize(10);
+                            t.Span(project.Name).FontSize(10).Bold();
                         });
 
                         col.Item().PaddingTop(3).Table(table =>
@@ -903,19 +921,19 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                             row.ConstantItem(18);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("اعتماد المالي").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
                     });
 
-                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(7).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }
@@ -926,13 +944,13 @@ namespace AtharERP_System.Services
             var hasLogo = File.Exists(logoPath);
 
             void ProfitHeaderCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
 
             void ProfitDataCell(TableDescriptor t, string text) =>
-        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8.5f);
+        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
             void ProfitTotalCell(TableDescriptor t, string text) =>
-                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8.5f);
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(8);
 
             return Document.Create(container =>
             {
@@ -940,7 +958,7 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(25);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(9));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
@@ -973,8 +991,8 @@ namespace AtharERP_System.Services
                         header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a");
                         header.Item().PaddingTop(6).Text(t =>
                         {
-                            t.Span("المشروع: ").FontSize(9);
-                            t.Span($"{project.Code} - {project.Name}").FontSize(9).Bold();
+                            t.Span("المشروع: ").FontSize(10);
+                            t.Span($"{project.Code} - {project.Name}").FontSize(10).Bold();
                         });
                     });
 
@@ -982,7 +1000,7 @@ namespace AtharERP_System.Services
                     {
                         col.Spacing(14);
 
-                        col.Item().Text("جدول البيع النهائي").FontSize(11).Bold().FontColor("#221837");
+                        col.Item().Text("جدول البيع النهائي").FontSize(12).Bold().FontColor("#221837");
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
@@ -1018,7 +1036,7 @@ namespace AtharERP_System.Services
                             ProfitTotalCell(table, "-");
                         });
 
-                        col.Item().Text("جدول التكاليف").FontSize(11).Bold().FontColor("#221837");
+                        col.Item().Text("جدول التكاليف").FontSize(12).Bold().FontColor("#221837");
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
@@ -1042,7 +1060,7 @@ namespace AtharERP_System.Services
                             }
                         });
 
-                        col.Item().Text("جدول المصروفات").FontSize(11).Bold().FontColor("#221837");
+                        col.Item().Text("جدول المصروفات").FontSize(12).Bold().FontColor("#221837");
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
@@ -1083,13 +1101,13 @@ namespace AtharERP_System.Services
                         {
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                             row.ConstantItem(20);
                             row.RelativeItem().Column(c =>
                             {
-                                c.Item().AlignCenter().Text("اعتماد المالي").FontSize(8.5f).FontColor(Colors.Grey.Medium);
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
                             });
                         });
@@ -1119,7 +1137,7 @@ namespace AtharERP_System.Services
                         if (hasLogo)
                             header.Item().AlignCenter().Height(55).Image(logoPath).FitArea();
                         header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a")
-                            .PaddingBottom(6).AlignCenter().Text("طلبات التوريد").FontSize(16).Bold().FontColor("#221837");
+                            .PaddingBottom(6).AlignCenter().Text("طلبات التوريد").FontSize(14).Bold().FontColor("#221837");
                     });
 
                     page.Content().PaddingTop(15).Table(table =>

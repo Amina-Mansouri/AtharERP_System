@@ -32,21 +32,21 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10.5f));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(12));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
                     {
                         if (hasLogo)
                             header.Item().AlignCenter().Height(55).Image(logoPath).FitArea();
-                        header.Item().PaddingTop(6).AlignCenter().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
+                        header.Item().PaddingTop(6).AlignCenter().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(10).FontColor(Colors.Grey.Medium);
                     });
 
                     page.Content().PaddingTop(12).Column(col =>
                     {
                         col.Spacing(10);
 
-                        col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("الطلب").Bold().FontSize(13).FontColor(Colors.White);
+                        col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("الطلب").Bold().FontSize(14).FontColor(Colors.White);
 
                         col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Column(c =>
                         {
@@ -72,10 +72,10 @@ namespace AtharERP_System.Services
                             });
                         });
 
-                        col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("تفاصيل الاستفسار").Bold().FontSize(13).FontColor(Colors.White);
+                        col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("تفاصيل الاستفسار").Bold().FontSize(14).FontColor(Colors.White);
                         col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(90).Text(item.DetailedQuery);
 
-                        col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("المرفقات").Bold().FontSize(13).FontColor(Colors.White);
+                        col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("المرفقات").Bold().FontSize(14).FontColor(Colors.White);
                         col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(30).Column(c =>
                         {
                             if (!item.Attachments.Any())
@@ -97,7 +97,7 @@ namespace AtharERP_System.Services
                             {
                                 row.RelativeItem().Column(c =>
                                 {
-                                    c.Item().Background("#c9a15a").Padding(5).AlignCenter().Text("اعتماد المدير المباشر").Bold().FontSize(11).FontColor(Colors.White);
+                                    c.Item().Background("#c9a15a").Padding(5).AlignCenter().Text("اعتماد المدير المباشر").Bold().FontSize(12).FontColor(Colors.White);
                                     c.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(cc =>
                                     {
                                         cc.Item().Text($"الصفة: {item.ApproverPosition ?? "-"}");
@@ -114,7 +114,7 @@ namespace AtharERP_System.Services
                                 row.ConstantItem(10);
                                 row.RelativeItem().Column(c =>
                                 {
-                                    c.Item().Background("#c9a15a").Padding(5).AlignCenter().Text("مقدم الطلب").Bold().FontSize(11).FontColor(Colors.White);
+                                    c.Item().Background("#c9a15a").Padding(5).AlignCenter().Text("مقدم الطلب").Bold().FontSize(12).FontColor(Colors.White);
                                     c.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(cc =>
                                     {
                                         cc.Item().Text($"الصفة: {item.SubmittedByPosition ?? "-"}");
@@ -134,7 +134,7 @@ namespace AtharERP_System.Services
                         {
                             col.Item().PaddingTop(10).Column(c =>
                             {
-                                c.Item().Background("#c9a15a").Padding(5).AlignCenter().Text("مقدم الطلب").Bold().FontSize(11).FontColor(Colors.White);
+                                c.Item().Background("#c9a15a").Padding(5).AlignCenter().Text("مقدم الطلب").Bold().FontSize(12).FontColor(Colors.White);
                                 c.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(cc =>
                                 {
                                     cc.Item().Text($"الصفة: {item.SubmittedByPosition ?? "-"}");
