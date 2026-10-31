@@ -80,7 +80,7 @@
                 <option value="">-- اختاري التكليف --</option>
                 @foreach (var sa in stageAssignments)
                 {
-                    <option value="@sa.Id">@(string.IsNullOrWhiteSpace(sa.AssignmentType) ? $"تكليف #{sa.Id}" : sa.AssignmentType)</option>
+                        <option value="@sa.Id">@(!string.IsNullOrWhiteSpace(sa.AssignmentType) ? sa.AssignmentType : (sa.Tasks.Any() ? string.Join("، ", sa.Tasks.Select(t => t.Title)) : $"تكليف #{sa.Id}"))</option>
                 }
             </select>
         </div>

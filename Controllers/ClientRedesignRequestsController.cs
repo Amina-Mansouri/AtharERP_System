@@ -43,8 +43,9 @@ namespace AtharERP_System.Controllers
             ViewBag.Stage = stage;
             ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.StageAssignments = await _context.ProjectAssignments
-                .Where(a => a.StageId == stageId && !a.IsRedesign)
-                .ToListAsync();
+      .Include(a => a.Tasks)
+      .Where(a => a.StageId == stageId && !a.IsRedesign)
+      .ToListAsync();
             return View(requests);
         }
 
