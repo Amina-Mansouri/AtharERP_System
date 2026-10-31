@@ -225,322 +225,345 @@
         });
     </script>
 
-    <div class="athar-card" style="margin-bottom:10px;">
-        <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secSales">
-            <span style="font-size:13px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></span>
-            <span>▾</span>
-        </button>
-        <div class="collapse" id="secSales" style="margin-top:10px;">
-            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px")">
-                <div class="data-table-head">
-                    @if (project == null)
-                    {
-                        <div class="cell"><span>المشروع</span></div>
-                    }
-                    <div class="cell"><span>بيان التكليف</span></div>
-                    <div class="cell"><span>التاريخ</span></div>
-                    <div class="cell"><span>قيمة البيع</span></div>
-                    <div class="cell"><span>نسبة إعادة التصميم</span></div>
-                    <div class="cell"><span>الإجمالي</span></div>
-                    <div class="cell"><span>المحقق</span></div>
-                    <div class="cell"><span>المستحق</span></div>
-                    <div class="cell"><span>الحالة</span></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
+        <div>
+            <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:#221837;">مصروفات المشروع</div>
+            <div class="athar-card" style="margin-bottom:10px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secSales">
+                    <span style="font-size:13px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secSales" style="margin-top:10px;">
+                    <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px")">
+                        <div class="data-table-head">
+                            @if (project == null)
+                            {
+                                <div class="cell"><span>المشروع</span></div>
+                            }
+                            <div class="cell"><span>بيان التكليف</span></div>
+                            <div class="cell"><span>التاريخ</span></div>
+                            <div class="cell"><span>قيمة البيع</span></div>
+                            <div class="cell"><span>نسبة إعادة التصميم</span></div>
+                            <div class="cell"><span>الإجمالي</span></div>
+                            <div class="cell"><span>المحقق</span></div>
+                            <div class="cell"><span>المستحق</span></div>
+                            <div class="cell"><span>الحالة</span></div>
+                        </div>
+                        @if (!Model.Claims.Any())
+                        {
+                            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مبيعات ضمن هذه الفلترة</div></div>
+                        }
+                        else
+                        {
+                            @foreach (var c in Model.Claims)
+                            {
+                                <div class="data-table-row row-income">
+                                    @if (project == null)
+                                    {
+                                        <div class="cell">@c.Project?.Name</div>
+                                    }
+                                    <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
+                                    <div class="cell cell-num">@c.CreatedAt.ToString("yyyy-MM-dd")</div>
+                                    <div class="cell cell-num">@c.Value.ToString("N0")</div>
+                                    <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
+                                    <div class="cell cell-num">@c.RealValue.ToString("N0")</div>
+                                    <div class="cell cell-num">@c.PaidAmount.ToString("N0")</div>
+                                    <div class="cell cell-num">@c.RemainingAmount.ToString("N0")</div>
+                                    <div class="cell">
+                                        @if (c.IsClientSettled)
+                                        {
+                                            <span class="tag tag-success">محصَّل @c.ClientSettledAt?.ToString("yyyy-MM-dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="tag tag-warning">غير محصَّل</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
                 </div>
-                @if (!Model.Claims.Any())
-                {
-                    <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مبيعات ضمن هذه الفلترة</div></div>
-                }
-                else
-                {
-                    @foreach (var c in Model.Claims)
-                    {
+            </div>
+
+            <div class="athar-card" style="margin-bottom:10px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secCosts">
+                    <span style="font-size:13px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secCosts" style="margin-top:10px;">
+                    <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px")">
+                        <div class="data-table-head">
+                            @if (project == null)
+                            {
+                                <div class="cell">المشروع</div>
+                            }
+                            <div class="cell">بيان التكليف</div>
+                            <div class="cell">المهندسة</div>
+                            <div class="cell">القيمة</div>
+                            <div class="cell">تقييم الأداء</div>
+                            <div class="cell">استحقاق المهندسة</div>
+                            <div class="cell">الحالة</div>
+                        </div>
+                        @if (!Model.Records.Any())
+                        {
+                            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكاليف ضمن هذه الفلترة</div></div>
+                        }
+                        else
+                        {
+                            @foreach (var r in Model.Records)
+                            {
+                                <div class="data-table-row row-expense">
+                                    @if (project == null)
+                                    {
+                                        <div class="cell">@r.Project?.Name</div>
+                                    }
+                                    <div class="cell">@(r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
+                                    <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
+                                    <div class="cell cell-num">@r.Value.ToString("N0")</div>
+                                    <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
+                                    <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N0")</div>
+                                    <div class="cell">
+                                        @if (r.IsCleared)
+                                        {
+                                            <span class="tag tag-success">مصروف @r.ClearedAt?.ToString("yyyy-MM-dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="tag tag-warning">غير مصروف</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="athar-card" style="margin-bottom:10px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secExp">
+                    <span style="font-size:13px;">مصروفات المشروع: <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secExp" style="margin-top:10px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px">
+                        <div class="data-table-head">
+                            <div class="cell">التصنيف</div>
+                            <div class="cell">المبلغ</div>
+                        </div>
+                        @if (!Model.ProjectExpensesByCategory.Any())
+                        {
+                            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات مشروع ضمن هذه الفلترة</div></div>
+                        }
+                        else
+                        {
+                            @foreach (var cat in Model.ProjectExpensesByCategory)
+                            {
+                                <div class="data-table-row row-expense">
+                                    <div class="cell">@cat.CategoryName</div>
+                                    <div class="cell cell-num">@cat.Amount.ToString("N0")</div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="athar-card" style="margin-bottom:10px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secSite">
+                    <span style="font-size:13px;">تكاليف المواقع: <strong>@Model.SiteCosts.ToString("N0")</strong></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secSite" style="margin-top:10px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px">
+                        <div class="data-table-head">
+                            <div class="cell">المصدر</div>
+                            <div class="cell">المبلغ</div>
+                        </div>
+                        @if (Model.SiteCostBreakdown.MaintenanceCost != 0)
+                        {
+                            <div class="data-table-row row-expense">
+                                <div class="cell">الصيانة</div>
+                                <div class="cell cell-num">@Model.SiteCostBreakdown.MaintenanceCost.ToString("N0")</div>
+                            </div>
+                        }
+                        @if (Model.SiteCostBreakdown.ContractorCost != 0)
+                        {
+                            <div class="data-table-row row-expense">
+                                <div class="cell">أجور المقاولين</div>
+                                <div class="cell cell-num">@Model.SiteCostBreakdown.ContractorCost.ToString("N0")</div>
+                            </div>
+                        }
+                        @foreach (var cat in Model.SiteCostBreakdown.ExpensesByCategory)
+                        {
+                            <div class="data-table-row row-expense">
+                                <div class="cell">@cat.CategoryName</div>
+                                <div class="cell cell-num">@cat.Amount.ToString("N0")</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="athar-card" style="margin-bottom:16px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secTreasury">
+                    <span style="font-size:13px;">الخزينة: <strong style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</strong></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secTreasury" style="margin-top:10px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px">
+                        <div class="data-table-head">
+                            <div class="cell">البند</div>
+                            <div class="cell">الإجمالي</div>
+                            <div class="cell">المنفَّذ</div>
+                            <div class="cell">المتبقي</div>
+                        </div>
                         <div class="data-table-row row-income">
-                            @if (project == null)
-                            {
-                                <div class="cell">@c.Project?.Name</div>
-                            }
-                            <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
-                            <div class="cell cell-num">@c.CreatedAt.ToString("yyyy-MM-dd")</div>
-                            <div class="cell cell-num">@c.Value.ToString("N0")</div>
-                            <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
-                            <div class="cell cell-num">@c.RealValue.ToString("N0")</div>
-                            <div class="cell cell-num">@c.PaidAmount.ToString("N0")</div>
-                            <div class="cell cell-num">@c.RemainingAmount.ToString("N0")</div>
-                            <div class="cell">
-                                @if (c.IsClientSettled)
-                                {
-                                    <span class="tag tag-success">محصَّل @c.ClientSettledAt?.ToString("yyyy-MM-dd")</span>
-                                }
-                                else
-                                {
-                                    <span class="tag tag-warning">غير محصَّل</span>
-                                }
-                            </div>
+                            <div class="cell">+ إجمالي المبيعات</div>
+                            <div class="cell cell-num">@aggregate.TotalSalesAccrued.ToString("N0")</div>
+                            <div class="cell cell-num">@aggregate.TotalSalesRealized.ToString("N0")</div>
+                            <div class="cell cell-num">@((aggregate.TotalSalesAccrued - aggregate.TotalSalesRealized).ToString("N0"))</div>
                         </div>
-                    }
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="athar-card" style="margin-bottom:10px;">
-        <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secCosts">
-            <span style="font-size:13px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></span>
-            <span>▾</span>
-        </button>
-        <div class="collapse" id="secCosts" style="margin-top:10px;">
-            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px")">
-                <div class="data-table-head">
-                    @if (project == null)
-                    {
-                        <div class="cell">المشروع</div>
-                    }
-                    <div class="cell">بيان التكليف</div>
-                    <div class="cell">المهندسة</div>
-                    <div class="cell">القيمة</div>
-                    <div class="cell">تقييم الأداء</div>
-                    <div class="cell">استحقاق المهندسة</div>
-                    <div class="cell">الحالة</div>
-                </div>
-                @if (!Model.Records.Any())
-                {
-                    <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكاليف ضمن هذه الفلترة</div></div>
-                }
-                else
-                {
-                    @foreach (var r in Model.Records)
-                    {
                         <div class="data-table-row row-expense">
-                            @if (project == null)
-                            {
-                                <div class="cell">@r.Project?.Name</div>
-                            }
-                            <div class="cell">@(r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
-                            <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
-                            <div class="cell cell-num">@r.Value.ToString("N0")</div>
-                            <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
-                            <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N0")</div>
-                            <div class="cell">
-                                @if (r.IsCleared)
-                                {
-                                    <span class="tag tag-success">مصروف @r.ClearedAt?.ToString("yyyy-MM-dd")</span>
-                                }
-                                else
-                                {
-                                    <span class="tag tag-warning">غير مصروف</span>
-                                }
-                            </div>
+                            <div class="cell">− تكاليف المهام</div>
+                            <div class="cell cell-num">@aggregate.TotalTaskCostsAccrued.ToString("N0")</div>
+                            <div class="cell cell-num">@aggregate.TotalTaskCostsRealized.ToString("N0")</div>
+                            <div class="cell cell-num">@((aggregate.TotalTaskCostsAccrued - aggregate.TotalTaskCostsRealized).ToString("N0"))</div>
                         </div>
-                    }
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="athar-card" style="margin-bottom:10px;">
-        <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secExp">
-            <span style="font-size:13px;">مصروفات المشروع: <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></span>
-            <span>▾</span>
-        </button>
-        <div class="collapse" id="secExp" style="margin-top:10px;">
-            <div class="data-table profit-table" style="--cols: 1fr 130px">
-                <div class="data-table-head">
-                    <div class="cell">التصنيف</div>
-                    <div class="cell">المبلغ</div>
-                </div>
-                @if (!Model.ProjectExpensesByCategory.Any())
-                {
-                    <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات مشروع ضمن هذه الفلترة</div></div>
-                }
-                else
-                {
-                    @foreach (var cat in Model.ProjectExpensesByCategory)
-                    {
                         <div class="data-table-row row-expense">
-                            <div class="cell">@cat.CategoryName</div>
-                            <div class="cell cell-num">@cat.Amount.ToString("N0")</div>
+                            <div class="cell">− تكاليف المواقع</div>
+                            <div class="cell cell-num">@aggregate.SiteCosts.ToString("N0")</div>
+                            <div class="cell cell-num">@aggregate.SiteCosts.ToString("N0")</div>
+                            <div class="cell cell-num">-</div>
                         </div>
-                    }
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="athar-card" style="margin-bottom:10px;">
-        <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secSite">
-            <span style="font-size:13px;">تكاليف المواقع: <strong>@Model.SiteCosts.ToString("N0")</strong></span>
-            <span>▾</span>
-        </button>
-        <div class="collapse" id="secSite" style="margin-top:10px;">
-            <div class="data-table profit-table" style="--cols: 1fr 130px">
-                <div class="data-table-head">
-                    <div class="cell">المصدر</div>
-                    <div class="cell">المبلغ</div>
+                        <div class="data-table-row row-expense">
+                            <div class="cell">− مصروفات المشروع</div>
+                            <div class="cell cell-num">@aggregate.TotalGeneralExpenses.ToString("N0")</div>
+                            <div class="cell cell-num">@aggregate.TotalGeneralExpenses.ToString("N0")</div>
+                            <div class="cell cell-num">-</div>
+                        </div>
+                        <div class="data-table-row row-total">
+                            <div class="cell">الخزينة =</div>
+                            <div class="cell cell-num"></div>
+                            <div class="cell cell-num" style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</div>
+                            <div class="cell cell-num"></div>
+                        </div>
+                    </div>
                 </div>
-                @if (Model.SiteCostBreakdown.MaintenanceCost != 0)
-                {
-                    <div class="data-table-row row-expense">
-                        <div class="cell">الصيانة</div>
-                        <div class="cell cell-num">@Model.SiteCostBreakdown.MaintenanceCost.ToString("N0")</div>
-                    </div>
-                }
-                @if (Model.SiteCostBreakdown.ContractorCost != 0)
-                {
-                    <div class="data-table-row row-expense">
-                        <div class="cell">أجور المقاولين</div>
-                        <div class="cell cell-num">@Model.SiteCostBreakdown.ContractorCost.ToString("N0")</div>
-                    </div>
-                }
-                @foreach (var cat in Model.SiteCostBreakdown.ExpensesByCategory)
-                {
-                    <div class="data-table-row row-expense">
-                        <div class="cell">@cat.CategoryName</div>
-                        <div class="cell cell-num">@cat.Amount.ToString("N0")</div>
-                    </div>
-                }
             </div>
         </div>
-    </div>
 
-    <div class="athar-card" style="margin-bottom:16px;">
-        <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">الخزينة</div>
-        <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px">
-            <div class="data-table-head">
-                <div class="cell">البند</div>
-                <div class="cell">الإجمالي</div>
-                <div class="cell">المنفَّذ</div>
-                <div class="cell">المتبقي</div>
-            </div>
-            <div class="data-table-row row-income">
-                <div class="cell">+ إجمالي المبيعات</div>
-                <div class="cell cell-num">@aggregate.TotalSalesAccrued.ToString("N0")</div>
-                <div class="cell cell-num">@aggregate.TotalSalesRealized.ToString("N0")</div>
-                <div class="cell cell-num">@((aggregate.TotalSalesAccrued - aggregate.TotalSalesRealized).ToString("N0"))</div>
-            </div>
-            <div class="data-table-row row-expense">
-                <div class="cell">− تكاليف المهام</div>
-                <div class="cell cell-num">@aggregate.TotalTaskCostsAccrued.ToString("N0")</div>
-                <div class="cell cell-num">@aggregate.TotalTaskCostsRealized.ToString("N0")</div>
-                <div class="cell cell-num">@((aggregate.TotalTaskCostsAccrued - aggregate.TotalTaskCostsRealized).ToString("N0"))</div>
-            </div>
-            <div class="data-table-row row-expense">
-                <div class="cell">− تكاليف المواقع</div>
-                <div class="cell cell-num">@aggregate.SiteCosts.ToString("N0")</div>
-                <div class="cell cell-num">@aggregate.SiteCosts.ToString("N0")</div>
-                <div class="cell cell-num">-</div>
-            </div>
-            <div class="data-table-row row-expense">
-                <div class="cell">− مصروفات المشروع</div>
-                <div class="cell cell-num">@aggregate.TotalGeneralExpenses.ToString("N0")</div>
-                <div class="cell cell-num">@aggregate.TotalGeneralExpenses.ToString("N0")</div>
-                <div class="cell cell-num">-</div>
-            </div>
-            <div class="data-table-row row-total">
-                <div class="cell">الخزينة =</div>
-                <div class="cell cell-num"></div>
-                <div class="cell cell-num" style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</div>
-                <div class="cell cell-num"></div>
-            </div>
-        </div>
-    </div>
+        <div>
+            <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:#221837;">المصروفات العامة</div>
+            <div class="athar-card" style="border:2px solid #7b6bd6; margin-bottom:16px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;" data-bs-toggle="collapse" data-bs-target="#secGenExp">
+                    <span style="font-size:13.5px; font-weight:700; color:#221837;">مصروفات عامة: <strong>@generalAdminTotal.ToString("N0")</strong></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secGenExp">
+                    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:12px;">
+                        <input type="hidden" name="categoryId" value="@categoryId" />
+                        <input type="hidden" name="projectId" value="@projectId" />
+                        <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+                        <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+                        <div style="min-width:200px;">
+                            <label class="form-label" style="font-size:11px;">تصنيف المصروف الإداري</label>
+                            <select name="genCategoryId" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">-- الكل --</option>
+                                @foreach (var c in generalAdminCategories)
+                                {
+                                    <option value="@c.Id" selected="@(genCategoryId == c.Id)">@c.NameAr</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size:11px;">من</label>
+                            <input type="date" name="genDateFrom" class="form-control form-control-sm" value="@(genDateFrom?.ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size:11px;">إلى</label>
+                            <input type="date" name="genDateTo" class="form-control form-control-sm" value="@(genDateTo?.ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+                    </form>
 
-    <div class="athar-card" style="border:2px solid #7b6bd6; margin-bottom:16px;">
-        <div style="font-size:13.5px; font-weight:700; margin-bottom:10px; color:#221837;">مصروفات عامة</div>
-        <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:12px;">
-            <input type="hidden" name="categoryId" value="@categoryId" />
-            <input type="hidden" name="projectId" value="@projectId" />
-            <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
-            <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
-            <div style="min-width:200px;">
-                <label class="form-label" style="font-size:11px;">تصنيف المصروف الإداري</label>
-                <select name="genCategoryId" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">-- الكل --</option>
-                    @foreach (var c in generalAdminCategories)
-                    {
-                        <option value="@c.Id" selected="@(genCategoryId == c.Id)">@c.NameAr</option>
-                    }
-                </select>
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">من</label>
-                <input type="date" name="genDateFrom" class="form-control form-control-sm" value="@(genDateFrom?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <div>
-                <label class="form-label" style="font-size:11px;">إلى</label>
-                <input type="date" name="genDateTo" class="form-control form-control-sm" value="@(genDateTo?.ToString("yyyy-MM-dd"))" />
-            </div>
-            <button type="submit" class="btn-line btn-line-accent">تصفية</button>
-        </form>
-
-        <div class="stat-strip stat-strip-text" style="margin-bottom:12px;">
-            <div class="stat-item"><span class="kicker">إجمالي المصروفات الإدارية</span><span class="stat-value">@generalAdminTotal.ToString("N0")</span></div>
-            <div class="stat-item" style="opacity:.5;"><span class="kicker">الرواتب</span><span class="stat-value">قادمة</span></div>
-        </div>
-
-        <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr">
-            <div class="data-table-head">
-                <div class="cell">التاريخ</div>
-                <div class="cell">التصنيف</div>
-                <div class="cell">المبلغ</div>
-                <div class="cell">الوصف</div>
-            </div>
-            @if (!generalAdminExpenses.Any())
-            {
-                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات إدارية ضمن هذه الفلترة</div></div>
-            }
-            else
-            {
-                @foreach (var e in generalAdminExpenses)
-                {
-                    <div class="data-table-row row-expense">
-                        <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
-                        <div class="cell">@e.ExpenseCategory?.NameAr</div>
-                        <div class="cell cell-num">@e.Amount.ToString("N0")</div>
-                        <div class="cell">@(e.Description ?? "-")</div>
+                    <div class="stat-strip stat-strip-text" style="margin-bottom:12px;">
+                        <div class="stat-item"><span class="kicker">إجمالي المصروفات الإدارية</span><span class="stat-value">@generalAdminTotal.ToString("N0")</span></div>
+                        <div class="stat-item" style="opacity:.5;"><span class="kicker">الرواتب</span><span class="stat-value">قادمة</span></div>
                     </div>
-                }
-            }
-        </div>
-    </div>
 
-    <div class="athar-card" style="margin-bottom:16px;">
-        <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">هامش الربح</div>
-        <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px">
-            <div class="data-table-row row-total">
-                <div class="cell">الخزينة</div>
-                <div class="cell cell-num"></div>
-                <div class="cell cell-num" style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</div>
-                <div class="cell cell-num"></div>
+                    <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr">
+                        <div class="data-table-head">
+                            <div class="cell">التاريخ</div>
+                            <div class="cell">التصنيف</div>
+                            <div class="cell">المبلغ</div>
+                            <div class="cell">الوصف</div>
+                        </div>
+                        @if (!generalAdminExpenses.Any())
+                        {
+                            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مصروفات إدارية ضمن هذه الفلترة</div></div>
+                        }
+                        else
+                        {
+                            @foreach (var e in generalAdminExpenses)
+                            {
+                                <div class="data-table-row row-expense">
+                                    <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
+                                    <div class="cell">@e.ExpenseCategory?.NameAr</div>
+                                    <div class="cell cell-num">@e.Amount.ToString("N0")</div>
+                                    <div class="cell">@(e.Description ?? "-")</div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
             </div>
-            <div class="data-table-row row-expense">
-                <div class="cell">− مصروفات عامة</div>
-                <div class="cell cell-num">@generalAdminTotalForMargin.ToString("N0")</div>
-                <div class="cell cell-num">@generalAdminTotalForMargin.ToString("N0")</div>
-                <div class="cell cell-num">-</div>
-            </div>
-            <div class="data-table-row row-expense">
-                <div class="cell">− الرواتب <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
-                <div class="cell cell-num">0</div>
-                <div class="cell cell-num">0</div>
-                <div class="cell cell-num">-</div>
-            </div>
-            <div class="data-table-row row-income">
-                <div class="cell">+ الخصومات <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
-                <div class="cell cell-num">0</div>
-                <div class="cell cell-num">0</div>
-                <div class="cell cell-num">-</div>
-            </div>
-            <div class="data-table-row row-expense">
-                <div class="cell">− المكافآت <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
-                <div class="cell cell-num">0</div>
-                <div class="cell cell-num">0</div>
-                <div class="cell cell-num">-</div>
-            </div>
-            <div class="data-table-row row-total">
-                <div class="cell">= هامش الربح</div>
-                <div class="cell cell-num"></div>
-                <div class="cell cell-num" style="color:@(profitMargin >= 0 ? "#2e8b57" : "#c94a42");">@profitMargin.ToString("N0")</div>
-                <div class="cell cell-num"></div>
+
+            <div class="athar-card" style="margin-bottom:16px;">
+                <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secMargin">
+                    <span style="font-size:13px;">هامش الربح: <strong style="color:@(profitMargin >= 0 ? "#2e8b57" : "#c94a42");">@profitMargin.ToString("N0")</strong></span>
+                    <span>▾</span>
+                </button>
+                <div class="collapse" id="secMargin" style="margin-top:10px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px">
+                        <div class="data-table-row row-total">
+                            <div class="cell">الخزينة</div>
+                            <div class="cell cell-num"></div>
+                            <div class="cell cell-num" style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</div>
+                            <div class="cell cell-num"></div>
+                        </div>
+                        <div class="data-table-row row-expense">
+                            <div class="cell">− مصروفات عامة</div>
+                            <div class="cell cell-num">@generalAdminTotalForMargin.ToString("N0")</div>
+                            <div class="cell cell-num">@generalAdminTotalForMargin.ToString("N0")</div>
+                            <div class="cell cell-num">-</div>
+                        </div>
+                        <div class="data-table-row row-expense">
+                            <div class="cell">− الرواتب <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
+                            <div class="cell cell-num">0</div>
+                            <div class="cell cell-num">0</div>
+                            <div class="cell cell-num">-</div>
+                        </div>
+                        <div class="data-table-row row-income">
+                            <div class="cell">+ الخصومات <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
+                            <div class="cell cell-num">0</div>
+                            <div class="cell cell-num">0</div>
+                            <div class="cell cell-num">-</div>
+                        </div>
+                        <div class="data-table-row row-expense">
+                            <div class="cell">− المكافآت <span class="tag tag-muted" style="font-size:9px;">قادمة</span></div>
+                            <div class="cell cell-num">0</div>
+                            <div class="cell cell-num">0</div>
+                            <div class="cell cell-num">-</div>
+                        </div>
+                        <div class="data-table-row row-total">
+                            <div class="cell">= هامش الربح</div>
+                            <div class="cell cell-num"></div>
+                            <div class="cell cell-num" style="color:@(profitMargin >= 0 ? "#2e8b57" : "#c94a42");">@profitMargin.ToString("N0")</div>
+                            <div class="cell cell-num"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
