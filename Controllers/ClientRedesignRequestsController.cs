@@ -42,6 +42,9 @@ namespace AtharERP_System.Controllers
 
             ViewBag.Stage = stage;
             ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
+            ViewBag.StageAssignments = await _context.ProjectAssignments
+                .Where(a => a.StageId == stageId && !a.IsRedesign)
+                .ToListAsync();
             return View(requests);
         }
 
@@ -51,6 +54,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Create(
             [Bind("ProjectStageId,IncreasePercentage,Notes")] ClientRedesignRequest model,
             string redesignTaskTitle,
+            int? redesignOfAssignmentId,
             List<string>? engineerIds,
             DateTime? plannedStartDate,
             DateTime? plannedEndDate)
@@ -65,6 +69,12 @@ namespace AtharERP_System.Controllers
             if (string.IsNullOrWhiteSpace(redesignTaskTitle))
             {
                 TempData["Error"] = "يجب كتابة عنوان مهمة إعادة التصميم";
+                return RedirectToAction("Index", new { stageId = model.ProjectStageId });
+            }
+
+            if (!redesignOfAssignmentId.HasValue)
+            {
+                TempData["Error"] = "يجب اختيار التكليف الأصلي الذي تخصّه إعادة التصميم";
                 return RedirectToAction("Index", new { stageId = model.ProjectStageId });
             }
 
@@ -93,6 +103,7 @@ namespace AtharERP_System.Controllers
                 StageId = stage.Id,
                 AssignmentType = $"إعادة تصميم: {redesignTaskTitle}",
                 IsRedesign = true,
+                RedesignOfAssignmentId = redesignOfAssignmentId,
                 Status = AssignmentStatus.InProgress,
                 PlannedStartDate = plannedStartDate,
                 PlannedEndDate = plannedEndDate,

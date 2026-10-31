@@ -304,25 +304,6 @@ namespace AtharERP_System.Controllers
 
             var records = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
-            var allProjectTasks = await _context.ProjectTasks
-                .Include(t => t.Stage)
-                .Include(t => t.Todos).ThenInclude(td => td.DesignProposals)
-                .Where(t => targetProjectIds.Contains(t.ProjectId))
-                .ToListAsync();
-
-            decimal EngineerProjectContribution(string engineerId)
-            {
-                var engineerTasks = allProjectTasks
-                    .Where(t => t.Todos.Any(td => td.DesignProposals.Any(dp => dp.PreparedById == engineerId)));
-
-                return engineerTasks.Sum(t => t.Weight * (t.Stage?.Weight ?? 0) / 100);
-            }
-
-            ViewBag.EngineerContributions = records
-                .Select(r => r.EngineerId)
-                .Distinct()
-                .ToDictionary(id => id, id => EngineerProjectContribution(id));
-
             return View(records);
         }
 

@@ -443,16 +443,21 @@ List<int>? taskIds)
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var assignment = await _context.ProjectAssignments.FindAsync(id);
+            var assignment = await _context.ProjectAssignments
+                .Include(a => a.FinancialRecords)
+                .Include(a => a.FinancialClaims)
+                .FirstOrDefaultAsync(a => a.Id == id);
             if (assignment == null)
                 return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, assignment.ProjectId))
                 return Forbid();
 
-            if (assignment.IsTransferredToFinance)
+            var hasRealMoneyMovement = assignment.FinancialRecords.Any(r => r.IsCleared)
+                || assignment.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0);
+            if (hasRealMoneyMovement)
             {
-                TempData["Error"] = "لا يمكن حذف تكليف تم ترحيله للمالية بالفعل";
+                TempData["Error"] = "لا يمكن حذف هذا التكليف — توجد عليه حركة مالية فعلية (مكافأة مصروفة أو مبلغ محصَّل من العميل)";
                 return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
             }
 
@@ -474,6 +479,9 @@ List<int>? taskIds)
               || (n.EntityType == "DesignProposal" && n.EntityId.HasValue && proposalIds.Contains(n.EntityId.Value)))
      .ToListAsync();
             _context.Notifications.RemoveRange(relatedNotifications);
+
+            _context.FinancialRecords.RemoveRange(assignment.FinancialRecords);
+            _context.FinancialClaims.RemoveRange(assignment.FinancialClaims);
 
             _context.ProjectAssignments.Remove(assignment);
             await _context.SaveChangesAsync();

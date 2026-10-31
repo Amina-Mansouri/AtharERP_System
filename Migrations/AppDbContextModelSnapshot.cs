@@ -1376,6 +1376,9 @@ namespace AtharERP_System.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("RedesignOfAssignmentId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("SalePricePerMeter")
                         .HasColumnType("decimal(18,2)");
 
@@ -1391,6 +1394,8 @@ namespace AtharERP_System.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("RedesignOfAssignmentId");
 
                     b.HasIndex("StageId");
 
@@ -3253,12 +3258,18 @@ namespace AtharERP_System.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectAssignment", "RedesignOfAssignment")
+                        .WithMany()
+                        .HasForeignKey("RedesignOfAssignmentId");
+
                     b.HasOne("AtharERP_System.Models.Entities.ProjectStage", "Stage")
                         .WithMany("Assignments")
                         .HasForeignKey("StageId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Project");
+
+                    b.Navigation("RedesignOfAssignment");
 
                     b.Navigation("Stage");
                 });

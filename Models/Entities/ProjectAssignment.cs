@@ -52,6 +52,12 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "تكليف إعادة تصميم")]
         public bool IsRedesign { get; set; }
 
+        [Display(Name = "التكليف الأصلي (لإعادة التصميم)")]
+        public int? RedesignOfAssignmentId { get; set; }
+
+        [ForeignKey("RedesignOfAssignmentId")]
+        public virtual ProjectAssignment? RedesignOfAssignment { get; set; }
+
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ البداية")]
         public DateTime? PlannedStartDate { get; set; }

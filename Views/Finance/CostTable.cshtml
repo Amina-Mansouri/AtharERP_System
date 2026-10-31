@@ -12,7 +12,6 @@
     var project = ViewBag.Project as Project;
     var dateFrom = ViewBag.DateFrom as DateTime?;
     var dateTo = ViewBag.DateTo as DateTime?;
-    var contributions = ViewBag.EngineerContributions as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
     var engineerId = ViewBag.EngineerId as string;
     var engineerOptions = ViewBag.Engineers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     ViewData["Title"] = "جدول التكاليف";
@@ -222,7 +221,7 @@
                 @foreach (var r in Model)
                 {
                     var valueAfter = r.ValueAfterPercentage;
-                    var engineerContribution = contributions.TryGetValue(r.EngineerId, out var c) ? c : 0;
+                var engineerContribution = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Sum(t => t.Weight * (r.ProjectAssignment.Stage?.Weight ?? 0) / 100) : 0;
                     <div class="data-table-row">
                         <div class="cell">
                             @if (!string.IsNullOrWhiteSpace(engineerId))

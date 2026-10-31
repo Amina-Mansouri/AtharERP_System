@@ -53,9 +53,11 @@
     };
 
     var allAssignments = Model.Stages
-        .SelectMany(s => s.Assignments.Select(a => new { Stage = s, Assignment = a }))
-        .OrderByDescending(x => x.Assignment.CreatedAt)
-        .ToList();
+     .SelectMany(s => s.Assignments.Select(a => new { Stage = s, Assignment = a }))
+     .OrderBy(x => x.Assignment.RedesignOfAssignmentId ?? x.Assignment.Id)
+     .ThenBy(x => x.Assignment.IsRedesign)
+     .ThenByDescending(x => x.Assignment.CreatedAt)
+     .ToList();
 }
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
@@ -844,10 +846,21 @@ else
                         @foreach (var item in allAssignments)
                         {
                             var a = item.Assignment;
-                                                       <div class="data-table-row" data-stage="@item.Stage.Id">
+                            var isNestedRedesign = a.IsRedesign && a.RedesignOfAssignmentId.HasValue;
+                            var redesignRowClass = isNestedRedesign ? $"redesign-child-of-{a.RedesignOfAssignmentId}" : "";
+                            var hasRedesignChildren = allAssignments.Any(x => x.Assignment.RedesignOfAssignmentId == a.Id);
+                            <div class="data-table-row @redesignRowClass" data-stage="@item.Stage.Id" style="@(isNestedRedesign ? "display:none; background:#faf9fd;" : "")">
                                 <div class="cell">
-                                                                      <div style="display:flex; align-items:center; gap:5px;">
+                                    <div style="display:flex; align-items:center; gap:5px;">
                                         <span>@item.Stage.Name</span>
+                                        @if (a.IsRedesign)
+                                        {
+                                            <span class="tag tag-accent" style="font-size:9px;">🔁 إعادة تصميم</span>
+                                        }
+                                        @if (hasRedesignChildren)
+                                        {
+                                            <span id="redesignArrow-@a.Id" onclick="toggleRedesignChildren(@a.Id)" style="cursor:pointer; font-size:11px; color:#7b6bd6;" title="عرض إعادات التصميم">▸</span>
+                                        }
                                         @if (a.Tasks.Any() || !string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent)
                                         {
                                             <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="عرض التفاصيل">▾</span>
@@ -956,7 +969,10 @@ else
                                                 </form>
                                             }
                                         }
-                                        <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟');">
+                                    }
+                                    @if (canManageAssignments)
+                                    {
+                                        <form method="post" asp-controller="ProjectAssignments" asp-action="Delete" asp-route-id="@a.Id" onsubmit="return confirm('حذف هذا التكليف؟ لا يمكن التراجع.');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-line" style="height:22px; padding:0 8px; font-size:10px; color:#c94a42;">حذف</button>
                                         </form>
@@ -1014,11 +1030,15 @@ else
                             <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
                                 <div>
                                     <label style="font-size:10.5px; color:#8a83a0;">تاريخ بداية التكليف</label>
-                                    <input type="date" name="PlannedStartDate" required  style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                    <input type="date" name="PlannedStartDate" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                    @if (Model.PlannedStartDate.HasValue || Model.PlannedEndDate.HasValue)
+                                    {
+                                        <div style="font-size:9.5px; color:#8a83a0; margin-top:2px;">نطاق المشروع: @(Model.PlannedStartDate?.ToString("yyyy-MM-dd") ?? "-") إلى @(Model.PlannedEndDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                                    }
                                 </div>
                                 <div>
                                     <label style="font-size:10.5px; color:#8a83a0;">تاريخ نهاية التكليف</label>
-                                    <input type="date" name="PlannedEndDate" required  style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
+                                    <input type="date" name="PlannedEndDate" required style="width:100%; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:11.5px;" />
                                 </div>
                             </div>
                             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
@@ -1562,7 +1582,13 @@ else
                 });
             });
         });
-
+        function toggleRedesignChildren(assignmentId) {
+            document.querySelectorAll('.redesign-child-of-' + assignmentId).forEach(function (row) {
+                row.style.display = row.style.display === 'none' ? '' : 'none';
+            });
+            var arrow = document.getElementById('redesignArrow-' + assignmentId);
+            if (arrow) arrow.textContent = arrow.textContent.trim() === '▸' ? '▾' : '▸';
+        }
         function filterAssignmentsByStage() {
             var val = document.getElementById('stageFilter').value;
             document.querySelectorAll('[data-stage]').forEach(function (row) {
