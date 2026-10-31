@@ -233,8 +233,8 @@
                     <span style="font-size:13px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></span>
                     <span>▾</span>
                 </button>
-                <div class="collapse" id="secSales" style="margin-top:10px;">
-                    <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px")">
+                <div class="collapse" id="secSales" style="margin-top:10px; overflow-x:auto;">
+                    <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px"); min-width:700px;">
                         <div class="data-table-head">
                             @if (project == null)
                             {
@@ -291,8 +291,8 @@
                     <span style="font-size:13px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></span>
                     <span>▾</span>
                 </button>
-                <div class="collapse" id="secCosts" style="margin-top:10px;">
-                    <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px")">
+                <div class="collapse" id="secCosts" style="margin-top:10px; overflow-x:auto;">
+                    <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px"); min-width:600px;">
                         <div class="data-table-head">
                             @if (project == null)
                             {
@@ -345,8 +345,8 @@
                     <span style="font-size:13px;">مصروفات المشروع: <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></span>
                     <span>▾</span>
                 </button>
-                <div class="collapse" id="secExp" style="margin-top:10px;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px">
+                <div class="collapse" id="secExp" style="margin-top:10px; overflow-x:auto;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:280px;">
                         <div class="data-table-head">
                             <div class="cell">التصنيف</div>
                             <div class="cell">المبلغ</div>
@@ -374,8 +374,8 @@
                     <span style="font-size:13px;">تكاليف المواقع: <strong>@Model.SiteCosts.ToString("N0")</strong></span>
                     <span>▾</span>
                 </button>
-                <div class="collapse" id="secSite" style="margin-top:10px;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px">
+                <div class="collapse" id="secSite" style="margin-top:10px; overflow-x:auto;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:280px;">
                         <div class="data-table-head">
                             <div class="cell">المصدر</div>
                             <div class="cell">المبلغ</div>
@@ -410,8 +410,8 @@
                     <span style="font-size:13px;">الخزينة: <strong style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</strong></span>
                     <span>▾</span>
                 </button>
-                <div class="collapse" id="secTreasury" style="margin-top:10px;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px">
+                <div class="collapse" id="secTreasury" style="margin-top:10px; overflow-x:auto;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:480px;">
                         <div class="data-table-head">
                             <div class="cell">البند</div>
                             <div class="cell">الإجمالي</div>
@@ -492,7 +492,7 @@
                         <div class="stat-item" style="opacity:.5;"><span class="kicker">الرواتب</span><span class="stat-value">قادمة</span></div>
                     </div>
 
-                    <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr">
+                    <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr; min-width:450px;">
                         <div class="data-table-head">
                             <div class="cell">التاريخ</div>
                             <div class="cell">التصنيف</div>
@@ -524,8 +524,8 @@
                     <span style="font-size:13px;">هامش الربح: <strong style="color:@(profitMargin >= 0 ? "#2e8b57" : "#c94a42");">@profitMargin.ToString("N0")</strong></span>
                     <span>▾</span>
                 </button>
-                <div class="collapse" id="secMargin" style="margin-top:10px;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px">
+                <div class="collapse" id="secMargin" style="margin-top:10px; overflow-x:auto;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:480px;">
                         <div class="data-table-row row-total">
                             <div class="cell">الخزينة</div>
                             <div class="cell cell-num"></div>
