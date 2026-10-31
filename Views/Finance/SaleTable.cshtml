@@ -102,6 +102,16 @@
     function toggleProjectsDropdown(e) {
         toggleDropdownPanel(e, 'projectsDropdownPanel');
     }
+    function toggleTaskDesc(el) {
+        var expanded = el.getAttribute('data-expanded') === 'true';
+        if (expanded) {
+            el.innerHTML = el.getAttribute('data-short') + '... <span class="task-desc-arrow">▸</span>';
+            el.setAttribute('data-expanded', 'false');
+        } else {
+            el.innerHTML = el.getAttribute('data-full') + ' <span class="task-desc-arrow">▾</span>';
+            el.setAttribute('data-expanded', 'true');
+        }
+    }
     document.addEventListener('click', function (e) {
         document.querySelectorAll('.athar-checkbox-dropdown-panel').forEach(function (panel) {
             if (!panel.hidden && !panel.contains(e.target)) {
@@ -149,22 +159,23 @@
                 <canvas id="saleBarChart" height="180"></canvas>
             </div>
         </div>
+        @{
+            var sLabels = new[] { "قيمة البيع", "قيم النسب", "قيمة البيع بعد النسب", "نسبة إعادة التصميم", "المساحة", "المحقق", "المستحق" };
+            var sValues = new[] { Model.Sum(c => c.Value), Model.Sum(c => c.MarkupNetEffect), Model.Sum(c => c.ValueAfterPercentage), Model.Sum(c => c.RedesignResult), Model.Sum(c => c.Area ?? 0), Model.Sum(c => c.PaidAmount), Model.Sum(c => c.RemainingAmount) };
+            var sTickLabels = new object[sLabels.Length];
+            for (int i = 0; i < sLabels.Length; i++)
+            {
+                sTickLabels[i] = new[] { sLabels[i], sValues[i].ToString("N0") };
+            }
+        }
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
         <script>
                 new Chart(document.getElementById('saleBarChart'), {
                     type: 'bar',
                     data: {
-                        labels: ['قيمة البيع', 'قيم النسب', 'قيمة البيع بعد النسب', 'نسبة إعادة التصميم', 'المساحة', 'المحقق', 'المستحق'],
+                        labels: @Json.Serialize(sTickLabels),
                         datasets: [{
-                            data: [
-                                                                            @Model.Sum(c => c.Value).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                                            @Model.Sum(c => c.MarkupNetEffect).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                                            @Model.Sum(c => c.ValueAfterPercentage).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                                            @Model.Sum(c => c.RedesignResult).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                                            @Model.Sum(c => c.Area ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                                            @Model.Sum(c => c.PaidAmount).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                                                                            @Model.Sum(c => c.RemainingAmount).ToString(System.Globalization.CultureInfo.InvariantCulture)
-                                                                        ],
+                            data: @Json.Serialize(sValues),
                             backgroundColor: ['#7b6bd6', '#9a6fb0', '#c9a15a', '#e0a040', '#4a90d9', '#2e8b57', '#c94a42']
                         }]
                     },
@@ -212,7 +223,19 @@
                 </div>
             <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
                     <div class="cell">@(c.Project?.Name ?? "-")</div>
-                    <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
+                <div class="cell">
+                    @{
+                        var cTaskTitles = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
+                    }
+                    @if (cTaskTitles.Any())
+                    {
+                        <span class="task-desc-toggle" onclick="toggleTaskDesc(this)" data-full="@string.Join("، ", cTaskTitles)" data-short="@cTaskTitles[0]" data-expanded="false" style="cursor:pointer;">@cTaskTitles[0]... <span class="task-desc-arrow">▸</span></span>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </div>
                         <div class="cell cell-num">@(c.Area?.ToString("N1") ?? "-")</div>
                         <div class="cell cell-num">@(c.SalePricePerMeter?.ToString("N0") ?? "-")</div>
                         <div class="cell cell-num">@c.Value.ToString("N0")</div>

@@ -102,6 +102,16 @@
     function toggleProjectsDropdown(e) {
         toggleDropdownPanel(e, 'projectsDropdownPanel');
     }
+    function toggleTaskDesc(el) {
+        var expanded = el.getAttribute('data-expanded') === 'true';
+        if (expanded) {
+            el.innerHTML = el.getAttribute('data-short') + '... <span class="task-desc-arrow">▸</span>';
+            el.setAttribute('data-expanded', 'false');
+        } else {
+            el.innerHTML = el.getAttribute('data-full') + ' <span class="task-desc-arrow">▾</span>';
+            el.setAttribute('data-expanded', 'true');
+        }
+    }
     document.addEventListener('click', function (e) {
         document.querySelectorAll('.athar-checkbox-dropdown-panel').forEach(function (panel) {
             if (!panel.hidden && !panel.contains(e.target)) {
@@ -411,6 +421,19 @@
                             </div>
                             <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
                             <div class="cell" style="padding-right:14px; color:#8a83a0; font-size:11px; font-weight:400;">
+                                @{
+                                    var cTaskTitles = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
+                                }
+                                @if (cTaskTitles.Any())
+                                {
+                                    <span>↳ </span>
+                                    <span class="task-desc-toggle" onclick="toggleTaskDesc(this)" data-full="@string.Join("، ", cTaskTitles)" data-short="@cTaskTitles[0]" data-expanded="false" style="cursor:pointer;">@cTaskTitles[0]... <span class="task-desc-arrow">▸</span></span>
+                                }
+                                else
+                                {
+                                    <span>↳ تكليف #@c.Id</span>
+                                }
+                            </div>
                                 ↳ @(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "تكليف #" + c.Id)
                             </div>
                             <div class="cell" style="font-size:11px; font-weight:400;"></div>

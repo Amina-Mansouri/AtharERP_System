@@ -114,6 +114,16 @@
     function toggleProjectsDropdown(e) {
         toggleDropdownPanel(e, 'projectsDropdownPanel');
     }
+    function toggleTaskDesc(el) {
+        var expanded = el.getAttribute('data-expanded') === 'true';
+        if (expanded) {
+            el.innerHTML = el.getAttribute('data-short') + '... <span class="task-desc-arrow">▸</span>';
+            el.setAttribute('data-expanded', 'false');
+        } else {
+            el.innerHTML = el.getAttribute('data-full') + ' <span class="task-desc-arrow">▾</span>';
+            el.setAttribute('data-expanded', 'true');
+        }
+    }
     document.addEventListener('click', function (e) {
         document.querySelectorAll('.athar-checkbox-dropdown-panel').forEach(function (panel) {
             if (!panel.hidden && !panel.contains(e.target)) {
@@ -231,7 +241,19 @@
                         </div>
                         <div class="cell cell-num">@(r.Project?.Code ?? "-")</div>
                         <div class="cell">@(r.Project?.Name ?? "-")</div>
-                    <div class="cell">@(r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
+                    <div class="cell">
+                        @{
+                            var rTaskTitles = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
+                        }
+                        @if (rTaskTitles.Any())
+                        {
+                            <span class="task-desc-toggle" onclick="toggleTaskDesc(this)" data-full="@string.Join("، ", rTaskTitles)" data-short="@rTaskTitles[0]" data-expanded="false" style="cursor:pointer;">@rTaskTitles[0]... <span class="task-desc-arrow">▸</span></span>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </div>
                         <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
                         <div class="cell cell-num">@(r.Area?.ToString("N1") ?? "-")</div>
                         <div class="cell cell-num">@(r.PricePerMeter?.ToString("N0") ?? "-")</div>
