@@ -465,7 +465,7 @@ body {
     }
 
 @media print {
-    .athar-navbar, .athar-footer {
+    .app-topbar, .app-sidebar, .app-subbar {
         display: none !important;
     }
 

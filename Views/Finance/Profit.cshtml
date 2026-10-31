@@ -274,18 +274,15 @@
         <button type="button" class="btn-line btn-line-accent" onclick="window.print()">🖨 طباعة القسم المعروض</button>
     </div>
 
-    <style>
+      <style>
         @@media print {
-            .no-print {
-                display: none !important;
-            }
-
-            .profit-section-detail {
-                box-shadow: none !important;
-                border: none !important;
-            }
+            @@page { size: landscape; }
+            .no-print { display: none !important; }
+            .profit-section-detail { box-shadow: none !important; border: none !important; }
+            .profit-section-detail .cell { font-size: 10px; padding: 5px 6px; }
         }
     </style>
+
     <div id="profitDetail-sales" class="profit-section-detail athar-card" style="margin-bottom:16px;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></div>
         <div>
