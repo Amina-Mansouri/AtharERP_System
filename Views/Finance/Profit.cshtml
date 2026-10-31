@@ -36,7 +36,7 @@
     }
 </div>
 
-<div class="athar-card" style="margin-bottom:12px;">
+<div class="athar-card no-print" style="margin-bottom:12px;">
     <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">ربح/خسارة مشروع</div>
     <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
         <div style="min-width:180px;">
@@ -169,7 +169,7 @@
         </div>
     </div>
 
-    <div class="athar-card" style="margin-bottom:16px;">
+    <div class="athar-card no-print" style="margin-bottom:16px;">
         <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">مسار تحوّل المبيعات إلى هامش الربح</div>
         <canvas id="profitWaterfall" height="140"></canvas>
     </div>
@@ -237,7 +237,7 @@
                 border: 2px solid #7b6bd6;
             }
     </style>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:16px;">
+    <div class="no-print" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:16px;">
         <div id="profitCard-sales" class="athar-card profit-card profit-card-active" onclick="showProfitSection('sales')">
             <div style="font-size:11.5px; color:#8a83a0; margin-bottom:6px;">المبيعات</div>
             <div style="font-size:16px; font-weight:700;">@Model.TotalSalesAccrued.ToString("N0")</div>
@@ -270,10 +270,27 @@
         </div>
     </div>
 
+    <div class="no-print" style="margin-bottom:12px;">
+        <button type="button" class="btn-line btn-line-accent" onclick="window.print()">🖨 طباعة القسم المعروض</button>
+    </div>
+
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .profit-section-detail {
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+    </style>
+
     <div id="profitDetail-sales" class="profit-section-detail athar-card" style="margin-bottom:16px;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></div>
-        <div style="overflow-x:auto;">
-            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px"); min-width:1050px;">
+        <div>
+            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px");">
                 <div class="data-table-head">
                     @if (project == null)
                     {
@@ -328,7 +345,7 @@
     <div id="profitDetail-costs" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></div>
         <div style="overflow-x:auto;">
-            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px"); min-width:900px;">
+            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px");">
                 <div class="data-table-head">
                     @if (project == null)
                     {
@@ -379,7 +396,7 @@
     <div id="profitDetail-expenses" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">مصروفات المشروع: <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></div>
         <div style="overflow-x:auto;">
-            <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:420px;">
+            <div class="data-table profit-table" style="--cols: 1fr 130px;">
                 <div class="data-table-head">
                     <div class="cell">التصنيف</div>
                     <div class="cell">المبلغ</div>
@@ -438,7 +455,7 @@
     <div id="profitDetail-treasury" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">الخزينة: <strong style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</strong></div>
         <div style="overflow-x:auto;">
-            <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:650px;">
+            <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px;">
                 <div class="data-table-head">
                     <div class="cell">البند</div>
                     <div class="cell">الإجمالي</div>
@@ -513,7 +530,7 @@
         </div>
 
         <div style="overflow-x:auto;">
-            <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr; min-width:650px;">
+            <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr;">
                 <div class="data-table-head">
                     <div class="cell">التاريخ</div>
                     <div class="cell">التصنيف</div>
