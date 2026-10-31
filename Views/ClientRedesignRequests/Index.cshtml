@@ -54,7 +54,13 @@
     var stageAssignments = ViewBag.StageAssignments as List<ProjectAssignment> ?? new List<ProjectAssignment>();
 }
 <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:12px 16px; margin-top:12px;">
-    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تسجيل طلب إعادة تصميم جديد + إنشاء تكليفه</div>
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تكليف إعادة تصميم جديد</div>
+    @if (!stageAssignments.Any())
+    {
+        <div class="alert alert-warning" style="margin:0;">لا توجد تكليفات في هذه المرحلة بعد — يجب إنشاء تكليف أصلي أولاً قبل إمكانية تسجيل إعادة تصميم له.</div>
+    }
+    else
+    {
     <form method="post" asp-action="Create" style="display:grid; gap:8px;">
         @Html.AntiForgeryToken()
         <input type="hidden" name="ProjectStageId" value="@stage?.Id" />
@@ -101,6 +107,7 @@
                 <input type="date" name="plannedEndDate" class="form-control form-control-sm" required />
             </div>
         </div>
-        <button type="submit" class="btn-line btn-line-accent">+ تسجيل الطلب وإنشاء التكليف</button>
-    </form>
+            <button type="submit" class="btn-line btn-line-accent">+ إنشاء طلب إعادة تصميم</button>
+        </form>
+    }
 </div>
