@@ -519,7 +519,7 @@ else
                                     {
                                         <span class="tag tag-accent" title="يوجد تكليف إعادة تصميم قيد التنفيذ على هذه المرحلة">🔁 إعادة تصميم</span>
                                     }
-                                    @if (stage.ActualCost > stage.SaleValue)
+                                   @if (canViewCosts && stage.ActualCost > stage.SaleValue)
                                     {
                                         <span class="tag tag-danger">خسارة في المرحلة</span>
                                     }
@@ -927,9 +927,12 @@ else
                                 </div>
                                 <div class="cell" style="font-size:10.5px;">
                                     <div>م: @(a.Area?.ToString("N1") ?? "-")</div>
-                                    <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
-                                    <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
-                                    @if (a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0))
+                                    @if (canViewCosts)
+                                    {
+                                        <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
+                                        <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                                    }
+                                    @if (canViewCosts && (a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0)))
                                     {
                                         <span class="tag tag-warning" style="font-size:9px;">مُسوّى — مقفل</span>
                                     }
