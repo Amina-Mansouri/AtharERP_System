@@ -226,7 +226,7 @@
     </script>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
-        <div>
+        <div style="min-width:0;">
             <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:#221837;">مصروفات المشروع</div>
             <div class="athar-card" style="margin-bottom:10px;">
                 <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center;" data-bs-toggle="collapse" data-bs-target="#secSales">
@@ -234,7 +234,7 @@
                     <span>▾</span>
                 </button>
                 <div class="collapse" id="secSales" style="margin-top:10px; overflow-x:auto;">
-                    <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px"); min-width:700px;">
+                    <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px"); min-width:1050px;">
                         <div class="data-table-head">
                             @if (project == null)
                             {
@@ -292,7 +292,7 @@
                     <span>▾</span>
                 </button>
                 <div class="collapse" id="secCosts" style="margin-top:10px; overflow-x:auto;">
-                    <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px"); min-width:600px;">
+                    <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px"); min-width:900px;">
                         <div class="data-table-head">
                             @if (project == null)
                             {
@@ -346,7 +346,7 @@
                     <span>▾</span>
                 </button>
                 <div class="collapse" id="secExp" style="margin-top:10px; overflow-x:auto;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:280px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:420px;">
                         <div class="data-table-head">
                             <div class="cell">التصنيف</div>
                             <div class="cell">المبلغ</div>
@@ -375,7 +375,7 @@
                     <span>▾</span>
                 </button>
                 <div class="collapse" id="secSite" style="margin-top:10px; overflow-x:auto;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:280px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:420px;">
                         <div class="data-table-head">
                             <div class="cell">المصدر</div>
                             <div class="cell">المبلغ</div>
@@ -411,7 +411,7 @@
                     <span>▾</span>
                 </button>
                 <div class="collapse" id="secTreasury" style="margin-top:10px; overflow-x:auto;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:480px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:650px;">
                         <div class="data-table-head">
                             <div class="cell">البند</div>
                             <div class="cell">الإجمالي</div>
@@ -453,7 +453,7 @@
             </div>
         </div>
 
-        <div>
+        <div style="min-width:0;">
             <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:#221837;">المصروفات العامة</div>
             <div class="athar-card" style="border:2px solid #7b6bd6; margin-bottom:16px;">
                 <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;" data-bs-toggle="collapse" data-bs-target="#secGenExp">
@@ -492,7 +492,7 @@
                         <div class="stat-item" style="opacity:.5;"><span class="kicker">الرواتب</span><span class="stat-value">قادمة</span></div>
                     </div>
 
-                    <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr; min-width:450px;">
+                    <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr; min-width:650px;">
                         <div class="data-table-head">
                             <div class="cell">التاريخ</div>
                             <div class="cell">التصنيف</div>
@@ -525,7 +525,7 @@
                     <span>▾</span>
                 </button>
                 <div class="collapse" id="secMargin" style="margin-top:10px; overflow-x:auto;">
-                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:480px;">
+                    <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:650px;">
                         <div class="data-table-row row-total">
                             <div class="cell">الخزينة</div>
                             <div class="cell cell-num"></div>
