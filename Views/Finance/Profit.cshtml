@@ -275,7 +275,7 @@
     </div>
 
     <style>
-        @media print {
+        @@media print {
             .no-print {
                 display: none !important;
             }
@@ -343,7 +343,7 @@
 
     <div id="profitDetail-costs" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></div>
-        <div style="overflow-x:auto;">
+        <div >
             <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px");">
                 <div class="data-table-head">
                     @if (project == null)
@@ -421,7 +421,7 @@
     <div id="profitDetail-site" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">تكاليف المواقع: <strong>@Model.SiteCosts.ToString("N0")</strong></div>
         <div style="overflow-x:auto;">
-            <div class="data-table profit-table" style="--cols: 1fr 130px; min-width:420px;">
+            <div class="data-table profit-table" style="--cols: 1fr 130px;">
                 <div class="data-table-head">
                     <div class="cell">المصدر</div>
                     <div class="cell">المبلغ</div>
@@ -559,7 +559,7 @@
     <div id="profitDetail-margin" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">هامش الربح: <strong style="color:@(profitMargin >= 0 ? "#2e8b57" : "#c94a42");">@profitMargin.ToString("N0")</strong></div>
         <div style="overflow-x:auto;">
-            <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px; min-width:650px;">
+            <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px;">
                 <div class="data-table-row row-total">
                     <div class="cell">الخزينة</div>
                     <div class="cell cell-num"></div>
