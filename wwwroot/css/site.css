@@ -1321,7 +1321,6 @@ button:focus-visible {
     border: 1px solid var(--sys-border);
     border-radius: var(--sys-radius-card);
     box-shadow: var(--sys-shadow);
-    overflow-x: auto;
 }
 
 .data-table-head,
@@ -1329,7 +1328,7 @@ button:focus-visible {
     display: grid;
     grid-template-columns: var(--cols);
     align-items: center;
-    min-width: fit-content;
+    min-width: 0;
 }
 
 .data-table-head {

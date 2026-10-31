@@ -394,7 +394,7 @@
 
     <div id="profitDetail-expenses" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">مصروفات المشروع: <strong>@Model.TotalGeneralExpenses.ToString("N0")</strong></div>
-        <div style="overflow-x:auto;">
+        <div >
             <div class="data-table profit-table" style="--cols: 1fr 130px;">
                 <div class="data-table-head">
                     <div class="cell">التصنيف</div>
@@ -420,7 +420,7 @@
 
     <div id="profitDetail-site" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">تكاليف المواقع: <strong>@Model.SiteCosts.ToString("N0")</strong></div>
-        <div style="overflow-x:auto;">
+        <div >
             <div class="data-table profit-table" style="--cols: 1fr 130px;">
                 <div class="data-table-head">
                     <div class="cell">المصدر</div>
@@ -453,7 +453,7 @@
 
     <div id="profitDetail-treasury" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">الخزينة: <strong style="color:@(treasury >= 0 ? "#2e8b57" : "#c94a42");">@treasury.ToString("N0")</strong></div>
-        <div style="overflow-x:auto;">
+        <div>
             <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px;">
                 <div class="data-table-head">
                     <div class="cell">البند</div>
@@ -528,7 +528,7 @@
             <div class="stat-item" style="opacity:.5;"><span class="kicker">الرواتب</span><span class="stat-value">قادمة</span></div>
         </div>
 
-        <div style="overflow-x:auto;">
+        <div>
             <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr;">
                 <div class="data-table-head">
                     <div class="cell">التاريخ</div>
@@ -558,7 +558,7 @@
 
     <div id="profitDetail-margin" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">هامش الربح: <strong style="color:@(profitMargin >= 0 ? "#2e8b57" : "#c94a42");">@profitMargin.ToString("N0")</strong></div>
-        <div style="overflow-x:auto;">
+        <div>
             <div class="data-table profit-table" style="--cols: 1fr 130px 130px 130px;">
                 <div class="data-table-row row-total">
                     <div class="cell">الخزينة</div>
