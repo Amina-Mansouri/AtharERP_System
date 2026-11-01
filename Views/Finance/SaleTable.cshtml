@@ -266,16 +266,18 @@
             data: {
                 labels: @Json.Serialize(swTickLabels),
                 datasets: [
-                    { label: 'الإجمالي', data: @Json.Serialize(swTotalsData), backgroundColor: @Json.Serialize(swTotalsColors), yAxisID: 'ySales' },
-                    { label: 'التغيّر', data: @Json.Serialize(swDeltaData), backgroundColor: @Json.Serialize(swDeltaColors), yAxisID: 'yDelta' }
+                    { label: 'الإجمالي', data: @Json.Serialize(swTotalsData), backgroundColor: @Json.Serialize(swTotalsColors) },
+                    { label: 'التغيّر', data: @Json.Serialize(swDeltaData), backgroundColor: @Json.Serialize(swDeltaColors) }
                 ]
             },
             options: {
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { title: () => '', label: (ctx) => ctx.raw.toLocaleString('en-US') } }
+                },
                 scales: {
-                    ySales: { type: 'linear', position: 'left', beginAtZero: true },
-                    yDelta: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } },
-                    x: { ticks: { font: { size: 10 } } }
+                    y: { ticks: { font: { size: 9 } } },
+                    x: { ticks: { autoSkip: false, font: { size: 10 } } }
                 }
             }
         });
