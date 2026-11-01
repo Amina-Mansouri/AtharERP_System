@@ -197,8 +197,15 @@
             <canvas id="saleWaterfallChart" height="180"></canvas>
         </div>
         <div class="athar-card">
-            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">المطالبات حسب وجود نسب بيع</div>
-            <canvas id="saleMarkupUsageChart" height="180"></canvas>
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">أكبر 5 مطالبات تأثراً بنسب البيع</div>
+            @if (topMarkupClaims.Any())
+            {
+                <canvas id="saleMarkupUsageChart" height="180"></canvas>
+            }
+            else
+            {
+                <div style="font-size:11px; color:#8a83a0; padding:20px 0; text-align:center;">لا توجد مطالبات عليها نسب ضمن هذه الفلترة</div>
+            }
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -242,17 +249,26 @@
             }
         });
 
-        new Chart(document.getElementById('saleMarkupUsageChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['عليها نسب', 'بدون نسب'],
-                datasets: [{
-                    data: @Json.Serialize(new[] { countWithMarkup, countWithoutMarkup }),
-                    backgroundColor: ['#7b6bd6', '#c7c2db']
-                }]
-            },
-            options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
-        });
+        @if (topMarkupClaims.Any())
+            {
+                <text>
+                    new Chart(document.getElementById('saleMarkupUsageChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: @Json.Serialize(topMarkupLabels),
+                            datasets: [{
+                                data: @Json.Serialize(topMarkupValues),
+                                backgroundColor: @Json.Serialize(topMarkupColors)
+                                    }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            plugins: { legend: { display: false } },
+                            scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+                        }
+                    });
+            </text>
+        }
     </script>
 }
 
