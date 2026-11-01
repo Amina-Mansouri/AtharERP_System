@@ -151,39 +151,110 @@
     </div>
 }
 
-    @if (Model.Any())
+@if (Model.Any())
+{
+    var totalValue = Model.Sum(c => c.Value);
+    var totalMarkup = Model.Sum(c => c.MarkupNetEffect);
+    var totalRedesign = Model.Sum(c => c.RedesignResult);
+    var totalPaid = Model.Sum(c => c.PaidAmount);
+    var totalRemaining = Model.Sum(c => c.RemainingAmount);
+    var countSettled = Model.Count(c => c.IsClientSettled);
+    var countUnsettled = Model.Count - countSettled;
+    var topMarkupClaims = Model.Where(c => c.MarkupNetEffect != 0).OrderByDescending(c => Math.Abs(c.MarkupNetEffect)).Take(5).ToList();
+    var topMarkupLabels = topMarkupClaims.Select(c =>
     {
-        <div class="athar-card" style="margin-bottom:12px;">
-            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">ملخص جدول البيع النهائي</div>
-            <div style="max-width:560px; margin:0 auto;">
-                <canvas id="saleBarChart" height="180"></canvas>
-            </div>
+        var taskName = c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? c.ProjectAssignment.Tasks.First().Title : "-";
+        return project == null ? $"{c.Project?.Code}: {taskName}" : taskName;
+    }).ToArray();
+    var topMarkupValues = topMarkupClaims.Select(c => c.MarkupNetEffect).ToArray();
+    var topMarkupColors = topMarkupClaims.Select(c => c.MarkupNetEffect >= 0 ? "#2e8b57" : "#c94a42").ToArray();
+
+    var swLabels = new[] { "قيمة البيع", "قيم النسب", "إعادة التصميم", "الإجمالي" };
+    var swCum0 = totalValue;
+    var swCum1 = swCum0 + totalMarkup;
+    var swCum2 = swCum1 + totalRedesign;
+    var swBase = new[] { 0m, Math.Min(swCum0, swCum1), Math.Min(swCum1, swCum2), 0m };
+    var swDelta = new[] { totalValue, Math.Abs(totalMarkup), Math.Abs(totalRedesign), swCum2 };
+    var swColors = new[] { "#2e8b57", totalMarkup >= 0 ? "#2e8b57" : "#c94a42", totalRedesign >= 0 ? "#2e8b57" : "#c94a42", "#c9a15a" };
+    var swActual = new[] { totalValue, totalMarkup, totalRedesign, swCum2 };
+    var swTickLabels = new object[swLabels.Length];
+    for (int i = 0; i < swLabels.Length; i++)
+    {
+        swTickLabels[i] = new[] { swLabels[i], swActual[i].ToString("N0") };
+    }
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px; margin-bottom:12px;">
+        <div class="athar-card">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل (بالقيمة)</div>
+            <canvas id="saleCollectValueChart" height="180"></canvas>
+        </div>
+        <div class="athar-card">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل (بعدد المطالبات)</div>
+            <canvas id="saleCollectCountChart" height="180"></canvas>
+        </div>
+        <div class="athar-card">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">مسار القيمة: من البيع إلى الإجمالي</div>
+            <canvas id="saleWaterfallChart" height="180"></canvas>
+        </div>
+        <div class="athar-card">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">المطالبات حسب وجود نسب بيع</div>
+            <canvas id="saleMarkupUsageChart" height="180"></canvas>
+        </div>
     </div>
-    var sLabels = new[] { "قيمة البيع", "قيم النسب", "قيمة البيع بعد النسب", "نسبة إعادة التصميم", "المساحة", "المحقق", "المستحق" };
-    var sValues = new[] { Model.Sum(c => c.Value), Model.Sum(c => c.MarkupNetEffect), Model.Sum(c => c.ValueAfterPercentage), Model.Sum(c => c.RedesignResult), Model.Sum(c => c.Area ?? 0), Model.Sum(c => c.PaidAmount), Model.Sum(c => c.RemainingAmount) };
-    var sTickLabels = new object[sLabels.Length];
-    for (int i = 0; i < sLabels.Length; i++)
-    {
-        sTickLabels[i] = new[] { sLabels[i], sValues[i].ToString("N0") };
-    }
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-        <script>
-                new Chart(document.getElementById('saleBarChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: @Json.Serialize(sTickLabels),
-                        datasets: [{
-                            data: @Json.Serialize(sValues),
-                            backgroundColor: ['#7b6bd6', '#9a6fb0', '#c9a15a', '#e0a040', '#4a90d9', '#2e8b57', '#c94a42']
-                        }]
-                    },
-                    options: {
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 10 } } } }
-                    }
-                });
-        </script>
-    }
+    <script>
+        new Chart(document.getElementById('saleCollectValueChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['المحقق', 'المستحق'],
+                datasets: [{
+                    data: @Json.Serialize(new[] { totalPaid, totalRemaining }),
+                    backgroundColor: ['#2e8b57', '#c94a42']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+        });
+
+        new Chart(document.getElementById('saleCollectCountChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['محصَّلة', 'بانتظار التحصيل'],
+                datasets: [{
+                    data: @Json.Serialize(new[] { countSettled, countUnsettled }),
+                    backgroundColor: ['#2e8b57', '#e0a040']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+        });
+
+        new Chart(document.getElementById('saleWaterfallChart'), {
+            type: 'bar',
+            data: {
+                labels: @Json.Serialize(swTickLabels),
+                datasets: [
+                    { label: 'base', data: @Json.Serialize(swBase), backgroundColor: 'transparent', borderWidth: 0, stack: 's' },
+                    { label: 'value', data: @Json.Serialize(swDelta), backgroundColor: @Json.Serialize(swColors), stack: 's' }
+                ]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, stacked: true }, x: { stacked: true, ticks: { font: { size: 10 } } } }
+            }
+        });
+
+        new Chart(document.getElementById('saleMarkupUsageChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['عليها نسب', 'بدون نسب'],
+                datasets: [{
+                    data: @Json.Serialize(new[] { countWithMarkup, countWithoutMarkup }),
+                    backgroundColor: ['#7b6bd6', '#c7c2db']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
+        });
+    </script>
+}
 
     <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 1fr 55px 60px 65px 150px 65px 60px 55px 65px 55px 60px 140px">
             <div class="data-table-head">
