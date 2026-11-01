@@ -160,14 +160,19 @@
     var totalRemaining = Model.Sum(c => c.RemainingAmount);
     var countSettled = Model.Count(c => c.IsClientSettled);
     var countUnsettled = Model.Count - countSettled;
-    var topMarkupClaims = Model.Where(c => c.MarkupNetEffect != 0).OrderByDescending(c => Math.Abs(c.MarkupNetEffect)).Take(5).ToList();
-    var topMarkupLabels = topMarkupClaims.Select(c =>
+    string ClaimMarkupLabel(FinancialClaim c)
     {
         var taskName = c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? c.ProjectAssignment.Tasks.First().Title : "-";
         return project == null ? $"{c.Project?.Code}: {taskName}" : taskName;
-    }).ToArray();
-    var topMarkupValues = topMarkupClaims.Select(c => c.MarkupNetEffect).ToArray();
-    var topMarkupColors = topMarkupClaims.Select(c => c.MarkupNetEffect >= 0 ? "#2e8b57" : "#c94a42").ToArray();
+    }
+    var deductionClaims = Model.Where(c => c.MarkupNetEffect < 0).OrderByDescending(c => Math.Abs(c.MarkupNetEffect)).Take(8).ToList();
+    var increaseClaims = Model.Where(c => c.MarkupNetEffect > 0).OrderByDescending(c => c.MarkupNetEffect).Take(8).ToList();
+    var deductionLabels = deductionClaims.Select(ClaimMarkupLabel).ToArray();
+    var deductionValues = deductionClaims.Select(c => Math.Abs(c.MarkupNetEffect)).ToArray();
+    var increaseLabels = increaseClaims.Select(ClaimMarkupLabel).ToArray();
+    var increaseValues = increaseClaims.Select(c => c.MarkupNetEffect).ToArray();
+    var totalDeduction = Model.Where(c => c.MarkupNetEffect < 0).Sum(c => Math.Abs(c.MarkupNetEffect));
+    var totalIncrease = Model.Where(c => c.MarkupNetEffect > 0).Sum(c => c.MarkupNetEffect);
 
     var swLabels = new[] { "قيمة البيع", "قيم النسب", "إعادة التصميم", "الإجمالي" };
     var swCum0 = totalValue;
@@ -197,15 +202,30 @@
             <canvas id="saleWaterfallChart" height="180"></canvas>
         </div>
         <div class="athar-card">
-            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">أكبر 5 مطالبات تأثراً بنسب البيع</div>
-            @if (topMarkupClaims.Any())
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسب البيع الموجبة (خصم من القيمة)</div>
+            @if (deductionClaims.Any())
             {
-                <canvas id="saleMarkupUsageChart" height="180"></canvas>
+                <canvas id="saleDeductionChart" height="180"></canvas>
             }
             else
             {
-                <div style="font-size:11px; color:#8a83a0; padding:20px 0; text-align:center;">لا توجد مطالبات عليها نسب ضمن هذه الفلترة</div>
+                <div style="font-size:11px; color:#8a83a0; padding:20px 0; text-align:center;">لا توجد خصومات نسب ضمن هذه الفلترة</div>
             }
+        </div>
+        <div class="athar-card">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسب البيع السالبة (زيادة على السعر)</div>
+            @if (increaseClaims.Any())
+            {
+                <canvas id="saleIncreaseChart" height="180"></canvas>
+            }
+            else
+            {
+                <div style="font-size:11px; color:#8a83a0; padding:20px 0; text-align:center;">لا توجد زيادات نسب ضمن هذه الفلترة</div>
+            }
+        </div>
+        <div class="athar-card">
+            <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">إجمالي النسب وقيمة البيع قبل/بعد الخصم</div>
+            <canvas id="saleNetMarkupChart" height="180"></canvas>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -249,26 +269,54 @@
             }
         });
 
-        @if (topMarkupClaims.Any())
+        @if (deductionClaims.Any())
             {
                 <text>
-                    new Chart(document.getElementById('saleMarkupUsageChart'), {
+                    new Chart(document.getElementById('saleDeductionChart'), {
                         type: 'bar',
                         data: {
-                            labels: @Json.Serialize(topMarkupLabels),
-                            datasets: [{
-                                data: @Json.Serialize(topMarkupValues),
-                                backgroundColor: @Json.Serialize(topMarkupColors)
-                                    }]
+                            labels: @Json.Serialize(deductionLabels),
+                            datasets: [{ data: @Json.Serialize(deductionValues), backgroundColor: '#c94a42' }]
                         },
                         options: {
-                            indexAxis: 'y',
                             plugins: { legend: { display: false } },
-                            scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+                            scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 9 } } } }
                         }
                     });
             </text>
         }
+
+            @if (increaseClaims.Any())
+            {
+                <text>
+                    new Chart(document.getElementById('saleIncreaseChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: @Json.Serialize(increaseLabels),
+                            datasets: [{ data: @Json.Serialize(increaseValues), backgroundColor: '#2e8b57' }]
+                        },
+                        options: {
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 9 } } } }
+                        }
+                    });
+            </text>
+        }
+
+            new Chart(document.getElementById('saleNetMarkupChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['إجمالي الخصم', 'إجمالي الزيادة', 'إجمالي النسب', 'إجمالي البيع', 'إجمالي البيع بعد النسب'],
+                    datasets: [{
+                        data: @Json.Serialize(new[] { totalDeduction, totalIncrease, totalMarkup, totalValue, totalValue + totalMarkup }),
+                        backgroundColor: ['#c94a42', '#2e8b57', '#7b6bd6', '#4a90d9', '#c9a15a']
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 9 } } } }
+                }
+            });
     </script>
 }
 
