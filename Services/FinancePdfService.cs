@@ -666,6 +666,15 @@ namespace AtharERP_System.Services
                             c.Item().PaddingTop(2).Text($"فقط {NumberToArabicWords(amount)} دينار ليبي لا غير").FontSize(8).FontColor(Colors.Grey.Darken2);
                         });
 
+                        col.Item().PaddingTop(6).Border(1).BorderColor("#c9a15a").Background("#fdfaf3").Padding(6).Row(row =>
+                        {
+                            row.RelativeItem().Text(t =>
+                            {
+                                t.Span("المشروع: ").FontSize(9).FontColor(Colors.Grey.Medium);
+                                t.Span($"{project.Code} - {project.Name}").FontSize(10).Bold().FontColor("#221837");
+                            });
+                        });
+
                         col.Item().PaddingTop(6).Table(table =>
                         {
                             table.ColumnsDefinition(c =>
@@ -676,6 +685,8 @@ namespace AtharERP_System.Services
                                 c.RelativeColumn();
                                 c.RelativeColumn();
                             });
+                            void HeaderCell(string text) => table.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+
                             void HeaderCell(string text) => table.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
                             void DataCell(string text) => table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
