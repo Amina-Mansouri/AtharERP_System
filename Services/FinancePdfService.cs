@@ -367,7 +367,7 @@ namespace AtharERP_System.Services
                             });
                             row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
-                                var receiptCode = $"{project.Code}-RV-{payment.ReceiptNumber:D4}";
+                                var receiptCode = $"{project.Code}-RV-FIN-EXT-{payment.ReceiptNumber:D4}";
                                 c.Item().Text("رقم الإيصال").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().Text(receiptCode).FontSize(12).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(2).Text($"{payment.PaidAt:yyyy-MM-dd}").FontSize(8);
@@ -483,7 +483,7 @@ namespace AtharERP_System.Services
             var hasLogo = File.Exists(logoPath);
             var engineer = records.First().Engineer;
             var totalAmount = records.Sum(r => r.ValueAfterPercentage);
-            var receiptCode = string.Join("، ", records.Select(r => r.ReceiptNumber?.ToString("D4") ?? r.Id.ToString()));
+            var receiptCode = string.Join("، ", records.Select(r => $"PV-FIN-IN-{(r.ReceiptNumber?.ToString("D4") ?? r.Id.ToString())}"));
 
             void ReceiptHeaderCell(TableDescriptor t, string text) =>
                 t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(10);
@@ -628,7 +628,7 @@ namespace AtharERP_System.Services
                             });
                             row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
                             {
-                                var receiptCode = $"{project.Code}-PV-{record.ReceiptNumber:D4}";
+                                var receiptCode = $"{project.Code}-PV-FIN-IN-{record.ReceiptNumber:D4}";
                                 c.Item().Text("رقم الإيصال").FontSize(8).FontColor(Colors.Grey.Medium);
                                 c.Item().Text(receiptCode).FontSize(12).Bold().FontColor("#221837");
                                 c.Item().PaddingTop(2).Text($"{record.ClearedAt:yyyy-MM-dd}").FontSize(8);

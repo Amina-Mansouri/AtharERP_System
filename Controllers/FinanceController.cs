@@ -80,7 +80,7 @@ namespace AtharERP_System.Controllers
                 project.InvoiceDocNumber = next;
                 await _context.SaveChangesAsync();
             }
-            return $"{project.Code}-INV-{project.InvoiceDocNumber:D4}";
+            return $"{project.Code}-INV-FIN-EXT-{project.InvoiceDocNumber:D4}";
         }
 
         private async Task<string> GetOrAssignStageInvoiceDocNumberAsync(Project project, ProjectStage? stage)
@@ -95,7 +95,7 @@ namespace AtharERP_System.Controllers
                 stage.InvoiceDocNumber = Math.Max(maxProject, maxStage) + 1;
                 await _context.SaveChangesAsync();
             }
-            return $"{project.Code}-INV-{stage.InvoiceDocNumber:D4}";
+            return $"{project.Code}-INV-FIN-EXT-{stage.InvoiceDocNumber:D4}";
         }
 
         private async Task<string> GetOrAssignProfitReportDocNumberAsync(Project project)
@@ -476,7 +476,7 @@ namespace AtharERP_System.Controllers
                 return Forbid();
 
             var pdf = _pdfExport.GenerateEngineerReceipt(record);
-            return File(pdf, "application/pdf", $"{record.Project.Code}-PV-{(record.ReceiptNumber ?? record.Id):D4}.pdf");
+            return File(pdf, "application/pdf", $"{record.Project.Code}-PV-FIN-IN-{(record.ReceiptNumber ?? record.Id):D4}.pdf");
         }
 
         [RequirePermission("Finance.Costs.View")]
@@ -515,7 +515,7 @@ namespace AtharERP_System.Controllers
 
             var combinedPdf = _pdfExport.GenerateEngineerReceiptsCombined(records);
             var combinedRefNumber = records.First().ReceiptNumber ?? records.First().Id;
-            return File(combinedPdf, "application/pdf", $"{records.First().Project.Code}-PV-{combinedRefNumber:D4}.pdf");
+            return File(combinedPdf, "application/pdf", $"{records.First().Project.Code}-PV-FIN-IN-{combinedRefNumber:D4}.pdf");
         }
 
         [RequirePermission("Finance.Costs.View")]
@@ -1152,7 +1152,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
         .ToListAsync();
 
             var pdf = _pdfExport.GeneratePaymentReceipt(payment, previousPayments);
-            return File(pdf, "application/pdf", $"{payment.FinancialClaim.Project.Code}-RV-{payment.ReceiptNumber:D4}.pdf");
+            return File(pdf, "application/pdf", $"{payment.FinancialClaim.Project.Code}-RV-FIN-EXT-{payment.ReceiptNumber:D4}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]
