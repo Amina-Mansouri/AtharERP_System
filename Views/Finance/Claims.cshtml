@@ -303,7 +303,7 @@
         </div>
     }
 
-    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 1.3fr 90px 1fr 70px 75px 85px 65px 90px 80px 85px 230px">
+    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 1.3fr 90px 1.3fr 70px 75px 85px 65px 90px 80px 85px 175px">
         <div class="data-table-head">
             <div class="cell"></div>
             <div class="cell"><span>المشروع</span></div>
@@ -405,9 +405,9 @@
                             }
                             else
                             {
-                                <div style="display:flex; gap:5px; align-items:center;">
-                                    <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@groupClaims[0].Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:100px; height:28px; font-size:12px; padding:0 6px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
-                                    <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = groupClaims[0].Id, projectId = groupClaims[0].ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; height:28px; font-size:11px; justify-content:center;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
+                                <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+                                    <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@groupClaims[0].Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:70px; min-width:0; height:28px; font-size:11px; padding:0 4px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
+                                    <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = groupClaims[0].Id, projectId = groupClaims[0].ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; min-width:50px; height:28px; font-size:10.5px; justify-content:center; padding:0 6px;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
                                 </div>
                             }
                         }
@@ -457,9 +457,9 @@
                                 }
                                 else
                                 {
-                                    <div style="display:flex; gap:5px; align-items:center;">
-                                        <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:100px; height:28px; font-size:12px; padding:0 6px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
-                                        <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = c.Id, projectId = c.ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; height:28px; font-size:11px; justify-content:center;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
+                                    <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+                                        <input type="number" step="0.01" min="0.01" max="@remaining.ToString(System.Globalization.CultureInfo.InvariantCulture)" name="amount_@c.Id" onkeydown="if(event.key==='Enter'){event.preventDefault();}" style="width:70px; min-width:0; height:28px; font-size:11px; padding:0 4px; border:1px solid #e4e2ec; border-radius:5px;" placeholder="مبلغ" />
+                                        <button type="submit" formaction="@Url.Action("RegisterClaimPayment", new { claimId = c.Id, projectId = c.ProjectId, returnAction = "Claims" })" formmethod="post" formtarget="_self" class="btn-line btn-line-accent" style="flex:1; min-width:50px; height:28px; font-size:10.5px; justify-content:center; padding:0 6px;" onclick="return confirm('تأكيد تسجيل هذه الدفعة؟');">دفع</button>
                                     </div>
                                 }
                             </div>
