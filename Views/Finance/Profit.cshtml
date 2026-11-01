@@ -296,10 +296,11 @@
     <div id="profitDetail-sales" class="profit-section-detail athar-card" style="margin-bottom:16px;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></div>
         <div>
-            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 110px 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px");">
+            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "70px 1fr 90px 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px");">
                 <div class="data-table-head">
                     @if (project == null)
                     {
+                        <div class="cell"><span>رقم المشروع</span></div>
                         <div class="cell"><span>المشروع</span></div>
                         <div class="cell"><span>المشروع الفرعي</span></div>
                     }
@@ -323,7 +324,8 @@
                         <div class="data-table-row row-income">
                             @if (project == null)
                             {
-                                <div class="cell">@(c.Project != null ? (c.Project.ParentProjectId.HasValue ? $"{c.Project.ParentProject?.Code} - {c.Project.ParentProject?.Name}" : $"{c.Project.Code} - {c.Project.Name}") : "-")</div>
+                                <div class="cell cell-num">@(c.Project != null ? (c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project.Code) : "-")</div>
+                                <div class="cell">@(c.Project != null ? (c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Name : c.Project.Name) : "-")</div>
                                 <div class="cell">@(c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.Code} - {c.Project.Name}" : "-")</div>
                             }
                             @{
@@ -339,7 +341,6 @@
                                     <span>-</span>
                                 }
                             </div>
-                            <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
                             <div class="cell cell-num">@c.CreatedAt.ToString("yyyy-MM-dd")</div>
                             <div class="cell cell-num">@c.Value.ToString("N0")</div>
                             <div class="cell cell-num">@(c.RedesignIncreasePercentage?.ToString("N1") + "%" ?? "-")</div>
@@ -366,12 +367,14 @@
     <div id="profitDetail-costs" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></div>
         <div >
-            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 110px 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px");">
+            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "70px 1fr 90px 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px");">
                 <div class="data-table-head">
                     @if (project == null)
                     {
+                        <div class="cell">رقم المشروع</div>
                         <div class="cell">المشروع</div>
                         <div class="cell">المشروع الفرعي</div>
+                    
                     }
                     <div class="cell">بيان التكليف</div>
                     <div class="cell">المهندسة</div>
@@ -391,7 +394,8 @@
                         <div class="data-table-row row-expense">
                             @if (project == null)
                             {
-                                <div class="cell">@(r.Project != null ? (r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Code} - {r.Project.ParentProject?.Name}" : $"{r.Project.Code} - {r.Project.Name}") : "-")</div>
+                                <div class="cell cell-num">@(r.Project != null ? (r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project.Code) : "-")</div>
+                                <div class="cell">@(r.Project != null ? (r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Name : r.Project.Name) : "-")</div>
                                 <div class="cell">@(r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.Code} - {r.Project.Name}" : "-")</div>
                             }
                             @{
