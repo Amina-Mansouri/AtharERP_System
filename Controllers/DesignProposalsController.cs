@@ -94,9 +94,9 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Upload(int todoId, IFormFile file, FileCategory fileCategory, int? assignmentId)
         {
             var todo = await _context.TaskTodos
-      .Include(t => t.Task).ThenInclude(task => task.Project)
-      .Include(t => t.Task).ThenInclude(task => task.Stage)
-      .FirstOrDefaultAsync(t => t.Id == todoId);
+.Include(t => t.Task).ThenInclude(task => task.Project).ThenInclude(p => p.ParentProject)
+.Include(t => t.Task).ThenInclude(task => task.Stage)
+.FirstOrDefaultAsync(t => t.Id == todoId);
             if (todo == null)
                 return NotFound();
 
@@ -148,7 +148,10 @@ namespace AtharERP_System.Controllers
 
             var version = await _context.DesignProposals.Where(d => d.TaskTodoId == todoId).CountAsync() + 1;
 
-            var code = $"{task.Project.Code}-{fileCategory}-{classification}-{seqInAssignment:D2}-{version:D2}";
+            var isSubProject = task.Project.ParentProjectId.HasValue;
+            var mainProjectCode = isSubProject ? (task.Project.ParentProject?.Code ?? task.Project.Code) : task.Project.Code;
+            var buildingCode = isSubProject ? task.Project.Code : "0";
+            var code = $"{mainProjectCode}-{fileCategory}-{classification}-{buildingCode}-{seqInAssignment:D2}-{version:D2}";
 
             var proposal = new DesignProposal
             {
