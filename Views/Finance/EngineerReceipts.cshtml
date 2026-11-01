@@ -140,11 +140,12 @@
     <button type="submit" form="combinedReceiptForm" class="btn-line btn-line-accent">🖨 طباعة إيصال مجمّع للمُحدَّد</button>
 </div>
 
-<div class="data-table data-table-compact" style="--cols: 26px 90px 1fr 1fr 1fr 90px 90px 100px">
+<div class="data-table data-table-compact" style="--cols: 26px 90px 1fr 110px 1fr 1fr 90px 90px 100px">
     <div class="data-table-head">
         <div class="cell"></div>
         <div class="cell">تاريخ الصرف</div>
         <div class="cell">المشروع</div>
+        <div class="cell">المشروع الفرعي</div>
         <div class="cell">بيان التكليف</div>
         <div class="cell">المهندسة</div>
         <div class="cell">المبلغ</div>
@@ -162,7 +163,8 @@
             <div class="data-table-row">
                 <div class="cell"><input type="checkbox" name="recordIds" value="@r.Id" form="combinedReceiptForm" /></div>
                 <div class="cell">@r.ClearedAt?.ToString("yyyy-MM-dd")</div>
-                <div class="cell">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project?.Code) ?? "-") - @((r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Name} - {r.Project.Name}" : r.Project?.Name) ?? "-")</div>
+                <div class="cell">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project?.Code) ?? "-") - @((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Name : r.Project?.Name) ?? "-")</div>
+                <div class="cell">@(r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.Code} - {r.Project.Name}" : "-")</div>
                 <div class="cell">
                     @{
                         var rTaskTitles = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();

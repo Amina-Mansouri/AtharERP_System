@@ -4,7 +4,8 @@
     var claim = ViewBag.Claim as FinancialClaim;
     ViewData["Title"] = "سجل الدفعات";
     var claimProjectCode = claim?.Project != null && claim.Project.ParentProjectId.HasValue ? claim.Project.ParentProject?.Code : claim?.Project?.Code;
-    var claimProjectName = claim?.Project != null && claim.Project.ParentProjectId.HasValue ? $"{claim.Project.ParentProject?.Name} - {claim.Project.Name}" : claim?.Project?.Name;
+    var claimProjectName = claim?.Project != null && claim.Project.ParentProjectId.HasValue ? claim.Project.ParentProject?.Name : claim?.Project?.Name;
+    var claimSubProject = claim?.Project != null && claim.Project.ParentProjectId.HasValue ? $"{claim.Project.Code} - {claim.Project.Name}" : null;
 }
 
 <div class="page-head">
@@ -16,6 +17,10 @@
 
 <div class="athar-card" style="margin-bottom:12px; font-size:12px;">
     <div>المشروع: @(claimProjectCode ?? "-") - @(claimProjectName ?? "-")</div>
+    @if (claimSubProject != null)
+    {
+        <div>المشروع الفرعي: @claimSubProject</div>
+    }
     <div>بيان التكليف: @(claim?.ProjectAssignment?.Stage?.Name ?? "-")</div>
     <div>الإجمالي بعد الزيادة: @claim?.RealValue.ToString("N2")</div>
     <div>المدفوع: @claim?.PaidAmount.ToString("N2")</div>

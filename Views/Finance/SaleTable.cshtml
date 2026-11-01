@@ -340,11 +340,12 @@
     </script>
 }
 
-    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 1fr 55px 60px 65px 150px 65px 60px 55px 65px 55px 60px 140px">
-            <div class="data-table-head">
+<div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 50px 1fr 110px 1fr 55px 60px 65px 150px 65px 60px 55px 65px 55px 60px 140px">
+    <div class="data-table-head">
         <div class="cell"></div>
         <div class="cell"><span>رقم المشروع</span></div>
         <div class="cell"><span>المشروع</span></div>
+        <div class="cell"><span>المشروع الفرعي</span></div>
         <div class="cell"><span>بيان التكليف</span></div>
         <div class="cell"><span>مساحة التكليف</span></div>
         <div class="cell"><span>سعر متر البيع</span></div>
@@ -375,7 +376,8 @@
                     }
                 </div>
                 <div class="cell cell-num">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project?.Code) ?? "-")</div>
-                <div class="cell">@((c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.ParentProject?.Name} - {c.Project.Name}" : c.Project?.Name) ?? "-")</div>
+                <div class="cell">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Name : c.Project?.Name) ?? "-")</div>
+                <div class="cell">@(c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.Code} - {c.Project.Name}" : "-")</div>
                 <div class="cell">
                     @{
                         var cTaskTitles = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();

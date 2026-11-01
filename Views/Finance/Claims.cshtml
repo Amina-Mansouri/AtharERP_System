@@ -303,11 +303,12 @@
         </div>
     }
 
-    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 55px 1fr 1fr 70px 75px 85px 65px 90px 80px 85px 230px">
+    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 55px 1fr 110px 1fr 70px 75px 85px 65px 90px 80px 85px 230px">
         <div class="data-table-head">
             <div class="cell"></div>
             <div class="cell"><span>رقم المشروع</span></div>
             <div class="cell"><span>المشروع</span></div>
+            <div class="cell"><span>المشروع الفرعي</span></div>
             <div class="cell"><span>بيان التكليف</span></div>
             <div class="cell"><span>مساحة التكليف</span></div>
             <div class="cell"><span>سعر متر البيع</span></div>
@@ -363,7 +364,8 @@
                         }
                     </div>
                     <div class="cell cell-num">@((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Code : gProject?.Code) ?? "-")</div>
-                    <div class="cell">@((gProject != null && gProject.ParentProjectId.HasValue ? $"{gProject.ParentProject?.Name} - {gProject.Name}" : gProject?.Name) ?? "-")</div>
+                    <div class="cell">@((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Name : gProject?.Name) ?? "-")</div>
+                    <div class="cell">@(gProject != null && gProject.ParentProjectId.HasValue ? $"{gProject.Code} - {gProject.Name}" : "-")</div>
                     <div class="cell">
                         @stageName
                         @if (isMerged)
@@ -427,6 +429,8 @@
                                 }
                             </div>
                             <div class="cell cell-num">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project?.Code) ?? "-")</div>
+                            <div class="cell"></div>
+                            <div class="cell" style="font-weight:400;">@(c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.Code} - {c.Project.Name}" : "-")</div>
                             <div class="cell" style="padding-right:14px; color:#8a83a0; font-size:11px; font-weight:400;">
                                 @{
                                     var cTaskTitles = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
@@ -441,7 +445,6 @@
                                     <span>↳ تكليف #@c.Id</span>
                                 }
                             </div>
-                            <div class="cell" style="font-size:11px; font-weight:400;"></div>
                             <div class="cell cell-num" style="font-weight:400;">@(c.Area?.ToString("N2") ?? "-")</div>
                             <div class="cell cell-num" style="font-weight:400;">@(c.SalePricePerMeter?.ToString("N2") ?? "-")</div>
                             <div class="cell cell-num" style="font-weight:400;">@c.Value.ToString("N2")</div>

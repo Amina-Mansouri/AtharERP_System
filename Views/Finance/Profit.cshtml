@@ -296,11 +296,12 @@
     <div id="profitDetail-sales" class="profit-section-detail athar-card" style="margin-bottom:16px;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">المبيعات — الإجمالي: <strong>@Model.TotalSalesAccrued.ToString("N0")</strong> | <span style="color:#2e8b57;">المحقق: <strong>@Model.TotalSalesRealized.ToString("N0")</strong></span> | المستحق: <strong>@salesOutstanding.ToString("N0")</strong></div>
         <div>
-            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px");">
+            <div class="data-table data-table-compact profit-table" style="--cols: @(project == null ? "1fr 110px 1.2fr 85px 80px 85px 95px 80px 90px 115px" : "1.2fr 85px 80px 85px 95px 80px 90px 115px");">
                 <div class="data-table-head">
                     @if (project == null)
                     {
                         <div class="cell"><span>المشروع</span></div>
+                        <div class="cell"><span>المشروع الفرعي</span></div>
                     }
                     <div class="cell"><span>بيان التكليف</span></div>
                     <div class="cell"><span>تاريخ الإنشاء</span></div>
@@ -322,8 +323,22 @@
                         <div class="data-table-row row-income">
                             @if (project == null)
                             {
-                                <div class="cell">@(c.Project != null ? (c.Project.ParentProjectId.HasValue ? $"{c.Project.ParentProject?.Code} - {c.Project.ParentProject?.Name} - {c.Project.Name}" : $"{c.Project.Code} - {c.Project.Name}") : "-")</div>
+                                <div class="cell">@(c.Project != null ? (c.Project.ParentProjectId.HasValue ? $"{c.Project.ParentProject?.Code} - {c.Project.ParentProject?.Name}" : $"{c.Project.Code} - {c.Project.Name}") : "-")</div>
+                                <div class="cell">@(c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.Code} - {c.Project.Name}" : "-")</div>
                             }
+                            @{
+                                var cTaskTitles2 = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
+                            }
+                            <div class="cell">
+                                @if (cTaskTitles2.Any())
+                                {
+                                    <span class="task-desc-toggle" onclick="toggleTaskDesc(this)" data-full="@string.Join("، ", cTaskTitles2)" data-short="@cTaskTitles2[0]" data-expanded="false" style="cursor:pointer;">@cTaskTitles2[0]... <span class="task-desc-arrow">▸</span></span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </div>
                             <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
                             <div class="cell cell-num">@c.CreatedAt.ToString("yyyy-MM-dd")</div>
                             <div class="cell cell-num">@c.Value.ToString("N0")</div>
@@ -351,11 +366,12 @@
     <div id="profitDetail-costs" class="profit-section-detail athar-card" style="margin-bottom:16px; display:none;">
         <div style="font-size:13px; font-weight:600; margin-bottom:10px;">تكاليف المهام — الالتزام: <strong>@Model.TotalTaskCostsAccrued.ToString("N0")</strong> | <span style="color:#c94a42;">المسدَّد: <strong>@Model.TotalTaskCostsRealized.ToString("N0")</strong></span></div>
         <div >
-            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px");">
+            <div class="data-table profit-table" style="--cols: @(project == null ? "1fr 110px 1.2fr 1fr 90px 90px 100px 130px" : "1.2fr 1fr 90px 90px 100px 130px");">
                 <div class="data-table-head">
                     @if (project == null)
                     {
                         <div class="cell">المشروع</div>
+                        <div class="cell">المشروع الفرعي</div>
                     }
                     <div class="cell">بيان التكليف</div>
                     <div class="cell">المهندسة</div>
@@ -375,9 +391,22 @@
                         <div class="data-table-row row-expense">
                             @if (project == null)
                             {
-                                <div class="cell">@(r.Project != null ? (r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Code} - {r.Project.ParentProject?.Name} - {r.Project.Name}" : $"{r.Project.Code} - {r.Project.Name}") : "-")</div>
+                                <div class="cell">@(r.Project != null ? (r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Code} - {r.Project.ParentProject?.Name}" : $"{r.Project.Code} - {r.Project.Name}") : "-")</div>
+                                <div class="cell">@(r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.Code} - {r.Project.Name}" : "-")</div>
                             }
-                            <div class="cell">@(r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
+                            @{
+                                var rTaskTitles2 = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
+                            }
+                            <div class="cell">
+                                @if (rTaskTitles2.Any())
+                                {
+                                    <span class="task-desc-toggle" onclick="toggleTaskDesc(this)" data-full="@string.Join("، ", rTaskTitles2)" data-short="@rTaskTitles2[0]" data-expanded="false" style="cursor:pointer;">@rTaskTitles2[0]... <span class="task-desc-arrow">▸</span></span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </div> 
                             <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
                             <div class="cell cell-num">@r.Value.ToString("N0")</div>
                             <div class="cell cell-num">@(r.ContributionPercentage?.ToString("N1") + "%" ?? "-")</div>
@@ -607,7 +636,24 @@
         </div>
     </div>
 
+    <style>
+        .task-desc-arrow {
+            font-size: 16px;
+            color: #7b6bd6;
+            font-weight: bold;
+        }
+    </style>
     <script>
+        function toggleTaskDesc(el) {
+            var expanded = el.getAttribute('data-expanded') === 'true';
+            if (expanded) {
+                el.innerHTML = el.getAttribute('data-short') + '... <span class="task-desc-arrow">▸</span>';
+                el.setAttribute('data-expanded', 'false');
+            } else {
+                el.innerHTML = el.getAttribute('data-full') + ' <span class="task-desc-arrow">▾</span>';
+                el.setAttribute('data-expanded', 'true');
+            }
+        }
         function showProfitSection(key) {
             document.querySelectorAll('.profit-section-detail').forEach(function (el) {
                 el.style.display = 'none';

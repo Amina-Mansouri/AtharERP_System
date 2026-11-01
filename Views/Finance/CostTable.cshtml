@@ -218,12 +218,13 @@
             <input type="hidden" name="engineerId" value="@engineerId" />
         </form>
 
-        <div class="data-table data-table-compact" style="--cols: @(!string.IsNullOrWhiteSpace(engineerId) ? "28px" : "0px") 50px 1fr 1fr 1fr 55px 65px 65px 70px 65px 75px 110px">
-            <div class="data-table-head">
-                <div class="cell"></div>
-                <div class="cell"><span>رقم المشروع</span></div>
-                <div class="cell"><span>المشروع</span></div>
-                <div class="cell"><span>بيان التكليف</span></div>
+    <div class="data-table data-table-compact" style="--cols: @(!string.IsNullOrWhiteSpace(engineerId) ? "28px" : "0px") 50px 1fr 110px 1fr 1fr 55px 65px 65px 70px 65px 75px 110px">
+        <div class="data-table-head">
+            <div class="cell"></div>
+            <div class="cell"><span>رقم المشروع</span></div>
+            <div class="cell"><span>المشروع</span></div>
+            <div class="cell"><span>المشروع الفرعي</span></div>
+            <div class="cell"><span>بيان التكليف</span></div>
                 <div class="cell"><span>المهندسة</span></div>
                 <div class="cell"><span>مساحة التكليف</span></div>
                 <div class="cell"><span>سعر متر التكليف</span></div>
@@ -252,7 +253,9 @@
                             }
                         </div>
                     <div class="cell cell-num">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project?.Code) ?? "-")</div>
-                    <div class="cell">@((r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Name} - {r.Project.Name}" : r.Project?.Name) ?? "-")</div>
+                    <div class="cell cell-num">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project?.Code) ?? "-")</div>
+                    <div class="cell">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Name : r.Project?.Name) ?? "-")</div>
+                    <div class="cell">@(r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.Code} - {r.Project.Name}" : "-")</div>
                     <div class="cell">
                         @{
                             var rTaskTitles = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();
