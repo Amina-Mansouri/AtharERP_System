@@ -288,7 +288,7 @@ namespace AtharERP_System.Controllers
 .Include(r => r.Project).ThenInclude(p => p.ParentProject)
 .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
 .Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
-.Where(r => targetProjectIds.Contains(r.ProjectId) && r.IsCleared);
+.Where(r => targetProjectIds.Contains(r.ProjectId));
 
             if (!string.IsNullOrWhiteSpace(engineerId))
             {
