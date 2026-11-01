@@ -175,12 +175,11 @@
     var totalIncrease = Model.Where(c => c.MarkupNetEffect > 0).Sum(c => c.MarkupNetEffect);
 
     var swLabels = new[] { "قيمة البيع", "قيم النسب", "إعادة التصميم", "الإجمالي" };
-    var swCum0 = totalValue;
-    var swCum1 = swCum0 + totalMarkup;
-    var swCum2 = swCum1 + totalRedesign;
-    var swBase = new[] { 0m, Math.Min(swCum0, swCum1), Math.Min(swCum1, swCum2), 0m };
-    var swDelta = new[] { totalValue, Math.Abs(totalMarkup), Math.Abs(totalRedesign), swCum2 };
-    var swColors = new[] { "#2e8b57", totalMarkup >= 0 ? "#2e8b57" : "#c94a42", totalRedesign >= 0 ? "#2e8b57" : "#c94a42", "#c9a15a" };
+    var swCum2 = totalValue + totalMarkup + totalRedesign;
+    var swTotalsData = new decimal?[] { totalValue, null, null, swCum2 };
+    var swTotalsColors = new[] { "#2e8b57", "#2e8b57", "#2e8b57", "#c9a15a" };
+    var swDeltaData = new decimal?[] { null, totalMarkup, totalRedesign, null };
+    var swDeltaColors = new[] { "#2e8b57", totalMarkup >= 0 ? "#2e8b57" : "#c94a42", totalRedesign >= 0 ? "#2e8b57" : "#c94a42", "#c9a15a" };
     var swActual = new[] { totalValue, totalMarkup, totalRedesign, swCum2 };
     var swTickLabels = new object[swLabels.Length];
     for (int i = 0; i < swLabels.Length; i++)
@@ -188,6 +187,14 @@
         swTickLabels[i] = new[] { swLabels[i], swActual[i].ToString("N0") };
     }
 
+    var deductionTickLabels = new object[deductionLabels.Length];
+    for (int i = 0; i < deductionLabels.Length; i++) { deductionTickLabels[i] = new[] { deductionLabels[i], deductionValues[i].ToString("N0") }; }
+    var increaseTickLabels = new object[increaseLabels.Length];
+    for (int i = 0; i < increaseLabels.Length; i++) { increaseTickLabels[i] = new[] { increaseLabels[i], increaseValues[i].ToString("N0") }; }
+    var netLabels = new[] { "إجمالي الخصم", "إجمالي الزيادة", "إجمالي النسب", "إجمالي البيع", "إجمالي البيع بعد النسب" };
+    var netValues = new[] { totalDeduction, totalIncrease, totalMarkup, totalValue, totalValue + totalMarkup };
+    var netTickLabels = new object[netLabels.Length];
+    for (int i = 0; i < netLabels.Length; i++) { netTickLabels[i] = new[] { netLabels[i], netValues[i].ToString("N0") }; }
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px; margin-bottom:12px;">
         <div class="athar-card">
             <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">نسبة التحصيل (بالقيمة)</div>
@@ -259,13 +266,17 @@
             data: {
                 labels: @Json.Serialize(swTickLabels),
                 datasets: [
-                    { label: 'base', data: @Json.Serialize(swBase), backgroundColor: 'transparent', borderWidth: 0, stack: 's' },
-                    { label: 'value', data: @Json.Serialize(swDelta), backgroundColor: @Json.Serialize(swColors), stack: 's' }
+                    { label: 'الإجمالي', data: @Json.Serialize(swTotalsData), backgroundColor: @Json.Serialize(swTotalsColors), yAxisID: 'ySales' },
+                    { label: 'التغيّر', data: @Json.Serialize(swDeltaData), backgroundColor: @Json.Serialize(swDeltaColors), yAxisID: 'yDelta' }
                 ]
             },
             options: {
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, stacked: true }, x: { stacked: true, ticks: { font: { size: 10 } } } }
+                scales: {
+                    ySales: { type: 'linear', position: 'left', beginAtZero: true },
+                    yDelta: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } },
+                    x: { ticks: { font: { size: 10 } } }
+                }
             }
         });
 
@@ -275,7 +286,7 @@
                     new Chart(document.getElementById('saleDeductionChart'), {
                         type: 'bar',
                         data: {
-                            labels: @Json.Serialize(deductionLabels),
+                            labels: @Json.Serialize(deductionTickLabels),
                             datasets: [{ data: @Json.Serialize(deductionValues), backgroundColor: '#c94a42' }]
                         },
                         options: {
@@ -292,7 +303,7 @@
                     new Chart(document.getElementById('saleIncreaseChart'), {
                         type: 'bar',
                         data: {
-                            labels: @Json.Serialize(increaseLabels),
+                            labels: @Json.Serialize(increaseTickLabels),
                             datasets: [{ data: @Json.Serialize(increaseValues), backgroundColor: '#2e8b57' }]
                         },
                         options: {
@@ -306,7 +317,7 @@
             new Chart(document.getElementById('saleNetMarkupChart'), {
                 type: 'bar',
                 data: {
-                    labels: ['إجمالي الخصم', 'إجمالي الزيادة', 'إجمالي النسب', 'إجمالي البيع', 'إجمالي البيع بعد النسب'],
+                    labels: @Json.Serialize(netTickLabels),
                     datasets: [{
                         data: @Json.Serialize(new[] { totalDeduction, totalIncrease, totalMarkup, totalValue, totalValue + totalMarkup }),
                         backgroundColor: ['#c94a42', '#2e8b57', '#7b6bd6', '#4a90d9', '#c9a15a']
