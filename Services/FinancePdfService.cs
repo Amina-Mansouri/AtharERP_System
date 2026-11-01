@@ -687,7 +687,7 @@ namespace AtharERP_System.Services
                             });
                             void HeaderCell(string text) => table.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
 
-                            void HeaderCell(string text) => table.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+                           
                             void DataCell(string text) => table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
 
                             HeaderCell("بيان الأعمال");
