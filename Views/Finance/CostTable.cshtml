@@ -277,7 +277,8 @@
                         @if (r.IsCleared)
                         {
                             <div style="display:flex; flex-direction:column; gap:3px;">
-                                <span class="tag tag-success">تم الصرف (@r.ClearedAt?.ToString("yyyy-MM-dd"))</span>
+                            <span class="tag tag-success">تم الصرف</span>
+                            <span style="font-size:8px; color:#8a83a0;">@r.ClearedAt?.ToString("yyyy-MM-dd")</span>
                                 <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line" style="font-size:10px;">📄 طباعة</a>
                             </div>
                         }
