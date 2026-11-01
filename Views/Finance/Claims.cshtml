@@ -303,10 +303,9 @@
         </div>
     }
 
-    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 55px 1fr 90px 1fr 70px 75px 85px 65px 90px 80px 85px 230px">
+    <div class="data-table data-table-compact" style="--cols: @(showProjectSpecificActions ? "32px" : "0px") 1.3fr 90px 1fr 70px 75px 85px 65px 90px 80px 85px 230px">
         <div class="data-table-head">
             <div class="cell"></div>
-            <div class="cell"><span>رقم المشروع</span></div>
             <div class="cell"><span>المشروع</span></div>
             <div class="cell"><span>المشروع الفرعي</span></div>
             <div class="cell"><span>بيان التكليف</span></div>
@@ -363,8 +362,7 @@
                             }
                         }
                     </div>
-                    <div class="cell cell-num">@((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Code : gProject?.Code) ?? "-")</div>
-                    <div class="cell">@((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Name : gProject?.Name) ?? "-")</div>
+                    <div class="cell">@((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Code : gProject?.Code) ?? "-") - @((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Name : gProject?.Name) ?? "-")</div>
                     <div class="cell">@(gProject != null && gProject.ParentProjectId.HasValue ? $"{gProject.Code} - {gProject.Name}" : "-")</div>
                     <div class="cell">
                         @stageName
@@ -428,8 +426,7 @@
                                     <input type="checkbox" name="claimIds" value="@c.Id" class="claim-check @gKey" />
                                 }
                             </div>
-                            <div class="cell cell-num">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project?.Code) ?? "-")</div>
-                            <div class="cell"></div>
+                            <div class="cell">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project?.Code) ?? "-")</div>
                             <div class="cell" style="font-weight:400;">@(c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.Code} - {c.Project.Name}" : "-")</div>
                             <div class="cell" style="padding-right:14px; color:#8a83a0; font-size:11px; font-weight:400;">
                                 @{
