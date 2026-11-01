@@ -156,6 +156,11 @@
         engineerReceived.Add(Model.Where(r => (r.Engineer?.FullName ?? "-") == name && r.IsCleared).Sum(r => r.ValueAfterPercentage));
         engineerNotReceived.Add(Model.Where(r => (r.Engineer?.FullName ?? "-") == name && !r.IsCleared).Sum(r => r.ValueAfterPercentage));
     }
+    var engineerTickLabels = new object[engineerNames.Count];
+    for (int i = 0; i < engineerNames.Count; i++)
+    {
+        engineerTickLabels[i] = new[] { engineerNames[i], (engineerReceived[i] + engineerNotReceived[i]).ToString("N0") };
+    }
 
     if (engineerNames.Any())
     {
@@ -170,7 +175,7 @@
             new Chart(document.getElementById('engineerBarChart'), {
                 type: 'bar',
                 data: {
-                    labels: @Json.Serialize(engineerNames),
+                    labels: @Json.Serialize(engineerTickLabels),
                     datasets: [
                         {
                             label: 'ما استلمته',
@@ -188,7 +193,7 @@
                 },
                 options: {
                     plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
-                    scales: { y: { beginAtZero: true } }
+                    scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 10 } } } }
                 }
             });
         </script>
