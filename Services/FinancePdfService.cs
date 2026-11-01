@@ -544,13 +544,19 @@ namespace AtharERP_System.Services
                         {
                             table.ColumnsDefinition(c =>
                             {
+                                c.RelativeColumn(1.3f);
                                 c.RelativeColumn(1.5f);
-                                c.RelativeColumn(1.5f);
-                                c.RelativeColumn();
+                                c.RelativeColumn(0.7f);
+                                c.RelativeColumn(0.8f);
+                                c.RelativeColumn(0.8f);
+                                c.RelativeColumn(0.9f);
                             });
                             ReceiptHeaderCell(table, "المشروع");
-                            ReceiptHeaderCell(table, "التكليف");
-                            ReceiptHeaderCell(table, "القيمة");
+                            ReceiptHeaderCell(table, "بيان الأعمال");
+                            ReceiptHeaderCell(table, "الوحدة");
+                            ReceiptHeaderCell(table, "المساحة");
+                            ReceiptHeaderCell(table, "سعر المتر");
+                            ReceiptHeaderCell(table, "الإجمالي");
 
                             foreach (var r in records)
                             {
@@ -559,10 +565,16 @@ namespace AtharERP_System.Services
                                     : "-";
                                 ReceiptDataCell(table, $"{r.Project?.Code} - {r.Project?.Name}");
                                 ReceiptDataCell(table, stageName);
+                                ReceiptDataCell(table, "م²");
+                                ReceiptDataCell(table, r.Area.HasValue ? r.Area.Value.ToString("N2") : "-");
+                                ReceiptDataCell(table, r.PricePerMeter.HasValue ? r.PricePerMeter.Value.ToString("N2") : "-");
                                 ReceiptDataCell(table, r.ValueAfterPercentage.ToString("N2"));
                             }
 
                             ReceiptTotalCell(table, "الإجمالي");
+                            ReceiptTotalCell(table, "-");
+                            ReceiptTotalCell(table, "-");
+                            ReceiptTotalCell(table, "-");
                             ReceiptTotalCell(table, "-");
                             ReceiptTotalCell(table, totalAmount.ToString("N2"));
                         });
@@ -654,15 +666,30 @@ namespace AtharERP_System.Services
                             c.Item().PaddingTop(2).Text($"فقط {NumberToArabicWords(amount)} دينار ليبي لا غير").FontSize(8).FontColor(Colors.Grey.Darken2);
                         });
 
-                        col.Item().Text(t =>
+                        col.Item().PaddingTop(6).Table(table =>
                         {
-                            t.Span("التكليف: ").FontSize(10);
-                            t.Span(stageName).FontSize(10).Bold();
-                        });
-                        col.Item().Text(t =>
-                        {
-                            t.Span("وذلك عن: ").FontSize(10);
-                            t.Span($"{stageName} — مشروع {project.Code} - {project.Name}").FontSize(10).Bold();
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(2.5f);
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                            });
+                            void HeaderCell(string text) => table.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(9);
+                            void DataCell(string text) => table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(8);
+
+                            HeaderCell("بيان الأعمال");
+                            HeaderCell("الوحدة");
+                            HeaderCell("المساحة");
+                            HeaderCell("سعر المتر");
+                            HeaderCell("الإجمالي");
+
+                            DataCell(stageName);
+                            DataCell("م²");
+                            DataCell(record.Area.HasValue ? record.Area.Value.ToString("N2") : "-");
+                            DataCell(record.PricePerMeter.HasValue ? record.PricePerMeter.Value.ToString("N2") : "-");
+                            DataCell(amount.ToString("N2"));
                         });
 
                         col.Item().PaddingTop(12).Row(row =>
