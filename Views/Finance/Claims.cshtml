@@ -93,6 +93,13 @@
     </form>
 </div>
 
+<style>
+    .task-desc-arrow {
+        font-size: 16px;
+        color: #7b6bd6;
+        font-weight: bold;
+    }
+</style>
 <script>
     function toggleDropdownPanel(e, panelId) {
         e.stopPropagation();
@@ -355,8 +362,8 @@
                             }
                         }
                     </div>
-                    <div class="cell cell-num">@(gProject?.Code ?? "-")</div>
-                    <div class="cell">@(gProject?.Name ?? "-")</div>
+                    <div class="cell cell-num">@((gProject != null && gProject.ParentProjectId.HasValue ? gProject.ParentProject?.Code : gProject?.Code) ?? "-")</div>
+                    <div class="cell">@((gProject != null && gProject.ParentProjectId.HasValue ? $"{gProject.ParentProject?.Name} - {gProject.Name}" : gProject?.Name) ?? "-")</div>
                     <div class="cell">
                         @stageName
                         @if (isMerged)
@@ -419,7 +426,7 @@
                                     <input type="checkbox" name="claimIds" value="@c.Id" class="claim-check @gKey" />
                                 }
                             </div>
-                            <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
+                            <div class="cell cell-num">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project?.Code) ?? "-")</div>
                             <div class="cell" style="padding-right:14px; color:#8a83a0; font-size:11px; font-weight:400;">
                                 @{
                                     var cTaskTitles = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();

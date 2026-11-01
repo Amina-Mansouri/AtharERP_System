@@ -93,6 +93,13 @@
     </form>
 </div>
 
+<style>
+    .task-desc-arrow {
+        font-size: 16px;
+        color: #7b6bd6;
+        font-weight: bold;
+    }
+</style>
 <script>
     function toggleDropdownPanel(e, panelId) {
         e.stopPropagation();
@@ -367,8 +374,8 @@
                         <input type="checkbox" name="claimIds" value="@c.Id" form="saleExportForm" />
                     }
                 </div>
-            <div class="cell cell-num">@(c.Project?.Code ?? "-")</div>
-                    <div class="cell">@(c.Project?.Name ?? "-")</div>
+                <div class="cell cell-num">@((c.Project != null && c.Project.ParentProjectId.HasValue ? c.Project.ParentProject?.Code : c.Project?.Code) ?? "-")</div>
+                <div class="cell">@((c.Project != null && c.Project.ParentProjectId.HasValue ? $"{c.Project.ParentProject?.Name} - {c.Project.Name}" : c.Project?.Name) ?? "-")</div>
                 <div class="cell">
                     @{
                         var cTaskTitles = c.ProjectAssignment != null ? c.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();

@@ -303,7 +303,7 @@
                         <div class="cell"><span>المشروع</span></div>
                     }
                     <div class="cell"><span>بيان التكليف</span></div>
-                    <div class="cell"><span>التاريخ</span></div>
+                    <div class="cell"><span>تاريخ الإنشاء</span></div>
                     <div class="cell"><span>قيمة البيع</span></div>
                     <div class="cell"><span>نسبة إعادة التصميم</span></div>
                     <div class="cell"><span>الإجمالي</span></div>
@@ -322,7 +322,7 @@
                         <div class="data-table-row row-income">
                             @if (project == null)
                             {
-                                <div class="cell">@c.Project?.Name</div>
+                                <div class="cell">@(c.Project != null ? (c.Project.ParentProjectId.HasValue ? $"{c.Project.ParentProject?.Code} - {c.Project.ParentProject?.Name} - {c.Project.Name}" : $"{c.Project.Code} - {c.Project.Name}") : "-")</div>
                             }
                             <div class="cell">@(c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
                             <div class="cell cell-num">@c.CreatedAt.ToString("yyyy-MM-dd")</div>
@@ -375,7 +375,7 @@
                         <div class="data-table-row row-expense">
                             @if (project == null)
                             {
-                                <div class="cell">@r.Project?.Name</div>
+                                <div class="cell">@(r.Project != null ? (r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Code} - {r.Project.ParentProject?.Name} - {r.Project.Name}" : $"{r.Project.Code} - {r.Project.Name}") : "-")</div>
                             }
                             <div class="cell">@(r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-")</div>
                             <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
@@ -538,7 +538,7 @@
         <div>
             <div class="data-table profit-table" style="--cols: 100px 1fr 100px 1fr;">
                 <div class="data-table-head">
-                    <div class="cell">التاريخ</div>
+                    <div class="cell">تاريخ المصروف</div>
                     <div class="cell">التصنيف</div>
                     <div class="cell">المبلغ</div>
                     <div class="cell">الوصف</div>

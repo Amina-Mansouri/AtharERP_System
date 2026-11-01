@@ -251,8 +251,8 @@
                                 <input type="checkbox" name="recordIds" value="@r.Id" form="engineerStatementForm" />
                             }
                         </div>
-                        <div class="cell cell-num">@(r.Project?.Code ?? "-")</div>
-                        <div class="cell">@(r.Project?.Name ?? "-")</div>
+                    <div class="cell cell-num">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project?.Code) ?? "-")</div>
+                    <div class="cell">@((r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Name} - {r.Project.Name}" : r.Project?.Name) ?? "-")</div>
                     <div class="cell">
                         @{
                             var rTaskTitles = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();

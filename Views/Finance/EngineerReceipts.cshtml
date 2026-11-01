@@ -89,6 +89,13 @@
     </form>
 </div>
 
+<style>
+    .task-desc-arrow {
+        font-size: 16px;
+        color: #7b6bd6;
+        font-weight: bold;
+    }
+</style>
 <script>
     function toggleDropdownPanel(e, panelId) {
         e.stopPropagation();
@@ -155,7 +162,7 @@
             <div class="data-table-row">
                 <div class="cell"><input type="checkbox" name="recordIds" value="@r.Id" form="combinedReceiptForm" /></div>
                 <div class="cell">@r.ClearedAt?.ToString("yyyy-MM-dd")</div>
-                <div class="cell">@(r.Project?.Code ?? "-") - @(r.Project?.Name ?? "-")</div>
+                <div class="cell">@((r.Project != null && r.Project.ParentProjectId.HasValue ? r.Project.ParentProject?.Code : r.Project?.Code) ?? "-") - @((r.Project != null && r.Project.ParentProjectId.HasValue ? $"{r.Project.ParentProject?.Name} - {r.Project.Name}" : r.Project?.Name) ?? "-")</div>
                 <div class="cell">
                     @{
                         var rTaskTitles = r.ProjectAssignment != null ? r.ProjectAssignment.Tasks.Select(t => t.Title).ToList() : new List<string>();

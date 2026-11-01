@@ -83,8 +83,8 @@
         {
             <div class="data-table-row">
                 <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
-                <div class="cell cell-num">@p.FinancialClaim.Project.Code</div>
-                <div class="cell">@p.FinancialClaim.Project.Name</div>
+                <div class="cell cell-num">@(p.FinancialClaim.Project.ParentProjectId.HasValue ? p.FinancialClaim.Project.ParentProject?.Code : p.FinancialClaim.Project.Code)</div>
+                <div class="cell">@(p.FinancialClaim.Project.ParentProjectId.HasValue ? $"{p.FinancialClaim.Project.ParentProject?.Name} - {p.FinancialClaim.Project.Name}" : p.FinancialClaim.Project.Name)</div>
                 <div class="cell">@p.FinancialClaim.Project.Client.Name</div>
                 <div class="cell">@(p.FinancialClaim.ProjectAssignment?.Stage?.Name ?? "-")</div>
                 <div class="cell cell-num">@p.Amount.ToString("N0")</div>

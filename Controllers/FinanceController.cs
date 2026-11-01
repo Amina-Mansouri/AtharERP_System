@@ -284,11 +284,11 @@ namespace AtharERP_System.Controllers
             ViewBag.Project = project;
 
             var query = _context.FinancialRecords
+.Include(r => r.Engineer)
+.Include(r => r.Project).ThenInclude(p => p.ParentProject)
 .Include(r => r.ProjectAssignment).ThenInclude(a => a.Stage)
 .Include(r => r.ProjectAssignment).ThenInclude(a => a.Tasks)
-.Include(r => r.Engineer)
-.Include(r => r.Project)
-.Where(r => targetProjectIds.Contains(r.ProjectId));
+.Where(r => targetProjectIds.Contains(r.ProjectId) && r.IsCleared);
 
             if (!string.IsNullOrWhiteSpace(engineerId))
             {
@@ -623,7 +623,7 @@ namespace AtharERP_System.Controllers
             var query = _context.FinancialClaims
 .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
 .Include(c => c.ProjectAssignment).ThenInclude(a => a.Tasks)
-.Include(c => c.Project)
+.Include(c => c.Project).ThenInclude(p => p.ParentProject)
 .Where(c => targetProjectIds.Contains(c.ProjectId));
 
             if (dateFrom.HasValue)
@@ -1080,9 +1080,10 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
              public async Task<IActionResult> ClaimPaymentsHistory(int claimId)
         {
             var claim = await _context.FinancialClaims
-                .Include(c => c.Project)
-                .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
-                .FirstOrDefaultAsync(c => c.Id == claimId);
+     .Include(c => c.Project).ThenInclude(p => p.ParentProject)
+     .Include(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+     .FirstOrDefaultAsync(c => c.Id == claimId);
+
             if (claim == null) return NotFound();
 
             if (!await _permissionService.CanAccessProjectAsync(User, claim.ProjectId))
@@ -1219,9 +1220,10 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
                 accessibleProjectIds = accessibleProjectIds.Where(id => projectIds.Contains(id)).ToList();
 
             var query = _context.ClaimPayments
-      .Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
-      .Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
-      .Where(p => accessibleProjectIds.Contains(p.FinancialClaim.ProjectId));
+.Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.Client)
+.Include(p => p.FinancialClaim).ThenInclude(c => c.Project).ThenInclude(p => p.ParentProject)
+.Include(p => p.FinancialClaim).ThenInclude(c => c.ProjectAssignment).ThenInclude(a => a.Stage)
+.Where(p => accessibleProjectIds.Contains(p.FinancialClaim.ProjectId));
 
             if (dateFrom.HasValue) query = query.Where(p => p.PaidAt >= dateFrom.Value);
             if (dateTo.HasValue) query = query.Where(p => p.PaidAt <= dateTo.Value.AddDays(1).AddTicks(-1));
