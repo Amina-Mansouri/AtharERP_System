@@ -170,8 +170,15 @@
     </div>
 
     <div class="athar-card no-print" style="margin-bottom:16px;">
-        <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">مسار تحوّل المبيعات إلى هامش الربح</div>
-        <canvas id="profitWaterfall" height="140"></canvas>
+        <button type="button" class="btn-line" style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;" data-bs-toggle="collapse" data-bs-target="#secWaterfall">
+            <span style="font-size:12.5px; font-weight:600;">مسار تحوّل المبيعات إلى هامش الربح</span>
+            <span>▾</span>
+        </button>
+        <div class="collapse show" id="secWaterfall">
+            <div style="height:300px;">
+                <canvas id="profitWaterfall"></canvas>
+            </div>
+        </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script>
@@ -197,7 +204,8 @@
         }
                 ]
             },
-            options: {
+                       options: {
+                maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: true },
                 plugins: {
                     legend: { display: false },
@@ -212,13 +220,15 @@
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        grid: { color: '#e4e2ec', borderDash: [4, 4] }
+                        grid: { color: '#e4e2ec', borderDash: [4, 4] },
+                        ticks: { font: { size: 9 } }
                     },
                     x: {
                         stacked: true,
                         grid: { display: false },
-                        categoryPercentage: 0.7,
-                        barPercentage: 0.9
+                        categoryPercentage: 0.6,
+                        barPercentage: 0.8,
+                        ticks: { font: { size: 9 } }
                     }
                 }
             }
