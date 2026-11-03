@@ -187,25 +187,23 @@
                     }
                     else
                     {
-                        @{
-                            var latestSupplyRequest = t.SupplyRequests.OrderByDescending(r => r.RequestDate).FirstOrDefault();
-                            string supplyStatusLabel = latestSupplyRequest?.Status switch
-                            {
-                                SiteSupplyStatus.Pending => "معلّق",
-                                SiteSupplyStatus.Approved => "تمت الموافقة",
-                                SiteSupplyStatus.Delivered => "تم التسليم",
-                                SiteSupplyStatus.Rejected => "مرفوض",
-                                _ => "-"
-                            };
-                            string supplyStatusClass = latestSupplyRequest?.Status switch
-                            {
-                                SiteSupplyStatus.Approved => "tag-accent",
-                                SiteSupplyStatus.Delivered => "tag-success",
-                                SiteSupplyStatus.Rejected => "tag-danger",
-                                _ => "tag-warning"
-                            };
-                        }
-                        @if (latestSupplyRequest != null && latestSupplyRequest.Status != SiteSupplyStatus.Rejected)
+                        var latestSupplyRequest = t.SupplyRequests.OrderByDescending(r => r.RequestDate).FirstOrDefault();
+                        string supplyStatusLabel = latestSupplyRequest?.Status switch
+                        {
+                            SiteSupplyStatus.Pending => "معلّق",
+                            SiteSupplyStatus.Approved => "تمت الموافقة",
+                            SiteSupplyStatus.Delivered => "تم التسليم",
+                            SiteSupplyStatus.Rejected => "مرفوض",
+                            _ => "-"
+                        };
+                        string supplyStatusClass = latestSupplyRequest?.Status switch
+                        {
+                            SiteSupplyStatus.Approved => "tag-accent",
+                            SiteSupplyStatus.Delivered => "tag-success",
+                            SiteSupplyStatus.Rejected => "tag-danger",
+                            _ => "tag-warning"
+                        };
+                        if (latestSupplyRequest != null && latestSupplyRequest.Status != SiteSupplyStatus.Rejected)
                         {
                             <div style="padding:14px 0; font-size:12px;">
                                 حالة طلب التوريد: <span class="tag @supplyStatusClass">@supplyStatusLabel</span>
@@ -214,7 +212,7 @@
                         }
                         else
                         {
-                            @if (latestSupplyRequest != null && latestSupplyRequest.Status == SiteSupplyStatus.Rejected)
+                            if (latestSupplyRequest != null && latestSupplyRequest.Status == SiteSupplyStatus.Rejected)
                             {
                                 <div style="color:#c94a42; font-size:11.5px; margin:10px 0 4px;">رُفض طلب التوريد السابق — يمكنك إرسال طلب جديد أدناه</div>
                             }
