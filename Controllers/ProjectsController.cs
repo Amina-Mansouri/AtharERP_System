@@ -315,6 +315,21 @@ namespace AtharERP_System.Controllers
             });
             await _context.SaveChangesAsync();
 
+            // ترحيل تلقائي للموقع فور إنشاء المشروع (إن كان مفعّلاً)
+            if (model.AutoTransferToSite)
+            {
+                _context.Sites.Add(new Site
+                {
+                    Name = model.Name,
+                    ProjectId = model.Id,
+                    Status = SiteStatus.Active,
+                    StartDate = DateTime.UtcNow,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+
             await _audit.LogAsync(CurrentUserId, "Create", nameof(Project), model.Id.ToString(), $"إنشاء مشروع: {model.Name} ({model.Code})");
 
             TempData["Success"] = $"تم إنشاء المشروع {model.Name} برمز {model.Code} بنجاح";
@@ -397,9 +412,25 @@ namespace AtharERP_System.Controllers
             project.ActualDeliveryDate = model.ActualDeliveryDate;
 
             project.Priority = model.Priority;
+            var autoTransferJustEnabled = model.AutoTransferToSite && !project.AutoTransferToSite;
             project.AutoTransferToSite = model.AutoTransferToSite;
 
             await _context.SaveChangesAsync();
+
+            // إن تم تفعيل الترحيل التلقائي الآن (لم يكن مفعّلاً) ولا يوجد موقع للمشروع بعد — يُنشأ فوراً
+            if (autoTransferJustEnabled && !await _context.Sites.AnyAsync(s => s.ProjectId == project.Id))
+            {
+                _context.Sites.Add(new Site
+                {
+                    Name = project.Name,
+                    ProjectId = project.Id,
+                    Status = SiteStatus.Active,
+                    StartDate = DateTime.UtcNow,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
 
             var projectStagesToSync = await _context.ProjectStages.Where(s => s.ProjectId == project.Id).ToListAsync();
             if (projectStagesToSync.Any())
