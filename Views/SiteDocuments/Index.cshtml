@@ -13,8 +13,7 @@
     <a asp-controller="Sites" asp-action="Details" asp-route-id="@site?.Id" class="btn-line">العودة للموقع</a>
 </div>
 
-<div class="stat-sub" style="margin-bottom:10px;">عرض فقط — الإضافة والحذف تتمّان حصرياً من تبويب "المستندات" في شاشة بيانات المشروع</div>
-
+<div class="stat-sub" style="margin-bottom:10px;">هذه مستندات المشروع @site?.Project?.Name</div>
 <div class="data-table" style="--cols: 1.6fr 1.4fr 1fr 130px;">
     <div class="data-table-head">
         <div class="cell">الملف</div>
