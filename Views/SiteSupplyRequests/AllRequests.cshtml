@@ -113,7 +113,7 @@
                 <a href="@rowUrl" class="data-table-row" style="text-decoration:none; color:inherit;">
                     @if (canApprove)
                     {
-                        <div class="cell" onclick="event.preventDefault(); event.stopPropagation();"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+                        <div class="cell" onclick="event.stopPropagation();"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
                     }
                     <div class="cell">@r.Site?.Project?.Name</div>
                     <div class="cell">@r.Site?.Name</div>

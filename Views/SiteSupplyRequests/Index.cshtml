@@ -60,12 +60,13 @@
     </form>
 </div>
 
-<form method="post" asp-action="ExportSelectedPdf">
+<form method="post" asp-action="ExportSelectedPdf" id="exportForm">
     @Html.AntiForgeryToken()
-    <div style="margin-bottom:10px;">
-        <button type="submit" class="btn-line btn-line-accent">🖨 طباعة المحدد</button>
-    </div>
-    <div class="data-table" style="--cols: 36px 70px 1.2fr 90px 90px 1fr 1fr 130px @(canApprove ? "260px" : "");">
+</form>
+<div style="margin-bottom:10px;">
+    <button type="submit" form="exportForm" class="btn-line btn-line-accent">🖨 طباعة المحدد</button>
+</div>
+<div class="data-table" style="--cols: 36px 70px 1.2fr 90px 90px 1fr 1fr 130px @(canApprove ? "260px" : "");">
         <div class="data-table-head">
             <div class="cell"></div>
             <div class="cell">#الطلب</div>
@@ -93,8 +94,8 @@
                     continue;
                 }
                 anyRows = true;
-                <div class="data-table-row">
-                    <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
+            <div class="data-table-row">
+                <div class="cell"><input type="checkbox" name="itemIds" value="@item.Id" form="exportForm" /></div>
                     <div class="cell cell-num">@r.Id</div>
                     <div class="cell">
                         @item.MaterialName
@@ -114,16 +115,16 @@
                     @if (canApprove)
                     {
                         <div class="cell" style="display:flex; gap:4px; align-items:center;">
-                            <form method="post" asp-action="UpdateStatus" style="display:flex; gap:4px;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@r.Id" />
-                                <select name="status" class="form-select form-select-sm">
-                                    <option value="Pending" selected="@(r.Status == SiteSupplyStatus.Pending)">معلق</option>
-                                    <option value="Approved" selected="@(r.Status == SiteSupplyStatus.Approved)">تمت الموافقة</option>
-                                    <option value="Rejected" selected="@(r.Status == SiteSupplyStatus.Rejected)">مرفوض</option>
-                                </select>
-                                <button type="submit" class="btn-line btn-line-accent">تحديث</button>
-                            </form>
+                        <form method="post" asp-action="UpdateStatus" style="display:flex; gap:4px; flex-wrap:nowrap;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <select name="status" class="form-select form-select-sm" style="max-width:105px; flex-shrink:0;">
+                                <option value="Pending" selected="@(r.Status == SiteSupplyStatus.Pending)">معلق</option>
+                                <option value="Approved" selected="@(r.Status == SiteSupplyStatus.Approved)">تمت الموافقة</option>
+                                <option value="Rejected" selected="@(r.Status == SiteSupplyStatus.Rejected)">مرفوض</option>
+                            </select>
+                            <button type="submit" class="btn-line btn-line-accent" style="white-space:nowrap; flex-shrink:0;">تحديث</button>
+                        </form>
                             @if (r.Status == SiteSupplyStatus.Approved)
                             {
                                 <a asp-action="RegisterExpense" asp-route-id="@r.Id" class="btn-line" style="color:#2f8a57;">تسجيل الصرف</a>
@@ -133,10 +134,9 @@
                 </div>
             }
         }
-        @if (!anyRows)
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد ضمن هذه الفلترة</div></div>
-        }
-    </div>
-</form>
+    @if (!anyRows)
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات توريد ضمن هذه الفلترة</div></div>
+    }
+</div>
 
