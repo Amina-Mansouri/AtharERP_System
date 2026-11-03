@@ -104,7 +104,7 @@
             <a asp-controller="SiteMaintenance" asp-action="Index" asp-route-siteId="@Model.Id" class="btn-line">الصيانة</a>
             <a asp-controller="SiteDocuments" asp-action="Index" asp-route-siteId="@Model.Id" class="btn-line">المستندات</a>
         }
-        @if (!isDesignEngineer)
+   
         @if (!isDesignEngineer)
         {
             <a asp-controller="SiteCorrespondences" asp-action="Index" asp-route-siteId="@Model.Id" class="btn-line">مراسلات المقاول</a>

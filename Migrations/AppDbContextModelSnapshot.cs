@@ -2484,6 +2484,9 @@ namespace AtharERP_System.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("ProjectTaskId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("RequestDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -2502,6 +2505,8 @@ namespace AtharERP_System.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectTaskId");
 
                     b.HasIndex("RequestedByContractorId");
 
@@ -3691,6 +3696,10 @@ namespace AtharERP_System.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectTask", "ProjectTask")
+                        .WithMany("SupplyRequests")
+                        .HasForeignKey("ProjectTaskId");
+
                     b.HasOne("AtharERP_System.Models.Entities.Contractor", "RequestedByContractor")
                         .WithMany()
                         .HasForeignKey("RequestedByContractorId");
@@ -3707,6 +3716,8 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("Project");
+
+                    b.Navigation("ProjectTask");
 
                     b.Navigation("RequestedBy");
 
@@ -3988,6 +3999,8 @@ namespace AtharERP_System.Migrations
                     b.Navigation("DependentTasks");
 
                     b.Navigation("DesignProposals");
+
+                    b.Navigation("SupplyRequests");
 
                     b.Navigation("Todos");
                 });
