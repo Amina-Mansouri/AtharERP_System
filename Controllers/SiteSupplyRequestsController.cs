@@ -317,7 +317,7 @@ List<int?> vendorIds, List<string?> itemNotes, List<IFormFile> photos)
 
             return RedirectToAction("Expenses", "Finance", new
             {
-                projectId = request.ProjectId,
+                projectIds = new List<int> { request.ProjectId },
                 prefillSiteId = request.SiteId,
                 prefillCategoryId = category.Id,
                 prefillDescription = itemsSummary,
