@@ -219,6 +219,7 @@ namespace AtharERP_System.Controllers
             ViewBag.Engineers = new List<ApplicationUser>();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = new List<ProjectDocument>();
+            ViewBag.SupplyRequests = new List<SiteSupplyRequest>();
             return View("Details", new Project());
         }
 
@@ -296,6 +297,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
                 ViewBag.Engineers = new List<ApplicationUser>();
                 ViewBag.Documents = new List<ProjectDocument>();
+                ViewBag.SupplyRequests = new List<SiteSupplyRequest>();
                 return View("Details", model);
             }
 
@@ -379,8 +381,10 @@ namespace AtharERP_System.Controllers
                 ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
                 ViewBag.Engineers = new List<ApplicationUser>();
                 ViewBag.Documents = new List<ProjectDocument>();
+                ViewBag.SupplyRequests = new List<SiteSupplyRequest>();
                 return View("Details", model);
             }
+        
 
             if (model.Scope == ProjectScope.Main)
             {
