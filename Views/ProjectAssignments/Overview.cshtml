@@ -163,7 +163,7 @@
 
 @if (!selectedProjectId.HasValue)
 {
-     @{
+  
         var statusChips = new[]
         {
             new { Key = "all", Label = "عدد التكليفات", Count = (int)ViewBag.TotalAssignments, Color = "#7b6bd6" },
@@ -173,7 +173,7 @@
             new { Key = "completed", Label = "مكتملة", Count = (int)ViewBag.CompletedAssignments, Color = "#2f8a57" },
             new { Key = "cancelled", Label = "ملغاة", Count = (int)ViewBag.CancelledAssignments, Color = "#b9b4c7" }
         };
-    }
+    
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
         @foreach (var chip in statusChips)
         {
