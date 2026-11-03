@@ -2200,43 +2200,6 @@ namespace AtharERP_System.Migrations
                     b.ToTable("SiteDailyReportPhotos");
                 });
 
-            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDocument", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("SiteId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SiteId");
-
-                    b.ToTable("SiteDocuments");
-                });
-
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteMaintenance", b =>
                 {
                     b.Property<int>("Id")
@@ -3572,17 +3535,6 @@ namespace AtharERP_System.Migrations
                     b.Navigation("DailyReport");
                 });
 
-            modelBuilder.Entity("AtharERP_System.Models.Entities.SiteDocument", b =>
-                {
-                    b.HasOne("AtharERP_System.Models.Entities.Site", "Site")
-                        .WithMany("Documents")
-                        .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Site");
-                });
-
             modelBuilder.Entity("AtharERP_System.Models.Entities.SiteMaintenance", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "Responsible")
@@ -4012,8 +3964,6 @@ namespace AtharERP_System.Migrations
                     b.Navigation("Correspondences");
 
                     b.Navigation("DailyReports");
-
-                    b.Navigation("Documents");
 
                     b.Navigation("MaintenanceRequests");
 
