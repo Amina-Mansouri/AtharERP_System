@@ -119,8 +119,7 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             var supplyIndices = (supplyTaskIndices ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
-            if (template == null)
-                return NotFound();
+        
 
             var totalTaskWeight = taskWeights?.Where(w => w.HasValue).Sum(w => w!.Value) ?? 0;
             if (totalTaskWeight > 100)
