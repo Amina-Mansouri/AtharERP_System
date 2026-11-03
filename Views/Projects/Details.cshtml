@@ -23,7 +23,7 @@
     var parentProjects = ViewBag.ParentProjects as List<Project> ?? new List<Project>();
     var projectCategories = ViewBag.ProjectCategories as List<ProjectCategory> ?? new List<ProjectCategory>();
     var lastSubProjectByParent = ViewBag.LastSubProjectByParent as Dictionary<int, string> ?? new Dictionary<int, string>();
-     var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
+    var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
     var supplyRequests = ViewBag.SupplyRequests as List<SiteSupplyRequest> ?? new List<SiteSupplyRequest>();
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
