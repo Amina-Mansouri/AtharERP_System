@@ -26,7 +26,7 @@
 }
 
 <div class="athar-card mt-3">
-    <form method="post" asp-action="Create">
+    <form method="post" asp-action="Create" id="templateCreateForm">
         @Html.AntiForgeryToken()
 
         <div class="row">
@@ -132,7 +132,7 @@
             addTaskRow();
         }
 
-        document.querySelector('form').addEventListener('submit', function () {
+        document.getElementById('templateCreateForm').addEventListener('submit', function () {
             var rows = document.querySelectorAll('#taskRows > div');
             var indices = [];
             rows.forEach(function (row, idx) {
