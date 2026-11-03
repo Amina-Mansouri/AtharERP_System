@@ -23,8 +23,8 @@
     var parentProjects = ViewBag.ParentProjects as List<Project> ?? new List<Project>();
     var projectCategories = ViewBag.ProjectCategories as List<ProjectCategory> ?? new List<ProjectCategory>();
     var lastSubProjectByParent = ViewBag.LastSubProjectByParent as Dictionary<int, string> ?? new Dictionary<int, string>();
-    var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
-
+     var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
+    var supplyRequests = ViewBag.SupplyRequests as List<SiteSupplyRequest> ?? new List<SiteSupplyRequest>();
     var projectStatusLabels = EnumDisplayHelper.GetDisplayList<ProjectStatus>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
     var failedTemplateId = TempData.Peek("FailedTemplateId") as int?;
@@ -287,6 +287,7 @@ else
         <a class="tab-item" data-bs-toggle="tab" href="#pane-stages">مراحل المشروع (@Model.Stages.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-assignments">التكليفات (@allAssignments.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">وثائق المشروع (@documents.Count)</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-supply">التوريدات (@supplyRequests.Count)</a>
         <a class="tab-item" data-bs-toggle="tab" href="#pane-timeline">الجدول الزمني</a>
         
         @if (Model.Scope == ProjectScope.Main)
@@ -1152,6 +1153,60 @@ else
                                             </div>
                                             <span class="tag @DocsProposalTagClass(doc.Status)">@DocsProposalLabel(doc.Status)</span>
                                         </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="pane-supply">
+            @{
+                string SupplyStatusLabel(SiteSupplyStatus s) => s switch
+                {
+                    SiteSupplyStatus.Pending => "معلّق",
+                    SiteSupplyStatus.Approved => "تمت الموافقة",
+                    SiteSupplyStatus.Delivered => "تم التسليم",
+                    SiteSupplyStatus.Rejected => "مرفوض",
+                    _ => s.ToString()
+                };
+                string SupplyStatusClass(SiteSupplyStatus s) => s switch
+                {
+                    SiteSupplyStatus.Approved => "tag-accent",
+                    SiteSupplyStatus.Delivered => "tag-success",
+                    SiteSupplyStatus.Rejected => "tag-danger",
+                    _ => "tag-warning"
+                };
+            }
+            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">سجل طلبات التوريد (عرض فقط)</div>
+                @if (!supplyRequests.Any())
+                {
+                    <div class="stat-sub">لا توجد طلبات توريد لهذا المشروع بعد</div>
+                }
+                else
+                {
+                    <div style="display:grid; gap:10px;">
+                        @foreach (var sr in supplyRequests)
+                        {
+                            <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                                    <div style="font-size:11.5px; font-weight:700;">
+                                        طلب #@sr.Id
+                                        @if (sr.ProjectTask != null)
+                                        {
+                                            <span class="stat-sub">— عن مهمة: @sr.ProjectTask.Title</span>
+                                        }
+                                    </div>
+                                    <span class="tag @SupplyStatusClass(sr.Status)">@SupplyStatusLabel(sr.Status)</span>
+                                </div>
+                                <div class="stat-sub" style="margin-bottom:6px;">@(sr.RequestedBy?.FullName ?? sr.RequestedByContractor?.Name ?? "-") · @sr.RequestDate.ToString("yyyy-MM-dd")</div>
+                                <div style="display:grid; gap:4px;">
+                                    @foreach (var item in sr.Items)
+                                    {
+                                        <div style="font-size:11px; color:#5a5370;">• @item.MaterialName — @item.Quantity.ToString("N2") @item.Unit</div>
                                     }
                                 </div>
                             </div>

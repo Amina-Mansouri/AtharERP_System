@@ -193,10 +193,11 @@ namespace AtharERP_System.Controllers
    .ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
+            ViewBag.SupplyRequests = await _context.SiteSupplyRequests.Include(r => r.Items).Include(r => r.RequestedBy).Include(r => r.RequestedByContractor).Include(r => r.ProjectTask).Where(r => r.ProjectId == id).OrderByDescending(r => r.RequestDate).ToListAsync();
             await LoadDropdownsAsync(id);
             return View(project);
-        
-          
+
+
         }
 
         // ============================================
@@ -262,6 +263,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
                 ViewBag.Engineers = new List<ApplicationUser>();
                 ViewBag.Documents = new List<ProjectDocument>();
+                ViewBag.SupplyRequests = new List<SiteSupplyRequest>();
                 ViewBag.SuggestedProjectCode = await GenerateSuggestedMainProjectCodeAsync();
                 return View("Details", model);
             }
