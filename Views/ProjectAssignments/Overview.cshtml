@@ -26,9 +26,20 @@
     var totalAssignmentsCount = 0;
     var reworkCountInScope = 0;
     var avgCompletionInScope = 0m;
+    Dictionary<string, int>? docTabCounts = null;
     List<(string Label, int Value, string Color)>? assignmentSlices = null;
     if (selectedProjectId.HasValue)
     {
+        var allProposalsForCounts = Model.SelectMany(a => a.Tasks.SelectMany(t => t.Todos.SelectMany(td => td.DesignProposals))).ToList();
+        docTabCounts = new Dictionary<string, int>
+        {
+            ["all"] = allProposalsForCounts.Count,
+            ["Submitted"] = allProposalsForCounts.Count(p => p.Status == ProposalStatus.Submitted),
+            ["Approved"] = allProposalsForCounts.Count(p => p.Status == ProposalStatus.Approved),
+            ["ApprovedWithModification"] = allProposalsForCounts.Count(p => p.Status == ProposalStatus.ApprovedWithModification),
+            ["Resubmission"] = allProposalsForCounts.Count(p => p.Status == ProposalStatus.Resubmission),
+            ["Redesign"] = allProposalsForCounts.Count(p => p.Status == ProposalStatus.Redesign)
+        };
         totalAssignmentsCount = (int)ViewBag.TotalAssignments;
         var pendingAssignmentsCount = (int)ViewBag.PendingAssignments;
         var inProgressAssignmentsCount = (int)ViewBag.InProgressAssignments;
@@ -112,21 +123,32 @@
         <input type="hidden" name="docFilter" value="@docFilter" />
     </form>
 
-    @if (selectedProjectId.HasValue)
-    {
-        <div style="width:1px; align-self:stretch; background:#f1f0f6;"></div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            @foreach (var dtab in docTabs)
-            {
-                var isDocActive = docFilter == dtab.Key;
-                var dtabStyle = isDocActive
-                    ? "background:#7b6bd6; color:#fff; border-color:#7b6bd6;"
-                    : "background:#fff; color:#5a5370; border-color:#e4e2ec;";
-                <a href="@Url.Action("Overview", new { projectId = selectedProjectId, subProjectId = selectedSubProjectId, stageId = selectedStageId, docFilter = dtab.Key })" style="text-decoration:none; font-size:11px; padding:5px 12px; border-radius:8px; border:1px solid; @dtabStyle">@dtab.Label</a>
-            }
-        </div>
-    }
 </div>
+
+@if (selectedProjectId.HasValue)
+{
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-bottom:12px;">
+        @foreach (var dtab in docTabs)
+        {
+            var isDocActive = docFilter == dtab.Key;
+            var dtabColor = dtab.Key switch
+            {
+                "Submitted" => "#c9700f",
+                "Approved" => "#2f8a57",
+                "ApprovedWithModification" => "#2f8a57",
+                "Resubmission" => "#c94a42",
+                "Redesign" => "#c94a42",
+                _ => "#7b6bd6"
+            };
+            var dtabCount = docTabCounts != null && docTabCounts.TryGetValue(dtab.Key, out var cnt) ? cnt : 0;
+            <a href="@Url.Action("Overview", new { projectId = selectedProjectId, subProjectId = selectedSubProjectId, stageId = selectedStageId, docFilter = dtab.Key })"
+               style="text-decoration:none; background:@(isDocActive ? dtabColor : "#fff"); border:1px solid @(isDocActive ? dtabColor : "#ecebf2"); border-right:4px solid @dtabColor; border-radius:11px; padding:10px 12px; display:block;">
+                <div style="font-size:10px; color:@(isDocActive ? "#fff" : "#8a83a0");">@dtab.Label</div>
+                <div style="font-size:19px; font-weight:700; margin-top:2px; color:@(isDocActive ? "#fff" : "#221837");">@dtabCount</div>
+            </a>
+        }
+    </div>
+}
 
 <script>
     (function () {
