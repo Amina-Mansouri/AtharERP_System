@@ -74,6 +74,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "عاجلة")]
         public bool IsUrgent { get; set; }
 
+        [Display(Name = "توريد؟")]
+        public bool IsSupply { get; set; }
+
         [Display(Name = "المخرَج المطلوب")]
         public TaskOutputType? OutputType { get; set; }
 

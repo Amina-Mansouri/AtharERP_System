@@ -1656,6 +1656,9 @@ namespace AtharERP_System.Migrations
                     b.Property<int?>("ExpectedDays")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsSupply")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsUrgent")
                         .HasColumnType("boolean");
 
@@ -2630,6 +2633,9 @@ namespace AtharERP_System.Migrations
 
                     b.Property<decimal?>("DefaultWeight")
                         .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsSupply")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Order")
                         .HasColumnType("integer");

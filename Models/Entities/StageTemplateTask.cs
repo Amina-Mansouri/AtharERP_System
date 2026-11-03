@@ -24,5 +24,8 @@ namespace AtharERP_System.Models.Entities
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "الوزن الافتراضي %")]
         public decimal? DefaultWeight { get; set; }
+
+        [Display(Name = "توريد؟")]
+        public bool IsSupply { get; set; }
     }
 }

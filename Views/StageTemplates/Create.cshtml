@@ -7,9 +7,16 @@
     var postedTaskNames = ViewBag.PostedTaskNames as List<string> ?? new List<string>();
     var postedTaskWeights = ViewBag.PostedTaskWeights as List<decimal?> ?? new List<decimal?>();
     var existingTasksJson = System.Text.Json.JsonSerializer.Serialize(
-        postedTaskNames.Select((n, i) => new { name = n, weight = i < postedTaskWeights.Count ? postedTaskWeights[i] : null })
-    );
+     postedTaskNames.Select((n, i) => new { name = n, weight = i < postedTaskWeights.Count ? postedTaskWeights[i] : null })
+ );
 }
+
+<script>
+    function isSupplyTaskRow(row) {
+        var chk = row.querySelector('.task-supply-chk');
+        return chk && chk.checked;
+    }
+</script>
 
 <h1 class="athar-page-title">إنشاء قالب مرحلة جديد</h1>
 
@@ -52,6 +59,7 @@
                 <label class="form-label">المهام الافتراضية (اسم + وزن افتراضي لكل مهمة)</label>
                 <div id="taskRows" style="display:grid; gap:6px; margin-bottom:8px;"></div>
                 <button type="button" class="btn athar-btn-outline" onclick="addTaskRow()">+ إضافة مهمة</button>
+                <input type="hidden" id="supplyTaskIndices" name="supplyTaskIndices" />
             </div>
         </div>
 
@@ -62,11 +70,12 @@
 
 @section Scripts {
     <script>
-        function addTaskRow(name, weight) {
+        function addTaskRow(name, weight, isSupply) {
             var wrap = document.getElementById('taskRows');
             var row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '8px';
+            row.style.alignItems = 'center';
 
             var nameInput = document.createElement('input');
             nameInput.type = 'text';
@@ -88,23 +97,48 @@
             weightInput.style.flex = '1';
             weightInput.value = (weight != null ? weight : '');
 
+            var supplyLabel = document.createElement('label');
+            supplyLabel.style.display = 'flex';
+            supplyLabel.style.alignItems = 'center';
+            supplyLabel.style.gap = '4px';
+            supplyLabel.style.fontSize = '11.5px';
+            supplyLabel.style.whiteSpace = 'nowrap';
+
+            var supplyChk = document.createElement('input');
+            supplyChk.type = 'checkbox';
+            supplyChk.className = 'task-supply-chk';
+            supplyChk.checked = !!isSupply;
+
+            supplyLabel.appendChild(supplyChk);
+            supplyLabel.appendChild(document.createTextNode('توريد؟'));
+
             var delBtn = document.createElement('button');
             delBtn.type = 'button';
             delBtn.className = 'btn-line';
             delBtn.style.color = '#c94a42';
             delBtn.textContent = 'حذف';
-            delBtn.onclick = function() { row.remove(); };
+            delBtn.onclick = function () { row.remove(); };
 
             row.appendChild(nameInput);
             row.appendChild(weightInput);
+            row.appendChild(supplyLabel);
             row.appendChild(delBtn);
             wrap.appendChild(row);
         }
-                var existingTasks = @Html.Raw(existingTasksJson);
+        var existingTasks = @Html.Raw(existingTasksJson);
         if (existingTasks.length > 0) {
-                existingTasks.forEach(function (t) { addTaskRow(t.name, t.weight); });
-                } else {
-                    addTaskRow();
-                }
+            existingTasks.forEach(function (t) { addTaskRow(t.name, t.weight, t.isSupply); });
+        } else {
+            addTaskRow();
+        }
+
+        document.querySelector('form').addEventListener('submit', function () {
+            var rows = document.querySelectorAll('#taskRows > div');
+            var indices = [];
+            rows.forEach(function (row, idx) {
+                if (isSupplyTaskRow(row)) indices.push(idx);
+            });
+            document.getElementById('supplyTaskIndices').value = indices.join(',');
+        });
     </script>
 }

@@ -34,8 +34,9 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, int? disciplineDepartmentId, int stageOrder = 1)
+        public async Task<IActionResult> Create(string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, string? supplyTaskIndices, int? disciplineDepartmentId, int stageOrder = 1)
         {
+            var supplyIndices = (supplyTaskIndices ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
             if (string.IsNullOrWhiteSpace(name))
             {
                 ViewBag.Error = "اسم القالب مطلوب";
@@ -83,7 +84,8 @@ namespace AtharERP_System.Controllers
                         StageTemplateId = template.Id,
                         TaskName = taskName,
                         Order = order,
-                        DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null
+                        DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null,
+                        IsSupply = supplyIndices.Contains(i)
                     });
                     order++;
                 }
@@ -110,9 +112,13 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Stages.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, bool isActive, int? disciplineDepartmentId, int stageOrder = 1)
+        public async Task<IActionResult> Edit(int id, string name, decimal? defaultWeight, List<string>? taskNames, List<decimal?>? taskWeights, string? supplyTaskIndices, bool isActive, int? disciplineDepartmentId, int stageOrder = 1)
         {
             var template = await _context.StageTemplates.Include(t => t.DefaultTasks).FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+                return NotFound();
+
+            var supplyIndices = (supplyTaskIndices ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
             if (template == null)
                 return NotFound();
 
@@ -152,7 +158,8 @@ namespace AtharERP_System.Controllers
                         StageTemplateId = template.Id,
                         TaskName = taskName,
                         Order = order,
-                        DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null
+                        DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null,
+                        IsSupply = supplyIndices.Contains(i)
                     });
                     order++;
                 }

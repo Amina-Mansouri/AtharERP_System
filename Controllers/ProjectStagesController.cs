@@ -207,6 +207,11 @@ namespace AtharERP_System.Controllers
             if (selectedTasksWeightTotal != 100)
                 return Fail($"مجموع أوزان المهام المختارة يجب أن يساوي 100% بالضبط (المجموع الحالي: {selectedTasksWeightTotal}%)");
 
+            if (selectedTaskIds != null
+                && selectedTaskIds.Any(taskId => template.DefaultTasks.Any(dt => dt.Id == taskId && dt.IsSupply))
+                && !await _context.Sites.AnyAsync(s => s.ProjectId == projectId))
+                return Fail("هذه المرحلة تحتوي مهمة توريد — يجب أن يكون للمشروع موقع مُرحَّل أولاً قبل تفعيلها");
+
             var stage = new ProjectStage
             {
                 ProjectId = projectId,
@@ -435,6 +440,10 @@ namespace AtharERP_System.Controllers
             if (combinedTotal != 100)
                 return Fail($"مجموع أوزان المهام (القالب + الإضافية) يجب أن يساوي 100% بالضبط (المجموع الحالي: {combinedTotal}%)");
 
+            if (taskWeights.Keys.Any(taskId => template.DefaultTasks.Any(dt => dt.Id == taskId && dt.IsSupply))
+                && !await _context.Sites.AnyAsync(s => s.ProjectId == stage.ProjectId))
+                return Fail("هذه المرحلة تحتوي مهمة توريد — يجب أن يكون للمشروع موقع مُرحَّل أولاً قبل حفظ مهامها");
+
             var skippedNotes = new List<string>();
 
             foreach (var defaultTask in template.DefaultTasks)
@@ -458,6 +467,7 @@ namespace AtharERP_System.Controllers
                             Weight = taskWeights[defaultTask.Id],
                             Status = ProjectTaskStatus.NotStarted,
                             Priority = TaskPriority.Medium,
+                            IsSupply = defaultTask.IsSupply,
                             CreatedAt = DateTime.UtcNow,
                             CreatedById = CurrentUserId
                         });
