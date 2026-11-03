@@ -76,19 +76,35 @@ namespace AtharERP_System.Controllers
                 var accessibleAllProjectIds = await accessibleAllProjectIdsQuery.Select(p => p.Id).ToListAsync();
 
                 var allAssignmentsFlat = await _context.ProjectAssignments
-                    .Include(a => a.Project)
-                    .Include(a => a.Stage)
-                    .Include(a => a.Engineers).ThenInclude(e => e.User)
-                    .Include(a => a.Tasks)
-                    .Where(a => accessibleAllProjectIds.Contains(a.ProjectId))
-                    .OrderByDescending(a => a.CreatedAt)
-                    .ToListAsync();
+      .Include(a => a.Project)
+      .Include(a => a.Stage)
+      .Include(a => a.Engineers).ThenInclude(e => e.User)
+      .Include(a => a.Tasks)
+      .Where(a => accessibleAllProjectIds.Contains(a.ProjectId))
+      .OrderByDescending(a => a.CreatedAt)
+      .ToListAsync();
 
                 ViewBag.TotalAssignments = allAssignmentsFlat.Count;
                 ViewBag.PendingAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
                 ViewBag.InProgressAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
                 ViewBag.CompletedAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.Completed);
+                ViewBag.CancelledAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.Cancelled);
                 ViewBag.OverdueAssignments = allAssignmentsFlat.Count(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.EffectiveDelayDays > 0));
+
+                var totalForShare = allAssignmentsFlat.Count;
+                ViewBag.EngineerLeaderboard = allAssignmentsFlat
+                    .SelectMany(a => a.Engineers.Select(e => e.User))
+                    .Where(u => u != null)
+                    .GroupBy(u => u!.Id)
+                    .Select(g => new
+                    {
+                        Name = g.First()!.FullName,
+                        Count = g.Count(),
+                        Percent = totalForShare > 0 ? Math.Round((decimal)g.Count() / totalForShare * 100, 0) : 0
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .Take(4)
+                    .ToList();
 
                 return View(allAssignmentsFlat);
             }
