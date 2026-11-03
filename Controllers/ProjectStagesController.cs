@@ -41,8 +41,10 @@ namespace AtharERP_System.Controllers
         // تتبّع مراحل مشروع (اختيار مشروع → إحصائيات مراحله)
         // ============================================
         [RequirePermission("Projects.ViewOwn", "Projects.ViewAll")]
-        public async Task<IActionResult> Overview(int? projectId, int? subProjectId)
+        public async Task<IActionResult> Overview(int? projectId, int? subProjectId, string? statusFilter)
         {
+            statusFilter = string.IsNullOrEmpty(statusFilter) ? "all" : statusFilter;
+            ViewBag.StatusFilter = statusFilter;
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
                 .Where(tm => tm.UserId == CurrentUserId)
@@ -105,13 +107,40 @@ namespace AtharERP_System.Controllers
             ViewBag.CompletedStages = stages.Count(s => s.Status == StageStatus.Completed);
             ViewBag.InProgressStages = stages.Count(s => s.Status == StageStatus.InProgress);
             ViewBag.DelayedStages = stages.Count(s => s.Status == StageStatus.Delayed);
+            ViewBag.NewStages = stages.Count(s => s.Status == StageStatus.New);
+            ViewBag.ClientReviewStages = stages.Count(s => s.Status == StageStatus.ClientReview);
             var totalStageWeight = stages.Sum(s => s.Weight);
             var distinctProjectCount = stages.Select(s => s.ProjectId).Distinct().Count();
             ViewBag.WeightSum = distinctProjectCount > 0 ? totalStageWeight / distinctProjectCount : 0;
             ViewBag.WeightedCompletion = totalStageWeight > 0
      ? Math.Round(stages.Sum(s => s.Weight * s.CompletionPercentage) / totalStageWeight, 1)
      : 0;
-            return View(stages);
+
+            var totalStagesForShare = stages.Count;
+            ViewBag.SupervisorLeaderboard = stages
+                .Where(s => s.AssignedEngineer != null)
+                .GroupBy(s => s.AssignedEngineerId)
+                .Select(g => new
+                {
+                    Name = g.First().AssignedEngineer!.FullName,
+                    Count = g.Count(),
+                    Percent = totalStagesForShare > 0 ? Math.Round((decimal)g.Count() / totalStagesForShare * 100, 0) : 0
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(4)
+                .ToList();
+
+            var filteredStages = statusFilter switch
+            {
+                "new" => stages.Where(s => s.Status == StageStatus.New).ToList(),
+                "inprogress" => stages.Where(s => s.Status == StageStatus.InProgress).ToList(),
+                "clientreview" => stages.Where(s => s.Status == StageStatus.ClientReview).ToList(),
+                "delayed" => stages.Where(s => s.Status == StageStatus.Delayed).ToList(),
+                "completed" => stages.Where(s => s.Status == StageStatus.Completed).ToList(),
+                _ => stages
+            };
+
+            return View(filteredStages);
         }
 
 

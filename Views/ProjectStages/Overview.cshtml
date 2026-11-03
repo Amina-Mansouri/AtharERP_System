@@ -9,6 +9,7 @@
     var selectedSubProjectId = ViewBag.SubProjectId as int?;
     var stageTemplates = ViewBag.StageTemplates as List<StageTemplate> ?? new List<StageTemplate>();
     var stageStatusLabels = EnumDisplayHelper.GetDisplayList<StageStatus>();
+    var selectedStatusFilter = ViewBag.StatusFilter as string ?? "all";
 
     List<(string Label, int Value, string Color)>? stageSlices = null;
     {
@@ -16,15 +17,19 @@
         var completedStagesCountForChart = (int)ViewBag.CompletedStages;
         var inProgressStagesCountForChart = (int)ViewBag.InProgressStages;
         var delayedStagesCountForChart = (int)ViewBag.DelayedStages;
-        var notStartedStagesCountForChart = totalStagesCountForChart - completedStagesCountForChart - inProgressStagesCountForChart - delayedStagesCountForChart;
+        var newStagesCountForChart = (int)ViewBag.NewStages;
+        var clientReviewStagesCountForChart = (int)ViewBag.ClientReviewStages;
         stageSlices = new List<(string Label, int Value, string Color)>
         {
-            ("لم تبدأ", notStartedStagesCountForChart, "#8a83a0"),
+            ("جديدة", newStagesCountForChart, "#8a83a0"),
             ("قيد التنفيذ", inProgressStagesCountForChart, "#7b6bd6"),
+            ("مراجعة العميل", clientReviewStagesCountForChart, "#c9a15a"),
             ("مكتملة", completedStagesCountForChart, "#2f8a57"),
             ("متأخرة", delayedStagesCountForChart, "#c94a42")
         };
     }
+
+    var supervisorLeaderboard = ViewBag.SupervisorLeaderboard as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 
     string StageTagClass(StageStatus s) => s switch
     {
@@ -41,10 +46,10 @@
 </div>
 
 <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:12px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-    <form method="get" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <form method="get" id="stagesFilterForm" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:8px;">
             <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع</label>
-            <select name="projectId" onchange="var sp=this.form.querySelector('[name=subProjectId]'); if(sp) sp.value=''; this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
+            <select name="projectId" id="stageProjectSelect" onchange="var sp=this.form.querySelector('[name=subProjectId]'); if(sp) sp.value=''; this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
                 <option value="">-- عرض الكل --</option>
                 @foreach (var p in projects)
                 {
@@ -56,7 +61,7 @@
         {
             <div style="display:flex; align-items:center; gap:8px;">
                 <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المشروع الفرعي</label>
-                <select name="subProjectId" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
+                <select name="subProjectId" id="stageSubProjectSelect" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:190px; background:#fff;">
                     <option value="">-- المشروع الرئيسي نفسه --</option>
                     @foreach (var sp in subProjects)
                     {
@@ -66,13 +71,70 @@
             </div>
         }
     </form>
-    @if (stageSlices != null)
+</div>
+
+<script>
+    (function () {
+        var subSelect = document.getElementById('stageSubProjectSelect');
+        if (subSelect && subSelect.value === '' && subSelect.options.length > 1) {
+            subSelect.value = subSelect.options[1].value;
+            document.getElementById('stagesFilterForm').submit();
+        }
+    })();
+</script>
+
+@{
+    var stageChips = new[]
     {
-        <div style="width:1px; align-self:stretch; background:#f1f0f6;"></div>
-        <div style="display:inline-block;">
-            @await Html.PartialAsync("_StatDonutChart", stageSlices)
-        </div>
+        new { Key = "all", Label = "عدد المراحل", Count = (int)ViewBag.TotalStages, Color = "#7b6bd6" },
+        new { Key = "new", Label = "جديدة", Count = (int)ViewBag.NewStages, Color = "#8a83a0" },
+        new { Key = "inprogress", Label = "قيد التنفيذ", Count = (int)ViewBag.InProgressStages, Color = "#7b6bd6" },
+        new { Key = "clientreview", Label = "مراجعة العميل", Count = (int)ViewBag.ClientReviewStages, Color = "#c9a15a" },
+        new { Key = "delayed", Label = "متأخرة", Count = (int)ViewBag.DelayedStages, Color = "#c94a42" },
+        new { Key = "completed", Label = "مكتملة", Count = (int)ViewBag.CompletedStages, Color = "#2f8a57" }
+    };
+}
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
+    @foreach (var chip in stageChips)
+    {
+        var isChipActive = selectedStatusFilter == chip.Key;
+        <a href="@Url.Action("Overview", new { projectId = selectedProjectId, subProjectId = selectedSubProjectId, statusFilter = chip.Key })"
+           style="text-decoration:none; display:block; background:@(isChipActive ? chip.Color : "#fff"); border:1px solid @(isChipActive ? chip.Color : "#ecebf2"); border-right:4px solid @chip.Color; border-radius:11px; padding:12px 14px;">
+            <div style="font-size:10.5px; color:@(isChipActive ? "#fff" : "#8a83a0");">@chip.Label</div>
+            <div style="font-size:21px; font-weight:700; margin-top:3px; color:@(isChipActive ? "#fff" : chip.Color);">@chip.Count</div>
+        </a>
     }
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; align-items:start;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">أكثر المهندسين إشرافاً على المراحل</div>
+        @if (!supervisorLeaderboard.Any())
+        {
+            <div class="stat-sub">لا توجد مراحل مُسندة بعد</div>
+        }
+        else
+        {
+            <div style="display:grid; gap:10px;">
+                @foreach (var sup in supervisorLeaderboard)
+                {
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:4px;">
+                            <span>@sup.Name</span>
+                            <span style="color:#8a83a0;">@sup.Count مرحلة</span>
+                        </div>
+                        <div style="background:#f1f0f6; border-radius:6px; height:7px; overflow:hidden;">
+                            <div style="background:#7b6bd6; height:100%; width:@(sup.Percent)%;"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:6px;">توزيع المراحل حسب الحالة</div>
+        @await Html.PartialAsync("_StatDonutChart", stageSlices)
+    </div>
 </div>
 
 <div class="stat-strip stat-strip-text">
@@ -95,7 +157,7 @@
     </div>
     @if (!Model.Any())
     {
-        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مطابقة</div></div>
     }
     else
     {
