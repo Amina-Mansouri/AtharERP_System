@@ -1193,10 +1193,18 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var result = await _calc.CalculateProjectNetProfitAsync(new List<int> { projectId }, dateFrom, dateTo);
 
-            var accessibleProjects = await GetAccessibleProjectsAsync(null);
-            var aggregateProjectIds = accessibleProjects.Select(p => p.Id).ToList();
-            var aggregate = aggregateProjectIds.Any()
-                ? await _calc.CalculateProjectNetProfitAsync(aggregateProjectIds, dateFrom, dateTo)
+            var profitDocNumber = await GetOrAssignProfitReportDocNumberAsync(project);
+            var pdf = _pdfExport.GenerateProjectOnlyProfitReport(project, result, profitDocNumber);
+            return File(pdf, "application/pdf", $"{profitDocNumber}.pdf");
+        }
+
+        [RequirePermission("Finance.Sales.View")]
+        public async Task<IActionResult> PrintCompanyProfitReport(int? categoryId, DateTime? dateFrom, DateTime? dateTo)
+        {
+            var accessibleProjects = await GetAccessibleProjectsAsync(categoryId);
+            var projectIds = accessibleProjects.Select(p => p.Id).ToList();
+            var result = projectIds.Any()
+                ? await _calc.CalculateProjectNetProfitAsync(projectIds, dateFrom, dateTo)
                 : new ProjectCalculationService.ProjectNetProfitResult();
 
             var marginAdminExpensesQuery = _context.ProjectExpenses.Where(e => e.ProjectId == null);
@@ -1205,9 +1213,9 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             var generalAdminExpenses = await marginAdminExpensesQuery.Include(e => e.ExpenseCategory).OrderByDescending(e => e.Date).ToListAsync();
             var generalAdminTotal = generalAdminExpenses.Sum(e => e.Amount);
 
-            var profitDocNumber = await GetOrAssignProfitReportDocNumberAsync(project);
-            var pdf = _pdfExport.GenerateProjectProfitReport(project, result, aggregate, generalAdminTotal, generalAdminTotal, generalAdminExpenses, profitDocNumber);
-            return File(pdf, "application/pdf", $"{profitDocNumber}.pdf");
+            var docNumber = $"PNL-ALL-{DateTime.UtcNow:yyyyMMdd}";
+            var pdf = _pdfExport.GenerateCompanyProfitReport(result, generalAdminTotal, generalAdminExpenses, docNumber);
+            return File(pdf, "application/pdf", $"{docNumber}.pdf");
         }
 
         [RequirePermission("Finance.Sales.View")]

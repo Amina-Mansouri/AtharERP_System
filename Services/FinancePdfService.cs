@@ -983,7 +983,7 @@ namespace AtharERP_System.Services
             }).GeneratePdf();
         }
 
-        public byte[] GenerateProjectProfitReport(Project project, ProjectCalculationService.ProjectNetProfitResult result, ProjectCalculationService.ProjectNetProfitResult aggregate, decimal generalAdminTotal, decimal generalAdminTotalForMargin, List<ProjectExpense> generalAdminExpenses, string docNumber)
+        public byte[] GenerateProjectOnlyProfitReport(Project project, ProjectCalculationService.ProjectNetProfitResult result, string docNumber)
         {
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
             var hasLogo = File.Exists(logoPath);
@@ -996,9 +996,6 @@ namespace AtharERP_System.Services
 
             void ProfitTotalCell(TableDescriptor t, string text) =>
                 t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(7.5f);
-
-            var treasury = aggregate.TotalSalesRealized - aggregate.TotalTaskCostsRealized - aggregate.SiteCosts - aggregate.TotalGeneralExpenses;
-            var profitMargin = treasury - generalAdminTotalForMargin;
 
             return Document.Create(container =>
             {
@@ -1186,6 +1183,229 @@ namespace AtharERP_System.Services
                             ProfitTotalCell(table, result.SiteCosts.ToString("N0"));
                         });
 
+                        col.Item().PaddingTop(16).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المدير العام").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(20);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("اعتماد المالية").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(14).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                        });
+                    });
+
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+            }).GeneratePdf();
+        }
+
+        public byte[] GenerateCompanyProfitReport(ProjectCalculationService.ProjectNetProfitResult result, decimal generalAdminTotal, List<ProjectExpense> generalAdminExpenses, string docNumber)
+        {
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
+            var hasLogo = File.Exists(logoPath);
+
+            void ProfitHeaderCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#221837").Padding(3).Text(text).FontColor(Colors.White).Bold().FontSize(8);
+
+            void ProfitDataCell(TableDescriptor t, string text) =>
+        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Text(text).FontSize(7.5f);
+
+            void ProfitTotalCell(TableDescriptor t, string text) =>
+                t.Cell().Background("#f6f4fb").BorderTop(1).BorderColor("#c9a15a").Padding(3).Text(text).Bold().FontSize(7.5f);
+
+            var treasury = result.TotalSalesRealized - result.TotalTaskCostsRealized - result.SiteCosts - result.TotalGeneralExpenses;
+            var profitMargin = treasury - generalAdminTotal;
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(25);
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
+                    page.ContentFromRightToLeft();
+
+                    page.Header().Column(header =>
+                    {
+                        header.Item().Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                if (hasLogo)
+                                    c.Item().Height(35).Image(logoPath).FitArea();
+                                c.Item().PaddingTop(4).Text("تقرير الربح والخسارة — كل المشاريع").FontSize(14).Bold().FontColor("#221837");
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                            });
+                            row.ConstantItem(140).Border(1).BorderColor("#c9a15a").Padding(5).Column(c =>
+                            {
+                                c.Item().Text("رقم مرجعي").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text(docNumber).FontSize(10).Bold().FontColor("#221837");
+                                c.Item().PaddingTop(2).Text(t =>
+                                {
+                                    t.Span("التاريخ : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span($"{DateTime.UtcNow:yyyy-MM-dd}").FontSize(8);
+                                });
+                                c.Item().Text(t =>
+                                {
+                                    t.Span("الموافق : ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                    t.Span(ArabicDayName(DateTime.UtcNow)).FontSize(8);
+                                });
+                            });
+                        });
+                        header.Item().PaddingTop(6).BorderBottom(2).BorderColor("#c9a15a");
+                    });
+
+                    page.Content().PaddingTop(10).Column(col =>
+                    {
+                        col.Spacing(14);
+
+                        // === 1) المبيعات ===
+                        col.Item().Text("المبيعات").FontSize(12).Bold().FontColor("#221837");
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(1.6f);
+                                c.RelativeColumn(2.2f);
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                            });
+                            ProfitHeaderCell(table, "المشروع");
+                            ProfitHeaderCell(table, "بيان التكليف");
+                            ProfitHeaderCell(table, "قيمة البيع");
+                            ProfitHeaderCell(table, "نسبة إعادة التصميم");
+                            ProfitHeaderCell(table, "الإجمالي");
+                            ProfitHeaderCell(table, "المحقق");
+                            ProfitHeaderCell(table, "المستحق");
+                            ProfitHeaderCell(table, "الحالة");
+
+                            foreach (var c in result.Claims)
+                            {
+                                ProfitDataCell(table, c.Project != null ? $"{c.Project.Code} - {c.Project.Name}" : "-");
+                                ProfitDataCell(table, c.ProjectAssignment != null && c.ProjectAssignment.Tasks.Any() ? string.Join("، ", c.ProjectAssignment.Tasks.Select(t => t.Title)) : "-");
+                                ProfitDataCell(table, c.Value.ToString("N0"));
+                                ProfitDataCell(table, c.RedesignIncreasePercentage.HasValue ? c.RedesignIncreasePercentage.Value.ToString("N1") + "%" : "-");
+                                ProfitDataCell(table, c.RealValue.ToString("N0"));
+                                ProfitDataCell(table, c.PaidAmount.ToString("N0"));
+                                ProfitDataCell(table, c.RemainingAmount.ToString("N0"));
+                                ProfitDataCell(table, c.IsClientSettled ? "تم التحصيل" : "بانتظار التحصيل");
+                            }
+
+                            ProfitTotalCell(table, "الإجمالي");
+                            ProfitTotalCell(table, "-");
+                            ProfitTotalCell(table, result.Claims.Sum(c => c.Value).ToString("N0"));
+                            ProfitTotalCell(table, "-");
+                            ProfitTotalCell(table, result.Claims.Sum(c => c.RealValue).ToString("N0"));
+                            ProfitTotalCell(table, result.Claims.Sum(c => c.PaidAmount).ToString("N0"));
+                            ProfitTotalCell(table, result.Claims.Sum(c => c.RemainingAmount).ToString("N0"));
+                            ProfitTotalCell(table, "-");
+                        });
+
+                        // === 2) تكاليف المهام ===
+                        col.Item().Text("تكاليف المهام").FontSize(12).Bold().FontColor("#221837");
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(1.6f);
+                                c.RelativeColumn(2);
+                                c.RelativeColumn(1.5f);
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                                c.RelativeColumn();
+                            });
+                            ProfitHeaderCell(table, "المشروع");
+                            ProfitHeaderCell(table, "بيان التكليف");
+                            ProfitHeaderCell(table, "المهندسة");
+                            ProfitHeaderCell(table, "القيمة");
+                            ProfitHeaderCell(table, "تقييم الأداء");
+                            ProfitHeaderCell(table, "استحقاق المهندسة");
+                            ProfitHeaderCell(table, "الحالة");
+
+                            foreach (var r in result.Records)
+                            {
+                                ProfitDataCell(table, r.Project != null ? $"{r.Project.Code} - {r.Project.Name}" : "-");
+                                ProfitDataCell(table, r.ProjectAssignment != null && r.ProjectAssignment.Tasks.Any() ? string.Join("، ", r.ProjectAssignment.Tasks.Select(t => t.Title)) : "-");
+                                ProfitDataCell(table, r.Engineer?.FullName ?? "-");
+                                ProfitDataCell(table, r.Value.ToString("N0"));
+                                ProfitDataCell(table, r.ContributionPercentage.HasValue ? r.ContributionPercentage.Value.ToString("N1") + "%" : "-");
+                                ProfitDataCell(table, r.ValueAfterPercentage.ToString("N0"));
+                                ProfitDataCell(table, r.IsCleared ? "مصروف" : "غير مصروف");
+                            }
+
+                            ProfitTotalCell(table, "الإجمالي");
+                            ProfitTotalCell(table, "-");
+                            ProfitTotalCell(table, "-");
+                            ProfitTotalCell(table, result.Records.Sum(r => r.Value).ToString("N0"));
+                            ProfitTotalCell(table, "-");
+                            ProfitTotalCell(table, result.Records.Sum(r => r.ValueAfterPercentage).ToString("N0"));
+                            ProfitTotalCell(table, "-");
+                        });
+
+                        // === 3) مصروفات المشاريع ===
+                        col.Item().Text("مصروفات المشاريع").FontSize(12).Bold().FontColor("#221837");
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(2);
+                                c.RelativeColumn();
+                            });
+                            ProfitHeaderCell(table, "التصنيف");
+                            ProfitHeaderCell(table, "المبلغ");
+
+                            foreach (var cat in result.ProjectExpensesByCategory)
+                            {
+                                ProfitDataCell(table, cat.CategoryName);
+                                ProfitDataCell(table, cat.Amount.ToString("N0"));
+                            }
+
+                            ProfitTotalCell(table, "الإجمالي");
+                            ProfitTotalCell(table, result.ProjectExpensesByCategory.Sum(c => c.Amount).ToString("N0"));
+                        });
+
+                        // === 4) تكاليف المواقع ===
+                        col.Item().Text("تكاليف المواقع").FontSize(12).Bold().FontColor("#221837");
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.RelativeColumn(2);
+                                c.RelativeColumn();
+                            });
+                            ProfitHeaderCell(table, "المصدر");
+                            ProfitHeaderCell(table, "المبلغ");
+
+                            if (result.SiteCostBreakdown.MaintenanceCost != 0)
+                            {
+                                ProfitDataCell(table, "الصيانة");
+                                ProfitDataCell(table, result.SiteCostBreakdown.MaintenanceCost.ToString("N0"));
+                            }
+                            if (result.SiteCostBreakdown.ContractorCost != 0)
+                            {
+                                ProfitDataCell(table, "أجور المقاولين");
+                                ProfitDataCell(table, result.SiteCostBreakdown.ContractorCost.ToString("N0"));
+                            }
+                            foreach (var cat in result.SiteCostBreakdown.ExpensesByCategory)
+                            {
+                                ProfitDataCell(table, cat.CategoryName);
+                                ProfitDataCell(table, cat.Amount.ToString("N0"));
+                            }
+
+                            ProfitTotalCell(table, "الإجمالي");
+                            ProfitTotalCell(table, result.SiteCosts.ToString("N0"));
+                        });
+
                         // === 5) الخزينة ===
                         col.Item().Text("الخزينة").FontSize(12).Bold().FontColor("#221837");
                         col.Item().Table(table =>
@@ -1203,23 +1423,23 @@ namespace AtharERP_System.Services
                             ProfitHeaderCell(table, "المتبقي");
 
                             ProfitDataCell(table, "+ إجمالي المبيعات");
-                            ProfitDataCell(table, aggregate.TotalSalesAccrued.ToString("N0"));
-                            ProfitDataCell(table, aggregate.TotalSalesRealized.ToString("N0"));
-                            ProfitDataCell(table, (aggregate.TotalSalesAccrued - aggregate.TotalSalesRealized).ToString("N0"));
+                            ProfitDataCell(table, result.TotalSalesAccrued.ToString("N0"));
+                            ProfitDataCell(table, result.TotalSalesRealized.ToString("N0"));
+                            ProfitDataCell(table, (result.TotalSalesAccrued - result.TotalSalesRealized).ToString("N0"));
 
                             ProfitDataCell(table, "− تكاليف المهام");
-                            ProfitDataCell(table, aggregate.TotalTaskCostsAccrued.ToString("N0"));
-                            ProfitDataCell(table, aggregate.TotalTaskCostsRealized.ToString("N0"));
-                            ProfitDataCell(table, (aggregate.TotalTaskCostsAccrued - aggregate.TotalTaskCostsRealized).ToString("N0"));
+                            ProfitDataCell(table, result.TotalTaskCostsAccrued.ToString("N0"));
+                            ProfitDataCell(table, result.TotalTaskCostsRealized.ToString("N0"));
+                            ProfitDataCell(table, (result.TotalTaskCostsAccrued - result.TotalTaskCostsRealized).ToString("N0"));
 
                             ProfitDataCell(table, "− تكاليف المواقع");
-                            ProfitDataCell(table, aggregate.SiteCosts.ToString("N0"));
-                            ProfitDataCell(table, aggregate.SiteCosts.ToString("N0"));
+                            ProfitDataCell(table, result.SiteCosts.ToString("N0"));
+                            ProfitDataCell(table, result.SiteCosts.ToString("N0"));
                             ProfitDataCell(table, "-");
 
                             ProfitDataCell(table, "− مصروفات المشروع");
-                            ProfitDataCell(table, aggregate.TotalGeneralExpenses.ToString("N0"));
-                            ProfitDataCell(table, aggregate.TotalGeneralExpenses.ToString("N0"));
+                            ProfitDataCell(table, result.TotalGeneralExpenses.ToString("N0"));
+                            ProfitDataCell(table, result.TotalGeneralExpenses.ToString("N0"));
                             ProfitDataCell(table, "-");
 
                             ProfitTotalCell(table, "الخزينة =");
@@ -1281,8 +1501,8 @@ namespace AtharERP_System.Services
                             ProfitDataCell(table, "-");
 
                             ProfitDataCell(table, "− مصروفات عامة");
-                            ProfitDataCell(table, generalAdminTotalForMargin.ToString("N0"));
-                            ProfitDataCell(table, generalAdminTotalForMargin.ToString("N0"));
+                            ProfitDataCell(table, generalAdminTotal.ToString("N0"));
+                            ProfitDataCell(table, generalAdminTotal.ToString("N0"));
                             ProfitDataCell(table, "-");
 
                             ProfitDataCell(table, "− الرواتب (قادمة)");
