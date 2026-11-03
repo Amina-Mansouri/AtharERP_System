@@ -51,7 +51,6 @@ namespace AtharERP_System.Data
         public DbSet<SiteManager> SiteManagers { get; set; } = null!;
         public DbSet<Contractor> Contractors { get; set; } = null!;
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
-        public DbSet<SiteDocument> SiteDocuments { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
         public DbSet<SiteSupplyRequestItem> SiteSupplyRequestItems { get; set; } = null!;
         public DbSet<Vendor> Vendors { get; set; } = null!;
@@ -515,13 +514,6 @@ namespace AtharERP_System.Data
                 .WithMany()
                 .HasForeignKey(m => m.ResponsibleId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            // ========== مستندات الموقع (SiteDocument) ==========
-            builder.Entity<SiteDocument>()
-                .HasOne(d => d.Site)
-                .WithMany(s => s.Documents)
-                .HasForeignKey(d => d.SiteId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             // ========== طلبات توريد الموقع (SiteSupplyRequest) ==========
             builder.Entity<SiteSupplyRequest>()

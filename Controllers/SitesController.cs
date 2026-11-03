@@ -276,15 +276,14 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var site = await _context.Sites
-                .Include(s => s.Operations)
-                .Include(s => s.DailyReports)
-                .Include(s => s.QualityChecks)
-                .Include(s => s.SafetyChecks)
-                .Include(s => s.Contractors)
-                .Include(s => s.MaintenanceRequests)
-                .Include(s => s.Documents)
-                .Include(s => s.SupplyRequests)
-                .FirstOrDefaultAsync(s => s.Id == id);
+      .Include(s => s.Operations)
+      .Include(s => s.DailyReports)
+      .Include(s => s.QualityChecks)
+      .Include(s => s.SafetyChecks)
+      .Include(s => s.Contractors)
+      .Include(s => s.MaintenanceRequests)
+      .Include(s => s.SupplyRequests)
+      .FirstOrDefaultAsync(s => s.Id == id);
 
             if (site == null)
                 return NotFound();
@@ -295,12 +294,12 @@ namespace AtharERP_System.Controllers
             var hasExpenses = await _context.ProjectExpenses.AnyAsync(e => e.SiteId == id);
 
             var hasData = site.Operations.Any() || site.DailyReports.Any() || site.QualityChecks.Any()
-                || site.SafetyChecks.Any() || site.Contractors.Any() || site.MaintenanceRequests.Any()
-                || site.Documents.Any() || site.SupplyRequests.Any() || hasExpenses;
+      || site.SafetyChecks.Any() || site.Contractors.Any() || site.MaintenanceRequests.Any()
+      || site.SupplyRequests.Any() || hasExpenses;
 
             if (hasData)
             {
-                TempData["Error"] = "لا يمكن حذف الموقع لوجود بيانات ميدانية أو مصروفات مسجَّلة عليه (مراحل/تقارير/فحوصات/مقاولين/صيانة/مستندات/طلبات توريد/مصروفات)";
+                TempData["Error"] = "لا يمكن حذف الموقع لوجود بيانات ميدانية أو مصروفات مسجَّلة عليه (مراحل/تقارير/فحوصات/مقاولين/صيانة/طلبات توريد/مصروفات)";
                 return RedirectToAction("Details", new { id });
             }
 
