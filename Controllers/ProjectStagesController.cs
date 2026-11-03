@@ -456,6 +456,7 @@ namespace AtharERP_System.Controllers
                     if (existingTask != null)
                     {
                         existingTask.Weight = taskWeights[defaultTask.Id];
+                        existingTask.IsSupply = defaultTask.IsSupply;
                     }
                     else
                     {
