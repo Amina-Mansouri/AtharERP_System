@@ -9,6 +9,45 @@
     var sitesWithTodayReport = ViewBag.SitesWithTodayReport as List<int> ?? new();
     var pendingNeedsBySite = ViewBag.PendingNeedsBySite as Dictionary<int, int> ?? new();
 
+    var mainSites = Model.Where(s => s.Project.ParentProjectId == null).ToList();
+    var mainProjectIds = mainSites.Select(s => s.ProjectId).ToHashSet();
+    var childSitesByParentProject = Model
+        .Where(s => s.Project.ParentProjectId.HasValue && mainProjectIds.Contains(s.Project.ParentProjectId.Value))
+        .GroupBy(s => s.Project.ParentProjectId!.Value)
+        .ToDictionary(g => g.Key, g => g.ToList());
+    var nestedChildSiteIds = childSitesByParentProject.Values.SelectMany(v => v).Select(s => s.Id).ToHashSet();
+    var orphanChildSites = Model.Where(s => s.Project.ParentProjectId.HasValue && !nestedChildSiteIds.Contains(s.Id)).ToList();
+
+    var siteGroups = new List<List<(Site Site, bool IsNestedChild)>>();
+    foreach (var ms in mainSites)
+    {
+        var group = new List<(Site, bool)> { (ms, false) };
+        if (childSitesByParentProject.TryGetValue(ms.ProjectId, out var kids))
+        {
+            foreach (var kid in kids)
+            {
+                group.Add((kid, true));
+            }
+        }
+        siteGroups.Add(group);
+    }
+    foreach (var orphan in orphanChildSites)
+    {
+        siteGroups.Add(new List<(Site, bool)> { (orphan, false) });
+    }
+
+    const int sitePagerPageSize = 20;
+    int sitePagerPage = ViewBag.Page as int? ?? 1;
+    int sitePagerTotalCount = siteGroups.Count;
+    int sitePagerTotalPages = Math.Max(1, (int)Math.Ceiling(sitePagerTotalCount / (double)sitePagerPageSize));
+    sitePagerPage = Math.Max(1, Math.Min(sitePagerPage, sitePagerTotalPages));
+
+    var orderedSites = siteGroups
+        .Skip((sitePagerPage - 1) * sitePagerPageSize)
+        .Take(sitePagerPageSize)
+        .SelectMany(g => g)
+        .ToList();
+
     string StatusLabel(SiteStatus s) => s switch
     {
         SiteStatus.Active => "نشط",
@@ -107,16 +146,37 @@
     }
     else
     {
-        @foreach (var site in Model)
+        @foreach (var item in orderedSites)
         {
+            var site = item.Site;
+            var isNestedChild = item.IsNestedChild;
             var completion = completionBySite.TryGetValue(site.Id, out var c) ? c : 0;
             var hasTodayReport = sitesWithTodayReport.Contains(site.Id);
             var pendingNeeds = pendingNeedsBySite.TryGetValue(site.Id, out var n) ? n : 0;
             var activeContractor = site.Contractors.FirstOrDefault(sc => sc.Status == ContractorStatus.Active);
+            var siteHasKids = !isNestedChild && childSitesByParentProject.ContainsKey(site.ProjectId);
+            var siteNameCellStyle = isNestedChild ? "padding-right:24px;" : "";
+            if (siteHasKids) { siteNameCellStyle += "position:relative; padding-right:26px;"; }
+            var siteParentIdAttr = isNestedChild ? site.Project.ParentProjectId : (int?)null;
+            var siteRowStyle = isNestedChild ? "text-decoration:none; color:inherit; background:#faf9fc; display:none;" : "text-decoration:none; color:inherit;";
 
-            <a asp-action="Details" asp-route-id="@site.Id" class="data-table-row" style="text-decoration:none; color:inherit;">
+            <a asp-action="Details" asp-route-id="@site.Id" class="data-table-row" data-parent-id="@siteParentIdAttr" style="@siteRowStyle">
                 <div class="cell cell-num">@site.Code</div>
-                <div class="cell">@site.Name</div>
+                <div class="cell" style="@siteNameCellStyle">
+                    @if (siteHasKids)
+                    {
+                        <span data-target="@site.ProjectId" aria-expanded="false" onclick="event.preventDefault(); event.stopPropagation(); toggleSiteChildren(this);" style="position:absolute; top:9px; right:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; font-weight:700; color:#7b6bd6; background:#efedf7; border-radius:5px; width:18px; height:18px;">▸</span>
+                    }
+                    @if (isNestedChild)
+                    {
+                        <span style="color:#8a83a0;">↳</span>
+                    }
+                    @site.Name
+                    @if (siteHasKids)
+                    {
+                        <span class="tag tag-accent">@childSitesByParentProject[site.ProjectId].Count مواقع فرعية</span>
+                    }
+                </div>
                 <div class="cell cell-num">@site.Project.Code</div>
                 <div class="cell">@(site.Address ?? "-")</div>
                 <div class="cell">
@@ -161,23 +221,31 @@
     }
 </div>
 
-@{
-    int pagerPage = ViewBag.Page as int? ?? 1;
-    int pagerTotalPages = ViewBag.TotalPages as int? ?? 1;
-    int pagerTotalCount = ViewBag.TotalCount as int? ?? 0;
-    int pagerPageSize = ViewBag.PageSize as int? ?? 20;
-}
 <div class="pager">
-    <span class="cell-num">@(pagerTotalCount == 0 ? 0 : (pagerPage - 1) * pagerPageSize + 1)–@Math.Min(pagerPage * pagerPageSize, pagerTotalCount)</span> من <span class="cell-num">@pagerTotalCount</span>
+    <span class="cell-num">@(sitePagerTotalCount == 0 ? 0 : (sitePagerPage - 1) * sitePagerPageSize + 1)–@Math.Min(sitePagerPage * sitePagerPageSize, sitePagerTotalCount)</span> من <span class="cell-num">@sitePagerTotalCount</span>
     <div class="pager-pages">
-        @if (pagerPage > 1)
+        @if (sitePagerPage > 1)
         {
-            <a href="@Url.Action("Index", new { search, status, page = pagerPage - 1 })" class="pager-page">‹ السابق</a>
+            <a href="@Url.Action("Index", new { search, status, page = sitePagerPage - 1 })" class="pager-page">‹ السابق</a>
         }
-        <span class="stat-sub">صفحة @(pagerPage) من @(pagerTotalPages)</span>
-        @if (pagerPage < pagerTotalPages)
+        <span class="stat-sub">صفحة @(sitePagerPage) من @(sitePagerTotalPages)</span>
+        @if (sitePagerPage < sitePagerTotalPages)
         {
-            <a href="@Url.Action("Index", new { search, status, page = pagerPage + 1 })" class="pager-page">التالي ›</a>
+            <a href="@Url.Action("Index", new { search, status, page = sitePagerPage + 1 })" class="pager-page">التالي ›</a>
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function toggleSiteChildren(btn) {
+            var id = btn.getAttribute('data-target');
+            var expanded = btn.getAttribute('aria-expanded') !== 'false';
+            document.querySelectorAll('[data-parent-id="' + id + '"]').forEach(function (row) {
+                row.style.display = expanded ? 'none' : '';
+            });
+            btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            btn.textContent = expanded ? '▸' : '▾';
+        }
+    </script>
+}

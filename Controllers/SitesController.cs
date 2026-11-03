@@ -31,9 +31,8 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Sites.View")]
         public async Task<IActionResult> Index(string? search, SiteStatus? status, int page = 1)
         {
-            const int pageSize = 20;
             var query = _context.Sites
-                .Include(s => s.Project)
+                .Include(s => s.Project).ThenInclude(p => p.ParentProject)
                 .Include(s => s.Contractors).ThenInclude(sc => sc.Contractor)
                 .AsQueryable();
 
@@ -53,33 +52,24 @@ namespace AtharERP_System.Controllers
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
 
-            var totalCount = await query.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
-            page = Math.Max(1, Math.Min(page, totalPages));
-
-            var sites = await query
-                .OrderByDescending(s => s.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-            var siteIds = sites.Select(s => s.Id).ToList();
-            var allFilteredSiteIds = await query.Select(s => s.Id).ToListAsync();
+            var sites = await query.OrderBy(s => s.Project.Code).ToListAsync();
+            var allFilteredSiteIds = sites.Select(s => s.Id).ToList();
             var today = DateTime.UtcNow.Date;
 
             var completionBySite = await _context.SiteOperations
-     .Where(o => siteIds.Contains(o.SiteId))
+     .Where(o => allFilteredSiteIds.Contains(o.SiteId))
      .GroupBy(o => o.SiteId)
      .Select(g => new { SiteId = g.Key, Avg = g.Average(o => o.CompletionPercentage) })
      .ToDictionaryAsync(x => x.SiteId, x => x.Avg);
 
             var sitesWithTodayReport = await _context.SiteDailyReports
-                .Where(r => siteIds.Contains(r.SiteId) && r.ReportDate.Date == today)
+                .Where(r => allFilteredSiteIds.Contains(r.SiteId) && r.ReportDate.Date == today)
                 .Select(r => r.SiteId)
                 .Distinct()
                 .ToListAsync();
 
             var pendingNeedsBySite = await _context.SiteSupplyRequests
-                .Where(r => siteIds.Contains(r.SiteId) && r.Status == SiteSupplyStatus.Pending)
+                .Where(r => allFilteredSiteIds.Contains(r.SiteId) && r.Status == SiteSupplyStatus.Pending)
                 .GroupBy(r => r.SiteId)
                 .Select(g => new { SiteId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.SiteId, x => x.Count);
@@ -92,28 +82,17 @@ namespace AtharERP_System.Controllers
             ViewBag.Status = status;
             ViewBag.CanManage = await _permissionService.HasPermissionAsync(User, "Sites.Manage");
 
-            // إحصائيات على كل النتائج المطابقة للفلترة (وليس فقط الصفحة الحالية)
-            var activeSiteIdsAll = await query.Where(s => s.Status == SiteStatus.Active).Select(s => s.Id).ToListAsync();
-            var sitesWithTodayReportAll = await _context.SiteDailyReports
-                .Where(r => allFilteredSiteIds.Contains(r.SiteId) && r.ReportDate.Date == today)
-                .Select(r => r.SiteId)
-                .Distinct()
-                .ToListAsync();
-            var pendingNeedsByAllSites = await _context.SiteSupplyRequests
-                .Where(r => allFilteredSiteIds.Contains(r.SiteId) && r.Status == SiteSupplyStatus.Pending)
-                .CountAsync();
+            // إحصائيات على كل النتائج المطابقة للفلترة
+            var activeSiteIdsAll = sites.Where(s => s.Status == SiteStatus.Active).Select(s => s.Id).ToList();
 
             ViewBag.ActiveCount = activeSiteIdsAll.Count;
-            ViewBag.AwaitingResponsibleCount = await query.CountAsync(s => !s.Contractors.Any(c => c.Status == ContractorStatus.Active));
-            ViewBag.MissingTodayReportCount = activeSiteIdsAll.Except(sitesWithTodayReportAll).Count();
-            ViewBag.PendingNeedsCount = pendingNeedsByAllSites;
-            ViewBag.OnHoldCount = await query.CountAsync(s => s.Status == SiteStatus.OnHold);
-            ViewBag.CompletedCount = await query.CountAsync(s => s.Status == SiteStatus.Completed);
+            ViewBag.AwaitingResponsibleCount = sites.Count(s => !s.Contractors.Any(c => c.Status == ContractorStatus.Active));
+            ViewBag.MissingTodayReportCount = activeSiteIdsAll.Except(sitesWithTodayReport).Count();
+            ViewBag.PendingNeedsCount = pendingNeedsBySite.Values.Sum();
+            ViewBag.OnHoldCount = sites.Count(s => s.Status == SiteStatus.OnHold);
+            ViewBag.CompletedCount = sites.Count(s => s.Status == SiteStatus.Completed);
 
             ViewBag.Page = page;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.TotalCount = totalCount;
-            ViewBag.PageSize = pageSize;
 
             return View(sites);
         }
