@@ -13,14 +13,15 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
         private readonly PermissionService _permissionService;
+        private readonly NotificationService _notify;
 
-        public SiteManagersController(AppDbContext context, AuditService audit, PermissionService permissionService)
+        public SiteManagersController(AppDbContext context, AuditService audit, PermissionService permissionService, NotificationService notify)
         {
             _context = context;
             _audit = audit;
             _permissionService = permissionService;
+            _notify = notify;
         }
-
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [RequirePermission("Sites.View")]
@@ -50,7 +51,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int siteId, string userId, string? notes)
         {
-            var site = await _context.Sites.FindAsync(siteId);
+            var site = await _context.Sites.Include(s => s.Project).FirstOrDefaultAsync(s => s.Id == siteId);
             if (site == null)
                 return NotFound();
 
@@ -88,9 +89,12 @@ namespace AtharERP_System.Controllers
 
             await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteManager), "", "تكليف موظف بإدارة موقع");
 
+            await _notify.NotifyAsync(userId, $"تم تكليفك بإدارة موقع مشروع: {site.Project.Code} - {site.Project.Name}", NotificationEventType.TaskAssigned, $"/Sites/Details/{siteId}", entityType: "Site", entityId: siteId);
+
             TempData["Success"] = "تم تكليف الموظف بإدارة الموقع بنجاح";
             return RedirectToAction("Index", new { siteId });
         }
+
 
         [RequirePermission("Sites.Manage")]
         [HttpPost]
