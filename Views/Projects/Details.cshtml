@@ -511,8 +511,8 @@ else
                             <div class="data-table-row">
                                 <div class="cell cell-num">@stage.Sequence</div>
                                 <div class="cell" style="white-space:normal; overflow:visible; text-overflow:clip;">
-                                    <a href="#" data-bs-toggle="collapse" data-bs-target="#stage-tasks-@stage.Id" style="text-decoration:none; color:inherit;">
-                                        ▾ @stage.Name
+                                   <a href="#" data-bs-toggle="collapse" data-bs-target="#stage-tasks-@stage.Id" style="text-decoration:none; color:inherit;">
+                                        <span style="font-size:16px; color:#7b6bd6; font-weight:bold;">▾</span> @stage.Name
                                     </a>
                                     <span class="stat-sub">(@stage.Tasks.Count مهمة)</span>
                                    @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
@@ -859,11 +859,11 @@ else
                                         }
                                         @if (hasRedesignChildren)
                                         {
-                                            <span id="redesignArrow-@a.Id" onclick="toggleRedesignChildren(@a.Id)" style="cursor:pointer; font-size:11px; color:#7b6bd6;" title="عرض إعادات التصميم">▸</span>
+                                            <span id="redesignArrow-@a.Id" onclick="toggleRedesignChildren(@a.Id)" style="cursor:pointer; font-size:16px; font-weight:bold; color:#7b6bd6;" title="عرض إعادات التصميم">▸</span>
                                         }
                                         @if (a.Tasks.Any() || !string.IsNullOrWhiteSpace(a.AssignmentType) || a.IsUrgent)
                                         {
-                                            <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:11px; color:#8a83a0;" title="عرض التفاصيل">▾</span>
+                                            <span onclick="var el=document.getElementById('assignmentNotes-@a.Id'); el.hidden = !el.hidden;" style="cursor:pointer; font-size:16px; font-weight:bold; color:#7b6bd6;" title="عرض التفاصيل">▾</span>
                                         }
                                     </div>
                                                                      <div id="assignmentNotes-@a.Id" hidden style="margin-top:4px;">
@@ -1393,7 +1393,7 @@ else
                                     <div style="display:flex; align-items:center; gap:6px;">
                                         @if (hasStages)
                                         {
-                                            <span data-target="@projKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; font-weight:700; color:#5a5370; background:#efedf7; border-radius:5px; width:18px; height:18px;">▾</span>
+                                            <span data-target="@projKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; font-weight:700; color:#7b6bd6; background:#efedf7; border-radius:5px; width:18px; height:18px;">▾</span>
                                         }
                                         <a asp-action="Details" asp-route-id="@child.Id" style="font-size:12px; font-weight:600; text-decoration:underline; color:inherit;">@child.Code - @child.Name</a>
                                         <span class="tag">@child.Stages.Count مرحلة</span>
@@ -1409,7 +1409,7 @@ else
                                                     <div style="display:flex; align-items:center; gap:6px;">
                                                         @if (hasTasks)
                                                         {
-                                                            <span data-target="@stageKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; font-weight:700; color:#5a5370; background:#f1f0f6; border-radius:5px; width:16px; height:16px;">▾</span>
+                                                            <span data-target="@stageKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; font-weight:700; color:#7b6bd6; background:#f1f0f6; border-radius:5px; width:16px; height:16px;">▾</span>
                                                         }
                                                         <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11.5px; text-decoration:underline; color:inherit;">@stage.Name</a>
                                                         <span class="tag">@stage.Tasks.Count مهمة</span>

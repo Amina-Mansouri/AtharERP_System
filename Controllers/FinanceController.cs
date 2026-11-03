@@ -1193,8 +1193,20 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
             var result = await _calc.CalculateProjectNetProfitAsync(new List<int> { projectId }, dateFrom, dateTo);
 
+            var accessibleProjects = await GetAccessibleProjectsAsync(null);
+            var aggregateProjectIds = accessibleProjects.Select(p => p.Id).ToList();
+            var aggregate = aggregateProjectIds.Any()
+                ? await _calc.CalculateProjectNetProfitAsync(aggregateProjectIds, dateFrom, dateTo)
+                : new ProjectCalculationService.ProjectNetProfitResult();
+
+            var marginAdminExpensesQuery = _context.ProjectExpenses.Where(e => e.ProjectId == null);
+            if (dateFrom.HasValue) marginAdminExpensesQuery = marginAdminExpensesQuery.Where(e => e.Date >= dateFrom.Value);
+            if (dateTo.HasValue) marginAdminExpensesQuery = marginAdminExpensesQuery.Where(e => e.Date <= dateTo.Value);
+            var generalAdminExpenses = await marginAdminExpensesQuery.Include(e => e.ExpenseCategory).OrderByDescending(e => e.Date).ToListAsync();
+            var generalAdminTotal = generalAdminExpenses.Sum(e => e.Amount);
+
             var profitDocNumber = await GetOrAssignProfitReportDocNumberAsync(project);
-            var pdf = _pdfExport.GenerateProjectProfitReport(project, result, profitDocNumber);
+            var pdf = _pdfExport.GenerateProjectProfitReport(project, result, aggregate, generalAdminTotal, generalAdminTotal, generalAdminExpenses, profitDocNumber);
             return File(pdf, "application/pdf", $"{profitDocNumber}.pdf");
         }
 

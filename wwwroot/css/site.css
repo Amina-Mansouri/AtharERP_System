@@ -706,8 +706,9 @@ input[type="checkbox"].chk-gold {
 
 .dept-tree .dept-toggle {
     cursor: pointer;
-    color: var(--sys-text-light);
-    font-size: 9px;
+    color: #7b6bd6;
+    font-size: 16px;
+    font-weight: bold;
     margin-left: 4px;
     background: none;
     border: none;
