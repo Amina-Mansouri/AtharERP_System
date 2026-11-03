@@ -75,6 +75,7 @@
     }
 
     var engineerLeaderboard = ViewBag.EngineerLeaderboard as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var selectedStatusFilter = ViewBag.StatusFilter as string ?? "all";
 }
 
 <div style="margin-bottom:14px;">
@@ -162,31 +163,27 @@
 
 @if (!selectedProjectId.HasValue)
 {
+     @{
+        var statusChips = new[]
+        {
+            new { Key = "all", Label = "عدد التكليفات", Count = (int)ViewBag.TotalAssignments, Color = "#7b6bd6" },
+            new { Key = "pending", Label = "معلّقة", Count = (int)ViewBag.PendingAssignments, Color = "#8a83a0" },
+            new { Key = "inprogress", Label = "قيد التنفيذ", Count = (int)ViewBag.InProgressAssignments, Color = "#7b6bd6" },
+            new { Key = "overdue", Label = "متأخرة", Count = (int)ViewBag.OverdueAssignments, Color = "#c94a42" },
+            new { Key = "completed", Label = "مكتملة", Count = (int)ViewBag.CompletedAssignments, Color = "#2f8a57" },
+            new { Key = "cancelled", Label = "ملغاة", Count = (int)ViewBag.CancelledAssignments, Color = "#b9b4c7" }
+        };
+    }
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; border-right:4px solid #7b6bd6;">
-            <div style="font-size:10.5px; color:#8a83a0;">عدد التكليفات</div>
-            <div style="font-size:21px; font-weight:700; margin-top:3px;">@ViewBag.TotalAssignments</div>
-        </div>
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; border-right:4px solid #8a83a0;">
-            <div style="font-size:10.5px; color:#8a83a0;">معلّقة</div>
-            <div style="font-size:21px; font-weight:700; margin-top:3px;">@ViewBag.PendingAssignments</div>
-        </div>
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; border-right:4px solid #7b6bd6;">
-            <div style="font-size:10.5px; color:#8a83a0;">قيد التنفيذ</div>
-            <div style="font-size:21px; font-weight:700; margin-top:3px;">@ViewBag.InProgressAssignments</div>
-        </div>
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; border-right:4px solid #c94a42;">
-            <div style="font-size:10.5px; color:#8a83a0;">متأخرة</div>
-            <div style="font-size:21px; font-weight:700; margin-top:3px; color:#c94a42;">@ViewBag.OverdueAssignments</div>
-        </div>
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; border-right:4px solid #2f8a57;">
-            <div style="font-size:10.5px; color:#8a83a0;">مكتملة</div>
-            <div style="font-size:21px; font-weight:700; margin-top:3px; color:#2f8a57;">@ViewBag.CompletedAssignments</div>
-        </div>
-        <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; padding:12px 14px; border-right:4px solid #b9b4c7;">
-            <div style="font-size:10.5px; color:#8a83a0;">ملغاة</div>
-            <div style="font-size:21px; font-weight:700; margin-top:3px; color:#8a83a0;">@ViewBag.CancelledAssignments</div>
-        </div>
+        @foreach (var chip in statusChips)
+        {
+            var isChipActive = selectedStatusFilter == chip.Key;
+            <a href="@Url.Action("Overview", new { statusFilter = chip.Key })"
+               style="text-decoration:none; display:block; background:@(isChipActive ? chip.Color : "#fff"); border:1px solid @(isChipActive ? chip.Color : "#ecebf2"); border-right:4px solid @chip.Color; border-radius:11px; padding:12px 14px;">
+                <div style="font-size:10.5px; color:@(isChipActive ? "#fff" : "#8a83a0");">@chip.Label</div>
+                <div style="font-size:21px; font-weight:700; margin-top:3px; color:@(isChipActive ? "#fff" : chip.Color);">@chip.Count</div>
+            </a>
+        }
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; align-items:start;">

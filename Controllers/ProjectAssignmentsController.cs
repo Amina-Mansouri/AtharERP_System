@@ -42,8 +42,10 @@ namespace AtharERP_System.Controllers
         // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
         // ============================================
         [RequirePermission("Projects.Assignments.View")]
-        public async Task<IActionResult> Overview(int? projectId, int? subProjectId, int? stageId, string? taskFilter, string? docFilter)
+        public async Task<IActionResult> Overview(int? projectId, int? subProjectId, int? stageId, string? taskFilter, string? docFilter, string? statusFilter)
         {
+            statusFilter = string.IsNullOrEmpty(statusFilter) ? "all" : statusFilter;
+            ViewBag.StatusFilter = statusFilter;
 
             var canViewAll = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             var myProjectIds = await _context.ProjectTeamMembers
@@ -106,7 +108,17 @@ namespace AtharERP_System.Controllers
                     .Take(4)
                     .ToList();
 
-                return View(allAssignmentsFlat);
+                var filteredAssignmentsFlat = statusFilter switch
+                {
+                    "pending" => allAssignmentsFlat.Where(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.EffectiveDelayDays > 0)).ToList(),
+                    "inprogress" => allAssignmentsFlat.Where(a => a.Status == AssignmentStatus.InProgress && !a.Tasks.Any(t => t.EffectiveDelayDays > 0)).ToList(),
+                    "overdue" => allAssignmentsFlat.Where(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled && a.Tasks.Any(t => t.EffectiveDelayDays > 0)).ToList(),
+                    "completed" => allAssignmentsFlat.Where(a => a.Status == AssignmentStatus.Completed).ToList(),
+                    "cancelled" => allAssignmentsFlat.Where(a => a.Status == AssignmentStatus.Cancelled).ToList(),
+                    _ => allAssignmentsFlat
+                };
+
+                return View(filteredAssignmentsFlat);
             }
 
             ViewBag.SubProjects = await _context.Projects
