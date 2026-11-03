@@ -424,6 +424,56 @@ else
                             </tbody>
                         </table>
                     }
+
+                    @{
+                        var supplyTasksInAssignment = a.Tasks.Where(t => t.IsSupply).ToList();
+                    }
+                    @if (supplyTasksInAssignment.Any())
+                    {
+                        <div style="padding:10px 16px 16px; border-top:1px solid #f1f0f6;">
+                            <div style="font-size:12px; color:#8a83a0; margin-bottom:6px;">مهام التوريد (@supplyTasksInAssignment.Count)</div>
+                            <table style="width:100%; border-collapse:collapse;">
+                                <thead>
+                                    <tr style="background:#faf9fd;">
+                                        <th style="text-align:right; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">المهمة</th>
+                                        <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">حالة طلب التوريد</th>
+                                        <th style="text-align:center; padding:7px 10px; font-size:10px; color:#8a83a0; font-weight:600; border-top:1px solid #f1f0f6; border-bottom:1px solid #f1f0f6;">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var st in supplyTasksInAssignment)
+                                    {
+                                        var latestRequest = st.SupplyRequests.OrderByDescending(r => r.RequestDate).FirstOrDefault();
+                                        string supplyStatusLabel = latestRequest == null ? "لم تُرسَل بعد" : latestRequest.Status switch
+                                        {
+                                            SiteSupplyStatus.Pending => "معلّق",
+                                            SiteSupplyStatus.Approved => "تمت الموافقة",
+                                            SiteSupplyStatus.Delivered => "تم التسليم",
+                                            SiteSupplyStatus.Rejected => "مرفوض",
+                                            _ => latestRequest.Status.ToString()
+                                        };
+                                        string supplyStatusClass = latestRequest == null ? "tag-muted" : latestRequest.Status switch
+                                        {
+                                            SiteSupplyStatus.Approved => "tag-accent",
+                                            SiteSupplyStatus.Delivered => "tag-success",
+                                            SiteSupplyStatus.Rejected => "tag-danger",
+                                            _ => "tag-warning"
+                                        };
+                                        <tr style="border-bottom:1px solid #f6f5fa;">
+                                            <td style="padding:9px 10px; font-size:11px;">@st.Title</td>
+                                            <td style="padding:9px 10px; text-align:center;"><span class="tag @supplyStatusClass">@supplyStatusLabel</span></td>
+                                            <td style="padding:9px 10px; text-align:center;">
+                                                @if (latestRequest != null && canReview)
+                                                {
+                                                    <a asp-controller="SiteSupplyRequests" asp-action="Index" asp-route-siteId="@latestRequest.SiteId" style="display:inline-block; height:24px; line-height:24px; padding:0 12px; border-radius:6px; background:#7b6bd6; color:#fff; font-size:10.5px; text-decoration:none;">فتح طلبات التوريد</a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
                 </div>
             }
         }

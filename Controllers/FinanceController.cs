@@ -861,6 +861,40 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
                 {
                     supplyRequest.Status = SiteSupplyStatus.Delivered;
                     await _context.SaveChangesAsync();
+
+                    if (supplyRequest.ProjectTaskId.HasValue)
+                    {
+                        var supplyTask = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == supplyRequest.ProjectTaskId.Value);
+                        if (supplyTask != null && supplyTask.Status != ProjectTaskStatus.Completed)
+                        {
+                            supplyTask.Status = ProjectTaskStatus.Completed;
+                            supplyTask.CompletionPercentage = 100;
+                            supplyTask.ActualDeliveryDate = DateTime.UtcNow;
+                            await _context.SaveChangesAsync();
+
+                            if (supplyTask.ProjectAssignmentId.HasValue)
+                            {
+                                var supplyAssignment = await _context.ProjectAssignments.FirstOrDefaultAsync(a => a.Id == supplyTask.ProjectAssignmentId.Value);
+                                if (supplyAssignment != null && supplyAssignment.Status != AssignmentStatus.Cancelled)
+                                {
+                                    var assignmentTasks = await _context.ProjectTasks.Where(t => t.ProjectAssignmentId == supplyAssignment.Id).ToListAsync();
+                                    bool allTasksCompleted = assignmentTasks.Any() && assignmentTasks.All(t => t.Status == ProjectTaskStatus.Completed);
+                                    supplyAssignment.Status = allTasksCompleted ? AssignmentStatus.Completed : AssignmentStatus.InProgress;
+                                    await _context.SaveChangesAsync();
+                                    await _calc.RecalculateAssignmentFinanceAsync(supplyAssignment.Id);
+                                }
+                            }
+
+                            if (supplyTask.StageId.HasValue)
+                                await _calc.RecalculateStageAsync(supplyTask.StageId.Value);
+
+                            if (!string.IsNullOrEmpty(supplyRequest.RequestedById))
+                            {
+                                await _notify.NotifyAsync(supplyRequest.RequestedById, $"تم تسليم طلب التوريد لمهمتك \"{supplyTask.Title}\" — اكتملت المهمة",
+                                    NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{supplyTask.Id}", entityType: "ProjectTask", entityId: supplyTask.Id);
+                            }
+                        }
+                    }
                 }
             }
 

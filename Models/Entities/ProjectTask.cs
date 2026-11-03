@@ -119,6 +119,7 @@ namespace AtharERP_System.Models.Entities
         public virtual ICollection<TaskDependency> Dependencies { get; set; } = new List<TaskDependency>();
         public virtual ICollection<TaskDependency> DependentTasks { get; set; } = new List<TaskDependency>();
         public virtual ICollection<DesignProposal> DesignProposals { get; set; } = new List<DesignProposal>();
+        public virtual ICollection<SiteSupplyRequest> SupplyRequests { get; set; } = new List<SiteSupplyRequest>();
 
     }
 }

@@ -49,5 +49,12 @@ namespace AtharERP_System.Models.Entities
         public virtual Contractor? RequestedByContractor { get; set; }
 
         public virtual ICollection<SiteSupplyRequestItem> Items { get; set; } = new List<SiteSupplyRequestItem>();
+
+        [Display(Name = "المهمة (توريد ضمن تكليف)")]
+        public int? ProjectTaskId { get; set; }
+
+        [ForeignKey("ProjectTaskId")]
+        [ValidateNever]
+        public virtual ProjectTask? ProjectTask { get; set; }
     }
 }

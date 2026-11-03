@@ -147,6 +147,7 @@ namespace AtharERP_System.Controllers
 .Include(a => a.Tasks).ThenInclude(t => t.Todos)
 .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(p => p.PreparedBy)
 .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(p => p.Reviews)
+.Include(a => a.Tasks).ThenInclude(t => t.SupplyRequests)
 .Where(a => a.ProjectId == effectiveProjectId);
 
             if (stageId.HasValue)
@@ -660,10 +661,11 @@ List<int>? taskIds)
         public async Task<IActionResult> ManageTasks(int id, int? taskId = null)
         {
             var assignment = await _context.ProjectAssignments
-        .Include(a => a.Stage).ThenInclude(s => s!.Project)
-    .Include(a => a.Engineers).ThenInclude(e => e.User)
-    .Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(dp => dp.Reviews)
-    .FirstOrDefaultAsync(a => a.Id == id);
+.Include(a => a.Stage).ThenInclude(s => s!.Project)
+.Include(a => a.Engineers).ThenInclude(e => e.User)
+.Include(a => a.Tasks).ThenInclude(t => t.Todos).ThenInclude(td => td.DesignProposals).ThenInclude(dp => dp.Reviews)
+.Include(a => a.Tasks).ThenInclude(t => t.SupplyRequests)
+.FirstOrDefaultAsync(a => a.Id == id);
 
             if (assignment == null)
                 return NotFound();
@@ -682,9 +684,16 @@ List<int>? taskIds)
       : null;
 
             ViewBag.MyChecklist = await _context.PersonalChecklistItems
-                .Where(c => c.ProjectAssignmentId == id && c.UserId == CurrentUserId)
-                .OrderBy(c => c.CreatedAt)
-                .ToListAsync();
+    .Where(c => c.ProjectAssignmentId == id && c.UserId == CurrentUserId)
+    .OrderBy(c => c.CreatedAt)
+    .ToListAsync();
+
+            if (assignment.Tasks.Any(t => t.IsSupply))
+            {
+                ViewBag.MaterialCategories = await _context.MaterialCategories.Where(c => c.IsActive).OrderBy(c => c.NameAr).ToListAsync();
+                ViewBag.MaterialItems = await _context.MaterialItems.Where(i => i.IsActive).Include(i => i.MaterialCategory).OrderBy(i => i.Name).ToListAsync();
+                ViewBag.Vendors = await _context.Vendors.Where(v => v.IsActive).OrderBy(v => v.Name).ToListAsync();
+            }
 
             return View(assignment);
         }

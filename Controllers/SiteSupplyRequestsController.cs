@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -15,17 +16,36 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly FileUploadService _fileUpload;
         private readonly FinancePdfService _pdfExport;
+        private readonly NotificationService _notify;
 
-        public SiteSupplyRequestsController(AppDbContext context, AuditService audit, PermissionService permissionService, FileUploadService fileUpload, FinancePdfService pdfExport)
+        public SiteSupplyRequestsController(AppDbContext context, AuditService audit, PermissionService permissionService, FileUploadService fileUpload, FinancePdfService pdfExport, NotificationService notify)
         {
             _context = context;
             _audit = audit;
             _permissionService = permissionService;
             _fileUpload = fileUpload;
             _pdfExport = pdfExport;
+            _notify = notify;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        private async Task<bool> CanExecuteSupplyTaskAsync(ProjectTask task)
+        {
+            if (await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage"))
+                return await _permissionService.CanAccessProjectAsync(User, task.ProjectId);
+
+            if (task.ProjectAssignmentId.HasValue)
+            {
+                if (await _context.AssignmentEngineers.AnyAsync(e => e.ProjectAssignmentId == task.ProjectAssignmentId.Value && e.UserId == CurrentUserId))
+                    return true;
+            }
+            var stageEngineerId = await _context.ProjectStages
+                .Where(s => s.Id == task.StageId)
+                .Select(s => s.AssignedEngineerId)
+                .FirstOrDefaultAsync();
+            return stageEngineerId == CurrentUserId;
+        }
 
         private async Task<string> GetOrAssignSupplyRequestDocNumberAsync(Project project)
         {
@@ -143,38 +163,59 @@ namespace AtharERP_System.Controllers
             return File(pdf, "application/pdf", $"{srDocNumber}.pdf");
         }
 
-        [RequirePermission("Supply.Create")]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-      int siteId, string? notes,
-      List<int?> materialItemIds, List<decimal> quantities, List<string> units,
-      List<int?> vendorIds, List<string?> itemNotes, List<IFormFile> photos)
+        public async Task<IActionResult> CreateFromTask(
+int projectTaskId, int assignmentId, string? notes,
+List<int?> materialItemIds, List<decimal> quantities, List<string> units,
+List<int?> vendorIds, List<string?> itemNotes, List<IFormFile> photos)
         {
-            var site = await _context.Sites.FindAsync(siteId);
-            if (site == null)
+            var task = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == projectTaskId);
+            if (task == null)
                 return NotFound();
 
-            if (!await _permissionService.CanAccessProjectAsync(User, site.ProjectId))
+            if (!task.IsSupply)
+                return BadRequest();
+
+            if (!await CanExecuteSupplyTaskAsync(task))
                 return Forbid();
+
+            IActionResult BackToTask() => RedirectToAction("ManageTasks", "ProjectAssignments", new { id = assignmentId, taskId = projectTaskId });
+
+            var site = await _context.Sites.FirstOrDefaultAsync(s => s.ProjectId == task.ProjectId);
+            if (site == null)
+            {
+                TempData["Error"] = "لا يوجد موقع مُرحَّل لهذا المشروع بعد — يجب ترحيل الموقع أولاً";
+                return BackToTask();
+            }
 
             if (site.Status == SiteStatus.Completed)
             {
                 TempData["Error"] = "لا يمكن إضافة طلب توريد لموقع مكتمل";
-                return RedirectToAction("Index", new { siteId });
+                return BackToTask();
+            }
+
+            var hasActiveRequest = await _context.SiteSupplyRequests
+                .AnyAsync(r => r.ProjectTaskId == projectTaskId && r.Status != SiteSupplyStatus.Rejected);
+            if (hasActiveRequest)
+            {
+                TempData["Error"] = "يوجد طلب توريد قيد المعالجة لهذه المهمة بالفعل";
+                return BackToTask();
             }
 
             var itemCount = materialItemIds?.Count ?? 0;
             if (itemCount == 0 || !materialItemIds!.Any(m => m.HasValue))
             {
                 TempData["Error"] = "يجب اختيار صنف واحد على الأقل";
-                return RedirectToAction("Index", new { siteId });
+                return BackToTask();
             }
 
             var request = new SiteSupplyRequest
             {
-                SiteId = siteId,
-                ProjectId = site.ProjectId,
+                SiteId = site.Id,
+                ProjectId = task.ProjectId,
+                ProjectTaskId = projectTaskId,
                 Notes = notes,
                 Status = SiteSupplyStatus.Pending,
                 RequestDate = DateTime.UtcNow,
@@ -195,7 +236,7 @@ namespace AtharERP_System.Controllers
                 string? photoPath = null;
                 if (photos != null && i < photos.Count && photos[i] != null && photos[i].Length > 0)
                 {
-                    var result = await _fileUpload.SaveFileAsync(photos[i], $"sites/{siteId}/supply-requests/{request.Id}");
+                    var result = await _fileUpload.SaveFileAsync(photos[i], $"sites/{site.Id}/supply-requests/{request.Id}");
                     if (result.Success)
                         photoPath = result.FilePath;
                 }
@@ -214,10 +255,10 @@ namespace AtharERP_System.Controllers
             }
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteSupplyRequest), request.Id.ToString(), "إضافة طلب توريد");
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(SiteSupplyRequest), request.Id.ToString(), "إضافة طلب توريد من تنفيذ مهمة مرحلة");
 
-            TempData["Success"] = "تم إرسال طلب التوريد بنجاح";
-            return RedirectToAction("Index", new { siteId });
+            TempData["Success"] = "تم إرسال طلب التوريد بنجاح — بانتظار الاعتماد";
+            return BackToTask();
         }
 
         [RequirePermission("Supply.Approve")]
@@ -225,7 +266,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, SiteSupplyStatus status)
         {
-            var request = await _context.SiteSupplyRequests.Include(r => r.Site).FirstOrDefaultAsync(r => r.Id == id);
+            var request = await _context.SiteSupplyRequests.Include(r => r.Site).Include(r => r.ProjectTask).FirstOrDefaultAsync(r => r.Id == id);
             if (request == null)
                 return NotFound();
 
@@ -236,6 +277,12 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(SiteSupplyRequest), id.ToString(), $"تحديث حالة طلب توريد إلى: {status}");
+
+            if (status == SiteSupplyStatus.Rejected && request.ProjectTaskId.HasValue && !string.IsNullOrEmpty(request.RequestedById))
+            {
+                await _notify.NotifyAsync(request.RequestedById, $"رُفض طلب التوريد لمهمتك \"{request.ProjectTask?.Title}\" — يمكنك إرسال طلب جديد",
+                    NotificationEventType.TaskStatusChanged, null, requiresAction: true, entityType: "ProjectTask", entityId: request.ProjectTaskId.Value);
+            }
 
             TempData["Success"] = "تم تحديث حالة طلب التوريد";
             return RedirectToAction("Index", new { siteId = request.SiteId });

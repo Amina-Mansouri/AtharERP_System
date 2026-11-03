@@ -109,7 +109,10 @@
                             <span class="tag tag-danger">عاجلة</span>
                         }
                     </div>
-                                      <div style="display:grid; grid-template-columns:minmax(140px,2fr) 80px 80px minmax(150px,1fr) 95px 95px 95px 32px; gap:8px; padding:8px 0; font-size:10.5px; color:#8a83a0; font-weight:600; border-bottom:1px solid #f1f0f6;">
+
+                    @if (!t.IsSupply)
+                    {
+                        <div style="display:grid; grid-template-columns:minmax(140px,2fr) 80px 80px minmax(150px,1fr) 95px 95px 95px 32px; gap:8px; padding:8px 0; font-size:10.5px; color:#8a83a0; font-weight:600; border-bottom:1px solid #f1f0f6;">
                         <div>نص البند</div><div>التصنيف</div><div>نوع الملف</div><div>رفع مستند</div><div>تاريخ الرفع</div><div>تاريخ المراجعة</div><div>الحالة</div><div></div>
                     </div>
 
@@ -174,7 +177,6 @@
                             </div>
                         }
                     }
-
                     <form method="post" asp-controller="ProjectTasks" asp-action="AddTodo" style="display:flex; gap:8px; margin-top:12px;">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="taskId" value="@t.Id" />
@@ -182,6 +184,102 @@
                         <input type="text" name="item" placeholder="نص البند" required style="flex:1; height:32px; border:1px solid #e4e2ec; border-radius:8px; padding:0 8px; font-size:12px;" />
                         <button type="submit" style="height:32px; border:none; border-radius:8px; background:#7b6bd6; color:#fff; font-size:11.5px; font-weight:600; padding:0 14px;">+ إضافة بند</button>
                     </form>
+                    }
+                    else
+                    {
+                        @{
+                            var latestSupplyRequest = t.SupplyRequests.OrderByDescending(r => r.RequestDate).FirstOrDefault();
+                            string supplyStatusLabel = latestSupplyRequest?.Status switch
+                            {
+                                SiteSupplyStatus.Pending => "معلّق",
+                                SiteSupplyStatus.Approved => "تمت الموافقة",
+                                SiteSupplyStatus.Delivered => "تم التسليم",
+                                SiteSupplyStatus.Rejected => "مرفوض",
+                                _ => "-"
+                            };
+                            string supplyStatusClass = latestSupplyRequest?.Status switch
+                            {
+                                SiteSupplyStatus.Approved => "tag-accent",
+                                SiteSupplyStatus.Delivered => "tag-success",
+                                SiteSupplyStatus.Rejected => "tag-danger",
+                                _ => "tag-warning"
+                            };
+                        }
+                        @if (latestSupplyRequest != null && latestSupplyRequest.Status != SiteSupplyStatus.Rejected)
+                        {
+                            <div style="padding:14px 0; font-size:12px;">
+                                حالة طلب التوريد: <span class="tag @supplyStatusClass">@supplyStatusLabel</span>
+                                <div style="color:#8a83a0; font-size:11px; margin-top:4px;">بانتظار اعتماد/تسليم الطلب من مدير الموقع — تُقفل هذه المهمة تلقائياً عند التسليم</div>
+                            </div>
+                        }
+                        else
+                        {
+                            @if (latestSupplyRequest != null && latestSupplyRequest.Status == SiteSupplyStatus.Rejected)
+                            {
+                                <div style="color:#c94a42; font-size:11.5px; margin:10px 0 4px;">رُفض طلب التوريد السابق — يمكنك إرسال طلب جديد أدناه</div>
+                            }
+                            <form method="post" asp-controller="SiteSupplyRequests" asp-action="CreateFromTask" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectTaskId" value="@t.Id" />
+                                <input type="hidden" name="assignmentId" value="@Model.Id" />
+                                <div id="supplyItemsContainer-@t.Id" style="display:flex; flex-direction:column; gap:8px;">
+                                    <div class="supply-item-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; border-bottom:1px dashed #e4e2ec; padding-bottom:8px;">
+                                        <div style="min-width:160px;">
+                                            <label style="font-size:11px; color:#8a83a0;">التصنيف</label>
+                                            <select class="form-select form-select-sm materialCategorySelect" onchange="onSupplyCategoryChange(this)">
+                                                <option value="">-- اختاري تصنيفاً --</option>
+                                                @foreach (var cat in (ViewBag.MaterialCategories as List<MaterialCategory> ?? new List<MaterialCategory>()))
+                                                {
+                                                    <option value="@cat.Id">@cat.NameAr</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div style="min-width:180px;">
+                                            <label style="font-size:11px; color:#8a83a0;">المادة</label>
+                                            <select name="materialItemIds" class="form-select form-select-sm materialItemSelect" required>
+                                                <option value="">-- اختاري تصنيفاً أولاً --</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">الكمية</label>
+                                            <input type="number" step="0.01" name="quantities" class="form-control form-control-sm" style="max-width:90px;" required />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">الوحدة</label>
+                                            <input type="text" name="units" class="form-control form-control-sm" style="max-width:90px;" required />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">المورّد (اختياري)</label>
+                                            <select name="vendorIds" class="form-select form-select-sm">
+                                                <option value="">-- بلا --</option>
+                                                @foreach (var v in (ViewBag.Vendors as List<Vendor> ?? new List<Vendor>()))
+                                                {
+                                                    <option value="@v.Id">@v.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px; color:#8a83a0;">صورة</label>
+                                            <input type="file" name="photos" accept="image/*" class="form-control form-control-sm" />
+                                        </div>
+                                        <div style="flex:1; min-width:140px;">
+                                            <label style="font-size:11px; color:#8a83a0;">ملاحظات المادة</label>
+                                            <input type="text" name="itemNotes" class="form-control form-control-sm" />
+                                        </div>
+                                        <button type="button" class="btn-line" onclick="removeSupplyItemRow(this)" style="color:#c94a42;">حذف</button>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:8px; align-items:end; justify-content:space-between; flex-wrap:wrap;">
+                                    <button type="button" class="btn-line" onclick="addSupplyItemRow('@t.Id')">+ إضافة مادة أخرى</button>
+                                    <div style="flex:1; min-width:160px;">
+                                        <label style="font-size:11px; color:#8a83a0;">ملاحظات عامة على الطلب</label>
+                                        <input type="text" name="notes" class="form-control form-control-sm" />
+                                    </div>
+                                    <button type="submit" class="btn-line btn-line-accent">+ إرسال طلب التوريد</button>
+                                </div>
+                            </form>
+                        }
+                    }
                 </div>
             }
         }
@@ -231,6 +329,40 @@
 @section Scripts {
     <script src="~/js/tab-persist.js" asp-append-version="true"></script>
     <script>
+        const allMaterialItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((ViewBag.MaterialItems as List<MaterialItem> ?? new List<MaterialItem>()).Select(m => new { id = m.Id, name = m.Name, categoryId = m.MaterialCategoryId })));
+
+        function onSupplyCategoryChange(select) {
+            var row = select.closest('.supply-item-row');
+            var categoryId = parseInt(select.value);
+            var materialSelect = row.querySelector('.materialItemSelect');
+            materialSelect.innerHTML = '<option value="">-- اختاري مادة --</option>';
+            allMaterialItems.filter(function (m) { return m.categoryId === categoryId; }).forEach(function (m) {
+                var opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                materialSelect.appendChild(opt);
+            });
+        }
+
+        function addSupplyItemRow(taskId) {
+            var container = document.getElementById('supplyItemsContainer-' + taskId);
+            var first = container.querySelector('.supply-item-row');
+            var clone = first.cloneNode(true);
+            clone.querySelectorAll('input, select').forEach(function (el) {
+                if (el.type === 'file') { el.value = ''; }
+                else if (el.tagName === 'SELECT') { el.selectedIndex = 0; }
+                else { el.value = ''; }
+            });
+            clone.querySelector('.materialItemSelect').innerHTML = '<option value="">-- اختاري تصنيفاً أولاً --</option>';
+            container.appendChild(clone);
+        }
+        function removeSupplyItemRow(btn) {
+            var container = btn.closest('[id^="supplyItemsContainer-"]');
+            if (container.querySelectorAll('.supply-item-row').length > 1) {
+                btn.closest('.supply-item-row').remove();
+            }
+        }
+
         function filterTodosByTask() {
             var sel = document.getElementById('taskFilterSelect');
             if (!sel) return;
