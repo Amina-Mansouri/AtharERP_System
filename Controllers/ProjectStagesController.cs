@@ -297,13 +297,7 @@ namespace AtharERP_System.Controllers
                     await LoadDropdownsAsync(stage.ProjectId);
                     return View(model);
                 }
-                var tasksWeightTotal = stage.Tasks.Sum(t => t.Weight);
-                if (model.Weight < tasksWeightTotal)
-                {
-                    TempData["Error"] = $"لا يمكن أن يكون وزن المرحلة أقل من مجموع أوزان مهامها الحالية ({tasksWeightTotal:N0}%)";
-                    await LoadDropdownsAsync(stage.ProjectId);
-                    return View(model);
-                }
+              
                 stage.Weight = model.Weight;
             }
 
