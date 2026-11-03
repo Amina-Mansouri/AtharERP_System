@@ -108,9 +108,8 @@ namespace AtharERP_System.Controllers
                 .Select(x => (x.StageName, x.New, x.InProgress, x.ClientReview, x.Completed, x.Delayed))
                 .ToList();
             var projects = await query
-    .OrderByDescending(p => p.Priority)
-    .ThenByDescending(p => p.CreatedAt)
-    .ToListAsync();
+.OrderBy(p => p.Code)
+.ToListAsync();
             return View(projects);
         }
         // ============================================
