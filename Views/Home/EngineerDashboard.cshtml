@@ -52,12 +52,61 @@
     </div>
 </div>
 
+@{
+    var todayAttendance = ViewBag.TodayAttendance as AttendanceDailyRecord;
+    var isLocationAttendance = user?.AttendanceMethodType == AttendanceMethod.Location;
+}
+
 <div class="stat-strip stat-strip-text">
     <div class="stat-item"><span class="kicker">عدد المشاريع</span><span class="stat-value">@myProjectsCount</span></div>
     <div class="stat-item"><span class="kicker">عدد التكليفات</span><span class="stat-value">@myAssignmentsCount</span></div>
-    <div class="stat-item"><span class="kicker">حضور اليوم</span><span class="stat-value">قادمة</span></div>
+    <div class="stat-item">
+        <span class="kicker">حضور اليوم</span>
+        @if (todayAttendance?.CheckIn != null && todayAttendance?.CheckOut != null)
+        {
+            <span class="stat-value" style="font-size:13px;">دخول @todayAttendance.CheckIn.Value.AddHours(2).ToString("HH:mm") — خروج @todayAttendance.CheckOut.Value.AddHours(2).ToString("HH:mm")</span>
+        }
+        else if (todayAttendance?.CheckIn != null)
+        {
+            <span class="stat-value" style="font-size:13px;">دخول @todayAttendance.CheckIn.Value.AddHours(2).ToString("HH:mm")</span>
+            @if (isLocationAttendance)
+            {
+                <br /><button type="button" class="btn btn-sm btn-outline-primary" style="margin-top:4px; font-size:11px; padding:2px 10px;" onclick="submitLocationAttendance()">تسجيل انصراف</button>
+            }
+        }
+        else if (isLocationAttendance)
+        {
+            <br /><button type="button" class="btn btn-sm btn-primary" style="margin-top:4px; font-size:11px; padding:2px 10px;" onclick="submitLocationAttendance()">تسجيل حضور</button>
+        }
+        else
+        {
+            <span class="stat-value" style="font-size:13px;">لم يسجَّل بعد</span>
+        }
+    </div>
     <div class="stat-item"><span class="kicker">معدل الإنجاز الكلي</span><span class="stat-value">@avgCompletion.ToString("N0")%</span></div>
 </div>
+
+<form id="locationAttendanceForm" asp-controller="Attendance" asp-action="CheckInByLocation" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="latitude" id="attLatitude" />
+    <input type="hidden" name="longitude" id="attLongitude" />
+</form>
+
+<script>
+    function submitLocationAttendance() {
+        if (!navigator.geolocation) {
+            alert('المتصفح لا يدعم تحديد الموقع');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            document.getElementById('attLatitude').value = pos.coords.latitude;
+            document.getElementById('attLongitude').value = pos.coords.longitude;
+            document.getElementById('locationAttendanceForm').submit();
+        }, function () {
+            alert('تم رفض الوصول إلى الموقع، لا يمكن تسجيل الحضور بدونه');
+        }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+</script>
 
 <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:12px; margin-bottom:12px;">
     <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04);">

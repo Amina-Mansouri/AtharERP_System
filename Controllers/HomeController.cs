@@ -86,10 +86,14 @@ namespace AtharERP_System.Controllers
             ViewBag.DelayRate = completedTasks.Any() ? Math.Round(completedTasks.Count(t => t.DelayDays > 0) * 100m / completedTasks.Count, 0) : 0;
 
             ViewBag.DesignedArea = myAssignments
-                .Where(a => a.Status == AssignmentStatus.Completed && a.Stage != null)
-                .Select(a => a.Stage!)
-                .Distinct()
-                .Sum(s => s.Area ?? 0);
+       .Where(a => a.Status == AssignmentStatus.Completed && a.Stage != null)
+       .Select(a => a.Stage!)
+       .Distinct()
+       .Sum(s => s.Area ?? 0);
+
+            var todayDate = DateTime.UtcNow.AddHours(2).Date;
+            ViewBag.TodayAttendance = await _context.AttendanceDailyRecords
+                .FirstOrDefaultAsync(r => r.UserId == CurrentUserId && r.Date == todayDate);
 
             return View();
         }

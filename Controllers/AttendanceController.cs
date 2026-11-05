@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -12,11 +13,13 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
+        private readonly AttendanceCalculationService _calc;
 
-        public AttendanceController(AppDbContext context, AuditService audit)
+        public AttendanceController(AppDbContext context, AuditService audit, AttendanceCalculationService calc)
         {
             _context = context;
             _audit = audit;
+            _calc = calc;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -96,6 +99,64 @@ namespace AtharERP_System.Controllers
 
             TempData["Success"] = approved ? "تم اعتماد الساعات الإضافية" : "تم رفض الساعات الإضافية";
             return RedirectToAction("Index");
+        }
+
+        // تسجيل حضور/انصراف ذاتي بالموقع — متاح لكل موظف طريقته "بالموقع"، يستخدم نفس خط أنابيب البصمة بدون تكرار منطق
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckInByLocation(double latitude, double longitude)
+        {
+            var user = await _context.Users.FindAsync(CurrentUserId);
+            if (user == null)
+                return NotFound();
+
+            if (user.AttendanceMethodType != AttendanceMethod.Location)
+            {
+                TempData["Error"] = "طريقة تسجيل حضورك ليست عبر الموقع";
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (user.ExpectedLatitude == null || user.ExpectedLongitude == null)
+            {
+                TempData["Error"] = "لم يتم تحديد موقع عمل لك بعد، تواصل مع الإدارة";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var distanceMeters = GetDistanceMeters(user.ExpectedLatitude.Value, user.ExpectedLongitude.Value, latitude, longitude);
+            if (distanceMeters > user.AllowedRadiusMeters)
+            {
+                TempData["Error"] = $"أنت خارج النطاق المسموح به (تبعد {Math.Round(distanceMeters)} متر، المسموح {user.AllowedRadiusMeters} متر)";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var now = DateTime.UtcNow;
+            var today = now.AddHours(2).Date;
+
+            _context.AttendancePunches.Add(new AttendancePunch
+            {
+                UserId = user.Id,
+                PunchTime = now,
+                SourceTransactionId = $"LOC-{user.Id}-{now.Ticks}"
+            });
+            await _context.SaveChangesAsync();
+
+            await _calc.RecalculateDaysAsync(new[] { (user.Id, today) });
+
+            TempData["Success"] = "تم تسجيل الحضور بنجاح";
+            return RedirectToAction("Index", "Home");
+        }
+
+        private static double GetDistanceMeters(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double earthRadiusMeters = 6371000;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return earthRadiusMeters * c;
         }
     }
 }
