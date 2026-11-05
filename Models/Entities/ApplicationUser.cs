@@ -118,5 +118,14 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "نصف القطر المسموح (متر)")]
         public int AllowedRadiusMeters { get; set; } = 100;
 
-         }
+        [Display(Name = "وقت بداية الدوام")]
+        public TimeOnly? ExpectedStartTime { get; set; }
+
+        [Display(Name = "وقت نهاية الدوام")]
+        public TimeOnly? ExpectedEndTime { get; set; }
+
+        [Display(Name = "طريقة تسجيل الحضور")]
+        public AttendanceMethod AttendanceMethodType { get; set; } = AttendanceMethod.Fingerprint;
+
+    }
 }

@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 namespace AtharERP_System.Services
 {
     // يحسب ملخص الحضور اليومي (دخول/خروج/تأخير/انصراف مبكر/إضافي) من البصمات الخام
-    // وقت الدوام الرسمي موحَّد حاليًا لكل الموظفين: 9:00 صباحًا – 4:00 عصرًا (7 ساعات)
+    // وقت الدوام الرسمي أصبح خاصاً بكل موظف (ExpectedStartTime/ExpectedEndTime على بياناته) —
+    // وإن لم يُحدَّد له وقت مخصَّص بعد، يُستخدم الافتراضي القديم (9 صباحًا - 4 عصرًا) كاحتياط
     public class AttendanceCalculationService
     {
         private static readonly TimeSpan OfficeUtcOffset = TimeSpan.FromHours(2); // توقيت ليبيا — ثابت، بلا توقيت صيفي
-        private static readonly TimeSpan OfficialStart = new TimeSpan(9, 0, 0);
-        private static readonly TimeSpan OfficialEnd = new TimeSpan(16, 0, 0);
-        private const decimal OfficialWorkHours = 7m;
+        private static readonly TimeSpan DefaultOfficialStart = new TimeSpan(9, 0, 0);
+        private static readonly TimeSpan DefaultOfficialEnd = new TimeSpan(16, 0, 0);
 
         private readonly AppDbContext _context;
 
@@ -24,6 +24,10 @@ namespace AtharERP_System.Services
         public async Task RecalculateDaysAsync(IEnumerable<(string UserId, DateTime Date)> affectedDays)
         {
             var distinctDays = affectedDays.Distinct().ToList();
+            var userIds = distinctDays.Select(d => d.UserId).Distinct().ToList();
+            var users = await _context.Users
+                .Where(u => userIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id);
 
             foreach (var (userId, date) in distinctDays)
             {
@@ -41,6 +45,17 @@ namespace AtharERP_System.Services
                 var checkIn = punches.First().PunchTime;
                 var checkOut = punches.Last().PunchTime;
 
+                var user = users.TryGetValue(userId, out var u) ? u : null;
+                var officialStart = user?.ExpectedStartTime?.ToTimeSpan() ?? DefaultOfficialStart;
+                var officialEnd = user?.ExpectedEndTime?.ToTimeSpan() ?? DefaultOfficialEnd;
+                var officialWorkHours = (decimal)(officialEnd - officialStart).TotalHours;
+                if (officialWorkHours <= 0)
+                {
+                    officialStart = DefaultOfficialStart;
+                    officialEnd = DefaultOfficialEnd;
+                    officialWorkHours = (decimal)(DefaultOfficialEnd - DefaultOfficialStart).TotalHours;
+                }
+
                 decimal? totalHours = null;
                 decimal lateMinutes = 0;
                 decimal earlyLeaveMinutes = 0;
@@ -50,12 +65,12 @@ namespace AtharERP_System.Services
                 {
                     totalHours = (decimal)(checkOut - checkIn).TotalHours;
 
-                    if (totalHours > OfficialWorkHours)
-                        overtimeHours = Math.Round(totalHours.Value - OfficialWorkHours, 2);
+                    if (totalHours > officialWorkHours)
+                        overtimeHours = Math.Round(totalHours.Value - officialWorkHours, 2);
                 }
 
-                var officialStartToday = dayStart.Add(OfficialStart).Subtract(OfficeUtcOffset);
-                var officialEndToday = dayStart.Add(OfficialEnd).Subtract(OfficeUtcOffset);
+                var officialStartToday = dayStart.Add(officialStart).Subtract(OfficeUtcOffset);
+                var officialEndToday = dayStart.Add(officialEnd).Subtract(OfficeUtcOffset);
 
                 if (checkIn > officialStartToday)
                     lateMinutes = Math.Round((decimal)(checkIn - officialStartToday).TotalMinutes, 2);

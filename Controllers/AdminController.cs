@@ -120,7 +120,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
     string id,
-     [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,JobRankId,PositionId,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+     [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,JobRankId,PositionId,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters,ExpectedStartTime,ExpectedEndTime,AttendanceMethodType")] ApplicationUser model,
     IFormFile? profilePhoto,
     IFormFile? contractImage,
     IFormFile? signatureImage,
@@ -179,6 +179,9 @@ namespace AtharERP_System.Controllers
             user.ExpectedLatitude = model.ExpectedLatitude;
             user.ExpectedLongitude = model.ExpectedLongitude;
             user.AllowedRadiusMeters = model.AllowedRadiusMeters;
+            user.ExpectedStartTime = model.ExpectedStartTime;
+            user.ExpectedEndTime = model.ExpectedEndTime;
+            user.AttendanceMethodType = model.AttendanceMethodType;
 
             if (profilePhoto != null && profilePhoto.Length > 0)
             {

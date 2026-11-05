@@ -75,6 +75,9 @@ namespace AtharERP_System.Migrations
                     b.Property<int>("AllowedRadiusMeters")
                         .HasColumnType("integer");
 
+                    b.Property<int>("AttendanceMethodType")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
@@ -107,6 +110,9 @@ namespace AtharERP_System.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<TimeOnly?>("ExpectedEndTime")
+                        .HasColumnType("time without time zone");
+
                     b.Property<double?>("ExpectedLatitude")
                         .HasColumnType("double precision");
 
@@ -116,6 +122,9 @@ namespace AtharERP_System.Migrations
 
                     b.Property<double?>("ExpectedLongitude")
                         .HasColumnType("double precision");
+
+                    b.Property<TimeOnly?>("ExpectedStartTime")
+                        .HasColumnType("time without time zone");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
