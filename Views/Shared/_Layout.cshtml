@@ -119,7 +119,9 @@
         bool canSupplyApprove = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
         bool canAttendance = await PermissionService.HasPermissionAsync(User, "HR.Attendance.View");
         bool canSalaries = await PermissionService.HasPermissionAsync(User, "HR.Salaries.View");
-        string activeSystem = ViewContext.RouteData.Values["controller"]?.ToString() switch
+        string? currentAdminAction = ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? ViewContext.RouteData.Values["action"]?.ToString() : null;
+        bool isEmployeeAdminAction = currentAdminAction is "Users" or "UserDetails" or "CreateUser" or "EditUser" or "ToggleUserStatus" or "DeleteUser" or "ResetUserPassword";
+        string activeSystem = isEmployeeAdminAction ? "sys06" : ViewContext.RouteData.Values["controller"]?.ToString() switch
         {
             "Admin" => "sys01",
             "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
@@ -209,7 +211,7 @@
                 <div class="nav-quick-divider"></div>
                 <div class="nav-section-title">الإدارات</div>
 
-                    @if (canUsers || canRoles || canDepartments)
+                    @if (canRoles || canDepartments)
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys01" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys01">
@@ -217,12 +219,7 @@
                                 <span class="nav-group-caret">▾</span>
                             </button>
                             <div class="collapse @(activeSystem == "sys01" ? "show" : "")" id="sys01">
-                                <div class="nav-subgroup-title">الموظفون والصلاحيات</div>
-                                @if (canUsers)
-                                {
-                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
-                                       asp-controller="Admin" asp-action="Users">إدارة الموظفين</a>
-                                }
+                                <div class="nav-subgroup-title">الأدوار والصلاحيات</div>
                                 @if (canRoles)
                                 {
                                     <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Roles" ? "active" : "")"
@@ -357,17 +354,20 @@
                             <span class="nav-group-caret">▾</span>
                         </button>
                             <div class="collapse @(activeSystem == "sys06" ? "show" : "")" id="sys06">
-                                <span class="nav-item disabled">الموارد البشرية <span class="tag tag-muted">قادمة</span></span>
-                                <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>            
+                                @if (canUsers)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
+                                       asp-controller="Admin" asp-action="Users">إدارة الموظفين</a>
+                                }
                                 @if (canAttendance)
                                 {
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
                                        asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
                                 }
-                               
-                             
-                        <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
+                                <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
                                 <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
+                                <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>
+                                <span class="nav-item disabled">طلبات الاستقالة <span class="tag tag-muted">قادمة</span></span>
                             </div>
                         </div>
                     }

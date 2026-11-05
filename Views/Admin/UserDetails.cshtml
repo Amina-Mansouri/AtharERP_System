@@ -8,6 +8,7 @@
     var contractHistory = ViewBag.ContractHistory as List<ContractHistory> ?? new List<ContractHistory>();
     var auditLogs = ViewBag.AuditLogs as List<AuditLog> ?? new List<AuditLog>();
     var auditActors = ViewBag.AuditActors as Dictionary<string, string> ?? new Dictionary<string, string>();
+    var attendanceRecords = ViewBag.AttendanceRecords as List<AttendanceDailyRecord> ?? new List<AttendanceDailyRecord>();
     var rankLabel = Model.JobRankRef != null ? $"{Model.JobRankRef.Code} - {Model.JobRankRef.NameAr}" : "-";
     var trackLabel = Model.JobRankRef?.CareerTrack?.NameAr ?? "-";
     var contractRange = (Model.ContractStartDate?.ToString("yyyy-MM-dd") ?? "-") + " → " + (Model.ContractEndDate?.ToString("yyyy-MM-dd") ?? "مفتوح");
@@ -81,7 +82,8 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
     <a class="tab-item" data-bs-toggle="tab" href="#pane-permissions">الصلاحيات الفعلية</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-documents">المستندات @documents.Count</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-contracts">سجل العقود @contractHistory.Count</a>
-    <a class="tab-item" data-bs-toggle="tab" href="#pane-location">موقع الحضور</a>
+        <a class="tab-item" data-bs-toggle="tab" href="#pane-location">موقع الحضور</a>
+    <a class="tab-item" data-bs-toggle="tab" href="#pane-attendance">سجل الحضور</a>
     <a class="tab-item" data-bs-toggle="tab" href="#pane-audit">سجل التغييرات</a>
 </div>
 
@@ -375,11 +377,43 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
         </div>
     </div>
 
-    <div class="tab-pane fade" id="pane-location">
+       <div class="tab-pane fade" id="pane-location">
         <p><strong>الموقع المتوقع:</strong> @(Model.ExpectedLocationName ?? "غير محدد")</p>
         <p><strong>الإحداثيات:</strong> @(Model.ExpectedLatitude?.ToString("F5") ?? "-")، @(Model.ExpectedLongitude?.ToString("F5") ?? "-")</p>
         <p><strong>نطاق مسموح:</strong> @(Model.AllowedRadiusMeters) متر</p>
-        <p class="stat-sub">يعدّله مدير النظام فقط (من صفحة تعديل المستخدم)</p>
+      
+    </div>
+
+    <div class="tab-pane fade" id="pane-attendance">
+        <div class="data-table" style="--cols: 100px 90px 90px 90px 90px 90px">
+            <div class="data-table-head">
+                <div class="cell">التاريخ</div>
+                <div class="cell">الحضور</div>
+                <div class="cell">الانصراف</div>
+                <div class="cell">ساعات العمل</div>
+                <div class="cell">تأخير (د)</div>
+                <div class="cell">إضافي (س)</div>
+            </div>
+            @if (!attendanceRecords.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد سجل حضور لهذا الموظف بعد</div></div>
+            }
+            else
+            {
+                @foreach (var r in attendanceRecords)
+                {
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
+                        <div class="cell cell-num">@(r.CheckIn?.AddHours(2).ToString("HH:mm") ?? "-")</div>
+                        <div class="cell cell-num">@(r.CheckOut?.AddHours(2).ToString("HH:mm") ?? "-")</div>
+                        <div class="cell cell-num">@(r.TotalHours?.ToString("N1") ?? "-")</div>
+                        <div class="cell cell-num">@(r.LateMinutes > 0 ? r.LateMinutes.ToString("N0") : "-")</div>
+                        <div class="cell cell-num">@(r.OvertimeHours > 0 ? r.OvertimeHours.ToString("N1") : "-")</div>
+                    </div>
+                }
+            }
+        </div>
+        <p class="stat-sub" style="margin-top:8px;">آخر 30 يوماً — للعرض فقط، يُعدَّل الحضور من شاشة "الحضور والانصراف"</p>
     </div>
 
     <div class="tab-pane fade" id="pane-audit">

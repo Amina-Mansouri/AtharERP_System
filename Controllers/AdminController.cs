@@ -417,8 +417,14 @@ namespace AtharERP_System.Controllers
                 .ToListAsync();
 
             ViewBag.ContractHistory = await _context.ContractHistories
-                .Where(c => c.UserId == id)
-                .OrderByDescending(c => c.ArchivedAt)
+    .Where(c => c.UserId == id)
+    .OrderByDescending(c => c.ArchivedAt)
+    .ToListAsync();
+
+            ViewBag.AttendanceRecords = await _context.AttendanceDailyRecords
+                .Where(r => r.UserId == id)
+                .OrderByDescending(r => r.Date)
+                .Take(30)
                 .ToListAsync();
 
             var auditLogs = await _context.AuditLogs
