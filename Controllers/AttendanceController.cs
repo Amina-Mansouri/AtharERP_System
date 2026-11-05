@@ -49,9 +49,28 @@ namespace AtharERP_System.Controllers
                 query = query.Where(r => r.UserId == userId);
 
             var records = await query
-                .OrderByDescending(r => r.Date)
-                .ThenBy(r => r.User.FirstName)
-                .ToListAsync();
+     .OrderByDescending(r => r.Date)
+     .ThenBy(r => r.User.FirstName)
+     .ToListAsync();
+
+            var filteredUserIds = await usersQuery.Select(u => u.Id).ToListAsync();
+            if (!string.IsNullOrEmpty(userId))
+                filteredUserIds = filteredUserIds.Where(id => id == userId).ToList();
+
+            var effectiveDateTo = dateTo.Value.Date > DateTime.UtcNow.Date ? DateTime.UtcNow.Date : dateTo.Value.Date;
+            int expectedWorkDays = 0;
+            for (var d = dateFrom.Value.Date; d <= effectiveDateTo; d = d.AddDays(1))
+            {
+                if (d.DayOfWeek != DayOfWeek.Friday) expectedWorkDays++;
+            }
+            int expectedAttendanceSlots = expectedWorkDays * filteredUserIds.Count;
+            var presentDaySlots = records.Select(r => new { r.UserId, Date = r.Date.Date }).Distinct().Count();
+
+            ViewBag.LateCount = records.Count(r => r.LateMinutes > 0);
+            ViewBag.AbsentCount = Math.Max(0, expectedAttendanceSlots - presentDaySlots);
+            ViewBag.OvertimeCount = records.Count(r => r.OvertimeHours > 0);
+            ViewBag.OnTimeCount = records.Count(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0);
+            ViewBag.EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0);
 
             return View(records);
         }

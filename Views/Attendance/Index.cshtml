@@ -56,10 +56,32 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:12px;">
+    <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #c94a42; border-radius:11px; padding:12px 14px;">
+        <div style="font-size:10.5px; color:#8a83a0;">متأخرون</div>
+        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#c94a42;">@ViewBag.LateCount</div>
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #5a5370; border-radius:11px; padding:12px 14px;">
+        <div style="font-size:10.5px; color:#8a83a0;">غائبون</div>
+        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#5a5370;">@ViewBag.AbsentCount</div>
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #c9700f; border-radius:11px; padding:12px 14px;">
+        <div style="font-size:10.5px; color:#8a83a0;">إضافي</div>
+        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#c9700f;">@ViewBag.OvertimeCount</div>
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #2f8a57; border-radius:11px; padding:12px 14px;">
+        <div style="font-size:10.5px; color:#8a83a0;">ضمن الوقت</div>
+        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#2f8a57;">@ViewBag.OnTimeCount</div>
+    </div>
+    <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #7b6bd6; border-radius:11px; padding:12px 14px;">
+        <div style="font-size:10.5px; color:#8a83a0;">خروج مبكر</div>
+        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#7b6bd6;">@ViewBag.EarlyLeaveCount</div>
+    </div>
+</div>
+
 <div class="athar-card" style="margin-bottom:12px;">
     <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:12px;">
         <div><strong>أيام حضور:</strong> @Model.Count(r => r.CheckIn.HasValue)</div>
-        <div style="color:#c94a42;"><strong>أيام تأخير:</strong> @Model.Count(r => r.LateMinutes > 0)</div>
         <div style="color:#e0a040;"><strong>بانتظار اعتماد الإضافي:</strong> @Model.Count(r => r.OvertimeHours > 0 && r.OvertimeApproved == null)</div>
     </div>
 </div>
