@@ -110,10 +110,11 @@
         bool isDesignEngineer = User.IsInRole("مهندس تصميم");
         bool canViewAssignments = await PermissionService.HasPermissionAsync(User, "Projects.Assignments.View");
         bool canFinance = await PermissionService.HasPermissionAsync(User, "Finance.View")
-            || await PermissionService.HasPermissionAsync(User, "Finance.Costs.View")
-            || await PermissionService.HasPermissionAsync(User, "Finance.Sales.View")
-            || await PermissionService.HasPermissionAsync(User, "Finance.Claims.View")
-            || await PermissionService.HasPermissionAsync(User, "Finance.Claims.Manage");
+    || await PermissionService.HasPermissionAsync(User, "Finance.Costs.View")
+    || await PermissionService.HasPermissionAsync(User, "Finance.Sales.View")
+    || await PermissionService.HasPermissionAsync(User, "Finance.Claims.View")
+    || await PermissionService.HasPermissionAsync(User, "Finance.Claims.Manage")
+    || await PermissionService.HasPermissionAsync(User, "HR.Salaries.View");
         bool canSupply = await PermissionService.HasPermissionAsync(User, "Supply.View");
         bool canSupplyApprove = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
         bool canAttendance = await PermissionService.HasPermissionAsync(User, "HR.Attendance.View");
@@ -124,7 +125,7 @@
             "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
             "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" => "sys03",
             "Clients" => "sys07",
-            "Finance" or "ClientRedesignRequests" or "GeneralExpenses" => "sys04",
+            "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",
             "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
             "Attendance" => "sys06",
             _ => ""
@@ -318,6 +319,11 @@
                                 </div>  
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
                                    asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
+                                @if (canSalaries)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
+                                       asp-controller="Salaries" asp-action="Index">الرواتب والخصومات</a>
+                                }
                             </div>
                         </div>
                     }
@@ -343,7 +349,7 @@
                         </div>
                     }
 
-                    @if (canUsers || canAttendance || canSalaries)
+                    @if (canUsers || canAttendance)
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys06" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys06">
@@ -359,11 +365,7 @@
                                        asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
                                 }
                                
-                                @if (canSalaries)
-                                {
-                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
-                                       asp-controller="Salaries" asp-action="Index">الرواتب والخصومات</a>
-                                }
+                             
                         <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
                                 <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
                             </div>
