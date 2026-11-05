@@ -249,7 +249,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
                 <input type="hidden" id="ExpectedLatitude" name="ExpectedLatitude" value="@(Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
                 <input type="hidden" id="ExpectedLongitude" name="ExpectedLongitude" value="@(Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
                 <div style="margin-top:8px; max-width:220px;">
-                                    <div style="margin-top:8px; max-width:220px;">
+                                    
                     <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نصف القطر المسموح (متر)</div>
                     <input type="number" min="1" name="AllowedRadiusMeters" id="AllowedRadiusMeters" value="@Model.AllowedRadiusMeters" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                 </div>
