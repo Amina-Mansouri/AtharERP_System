@@ -52,6 +52,11 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("JobRankId")]
         public virtual JobRank? JobRankRef { get; set; }
 
+        [Display(Name = "المنصب")]
+        public int? PositionId { get; set; }
+        [ForeignKey("PositionId")]
+        public virtual Position? PositionRef { get; set; }
+
         [Display(Name = "التعهد")]
         public string? Pledge { get; set; }
 

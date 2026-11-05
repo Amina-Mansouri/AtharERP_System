@@ -176,6 +176,9 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("Pledge")
                         .HasColumnType("text");
 
+                    b.Property<int?>("PositionId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ProfilePhotoPath")
                         .HasColumnType("text");
 
@@ -216,6 +219,8 @@ namespace AtharERP_System.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("PositionId");
 
                     b.ToTable("Users", "identity");
                 });
@@ -1024,6 +1029,9 @@ namespace AtharERP_System.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<decimal>("OvertimePercentage")
+                        .HasColumnType("decimal(6,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CareerTrackId");
@@ -1237,6 +1245,30 @@ namespace AtharERP_System.Migrations
                     b.HasIndex("ProjectAssignmentId");
 
                     b.ToTable("PersonalChecklistItems");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.Position", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Percentage")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Positions");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Project", b =>
@@ -2883,9 +2915,15 @@ namespace AtharERP_System.Migrations
                         .WithMany()
                         .HasForeignKey("JobRankId");
 
+                    b.HasOne("AtharERP_System.Models.Entities.Position", "PositionRef")
+                        .WithMany()
+                        .HasForeignKey("PositionId");
+
                     b.Navigation("Department");
 
                     b.Navigation("JobRankRef");
+
+                    b.Navigation("PositionRef");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.AssignmentEngineer", b =>

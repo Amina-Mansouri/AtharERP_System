@@ -120,7 +120,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(
     string id,
-     [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,JobRankId,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
+     [Bind("FirstName,LastName,JobNumber,NextOfKinPhone,DepartmentId,JobRankId,PositionId,ContractSalary,ContractStartDate,ContractEndDate,PhoneNumber,ExpectedLocationName,ExpectedLatitude,ExpectedLongitude,AllowedRadiusMeters")] ApplicationUser model,
     IFormFile? profilePhoto,
     IFormFile? contractImage,
     IFormFile? signatureImage,
@@ -173,6 +173,7 @@ namespace AtharERP_System.Controllers
             user.NextOfKinPhone = model.NextOfKinPhone;
             user.DepartmentId = model.DepartmentId;
             user.JobRankId = model.JobRankId;
+            user.PositionId = model.PositionId;
             user.PhoneNumber = model.PhoneNumber;
             user.ExpectedLocationName = model.ExpectedLocationName;
             user.ExpectedLatitude = model.ExpectedLatitude;
@@ -435,6 +436,7 @@ namespace AtharERP_System.Controllers
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
             ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
+            ViewBag.Positions = await _context.Positions.Where(p => p.IsActive).OrderBy(p => p.NameAr).ToListAsync();
 
             return View(user);
         }
@@ -451,6 +453,7 @@ namespace AtharERP_System.Controllers
             ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
             ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
             ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
+            ViewBag.Positions = await _context.Positions.Where(p => p.IsActive).OrderBy(p => p.NameAr).ToListAsync();
             return View();
         }
 
@@ -471,11 +474,12 @@ namespace AtharERP_System.Controllers
             decimal contractSalary,
             DateTime? contractStartDate,
             DateTime? contractEndDate,
-            string? phoneNumber,
+           string? phoneNumber,
             string? expectedLocationName,
             double? expectedLatitude,
             double? expectedLongitude,
             int? allowedRadiusMeters,
+            int? positionId,
             string role)
         {
             async Task<IActionResult> FailAsync(string error)
@@ -485,6 +489,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.RoleOptions = await _roleManager.Roles.Where(r => r.IsActive).OrderBy(r => r.Name).Select(r => r.Name).ToListAsync();
                 ViewBag.CareerTracks = await _context.CareerTracks.OrderBy(t => t.DisplayOrder).ToListAsync();
                 ViewBag.JobRanks = await _context.JobRanks.OrderBy(r => r.DisplayOrder).ToListAsync();
+                ViewBag.Positions = await _context.Positions.Where(p => p.IsActive).OrderBy(p => p.NameAr).ToListAsync();
 
                 ViewBag.PostedFirstName = firstName;
                 ViewBag.PostedLastName = lastName;
@@ -495,6 +500,7 @@ namespace AtharERP_System.Controllers
                 ViewBag.PostedNextOfKinPhone = nextOfKinPhone;
                 ViewBag.PostedDepartmentId = departmentId;
                 ViewBag.PostedJobRankId = jobRankId;
+                ViewBag.PostedPositionId = positionId;
                 ViewBag.PostedContractSalary = contractSalary;
                 ViewBag.PostedContractStartDate = contractStartDate;
                 ViewBag.PostedContractEndDate = contractEndDate;
@@ -551,6 +557,7 @@ namespace AtharERP_System.Controllers
                 ExpectedLatitude = expectedLatitude,
                 ExpectedLongitude = expectedLongitude,
                 AllowedRadiusMeters = allowedRadiusMeters ?? 100,
+                PositionId = positionId,
                 EmailConfirmed = true,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
@@ -1192,7 +1199,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateRank(int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary, decimal? hourlyRate)
+        public async Task<IActionResult> CreateRank(int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary, decimal? hourlyRate, decimal overtimePercentage = 0)
         {
             if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(nameAr))
             {
@@ -1208,7 +1215,8 @@ namespace AtharERP_System.Controllers
                 NameEn = nameEn,
                 DisplayOrder = displayOrder,
                 BaseSalary = baseSalary,
-                HourlyRate = hourlyRate
+                HourlyRate = hourlyRate,
+                OvertimePercentage = overtimePercentage
             });
             await _context.SaveChangesAsync();
 
@@ -1219,7 +1227,7 @@ namespace AtharERP_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditRank(int id, int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary, decimal? hourlyRate)
+        public async Task<IActionResult> EditRank(int id, int careerTrackId, string code, string nameAr, string? nameEn, int displayOrder, decimal? baseSalary, decimal? hourlyRate, decimal overtimePercentage = 0)
         {
             var rank = await _context.JobRanks.FindAsync(id);
             if (rank == null) return NotFound();
@@ -1237,6 +1245,7 @@ namespace AtharERP_System.Controllers
             rank.DisplayOrder = displayOrder;
             rank.BaseSalary = baseSalary;
             rank.HourlyRate = hourlyRate;
+            rank.OvertimePercentage = overtimePercentage;
             await _context.SaveChangesAsync();
 
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل رتبة", "JobRank", id.ToString(), $"تعديل رتبة {rank.NameAr}");
@@ -1265,6 +1274,80 @@ namespace AtharERP_System.Controllers
             await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف رتبة", "JobRank", id.ToString(), $"حذف رتبة {deletedName}");
             TempData["Success"] = "تم حذف الرتبة بنجاح";
             return RedirectToAction("RanksAndTracks");
+        }
+
+        // ============================================
+        // إدارة المناصب (Position)
+        // ============================================
+        [HttpGet]
+        public async Task<IActionResult> Positions()
+        {
+            var positions = await _context.Positions.OrderBy(p => p.NameAr).ToListAsync();
+            return View(positions);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePosition(string nameAr, decimal percentage)
+        {
+            if (string.IsNullOrWhiteSpace(nameAr))
+            {
+                TempData["Error"] = "اسم المنصب مطلوب";
+                return RedirectToAction("Positions");
+            }
+
+            _context.Positions.Add(new Position { NameAr = nameAr.Trim(), Percentage = percentage, IsActive = true });
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "إضافة منصب", "Position", nameAr, $"إنشاء منصب {nameAr}");
+            TempData["Success"] = $"تم إنشاء منصب {nameAr} بنجاح";
+            return RedirectToAction("Positions");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPosition(int id, string nameAr, decimal percentage, bool isActive)
+        {
+            var position = await _context.Positions.FindAsync(id);
+            if (position == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(nameAr))
+            {
+                TempData["Error"] = "اسم المنصب مطلوب";
+                return RedirectToAction("Positions");
+            }
+
+            position.NameAr = nameAr.Trim();
+            position.Percentage = percentage;
+            position.IsActive = isActive;
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "تعديل منصب", "Position", id.ToString(), $"تعديل منصب {position.NameAr}");
+            TempData["Success"] = $"تم تحديث منصب {position.NameAr} بنجاح";
+            return RedirectToAction("Positions");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePosition(int id)
+        {
+            var position = await _context.Positions.FindAsync(id);
+            if (position == null) return NotFound();
+
+            var hasEmployees = await _userManager.Users.AnyAsync(u => u.PositionId == id);
+            if (hasEmployees)
+            {
+                TempData["Error"] = "لا يمكن حذف المنصب لوجود موظفين مكلَّفين به";
+                return RedirectToAction("Positions");
+            }
+
+            var deletedName = position.NameAr;
+            _context.Positions.Remove(position);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(_userManager.GetUserId(User)!, "حذف منصب", "Position", id.ToString(), $"حذف منصب {deletedName}");
+            TempData["Success"] = "تم حذف المنصب بنجاح";
+            return RedirectToAction("Positions");
         }
     }
 }

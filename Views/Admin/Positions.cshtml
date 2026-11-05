@@ -1,0 +1,100 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<Position>
+@{
+    ViewData["Title"] = "المناصب";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">الصلاحيات والمصادقة</span>
+        <h1>المناصب</h1>
+    </div>
+    <div class="page-head-actions">
+        <button type="button" class="btn-line btn-line-accent" onclick="openPositionModal()">+ منصب جديد</button>
+    </div>
+</div>
+
+<div class="side-panel">
+    @if (!Model.Any())
+    {
+        <div class="stat-sub">لا توجد مناصب بعد</div>
+    }
+    else
+    {
+        <div class="data-table" style="--cols: minmax(0,1.5fr) 120px 90px 130px">
+            <div class="data-table-head">
+                <div class="cell">اسم المنصب</div>
+                <div class="cell cell-num">نسبة الزيادة %</div>
+                <div class="cell">الحالة</div>
+                <div class="cell"></div>
+            </div>
+            @foreach (var position in Model)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@position.NameAr</div>
+                    <div class="cell cell-num">@position.Percentage.ToString("N0")%</div>
+                    <div class="cell"><span class="tag @(position.IsActive ? "tag-success" : "tag-muted")">@(position.IsActive ? "نشط" : "غير نشط")</span></div>
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <a href="#" style="font-size:11px;"
+                           onclick='openPositionModal(@position.Id, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(position.NameAr)), @position.Percentage.ToString(System.Globalization.CultureInfo.InvariantCulture), @(position.IsActive ? "true" : "false")); return false;'>
+                            تعديل
+                        </a>
+                        <form method="post" asp-action="DeletePosition" asp-route-id="@position.Id" onsubmit="return confirm('حذف هذا المنصب؟')" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" style="font-size:11px; color:#c94a42; background:none; border:none; padding:0;">حذف</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="positionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="positionForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="position-id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="position-modal-title">منصب جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">اسم المنصب</div>
+                        <input type="text" name="nameAr" id="position-nameAr" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نسبة الزيادة % (مثال: 50 تعني 50%)</div>
+                        <input type="number" step="0.01" name="percentage" id="position-percentage" value="0" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    </div>
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="isActive" value="true" class="form-check-input" id="position-isActive" checked />
+                        <input type="hidden" name="isActive" value="false" />
+                        <label class="form-check-label" for="position-isActive">نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openPositionModal(id, nameAr, percentage, isActive) {
+            const form = document.getElementById('positionForm');
+            const isEdit = id !== undefined && id !== null;
+            form.action = isEdit ? '@Url.Action("EditPosition")' : '@Url.Action("CreatePosition")';
+            document.getElementById('position-id').value = id ?? '';
+            document.getElementById('position-nameAr').value = nameAr ?? '';
+            document.getElementById('position-percentage').value = percentage ?? 0;
+            document.getElementById('position-isActive').checked = isActive === undefined ? true : !!isActive;
+            document.getElementById('position-modal-title').textContent = isEdit ? 'تعديل منصب' : 'منصب جديد';
+            new bootstrap.Modal(document.getElementById('positionModal')).show();
+        }
+    </script>
+}

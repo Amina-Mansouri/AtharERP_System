@@ -52,6 +52,7 @@ namespace AtharERP_System.Data
         public DbSet<Contractor> Contractors { get; set; } = null!;
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
+        public DbSet<Position> Positions { get; set; } = null!;
         public DbSet<SiteSupplyRequestItem> SiteSupplyRequestItems { get; set; } = null!;
         public DbSet<Vendor> Vendors { get; set; } = null!;
         public DbSet<SiteCorrespondence> SiteCorrespondences { get; set; } = null!;

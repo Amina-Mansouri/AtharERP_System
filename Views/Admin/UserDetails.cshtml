@@ -17,7 +17,8 @@
     var currentRole = ViewBag.CurrentRole as string;
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var careerTracks = ViewBag.CareerTracks as List<CareerTrack> ?? new List<CareerTrack>();
-    var jobRanks = ViewBag.JobRanks as List<JobRank> ?? new List<JobRank>();
+        var jobRanks = ViewBag.JobRanks as List<JobRank> ?? new List<JobRank>();
+    var positions = ViewBag.Positions as List<Position> ?? new List<Position>();
     var currentDept = departments.FirstOrDefault(d => d.Id == Model.DepartmentId);
     int? currentTopId = currentDept == null ? (int?)null : (currentDept.ParentDepartmentId ?? currentDept.Id);
     var initialLat = Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null";
@@ -129,12 +130,25 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
                     }
                 </select>
             </div>
-            <div>
+                       <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الرتبة الوظيفية</div>
                 <select name="JobRankId" id="edituser-rank-select" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
                     @foreach (var jr in jobRanks)
                     {
                         <option value="@jr.Id" data-track="@jr.CareerTrackId" selected="@(Model.JobRankId == jr.Id)">@jr.Code - @jr.NameAr (@jr.NameEn)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:11px; color:#5a5370;">المنصب</span>
+                    <a asp-action="Positions" target="_blank" style="font-size:10px;">+ إدارة الخيارات</a>
+                </div>
+                <select name="PositionId" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="">-- بلا --</option>
+                    @foreach (var p in positions)
+                    {
+                        <option value="@p.Id" selected="@(Model.PositionId == p.Id)">@p.NameAr</option>
                     }
                 </select>
             </div>

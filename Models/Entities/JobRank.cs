@@ -35,5 +35,9 @@ namespace AtharERP_System.Models.Entities
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "سعر الساعة")]
         public decimal? HourlyRate { get; set; }
+
+        [Column(TypeName = "decimal(6,2)")]
+        [Display(Name = "نسبة الإضافي %")]
+        public decimal OvertimePercentage { get; set; }
     }
 }

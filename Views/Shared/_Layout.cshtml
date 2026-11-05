@@ -232,6 +232,8 @@
                                        asp-controller="Admin" asp-action="Departments">الإدارات والأقسام</a>
                                     <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "RanksAndTracks" ? "active" : "")"
                                        asp-controller="Admin" asp-action="RanksAndTracks">الرتب والمسارات</a>
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Positions" ? "active" : "")"
+                                       asp-controller="Admin" asp-action="Positions">المناصب</a>
                                 }
                             </div>
                         </div>
