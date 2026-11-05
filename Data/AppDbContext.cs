@@ -53,6 +53,7 @@ namespace AtharERP_System.Data
         public DbSet<SiteMaintenance> SiteMaintenances { get; set; } = null!;
         public DbSet<SiteSupplyRequest> SiteSupplyRequests { get; set; } = null!;
         public DbSet<Position> Positions { get; set; } = null!;
+        public DbSet<SalaryPayment> SalaryPayments { get; set; } = null!;
         public DbSet<SiteSupplyRequestItem> SiteSupplyRequestItems { get; set; } = null!;
         public DbSet<Vendor> Vendors { get; set; } = null!;
         public DbSet<SiteCorrespondence> SiteCorrespondences { get; set; } = null!;
@@ -515,6 +516,11 @@ namespace AtharERP_System.Data
                 .WithMany()
                 .HasForeignKey(m => m.ResponsibleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ========== الرواتب المصروفة (SalaryPayment) — منع صرف نفس الشهر للموظف مرتين ==========
+            builder.Entity<SalaryPayment>()
+                .HasIndex(s => new { s.UserId, s.Year, s.Month })
+                .IsUnique();
 
             // ========== طلبات توريد الموقع (SiteSupplyRequest) ==========
             builder.Entity<SiteSupplyRequest>()

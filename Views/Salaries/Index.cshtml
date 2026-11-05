@@ -1,0 +1,189 @@
+﻿@using AtharERP_System.Models.Entities
+@{
+    ViewData["Title"] = "صرف الرواتب";
+    int year = (int)ViewBag.Year;
+    int month = (int)ViewBag.Month;
+    bool isCurrentMonth = (bool)ViewBag.IsCurrentMonth;
+    bool canManage = (bool)ViewBag.CanManage;
+    var employees = ViewBag.Employees as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var existingPayments = ViewBag.ExistingPayments as Dictionary<string, SalaryPayment> ?? new Dictionary<string, SalaryPayment>();
+    var previews = ViewBag.Previews as IEnumerable<object>;
+
+    string[] monthNames = { "", "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر" };
+    var prevMonth = month == 1 ? 12 : month - 1;
+    var prevYear = month == 1 ? year - 1 : year;
+    var nextMonth = month == 12 ? 1 : month + 1;
+    var nextYear = month == 12 ? year + 1 : year;
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">الموارد البشرية</span>
+        <h1>صرف الرواتب</h1>
+    </div>
+    <div class="page-head-actions">
+        <a asp-action="History" class="btn-line">سجل الرواتب المصروفة</a>
+    </div>
+</div>
+
+<div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:14px;">
+    <a href="@Url.Action("Index", new { year = prevYear, month = prevMonth })" class="btn-line">‹ الشهر السابق</a>
+    <div style="font-size:15px; font-weight:700;">@monthNames[month] @year @(isCurrentMonth ? "(الشهر الجاري)" : "")</div>
+    <a href="@Url.Action("Index", new { year = nextYear, month = nextMonth })" class="btn-line">الشهر التالي ›</a>
+</div>
+
+@if (!isCurrentMonth)
+{
+    <div style="background:#fdfaf3; border:1px solid #c9a15a; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:12px;">
+        هذا ليس الشهر الجاري — الأرقام لا تُحسب تلقائياً هنا، الإدخال يدوي بالكامل.
+    </div>
+}
+
+<div class="data-table" style="--cols: minmax(0,1.4fr) 1fr 1fr 150px 150px">
+    <div class="data-table-head">
+        <div class="cell">الموظف</div>
+        <div class="cell">الرتبة</div>
+        <div class="cell">المنصب</div>
+        <div class="cell">الحالة</div>
+        <div class="cell">إجراء</div>
+    </div>
+    @if (!employees.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا يوجد موظفون نشطون</div></div>
+    }
+    else
+    {
+        @foreach (var emp in employees)
+        {
+            var paid = existingPayments.TryGetValue(emp.Id, out var payment) ? payment : null;
+            <div class="data-table-row">
+                <div class="cell">@emp.FullName</div>
+                <div class="cell">@(emp.JobRankRef != null ? $"{emp.JobRankRef.Code} - {emp.JobRankRef.NameAr}" : "-")</div>
+                <div class="cell">@(emp.PositionRef?.NameAr ?? "-")</div>
+                <div class="cell">
+                    @if (paid != null)
+                    {
+                        <span class="tag tag-success">مدفوع — @paid.NetAmount.ToString("N2")</span>
+                    }
+                    else
+                    {
+                        <span class="tag tag-warning">غير مدفوع</span>
+                    }
+                </div>
+                <div class="cell">
+                    @if (paid != null)
+                    {
+                        <a asp-action="Receipt" asp-route-id="@paid.Id" target="_blank" class="btn-line">طباعة الإيصال</a>
+                    }
+                    else if (canManage)
+                    {
+                        <button type="button" class="btn-line btn-line-accent" onclick="openPayModal('@emp.Id')">صرف</button>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-action="Pay" id="payForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" id="pay-userId" />
+                <input type="hidden" name="year" value="@year" />
+                <input type="hidden" name="month" value="@month" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pay-modal-title">صرف راتب</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <div style="background:#f6f4fb; border-radius:8px; padding:10px; font-size:11.5px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                        <div>ساعات العمل الفعلية: <b id="pay-info-workedHours"></b></div>
+                        <div>ساعات الإضافي المعتمدة: <b id="pay-info-overtimeHours"></b></div>
+                        <div>أيام الغياب التقديرية: <b id="pay-info-absentDays"></b></div>
+                        <div>دقائق التأخير/الانصراف المبكر: <b id="pay-info-lateMinutes"></b></div>
+                        <div>سعر الساعة الأصلي للرتبة: <b id="pay-info-hourlyRate"></b></div>
+                        <div>الراتب الثابت للرتبة: <b id="pay-info-fixedSalary"></b></div>
+                        <div>نسبة المنصب: <b id="pay-info-positionPct"></b></div>
+                        <div>نسبة إضافي الرتبة: <b id="pay-info-overtimePct"></b></div>
+                    </div>
+                    <input type="hidden" name="workedHours" id="pay-workedHours" />
+                    <input type="hidden" name="overtimeHoursApproved" id="pay-overtimeHoursApproved" />
+                    <input type="hidden" name="estimatedAbsentDays" id="pay-estimatedAbsentDays" />
+                    <input type="hidden" name="lateMinutesTotal" id="pay-lateMinutesTotal" />
+                    <input type="hidden" name="hourlyRateUsed" id="pay-hourlyRateUsed" />
+                    <input type="hidden" name="fixedSalaryUsed" id="pay-fixedSalaryUsed" />
+                    <input type="hidden" name="positionPercentageUsed" id="pay-positionPercentageUsed" />
+                    <input type="hidden" name="overtimePercentageUsed" id="pay-overtimePercentageUsed" />
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الأساسي</div>
+                        <input type="number" step="0.01" name="baseAmount" id="pay-baseAmount" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" oninput="recalcNet()" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الإضافي</div>
+                        <input type="number" step="0.01" name="overtimeAmount" id="pay-overtimeAmount" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" oninput="recalcNet()" />
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الخصم (يدوي)</div>
+                        <input type="number" step="0.01" name="deduction" id="pay-deduction" value="0" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" oninput="recalcNet()" />
+                    </div>
+                    <div style="font-size:13px; font-weight:700;">الصافي: <span id="pay-net">0</span></div>
+                    <div>
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">ملاحظات</div>
+                        <input type="text" name="notes" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-line btn-line-accent">تأكيد الصرف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const previewsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(previews));
+
+        function recalcNet() {
+            var base_ = parseFloat(document.getElementById('pay-baseAmount').value) || 0;
+            var ot = parseFloat(document.getElementById('pay-overtimeAmount').value) || 0;
+            var ded = parseFloat(document.getElementById('pay-deduction').value) || 0;
+            document.getElementById('pay-net').textContent = (base_ + ot - ded).toFixed(2);
+        }
+
+        function openPayModal(userId) {
+            var p = previewsData.find(function (x) { return x.userId === userId; });
+            if (!p) return;
+
+            document.getElementById('pay-userId').value = p.userId;
+            document.getElementById('pay-modal-title').textContent = 'صرف راتب — ' + p.name;
+
+            document.getElementById('pay-info-workedHours').textContent = p.workedHours.toFixed(2);
+            document.getElementById('pay-info-overtimeHours').textContent = p.overtimeHoursApproved.toFixed(2);
+            document.getElementById('pay-info-absentDays').textContent = p.estimatedAbsentDays;
+            document.getElementById('pay-info-lateMinutes').textContent = p.lateMinutesTotal.toFixed(0);
+            document.getElementById('pay-info-hourlyRate').textContent = p.hourlyRateUsed != null ? p.hourlyRateUsed.toFixed(2) : '-';
+            document.getElementById('pay-info-fixedSalary').textContent = p.fixedSalaryUsed != null ? p.fixedSalaryUsed.toFixed(2) : '-';
+            document.getElementById('pay-info-positionPct').textContent = p.positionPercentage + '%';
+            document.getElementById('pay-info-overtimePct').textContent = p.overtimePercentage + '%';
+
+            document.getElementById('pay-workedHours').value = p.workedHours;
+            document.getElementById('pay-overtimeHoursApproved').value = p.overtimeHoursApproved;
+            document.getElementById('pay-estimatedAbsentDays').value = p.estimatedAbsentDays;
+            document.getElementById('pay-lateMinutesTotal').value = p.lateMinutesTotal;
+            document.getElementById('pay-hourlyRateUsed').value = p.hourlyRateUsed ?? '';
+            document.getElementById('pay-fixedSalaryUsed').value = p.fixedSalaryUsed ?? '';
+            document.getElementById('pay-positionPercentageUsed').value = p.positionPercentage;
+            document.getElementById('pay-overtimePercentageUsed').value = p.overtimePercentage;
+
+            document.getElementById('pay-baseAmount').value = p.baseAmount;
+            document.getElementById('pay-overtimeAmount').value = p.overtimeAmount;
+            document.getElementById('pay-deduction').value = 0;
+            recalcNet();
+
+            new bootstrap.Modal(document.getElementById('payModal')).show();
+        }
+    </script>
+}

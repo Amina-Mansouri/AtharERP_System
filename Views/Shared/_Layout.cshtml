@@ -117,6 +117,7 @@
         bool canSupply = await PermissionService.HasPermissionAsync(User, "Supply.View");
         bool canSupplyApprove = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
         bool canAttendance = await PermissionService.HasPermissionAsync(User, "HR.Attendance.View");
+        bool canSalaries = await PermissionService.HasPermissionAsync(User, "HR.Salaries.View");
         string activeSystem = ViewContext.RouteData.Values["controller"]?.ToString() switch
         {
             "Admin" => "sys01",
@@ -292,7 +293,7 @@
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
-                                <span>المالية <span class="tag tag-warning">قيد التنفيذ</span></span>
+                                <span>المالية  <span class="tag tag-success">كاملة</span></span>
                                 <span class="nav-group-caret">▾</span>
                             </button>
                             <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
@@ -314,7 +315,7 @@
                                        asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
                                        asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
-                                </div>     <span class="nav-item disabled">الرواتب <span class="tag tag-muted">قادمة</span></span>
+                                </div>  
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
                                    asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
                             </div>
@@ -342,7 +343,7 @@
                         </div>
                     }
 
-                    @if (canUsers || canAttendance)
+                    @if (canUsers || canAttendance || canSalaries)
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys06" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys06">
@@ -358,7 +359,11 @@
                                        asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
                                 }
                                
-                        <span class="nav-item disabled">الرواتب والخصومات <span class="tag tag-muted">قادمة</span></span>
+                                @if (canSalaries)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
+                                       asp-controller="Salaries" asp-action="Index">الرواتب والخصومات</a>
+                                }
                         <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
                                 <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
                             </div>

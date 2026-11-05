@@ -1935,6 +1935,88 @@ namespace AtharERP_System.Migrations
                     b.ToTable("RolePermissions");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SalaryPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BaseAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Deduction")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("EstimatedAbsentDays")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("FixedSalaryUsed")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("HourlyRateUsed")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("LateMinutesTotal")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("OvertimeAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OvertimeHoursApproved")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<decimal>("OvertimePercentageUsed")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<DateTime>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaidById")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PositionNameUsed")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("PositionPercentageUsed")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("RankNameUsed")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("WorkedHours")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaidById");
+
+                    b.HasIndex("UserId", "Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("SalaryPayments");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.Site", b =>
                 {
                     b.Property<int>("Id")
@@ -3462,6 +3544,25 @@ namespace AtharERP_System.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SalaryPayment", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "PaidBy")
+                        .WithMany()
+                        .HasForeignKey("PaidById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PaidBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Site", b =>
