@@ -9,9 +9,25 @@
     {
         public string Title { get; set; } = "";
         public string Url { get; set; } = "";
+        public string System { get; set; } = "";
     }
 }
 @{
+    string? currentAdminActionForTrail = ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? ViewContext.RouteData.Values["action"]?.ToString() : null;
+    bool isEmployeeAdminActionForTrail = currentAdminActionForTrail is "Users" or "UserDetails" or "CreateUser" or "EditUser" or "ToggleUserStatus" or "DeleteUser" or "ResetUserPassword";
+    // تصنيف القسم الكبير الذي تنتمي له الصفحة الحالية (نفس تصنيف sys01..sys08 بالشريط الجانبي) — يُستخدم لمعرفة متى ننتقل من قسم لآخر تماماً فنُصفِّر الرابط العلوي بدل أن نراكم عليه
+    string currentSystem = isEmployeeAdminActionForTrail ? "sys06" : ViewContext.RouteData.Values["controller"]?.ToString() switch
+    {
+        "Admin" => "sys01",
+        "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
+        "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" => "sys03",
+        "Clients" => "sys07",
+        "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",
+        "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
+        "Attendance" => "sys06",
+        _ => ""
+    };
+
     var navTrail = new List<NavTrailEntry>();
     if (SignInManager.IsSignedIn(User) && Context.Request.Method == "GET" && ViewData["HideNav"] as bool? != true)
     {
@@ -33,7 +49,11 @@
         }
         else
         {
-            navTrail.Add(new NavTrailEntry { Title = currentTitle, Url = currentUrl });
+            if (navTrail.Any() && navTrail.Last().System != currentSystem)
+            {
+                navTrail = new List<NavTrailEntry>();
+            }
+            navTrail.Add(new NavTrailEntry { Title = currentTitle, Url = currentUrl, System = currentSystem });
             if (navTrail.Count > 8)
             {
                 navTrail = navTrail.Skip(navTrail.Count - 8).ToList();
@@ -119,19 +139,8 @@
         bool canSupplyApprove = await PermissionService.HasPermissionAsync(User, "Supply.Approve");
         bool canAttendance = await PermissionService.HasPermissionAsync(User, "HR.Attendance.View");
         bool canSalaries = await PermissionService.HasPermissionAsync(User, "HR.Salaries.View");
-        string? currentAdminAction = ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? ViewContext.RouteData.Values["action"]?.ToString() : null;
-        bool isEmployeeAdminAction = currentAdminAction is "Users" or "UserDetails" or "CreateUser" or "EditUser" or "ToggleUserStatus" or "DeleteUser" or "ResetUserPassword";
-        string activeSystem = isEmployeeAdminAction ? "sys06" : ViewContext.RouteData.Values["controller"]?.ToString() switch
-        {
-            "Admin" => "sys01",
-            "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
-            "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" => "sys03",
-            "Clients" => "sys07",
-            "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",
-            "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
-            "Attendance" => "sys06",
-            _ => ""
-        };
+        // نفس تصنيف القسم المحسوب أعلاه في بداية الملف لبناء الرابط العلوي — نعيد استخدامه هنا بدل تكراره لضمان تطابقهما دائماً
+        string activeSystem = currentSystem;
         bool expensesSubActive = (ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses")
     || ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses";
         <header class="app-topbar">

@@ -81,7 +81,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("HR.Attendance.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DecideOvertime(int id, bool approved)
+        public async Task<IActionResult> DecideOvertime(int id, bool approved, int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo)
         {
             var record = await _context.AttendanceDailyRecords.FindAsync(id);
             if (record == null)
@@ -98,7 +98,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Update", nameof(AttendanceDailyRecord), record.Id.ToString(), approved ? "اعتماد ساعات إضافية" : "رفض ساعات إضافية");
 
             TempData["Success"] = approved ? "تم اعتماد الساعات الإضافية" : "تم رفض الساعات الإضافية";
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", new { departmentId, userId, dateFrom, dateTo });
         }
 
         // تسجيل حضور/انصراف ذاتي بالموقع — متاح لكل موظف طريقته "بالموقع"، يستخدم نفس خط أنابيب البصمة بدون تكرار منطق
