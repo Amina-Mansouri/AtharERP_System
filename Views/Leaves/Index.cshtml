@@ -1,0 +1,142 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<LeaveRequest>
+@{
+    ViewData["Title"] = "الإجازات";
+    int allowance = (int)ViewBag.AnnualAllowance;
+    int usedDays = (int)ViewBag.UsedDays;
+    int remainingDays = (int)ViewBag.RemainingDays;
+    bool canManage = (bool)ViewBag.CanManage;
+    var pending = ViewBag.PendingRequests as List<LeaveRequest> ?? new List<LeaveRequest>();
+    var leaveTypeLabels = EnumDisplayHelper.GetDisplayList<LeaveType>();
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>الإجازات</h1>
+    </div>
+</div>
+
+<div class="stat-strip stat-strip-text">
+    <div class="stat-item"><span class="kicker">الرصيد السنوي</span><span class="stat-value">@allowance يوم</span></div>
+    <div class="stat-item"><span class="kicker">المستخدم هذا العام</span><span class="stat-value">@usedDays يوم</span></div>
+    <div class="stat-item"><span class="kicker">المتبقي</span><span class="stat-value">@remainingDays يوم</span></div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تقديم طلب إجازة</div>
+    <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+        @Html.AntiForgeryToken()
+        <div>
+            <label class="form-label" style="font-size:11px;">النوع</label>
+            <select name="type" class="form-select form-select-sm" required>
+                @foreach (var t in leaveTypeLabels)
+                {
+                    <option value="@t.Value">@t.Label</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">من</label>
+            <input type="date" name="startDate" class="form-control form-control-sm" required />
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">إلى</label>
+            <input type="date" name="endDate" class="form-control form-control-sm" required />
+        </div>
+        <div style="min-width:220px;">
+            <label class="form-label" style="font-size:11px;">السبب (اختياري)</label>
+            <input type="text" name="reason" class="form-control form-control-sm" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">إرسال الطلب</button>
+    </form>
+</div>
+
+@if (canManage && pending.Any())
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد (@pending.Count)</div>
+        <div class="data-table" style="--cols: 1.2fr 100px 100px 100px 80px 1fr 150px">
+            <div class="data-table-head">
+                <div class="cell">الموظف</div>
+                <div class="cell">النوع</div>
+                <div class="cell">من</div>
+                <div class="cell">إلى</div>
+                <div class="cell">الأيام</div>
+                <div class="cell">السبب</div>
+                <div class="cell">إجراء</div>
+            </div>
+            @foreach (var r in pending)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.User?.FullName</div>
+                    <div class="cell">@leaveTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
+                    <div class="cell cell-num">@r.StartDate.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.EndDate.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.DaysCount</div>
+                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="Decide" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="true" />
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                        </form>
+                        <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="false" />
+                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<div class="athar-card">
+    <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلباتي</div>
+    <div class="data-table" style="--cols: 100px 100px 100px 80px 1fr 110px">
+        <div class="data-table-head">
+            <div class="cell">النوع</div>
+            <div class="cell">من</div>
+            <div class="cell">إلى</div>
+            <div class="cell">الأيام</div>
+            <div class="cell">السبب</div>
+            <div class="cell">الحالة</div>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات إجازة سابقة</div></div>
+        }
+        else
+        {
+            @foreach (var r in Model)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@leaveTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
+                    <div class="cell cell-num">@r.StartDate.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.EndDate.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.DaysCount</div>
+                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell">
+                        @if (r.Status == LeaveRequestStatus.Pending)
+                        {
+                            <span class="tag tag-warning">بانتظار الاعتماد</span>
+                        }
+                        else if (r.Status == LeaveRequestStatus.Approved)
+                        {
+                            <span class="tag tag-success">معتمدة</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-danger">مرفوضة</span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

@@ -67,6 +67,7 @@ namespace AtharERP_System.Data
         public DbSet<ClaimPayment> ClaimPayments { get; set; } = null!;
         public DbSet<AttendancePunch> AttendancePunches { get; set; } = null!;
         public DbSet<AttendanceDailyRecord> AttendanceDailyRecords { get; set; } = null!;
+        public DbSet<LeaveRequest> LeaveRequests { get; set; } = null!;
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
         public DbSet<Custody> Custodies { get; set; } = null!;
         public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;

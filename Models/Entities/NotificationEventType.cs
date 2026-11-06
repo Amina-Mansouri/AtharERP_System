@@ -74,6 +74,12 @@ namespace AtharERP_System.Models.Entities
         EngineerRewardCancelled = 22,
 
         [Display(Name = "حذف إيصال دفعة")]
-        ClaimPaymentDeleted = 23
+        ClaimPaymentDeleted = 23,
+
+        [Display(Name = "طلب إجازة جديد")]
+        LeaveRequestCreated = 24,
+
+        [Display(Name = "قرار بشأن طلب إجازة")]
+        LeaveRequestDecided = 25
     }
 }

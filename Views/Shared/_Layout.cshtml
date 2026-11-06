@@ -24,7 +24,7 @@
         "Clients" => "sys07",
         "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",
         "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
-        "Attendance" => "sys06",
+        "Attendance" or "Leaves" => "sys06",
         _ => ""
     };
 
@@ -355,7 +355,7 @@
                         </div>
                     }
 
-                    @if (canUsers || canAttendance)
+                    @if (true)
                     {
                         <div class="nav-group">
                             <button type="button" class="nav-group-header @(activeSystem == "sys06" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys06">
@@ -373,7 +373,8 @@
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
                                        asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
                                 }
-                                <span class="nav-item disabled">الإجازات <span class="tag tag-muted">قادمة</span></span>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
+                                   asp-controller="Leaves" asp-action="Index">الإجازات</a>
                                 <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
                                 <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>
                                 <span class="nav-item disabled">طلبات الاستقالة <span class="tag tag-muted">قادمة</span></span>

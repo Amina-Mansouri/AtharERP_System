@@ -1048,6 +1048,51 @@ namespace AtharERP_System.Migrations
                     b.ToTable("JobRanks");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.LeaveRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("LeaveRequests");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -3274,6 +3319,23 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("CareerTrack");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.LeaveRequest", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DecidedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialItem", b =>
