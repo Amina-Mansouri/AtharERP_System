@@ -73,8 +73,24 @@ namespace AtharERP_System.Controllers
             int expectedAttendanceSlots = expectedWorkDays * filteredUserIds.Count;
             var presentDaySlots = records.Select(r => new { r.UserId, Date = r.Date.Date }).Distinct().Count();
 
+            var approvedLeaves = await _context.LeaveRequests
+                .Where(l => l.Status == LeaveRequestStatus.Approved && filteredUserIds.Contains(l.UserId)
+                    && l.StartDate <= effectiveDateTo && l.EndDate >= dateFrom.Value.Date)
+                .ToListAsync();
+
+            int leaveDaySlots = 0;
+            foreach (var leave in approvedLeaves)
+            {
+                var overlapStart = leave.StartDate > dateFrom.Value.Date ? leave.StartDate : dateFrom.Value.Date;
+                var overlapEnd = leave.EndDate < effectiveDateTo ? leave.EndDate : effectiveDateTo;
+                for (var d = overlapStart; d <= overlapEnd; d = d.AddDays(1))
+                {
+                    if (d.DayOfWeek != DayOfWeek.Friday) leaveDaySlots++;
+                }
+            }
+
             ViewBag.LateCount = records.Count(r => r.LateMinutes > 0);
-            ViewBag.AbsentCount = Math.Max(0, expectedAttendanceSlots - presentDaySlots);
+            ViewBag.AbsentCount = Math.Max(0, expectedAttendanceSlots - presentDaySlots - leaveDaySlots);
             ViewBag.OvertimeCount = records.Count(r => r.OvertimeHours > 0);
             ViewBag.OnTimeCount = records.Count(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0);
             ViewBag.EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0);
