@@ -1,0 +1,122 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<Custody>
+@{
+    ViewData["Title"] = "العهد";
+    var users = ViewBag.Users as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var holderId = ViewBag.HolderId as string;
+    var status = ViewBag.Status as CustodyStatus?;
+    var statusLabels = EnumDisplayHelper.GetDisplayList<CustodyStatus>();
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>العهد</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
+    <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <div style="min-width:200px;">
+            <label class="form-label" style="font-size:11px;">الموظف</label>
+            <select name="holderId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var u in users)
+                {
+                    <option value="@u.Id" selected="@(holderId == u.Id)">@u.FullName</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:160px;">
+            <label class="form-label" style="font-size:11px;">الحالة</label>
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- الكل --</option>
+                @foreach (var s in statusLabels)
+                {
+                    <option value="@s.Value" selected="@(status?.ToString() == s.Value)">@s.Label</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+    </form>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تسجيل عهدة جديدة</div>
+    <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+        @Html.AntiForgeryToken()
+        <div>
+            <label class="form-label" style="font-size:11px;">الرمز</label>
+            <input type="text" name="code" class="form-control form-control-sm" required />
+        </div>
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">اسم العهدة</label>
+            <input type="text" name="itemName" class="form-control form-control-sm" required />
+        </div>
+        <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">الموظف</label>
+            <select name="holderId" class="form-select form-select-sm" required>
+                <option value="">-- اختاري --</option>
+                @foreach (var u in users)
+                {
+                    <option value="@u.Id">@u.FullName</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">تاريخ التسليم</label>
+            <input type="date" name="handedDate" class="form-control form-control-sm" />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تسجيل</button>
+    </form>
+</div>
+
+<div class="data-table" style="--cols: 90px 1.2fr 1fr 100px 100px 110px 100px">
+    <div class="data-table-head">
+        <div class="cell">الرمز</div>
+        <div class="cell">العهدة</div>
+        <div class="cell">الموظف</div>
+        <div class="cell">تاريخ التسليم</div>
+        <div class="cell">تاريخ الإعادة</div>
+        <div class="cell">الحالة</div>
+        <div class="cell">إجراء</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد عهد مسجَّلة بعد</div></div>
+    }
+    else
+    {
+        @foreach (var c in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell">@c.Code</div>
+                <div class="cell">@c.ItemName</div>
+                <div class="cell">@c.Holder?.FullName</div>
+                <div class="cell cell-num">@c.HandedDate.ToString("yyyy-MM-dd")</div>
+                <div class="cell cell-num">@(c.ReturnedDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                <div class="cell">@statusLabels.FirstOrDefault(x => x.Value == c.Status.ToString()).Label</div>
+                <div class="cell">
+                    @if (c.Status == CustodyStatus.WithEmployee)
+                    {
+                        <form method="post" asp-action="Return" style="display:inline;" onsubmit="return confirm('تأكيد استرجاع هذه العهدة؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.Id" />
+                            <button type="submit" class="btn-line" style="font-size:10px;">استرجاع</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="stat-sub">-</span>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

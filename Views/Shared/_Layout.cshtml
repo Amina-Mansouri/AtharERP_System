@@ -24,7 +24,7 @@
         "Clients" => "sys07",
         "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",
         "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
-        "Attendance" or "Leaves" => "sys06",
+        "Attendance" or "Leaves" or "Custody" => "sys06",
         _ => ""
     };
 
@@ -376,7 +376,11 @@
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
                                    asp-controller="Leaves" asp-action="Index">الإجازات</a>
                                 <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
-                                <span class="nav-item disabled">العهد <span class="tag tag-muted">قادمة</span></span>
+                                @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")"
+                                       asp-controller="Custody" asp-action="Index">العهد</a>
+                                }
                                 <span class="nav-item disabled">طلبات الاستقالة <span class="tag tag-muted">قادمة</span></span>
                             </div>
                         </div>
