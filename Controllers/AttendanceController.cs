@@ -14,12 +14,16 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
         private readonly AttendanceCalculationService _calc;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _config;
 
-        public AttendanceController(AppDbContext context, AuditService audit, AttendanceCalculationService calc)
+        public AttendanceController(AppDbContext context, AuditService audit, AttendanceCalculationService calc, IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _context = context;
             _audit = audit;
             _calc = calc;
+            _httpClientFactory = httpClientFactory;
+            _config = config;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -157,6 +161,51 @@ namespace AtharERP_System.Controllers
                     Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
             var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
             return earthRadiusMeters * c;
+        }
+
+        // يطلب من وكيل البصمة (الجهاز المحلي بالمكتب) جلب بصمات فترة محددة وإرسالها مباشرة إلى /api/attendance/sync —
+        // نفس خط أنابيب البصمة التلقائي والتحقق من التكرار هناك يبقيان كما هما بدون أي تغيير
+        [RequirePermission("HR.Attendance.Edit")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FetchFromBridge(DateTime bridgeFrom, DateTime bridgeTo)
+        {
+            var listenerUrl = _config["Attendance:BridgeListenerUrl"];
+            var sharedKey = _config["Attendance:SyncApiKey"];
+
+            if (string.IsNullOrEmpty(listenerUrl))
+            {
+                TempData["Error"] = "لم يتم إعداد عنوان وكيل البصمة بعد — راجعي appsettings.json";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var http = _httpClientFactory.CreateClient();
+                http.Timeout = TimeSpan.FromMinutes(5);
+
+                var url = $"{listenerUrl.TrimEnd('/')}/fetch?from={bridgeFrom:yyyy-MM-dd}&to={bridgeTo:yyyy-MM-dd}";
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Headers.Add("X-Bridge-Key", sharedKey);
+
+                var response = await http.SendAsync(request);
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["Success"] = $"تم الاتصال بوكيل البصمة بنجاح — النتيجة: {body}";
+                }
+                else
+                {
+                    TempData["Error"] = $"رفض الوكيل الطلب ({response.StatusCode}): {body}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"تعذّر الوصول لوكيل البصمة — تأكدي أنه يعمل على جهاز المكتب وأن عنوانه صحيح في الإعدادات. ({ex.Message})";
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }
