@@ -68,7 +68,7 @@
                             @if (canManage)
                             {
                                 <a asp-action="Edit" asp-route-id="@client.Id" class="btn btn-sm athar-btn-outline">تعديل</a>
-                                <form method="post" asp-action="Delete" asp-route-id="@client.Id" class="d-inline"
+                                <form method="post" asp-action="Delete" asp-route-id="@client.Id" asp-route-search="@search" class="d-inline"
                                       onsubmit="return confirm('هل أنت متأكد من حذف هذا العميل؟');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>

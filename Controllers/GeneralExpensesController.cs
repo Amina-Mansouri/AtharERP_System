@@ -52,7 +52,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ExpenseCategoryId,Amount,Date,Description")] ProjectExpense model)
+        public async Task<IActionResult> Create([Bind("ExpenseCategoryId,Amount,Date,Description")] ProjectExpense model, int? categoryId, DateTime? dateFrom, DateTime? dateTo)
         {
             model.ProjectId = null;
             model.CreatedAt = DateTime.UtcNow;
@@ -60,13 +60,13 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم تسجيل المصروف الإداري بنجاح";
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", new { categoryId, dateFrom, dateTo });
         }
 
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, int? categoryId, DateTime? dateFrom, DateTime? dateTo)
         {
             var expense = await _context.ProjectExpenses.FirstOrDefaultAsync(e => e.Id == id && e.ProjectId == null);
             if (expense == null)
@@ -76,7 +76,7 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم حذف المصروف بنجاح";
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", new { categoryId, dateFrom, dateTo });
         }
     }
 }

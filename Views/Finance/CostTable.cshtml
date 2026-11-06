@@ -216,10 +216,21 @@
                 <button type="submit" form="engineerStatementForm" class="btn-line btn-line-accent">📑 طباعة كشف المحدَّد</button>
             }
         </div>
-        <form id="engineerStatementForm" method="post" asp-action="ExportEngineerStatementPdf" target="_blank">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="engineerId" value="@engineerId" />
-        </form>
+    <form id="engineerStatementForm" method="post" asp-action="ExportEngineerStatementPdf" target="_blank">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="engineerId" value="@engineerId" />
+        <input type="hidden" name="categoryId" value="@categoryId" />
+        @foreach (var pid in selectedProjectIds)
+        {
+            <input type="hidden" name="projectIds" value="@pid" />
+        }
+        @foreach (var spid in selectedSubProjectIds)
+        {
+            <input type="hidden" name="subProjectIds" value="@spid" />
+        }
+        <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+        <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+    </form>
 
     <div class="data-table data-table-compact" style="--cols: @(!string.IsNullOrWhiteSpace(engineerId) ? "28px" : "0px") 1.3fr 90px 1.3fr 1fr 55px 65px 65px 70px 65px 75px 90px">
         <div class="data-table-head">

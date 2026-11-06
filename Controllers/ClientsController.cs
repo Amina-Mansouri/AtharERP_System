@@ -115,7 +115,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("PR.Clients")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, string? search)
         {
             var client = await _context.Clients.Include(c => c.Projects).FirstOrDefaultAsync(c => c.Id == id);
             if (client == null)
@@ -124,7 +124,7 @@ namespace AtharERP_System.Controllers
             if (client.Projects.Any())
             {
                 TempData["Error"] = "لا يمكن حذف العميل لوجود مشاريع مرتبطة به";
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", new { search });
             }
 
             var clientName = client.Name;
@@ -134,7 +134,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Delete", nameof(Client), id.ToString(), $"حذف العميل: {clientName}");
 
             TempData["Success"] = $"تم حذف العميل {clientName} بنجاح";
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", new { search });
         }
     }
 }

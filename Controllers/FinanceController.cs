@@ -521,12 +521,12 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Costs.View")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ExportEngineerStatementPdf(List<int> recordIds, string engineerId)
+        public async Task<IActionResult> ExportEngineerStatementPdf(List<int> recordIds, string engineerId, int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo)
         {
             if (recordIds == null || !recordIds.Any())
             {
                 TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
-                return RedirectToAction("CostTable", new { engineerId });
+                return RedirectToAction("CostTable", new { engineerId, categoryId, projectIds, subProjectIds, dateFrom, dateTo });
             }
 
             var records = await _context.FinancialRecords
