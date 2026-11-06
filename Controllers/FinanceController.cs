@@ -337,13 +337,13 @@ namespace AtharERP_System.Controllers
                 await _notify.NotifyManyAsync(payoutRecipientIds, $"تم صرف مكافأة بقيمة {record.ValueAfterPercentage:N2} د.ل للمهندسة {payoutEngineer?.FullName} عن مشروع {payoutProject?.Code} - {payoutProject?.Name} (المرحلة: {payoutStageLabel})", NotificationEventType.EngineerRewardPaid, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
             }
 
-            return RedirectToAction("CostTable", new { projectId });
+            return RedirectToAction("CostTable", new { projectIds = new List<int> { projectId } });
         }
 
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelRecordCleared(int id)
+        public async Task<IActionResult> CancelRecordCleared(int id, int? categoryId, List<int>? projectIds, List<int>? subProjectIds, string? engineerId, DateTime? dateFrom, DateTime? dateTo)
         {
             var record = await _context.FinancialRecords.FindAsync(id);
             if (record == null)
@@ -370,7 +370,7 @@ namespace AtharERP_System.Controllers
             }
 
             TempData["Success"] = "تم إلغاء الصرف وإعادة الحالة إلى غير مصروف";
-            return RedirectToAction("EngineerReceipts");
+            return RedirectToAction("EngineerReceipts", new { categoryId, projectIds, subProjectIds, engineerId, dateFrom, dateTo });
         }
 
         [RequirePermission("Finance.Costs.View")]
@@ -482,12 +482,12 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Finance.Costs.View")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ExportRecordReceiptsSelectedPdf(List<int> recordIds)
+        public async Task<IActionResult> ExportRecordReceiptsSelectedPdf(List<int> recordIds, int? categoryId, List<int>? projectIds, List<int>? subProjectIds, string? engineerId, DateTime? dateFrom, DateTime? dateTo)
         {
             if (recordIds == null || !recordIds.Any())
             {
                 TempData["Error"] = "اختاري سطراً واحداً على الأقل للطباعة";
-                return RedirectToAction("EngineerReceipts");
+                return RedirectToAction("EngineerReceipts", new { categoryId, projectIds, subProjectIds, engineerId, dateFrom, dateTo });
             }
 
             var records = await _context.FinancialRecords
@@ -504,7 +504,7 @@ namespace AtharERP_System.Controllers
             if (records.Select(r => r.EngineerId).Distinct().Count() > 1)
             {
                 TempData["Error"] = "لا يمكن طباعة إيصال مجمّع لأكثر من مهندسة في نفس الوقت — اختاري تكليفات مهندسة واحدة فقط";
-                return RedirectToAction("EngineerReceipts");
+                return RedirectToAction("EngineerReceipts", new { categoryId, projectIds, subProjectIds, engineerId, dateFrom, dateTo });
             }
 
             foreach (var rec in records)
@@ -732,7 +732,7 @@ namespace AtharERP_System.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم حفظ النسبتين بنجاح";
-            return RedirectToAction("SaleTable", new { projectId });
+            return RedirectToAction("SaleTable", new { projectIds = new List<int> { projectId } });
         }
         // ============================================
         // المصروفات — عامة أو مرتبطة بموقع محدد
@@ -835,7 +835,8 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateExpense([Bind("ProjectId,ExpenseCategoryId,SiteId,Amount,Date,Description")] ProjectExpense model, int? supplyRequestId)
+        public async Task<IActionResult> CreateExpense([Bind("ProjectId,ExpenseCategoryId,SiteId,Amount,Date,Description")] ProjectExpense model, int? supplyRequestId,
+            int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo)
         {
             if (!model.ProjectId.HasValue || !await _permissionService.CanAccessProjectAsync(User, model.ProjectId.Value))
                 return Forbid();
@@ -846,7 +847,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
                 if (site == null || site.ProjectId != model.ProjectId.Value)
                 {
                     TempData["Error"] = "الموقع المحدد لا يتبع هذا المشروع";
-                    return RedirectToAction("Expenses", new { projectId = model.ProjectId });
+                    return RedirectToAction("Expenses", new { categoryId, projectIds, subProjectIds, dateFrom, dateTo });
                 }
             }
 
@@ -897,15 +898,14 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
                     }
                 }
             }
-
             TempData["Success"] = "تم تسجيل المصروف بنجاح";
-            return RedirectToAction("Expenses", new { projectId = model.ProjectId });
+            return RedirectToAction("Expenses", new { categoryId, projectIds, subProjectIds, dateFrom, dateTo });
         }
 
         [RequirePermission("Finance.Costs.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteExpense(int id, int projectId)
+        public async Task<IActionResult> DeleteExpense(int id, int? categoryId, List<int>? projectIds, List<int>? subProjectIds, DateTime? dateFrom, DateTime? dateTo)
         {
             var expense = await _context.ProjectExpenses.FindAsync(id);
             if (expense == null)
@@ -918,7 +918,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "تم حذف المصروف بنجاح";
-            return RedirectToAction("Expenses", new { projectId });
+            return RedirectToAction("Expenses", new { categoryId, projectIds, subProjectIds, dateFrom, dateTo });
         }
 
         // ============================================
@@ -1003,7 +1003,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             if (claimIds == null || !claimIds.Any())
             {
                 TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
-                return RedirectToAction("SaleTable", new { projectId, dateFrom, dateTo });
+                return RedirectToAction("SaleTable", new { projectIds = new List<int> { projectId }, dateFrom, dateTo });
             }
 
             var project = await _context.Projects.FindAsync(projectId);
@@ -1031,7 +1031,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             if (claimIds == null || !claimIds.Any())
             {
                 TempData["Error"] = "اختاري سطراً واحداً على الأقل للتصدير";
-                return RedirectToAction("Claims", new { projectId, dateFrom, dateTo });
+                return RedirectToAction("Claims", new { projectIds = new List<int> { projectId }, dateFrom, dateTo });
             }
 
             var project = await _context.Projects.FindAsync(projectId);
@@ -1208,7 +1208,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
             if (!claims.Any())
             {
                 TempData["Error"] = "لا توجد مطالبات لهذا المشروع لإصدار فاتورة";
-                return RedirectToAction("Claims", new { projectId });
+                return RedirectToAction("Claims", new { projectIds = new List<int> { projectId } });
             }
 
             var invoiceDocNumber = await GetOrAssignInvoiceDocNumberAsync(project);

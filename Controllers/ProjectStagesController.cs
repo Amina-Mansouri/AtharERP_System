@@ -616,13 +616,13 @@ namespace AtharERP_System.Controllers
             if (stage.Status == StageStatus.Completed)
             {
                 TempData["Error"] = "المرحلة مكتملة بالفعل";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             if (!stage.Assignments.Any())
             {
                 TempData["Error"] = "لا يمكن أرشفة مرحلة لم تُضَف لها أي تكليفات بعد";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             var assignmentsToComplete = stage.Assignments
@@ -633,7 +633,7 @@ namespace AtharERP_System.Controllers
             if (missingEngineerAssignment != null)
             {
                 TempData["Error"] = $"لا يمكن أرشفة المرحلة — التكليف \"{missingEngineerAssignment.AssignmentType}\" بدون مهندسة مرتبطة به";
-                return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+                return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
             }
 
             var today = DateTime.UtcNow.Date;
@@ -659,7 +659,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "ArchiveStage", nameof(ProjectStage), id.ToString(), $"أرشفة مرحلة مباشرة بواسطة مدير النظام — تم إنهاء {assignmentsToComplete.Count} تكليف(ات) تلقائياً وترحيلها للمالية");
 
             TempData["Success"] = $"تم أرشفة المرحلة، وإنهاء {assignmentsToComplete.Count} تكليف(ات) مرتبطة بها تلقائياً وترحيلها للمالية";
-            return RedirectToAction("Details", "Projects", new { id = stage.ProjectId });
+            return this.RedirectKeepingTab("Details", "Projects", new { id = stage.ProjectId });
         }
     }
 }

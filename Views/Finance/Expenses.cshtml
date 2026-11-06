@@ -209,12 +209,22 @@
                     <div class="cell cell-num">@e.Amount.ToString("N0")</div>
                     <div class="cell">@(e.Description ?? "-")</div>
                     <div class="cell">
-                        <form method="post" asp-action="DeleteExpense" onsubmit="return confirm('حذف هذا المصروف؟');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@e.Id" />
-                            <input type="hidden" name="projectId" value="@e.ProjectId" />
-                            <button type="submit" class="btn-line" style="color:#c94a42; font-size:10.5px;">حذف</button>
-                        </form>
+                    <form method="post" asp-action="DeleteExpense" onsubmit="return confirm('حذف هذا المصروف؟');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@e.Id" />
+                        <input type="hidden" name="categoryId" value="@projectCategoryId" />
+                        @foreach (var pid in selectedProjectIds)
+                        {
+                            <input type="hidden" name="projectIds" value="@pid" />
+                        }
+                        @foreach (var spid in selectedSubProjectIds)
+                        {
+                            <input type="hidden" name="subProjectIds" value="@spid" />
+                        }
+                        <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+                        <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
+                        <button type="submit" class="btn-line" style="color:#c94a42; font-size:10.5px;">حذف</button>
+                    </form>
                     </div>
                 </div>
             }
@@ -242,6 +252,17 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="ProjectId" value="@projectId" />
             <input type="hidden" name="supplyRequestId" value="@supplyRequestId" />
+            <input type="hidden" name="categoryId" value="@projectCategoryId" />
+            @foreach (var pid in selectedProjectIds)
+            {
+                <input type="hidden" name="projectIds" value="@pid" />
+            }
+            @foreach (var spid in selectedSubProjectIds)
+            {
+                <input type="hidden" name="subProjectIds" value="@spid" />
+            }
+            <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+            <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
             <div>
                 <label class="form-label" style="font-size:11px;">التصنيف</label>
                 <div style="display:flex; align-items:center; gap:6px;">

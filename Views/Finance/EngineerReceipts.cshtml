@@ -135,6 +135,18 @@
 
 <form id="combinedReceiptForm" method="post" asp-action="ExportRecordReceiptsSelectedPdf" target="_blank">
     @Html.AntiForgeryToken()
+    <input type="hidden" name="categoryId" value="@categoryId" />
+    @foreach (var pid in selectedProjectIds)
+    {
+        <input type="hidden" name="projectIds" value="@pid" />
+    }
+    @foreach (var spid in selectedSubProjectIds)
+    {
+        <input type="hidden" name="subProjectIds" value="@spid" />
+    }
+    <input type="hidden" name="engineerId" value="@engineerId" />
+    <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+    <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
 </form>
 <div style="margin-bottom:8px;">
     <button type="submit" form="combinedReceiptForm" class="btn-line btn-line-accent">🖨 طباعة إيصال مجمّع للمُحدَّد</button>
@@ -187,6 +199,18 @@
                     <form method="post" asp-action="CancelRecordCleared" onsubmit="return confirm('سيُلغى هذا الصرف وتعود المكافأة إلى حالة غير مصروف. هل أنت متأكدة؟');">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@r.Id" />
+                        <input type="hidden" name="categoryId" value="@categoryId" />
+                        @foreach (var pid in selectedProjectIds)
+                        {
+                            <input type="hidden" name="projectIds" value="@pid" />
+                        }
+                        @foreach (var spid in selectedSubProjectIds)
+                        {
+                            <input type="hidden" name="subProjectIds" value="@spid" />
+                        }
+                        <input type="hidden" name="engineerId" value="@engineerId" />
+                        <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
+                        <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
                         <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">إلغاء الصرف</button>
                     </form>
                 </div>
