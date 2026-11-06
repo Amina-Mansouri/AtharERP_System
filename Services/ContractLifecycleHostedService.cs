@@ -72,8 +72,8 @@ namespace AtharERP_System.Services
             }
 
             var expiredToday = await context.Users
-                .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date <= today)
-                .ToListAsync(stoppingToken);
+    .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date <= today)
+    .ToListAsync(stoppingToken);
 
             foreach (var user in expiredToday)
             {
@@ -96,7 +96,35 @@ namespace AtharERP_System.Services
                 }
             }
 
-            await context.SaveChangesAsync(stoppingToken);
+            // تعطيل تلقائي عند بلوغ آخر يوم عمل لاستقالة معتمدة
+            var resignedToday = await context.Users
+                .Where(u => u.IsActive && !u.IsSuspended)
+                .Join(context.ResignationRequests.Where(r => r.Status == ResignationStatus.Approved && r.RequestedLastWorkingDay.Date <= today),
+                    u => u.Id, r => r.UserId, (u, r) => u)
+                .ToListAsync(stoppingToken);
+
+            foreach (var user in resignedToday)
+            {
+                user.IsSuspended = true;
+                user.SuspendedReason = "استقالة";
+
+                foreach (var recipientId in systemAdminIds.Union(new[] { user.Id }).Distinct())
+                {
+                    context.Notifications.Add(new Notification
+                    {
+                        UserId = recipientId,
+                        Message = $"بلغ الموظف {user.FullName} آخر يوم عمل المعتمد لاستقالته — تم إيقاف الحساب",
+                        Link = $"/Admin/UserDetails/{user.Id}",
+                        EventType = NotificationEventType.ResignationEffective,
+                        SourceModule = "01",
+                        RequiresAction = true,
+                        EntityType = "ApplicationUser",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }

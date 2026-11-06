@@ -80,6 +80,15 @@ namespace AtharERP_System.Models.Entities
         LeaveRequestCreated = 24,
 
         [Display(Name = "قرار بشأن طلب إجازة")]
-        LeaveRequestDecided = 25
+        LeaveRequestDecided = 25,
+
+        [Display(Name = "طلب استقالة جديد")]
+        ResignationRequestCreated = 26,
+
+        [Display(Name = "قرار بشأن طلب استقالة")]
+        ResignationRequestDecided = 27,
+
+        [Display(Name = "تفعيل استقالة")]
+        ResignationEffective = 28
     }
 }

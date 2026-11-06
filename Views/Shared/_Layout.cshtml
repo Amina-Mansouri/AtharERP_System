@@ -24,7 +24,7 @@
         "Clients" => "sys07",
         "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",
         "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
-        "Attendance" or "Leaves" or "Custody" => "sys06",
+        "Attendance" or "Leaves" or "Custody" or "Resignations" => "sys06",
         _ => ""
     };
 
@@ -381,7 +381,8 @@
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")"
                                        asp-controller="Custody" asp-action="Index">العهد</a>
                                 }
-                                <span class="nav-item disabled">طلبات الاستقالة <span class="tag tag-muted">قادمة</span></span>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")"
+                                   asp-controller="Resignations" asp-action="Index">طلبات الاستقالة</a>
                             </div>
                         </div>
                     }

@@ -179,6 +179,7 @@ namespace AtharERP_System.Data
                 new Permission { Code = "HR.Leaves.Manage", Name = "الموارد_البشرية.إجازات.إدارة", Module = "HR" },
                 new Permission { Code = "HR.Evaluation", Name = "الموارد_البشرية.تقييم", Module = "HR" },
                 new Permission { Code = "HR.Custody.Manage", Name = "الموارد_البشرية.عهد.إدارة", Module = "HR" }, // بند L6
+                new Permission { Code = "HR.Resignations.Manage", Name = "الموارد_البشرية.استقالات.إدارة", Module = "HR" },
 
                 // 6.6 التوريدات
                 new Permission { Code = "Supply.View", Name = "التوريدات.عرض", Module = "Supply" },

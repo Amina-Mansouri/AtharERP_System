@@ -1,0 +1,114 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<ResignationRequest>
+@{
+    ViewData["Title"] = "طلبات الاستقالة";
+    bool canManage = (bool)ViewBag.CanManage;
+    bool hasPending = (bool)ViewBag.HasPending;
+    var pending = ViewBag.PendingRequests as List<ResignationRequest> ?? new List<ResignationRequest>();
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>طلبات الاستقالة</h1>
+    </div>
+</div>
+
+<div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تقديم طلب استقالة</div>
+    @if (hasPending)
+    {
+        <p class="stat-sub">لديك طلب استقالة بانتظار الاعتماد بالفعل — لا يمكن تقديم طلب جديد حتى يُبتّ فيه.</p>
+    }
+    else
+    {
+        <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;" onsubmit="return confirm('سيتم إرسال طلب استقالتك للإدارة. متابعة؟');">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="form-label" style="font-size:11px;">آخر يوم عمل</label>
+                <input type="date" name="lastWorkingDay" class="form-control form-control-sm" required />
+            </div>
+            <div style="min-width:260px;">
+                <label class="form-label" style="font-size:11px;">السبب (اختياري)</label>
+                <input type="text" name="reason" class="form-control form-control-sm" />
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">إرسال الطلب</button>
+        </form>
+    }
+</div>
+
+@if (canManage && pending.Any())
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد (@pending.Count)</div>
+        <div class="data-table" style="--cols: 1.2fr 120px 1fr 150px">
+            <div class="data-table-head">
+                <div class="cell">الموظف</div>
+                <div class="cell">آخر يوم عمل</div>
+                <div class="cell">السبب</div>
+                <div class="cell">إجراء</div>
+            </div>
+            @foreach (var r in pending)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.User?.FullName</div>
+                    <div class="cell cell-num">@r.RequestedLastWorkingDay.ToString("yyyy-MM-dd")</div>
+                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('اعتماد الاستقالة سيُعطِّل حساب الموظف تلقائياً في آخر يوم عمله. متابعة؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="true" />
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                        </form>
+                        <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="false" />
+                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<div class="athar-card">
+    <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلباتي</div>
+    <div class="data-table" style="--cols: 120px 1fr 130px">
+        <div class="data-table-head">
+            <div class="cell">آخر يوم عمل</div>
+            <div class="cell">السبب</div>
+            <div class="cell">الحالة</div>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات استقالة سابقة</div></div>
+        }
+        else
+        {
+            @foreach (var r in Model)
+            {
+                <div class="data-table-row">
+                    <div class="cell cell-num">@r.RequestedLastWorkingDay.ToString("yyyy-MM-dd")</div>
+                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell">
+                        @if (r.Status == ResignationStatus.Pending)
+                        {
+                            <span class="tag tag-warning">بانتظار الاعتماد</span>
+                        }
+                        else if (r.Status == ResignationStatus.Approved)
+                        {
+                            <span class="tag tag-success">معتمدة</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-danger">مرفوضة</span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
