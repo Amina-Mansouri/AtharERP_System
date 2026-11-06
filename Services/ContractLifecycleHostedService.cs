@@ -1,10 +1,12 @@
 ﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace AtharERP_System.Services
 {
     // وظيفة مجدولة كل ساعة — بند P6/§11: إشعار قبل 30 يوماً من انتهاء العقد، وإيقاف الحساب يوم الانتهاء بلا فقدان بيانات
+    // + تعطيل تلقائي عند بلوغ آخر يوم عمل لاستقالة معتمدة
     public class ContractLifecycleHostedService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -27,6 +29,7 @@ namespace AtharERP_System.Services
         {
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             var today = DateTime.UtcNow.Date;
             var soonCutoff = today.AddDays(30);
@@ -72,13 +75,16 @@ namespace AtharERP_System.Services
             }
 
             var expiredToday = await context.Users
-    .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date <= today)
-    .ToListAsync(stoppingToken);
+                .Where(u => u.IsActive && !u.IsSuspended && u.ContractEndDate != null && u.ContractEndDate.Value.Date <= today)
+                .ToListAsync(stoppingToken);
 
             foreach (var user in expiredToday)
             {
                 user.IsSuspended = true;
+                user.IsActive = false;
                 user.SuspendedReason = "انتهاء العقد بلا تجديد";
+                await context.SaveChangesAsync(stoppingToken);
+                await userManager.UpdateSecurityStampAsync(user);
 
                 foreach (var recipientId in systemAdminIds.Union(new[] { user.Id }).Distinct())
                 {
@@ -106,7 +112,10 @@ namespace AtharERP_System.Services
             foreach (var user in resignedToday)
             {
                 user.IsSuspended = true;
+                user.IsActive = false;
                 user.SuspendedReason = "استقالة";
+                await context.SaveChangesAsync(stoppingToken);
+                await userManager.UpdateSecurityStampAsync(user);
 
                 foreach (var recipientId in systemAdminIds.Union(new[] { user.Id }).Distinct())
                 {
@@ -124,7 +133,7 @@ namespace AtharERP_System.Services
                 }
             }
 
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(stoppingToken);
         }
     }
 }
