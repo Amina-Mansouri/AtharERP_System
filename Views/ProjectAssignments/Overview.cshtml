@@ -10,6 +10,8 @@
     var selectedProjectId = ViewBag.ProjectId as int?;
     var selectedSubProjectId = ViewBag.SubProjectId as int?;
     var selectedStageId = ViewBag.StageId as int?;
+    var engineers = ViewBag.Engineers as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var selectedEngineerId = ViewBag.EngineerId as string;
     var docFilter = ViewBag.DocFilter as string ?? "all";
     var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
 
@@ -121,6 +123,16 @@
                 </select>
             </div>
         }
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:10.5px; color:#8a83a0; white-space:nowrap;">المهندس</label>
+            <select name="engineerId" onchange="this.form.submit()" style="height:34px; border:1px solid #e4e2ec; border-radius:8px; padding:0 10px; font-size:11.5px; min-width:170px; background:#fff;">
+                <option value="">-- الكل --</option>
+                @foreach (var eng in engineers)
+                {
+                    <option value="@eng.Id" selected="@(selectedEngineerId == eng.Id)">@eng.FullName</option>
+                }
+            </select>
+        </div>
         <input type="hidden" name="docFilter" value="@docFilter" />
     </form>
 
@@ -262,7 +274,7 @@
                         }
                     </div>
                     <div class="cell"><span class="tag @assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label">@assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span></div>
-                    <div class="cell"><a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a></div>
+                    <div class="cell"><a asp-controller="ProjectAssignments" asp-action="ManageTasks" asp-route-id="@a.Id" style="font-size:11px;">فتح التكليف</a></div>
                 </div>
             }
         }
@@ -323,7 +335,7 @@ else
                                     }
                                 }
                             </div>
-                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" style="font-size:11px;">فتح المشروع</a>
+                            <a asp-controller="ProjectAssignments" asp-action="ManageTasks" asp-route-id="@a.Id" style="font-size:11px;">فتح التكليف</a>
                         </div>
                     </div>
 

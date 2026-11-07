@@ -307,7 +307,7 @@ namespace AtharERP_System.Controllers
             int id,
       [Bind("Name,Sequence,AssignedEngineerId,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,WorkDocumentation,Area,Weight")] ProjectStage model)
         {
-            var stage = await _context.ProjectStages.Include(s => s.Tasks).FirstOrDefaultAsync(s => s.Id == id);
+            var stage = await _context.ProjectStages.Include(s => s.Tasks).Include(s => s.Project).FirstOrDefaultAsync(s => s.Id == id);
             if (stage == null)
                 return NotFound();
 
@@ -365,7 +365,7 @@ namespace AtharERP_System.Controllers
             {
                 var recipientIds = await _permissionService.GetProjectRecipientsAsync(stage.ProjectId);
 
-                await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name} ({stage.Project.Code} - {stage.Project.Name})", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }
 
             TempData["Success"] = $"تم تحديث المرحلة {stage.Name} بنجاح";

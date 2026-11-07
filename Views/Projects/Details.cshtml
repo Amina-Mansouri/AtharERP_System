@@ -930,8 +930,8 @@ else
                                     <div>م: @(a.Area?.ToString("N1") ?? "-")</div>
                                     @if (canViewCosts)
                                     {
-                                        <div>تكلفة: @(a.PricePerMeter?.ToString("N0") ?? "-")</div>
-                                        <div>بيع: @(a.SalePricePerMeter?.ToString("N0") ?? "-")</div>
+                                        <div>تكلفة: @(a.PricePerMeter?.ToString("N2") ?? "-")</div>
+                                        <div>بيع: @(a.SalePricePerMeter?.ToString("N2") ?? "-")</div>
                                     }
                                     @if (canViewCosts && (a.FinancialRecords.Any(r => r.IsCleared) || a.FinancialClaims.Any(c => c.IsClientSettled || c.PaidAmount > 0)))
                                     {

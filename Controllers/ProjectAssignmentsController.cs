@@ -42,7 +42,7 @@ namespace AtharERP_System.Controllers
         // تتبّع تكليفات مشروع (اختيار مشروع ثم مرحلة → إحصائيات تكليفاتها)
         // ============================================
         [RequirePermission("Projects.Assignments.View")]
-        public async Task<IActionResult> Overview(int? projectId, int? subProjectId, int? stageId, string? taskFilter, string? docFilter, string? statusFilter)
+        public async Task<IActionResult> Overview(int? projectId, int? subProjectId, int? stageId, string? engineerId, string? taskFilter, string? docFilter, string? statusFilter)
         {
             statusFilter = string.IsNullOrEmpty(statusFilter) ? "all" : statusFilter;
             ViewBag.StatusFilter = statusFilter;
@@ -59,9 +59,11 @@ namespace AtharERP_System.Controllers
                 accessibleProjectsQuery = accessibleProjectsQuery.Where(p => p.CreatedById == CurrentUserId || myProjectIds.Contains(p.Id));
             }
             ViewBag.Projects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
+            ViewBag.Engineers = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
             ViewBag.ProjectId = projectId;
             ViewBag.SubProjectId = subProjectId;
             ViewBag.StageId = stageId;
+            ViewBag.EngineerId = engineerId;
             ViewBag.TaskFilter = string.IsNullOrEmpty(taskFilter) ? "all" : taskFilter;
             ViewBag.DocFilter = string.IsNullOrEmpty(docFilter) ? "all" : docFilter;
 
@@ -78,13 +80,14 @@ namespace AtharERP_System.Controllers
                 var accessibleAllProjectIds = await accessibleAllProjectIdsQuery.Select(p => p.Id).ToListAsync();
 
                 var allAssignmentsFlat = await _context.ProjectAssignments
-      .Include(a => a.Project)
-      .Include(a => a.Stage)
-      .Include(a => a.Engineers).ThenInclude(e => e.User)
-      .Include(a => a.Tasks)
-      .Where(a => accessibleAllProjectIds.Contains(a.ProjectId))
-      .OrderByDescending(a => a.CreatedAt)
-      .ToListAsync();
+.Include(a => a.Project)
+.Include(a => a.Stage)
+.Include(a => a.Engineers).ThenInclude(e => e.User)
+.Include(a => a.Tasks)
+.Where(a => accessibleAllProjectIds.Contains(a.ProjectId))
+.Where(a => string.IsNullOrEmpty(engineerId) || a.Engineers.Any(e => e.UserId == engineerId))
+.OrderByDescending(a => a.CreatedAt)
+.ToListAsync();
 
                 ViewBag.TotalAssignments = allAssignmentsFlat.Count;
                 ViewBag.PendingAssignments = allAssignmentsFlat.Count(a => a.Status == AssignmentStatus.Pending && !a.Tasks.Any(t => t.EffectiveDelayDays > 0));
@@ -152,6 +155,9 @@ namespace AtharERP_System.Controllers
 
             if (stageId.HasValue)
                 query = query.Where(a => a.StageId == stageId.Value);
+
+            if (!string.IsNullOrEmpty(engineerId))
+                query = query.Where(a => a.Engineers.Any(e => e.UserId == engineerId));
 
             var assignments = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
 
@@ -270,7 +276,7 @@ List<int>? taskIds)
 
                 foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
                 {
-                    await _notify.NotifyAsync(uid, $"تم تكليفك بتكليف: {model.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: model.Id);
+                    await _notify.NotifyAsync(uid, $"تم تكليفك بتكليف: {model.AssignmentType} ({project.Code} - {project.Name})", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: model.Id);
                 }
             }
             if (taskIds != null && taskIds.Any())
@@ -337,7 +343,8 @@ List<int>? taskIds)
                 await EnsureTeamMembershipAsync(assignment.ProjectId, userId);
                 await _context.SaveChangesAsync();
 
-                await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.AssignmentType}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
+                var assignmentProject = await _context.Projects.FindAsync(assignment.ProjectId);
+                await _notify.NotifyAsync(userId, $"تم تكليفك بتكليف: {assignment.AssignmentType} ({assignmentProject?.Code} - {assignmentProject?.Name})", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignmentId);
             }
             return this.RedirectKeepingTab("Details", "Projects", new { id = assignment.ProjectId });
         }
@@ -671,11 +678,14 @@ List<int>? taskIds)
                 return NotFound();
 
             var isWorker = assignment.Engineers.Any(e => e.UserId == CurrentUserId);
+            var isStageResponsible = assignment.Stage?.AssignedEngineerId == CurrentUserId;
             var canManage = await _permissionService.HasPermissionAsync(User, "Projects.Assignments.Edit")
                 && await _permissionService.CanAccessProjectAsync(User, assignment.Stage!.ProjectId);
-            if (!isWorker && !canManage)
+            if (!isWorker && !isStageResponsible && !canManage)
                 return Forbid();
 
+            // فقط المهندس المكلَّف فعلياً على هذا التكليف يستطيع التعديل — مدير النظام/مسؤول المرحلة يدخلان للعرض فقط
+            ViewBag.CanEdit = isWorker;
             ViewBag.IsSysAdmin = User.IsInRole("مدير النظام");
             ViewBag.CanManageTasks = await _permissionService.HasPermissionAsync(User, "Projects.Tasks.Manage");
             ViewBag.SelectedTaskId = taskId;

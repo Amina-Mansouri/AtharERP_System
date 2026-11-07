@@ -60,7 +60,7 @@ namespace AtharERP_System.Controllers
             DateTime? plannedStartDate,
             DateTime? plannedEndDate)
         {
-            var stage = await _context.ProjectStages.FindAsync(model.ProjectStageId);
+            var stage = await _context.ProjectStages.Include(s => s.Project).FirstOrDefaultAsync(s => s.Id == model.ProjectStageId);
             if (stage == null)
                 return NotFound();
 
@@ -145,7 +145,7 @@ namespace AtharERP_System.Controllers
 
             foreach (var uid in engineerIds.Where(u => !string.IsNullOrEmpty(u)).Distinct())
             {
-                await _notify.NotifyAsync(uid, $"تم تكليفك بإعادة تصميم: {redesignTaskTitle}", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignment.Id);
+                await _notify.NotifyAsync(uid, $"تم تكليفك بإعادة تصميم: {redesignTaskTitle} ({stage.Project.Code} - {stage.Project.Name})", NotificationEventType.TaskAssigned, "/ProjectAssignments/MyAssignments", entityType: "ProjectAssignment", entityId: assignment.Id);
             }
 
             await _calc.RecalculateStageAsync(stage.Id);

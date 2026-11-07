@@ -82,10 +82,10 @@ namespace AtharERP_System.Controllers
 
             var totalCount = await query.CountAsync();
             var users = await query
-    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
-    .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+.OrderBy(u => u.JobNumber).ThenBy(u => u.FirstName).ThenBy(u => u.LastName)
+.Skip((page - 1) * pageSize)
+    .Take(pageSize)
+    .ToListAsync();
 
             var userRoles = new Dictionary<string, IList<string>>();
             foreach (var user in users)

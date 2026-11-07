@@ -240,7 +240,7 @@ namespace AtharERP_System.Controllers
     int id,
     [Bind("Title,Description,PlannedStartDate,PlannedEndDate,ActualDeliveryDate,Priority,IsUrgent,Weight")] ProjectTask model)
         {
-            var task = await _context.ProjectTasks.Include(t => t.Todos).FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.ProjectTasks.Include(t => t.Todos).Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == id);
             if (task == null)
                 return NotFound();
 
@@ -349,7 +349,7 @@ namespace AtharERP_System.Controllers
             if (task.DelayDays > 0)
             {
                 var recipientIds = await _permissionService.GetProjectRecipientsAsync(task.ProjectId);
-                await _notify.NotifyManyAsync(recipientIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم", NotificationEventType.TaskDelayed, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"المهمة \"{task.Title}\" متأخرة بمقدار {task.DelayDays} يوم ({task.Project.Code} - {task.Project.Name})", NotificationEventType.TaskDelayed, $"/ProjectTasks/Edit/{task.Id}", requiresAction: true, entityType: "ProjectTask", entityId: task.Id);
             }
 
             TempData["Success"] = $"تم تحديث المهمة {task.Title} بنجاح";
