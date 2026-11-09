@@ -202,7 +202,7 @@
             @foreach (var e in Model)
             {
                 <div class="data-table-row">
-                    <div class="cell">@(e.Project != null ? $"{e.Project.Name}({e.Project.Code})" : "عام (بلا مشروع)")</div>
+                <div class="cell">@(e.Project != null ? $"{e.Project.Code} - {e.Project.Name}" : "عام (بلا مشروع)")</div>
                     <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
                     <div class="cell">@e.ExpenseCategory?.NameAr</div>
                     <div class="cell">@(e.Site?.Name ?? "عام (بلا موقع)")</div>

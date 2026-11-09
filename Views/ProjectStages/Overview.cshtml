@@ -165,7 +165,7 @@
         {
             <div class="data-table-row">
                 <div class="cell cell-num">@stage.Sequence</div>
-                <div class="cell">@(stage.Project?.Name ?? "-")</div>
+                <div class="cell">@(stage.Project != null ? $"{stage.Project.Code} - {stage.Project.Name}" : "-")</div>
                 <div class="cell">
                     @stage.Name
                     @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))

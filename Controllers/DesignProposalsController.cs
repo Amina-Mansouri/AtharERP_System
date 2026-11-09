@@ -364,15 +364,15 @@ IFormFile? attachment)
                 }
 
                 await _notify.NotifyAsync(proposal.PreparedById,
-                    $"وافق المهندس المشرف على مستندك \"{proposal.Name}\" — بانتظار الاعتماد النهائي من المدير",
-                    NotificationEventType.TaskStatusChanged,
+    $"وافق المهندس المشرف على مستندك \"{proposal.Name}\" ({proposal.Project.Code} - {proposal.Project.Name}) — بانتظار الاعتماد النهائي من المدير",
+    NotificationEventType.TaskStatusChanged,
                     pendingReview.PdfFilePath != null ? $"/DesignProposals/DownloadReview/{pendingReview.Id}" : $"/ProjectTasks/Edit/{task.Id}",
                     entityType: "DesignProposal", entityId: proposal.Id);
 
                 var managerIds = await GetProjectManagersAsync(proposal.ProjectId);
                 await _notify.NotifyManyAsync(managerIds,
-                    $"توصية المهندس المشرف بالاعتماد على مستند \"{proposal.Name}\" — بانتظار اعتمادك النهائي",
-                    NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}",
+      $"توصية المهندس المشرف بالاعتماد على مستند \"{proposal.Name}\" ({proposal.Project.Code} - {proposal.Project.Name}) — بانتظار اعتمادك النهائي",
+      NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{task.Id}",
                     requiresAction: true, entityType: "DesignProposal", entityId: proposal.Id);
 
                 TempData["Success"] = "تم إرسال توصيتك — بانتظار الاعتماد النهائي من المدير";
@@ -433,10 +433,10 @@ IFormFile? attachment)
             {
                 var workerIds = await GetTaskWorkerIdsAsync(task);
                 var message = task.Status == ProjectTaskStatus.Completed
-                    ? $"تم اعتماد جميع بنود مهمتك \"{task.Title}\""
-                    : (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign
-                        ? $"تحتاج مستنداً معدَّلاً لبند من مهمتك \"{task.Title}\""
-                        : $"تم اعتماد بند من مهمتك \"{task.Title}\" — بانتظار بقية البنود");
+      ? $"تم اعتماد جميع بنود مهمتك \"{task.Title}\" ({proposal.Project.Code} - {proposal.Project.Name})"
+      : (status == ProposalStatus.Resubmission || status == ProposalStatus.Redesign
+          ? $"تحتاج مستنداً معدَّلاً لبند من مهمتك \"{task.Title}\" ({proposal.Project.Code} - {proposal.Project.Name})"
+          : $"تم اعتماد بند من مهمتك \"{task.Title}\" ({proposal.Project.Code} - {proposal.Project.Name}) — بانتظار بقية البنود");
 
                 foreach (var workerId in workerIds)
                 {
@@ -456,8 +456,8 @@ IFormFile? attachment)
             }
 
             var notifyMessage = status == ProposalStatus.Approved || status == ProposalStatus.ApprovedWithModification
-                ? $"تم اعتماد مستندك \"{proposal.Name}\""
-                : $"تم رفض مستندك \"{proposal.Name}\" — تحتاج مراجعة";
+    ? $"تم اعتماد مستندك \"{proposal.Name}\" ({proposal.Project.Code} - {proposal.Project.Name})"
+    : $"تم رفض مستندك \"{proposal.Name}\" ({proposal.Project.Code} - {proposal.Project.Name}) — تحتاج مراجعة";
 
             await _notify.NotifyAsync(proposal.PreparedById, notifyMessage,
        NotificationEventType.TaskStatusChanged,

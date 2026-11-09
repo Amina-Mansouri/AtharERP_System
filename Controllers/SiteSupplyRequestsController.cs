@@ -266,7 +266,7 @@ List<int?> vendorIds, List<string?> itemNotes, List<IFormFile> photos)
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, SiteSupplyStatus status)
         {
-            var request = await _context.SiteSupplyRequests.Include(r => r.Site).Include(r => r.ProjectTask).FirstOrDefaultAsync(r => r.Id == id);
+            var request = await _context.SiteSupplyRequests.Include(r => r.Site).ThenInclude(s => s.Project).Include(r => r.ProjectTask).FirstOrDefaultAsync(r => r.Id == id);
             if (request == null)
                 return NotFound();
 
@@ -280,7 +280,7 @@ List<int?> vendorIds, List<string?> itemNotes, List<IFormFile> photos)
 
             if (status == SiteSupplyStatus.Rejected && request.ProjectTaskId.HasValue && !string.IsNullOrEmpty(request.RequestedById))
             {
-                await _notify.NotifyAsync(request.RequestedById, $"رُفض طلب التوريد لمهمتك \"{request.ProjectTask?.Title}\" — يمكنك إرسال طلب جديد",
+                await _notify.NotifyAsync(request.RequestedById, $"رُفض طلب التوريد لمهمتك \"{request.ProjectTask?.Title}\" ({request.Site?.Project?.Code} - {request.Site?.Project?.Name}) — يمكنك إرسال طلب جديد",
                     NotificationEventType.TaskStatusChanged, null, requiresAction: true, entityType: "ProjectTask", entityId: request.ProjectTaskId.Value);
             }
 

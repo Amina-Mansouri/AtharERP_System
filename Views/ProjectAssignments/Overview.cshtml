@@ -247,7 +247,7 @@
             @foreach (var a in Model)
             {
                 <div class="data-table-row">
-                    <div class="cell">@(a.Project?.Name ?? "-")</div>
+                    <div class="cell">@(a.Project != null ? $"{a.Project.Code} - {a.Project.Name}" : "-")</div>
                     <div class="cell">@(a.Stage?.Name ?? "-")</div>
                     <div class="cell">
                         @(string.IsNullOrWhiteSpace(a.AssignmentType) ? "-" : a.AssignmentType)

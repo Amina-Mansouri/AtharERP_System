@@ -21,8 +21,9 @@
 
 <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
     <div>
-        <div style="font-size:11px; color:#8a83a0; font-weight:500;">@Model.Stage?.Project?.Name — @Model.Stage?.Name</div>
+        <div style="font-size:11px; color:#8a83a0; font-weight:500;">@(Model.Stage?.Project != null ? $"{Model.Stage.Project.Code} - {Model.Stage.Project.Name}" : "") — @Model.Stage?.Name</div>
         <div style="font-size:19px; font-weight:600; margin-top:2px;">بيانات التكليف</div>
+
     </div>
     <a asp-controller="ProjectAssignments" asp-action="MyAssignments" class="btn-line">رجوع لتكليفاتي</a>
 </div>

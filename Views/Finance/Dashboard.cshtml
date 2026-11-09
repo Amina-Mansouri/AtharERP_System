@@ -203,7 +203,7 @@
                 {
                     <div class="data-table-row">
                         <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
-                        <div class="cell">@(p.FinancialClaim?.Project?.Name ?? "-")</div>
+                        <div class="cell">@(p.FinancialClaim?.Project != null ? $"{p.FinancialClaim.Project.Code} - {p.FinancialClaim.Project.Name}" : "-")</div>
                         <div class="cell cell-num">@p.Amount.ToString("N0")</div>
                     </div>
                 }
@@ -229,7 +229,7 @@
                 {
                     <div class="data-table-row">
                         <div class="cell">@r.ClearedAt?.ToString("yyyy-MM-dd")</div>
-                        <div class="cell">@(r.Project?.Name ?? "-")</div>
+                        <div class="cell">@(r.Project != null ? $"{r.Project.Code} - {r.Project.Name}" : "-")</div>
                         <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
                         <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N0")</div>
                     </div>

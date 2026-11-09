@@ -327,9 +327,10 @@ namespace AtharERP_System.Controllers
                 record.ReceiptNumber = nextReceiptNumber;
                 await _context.SaveChangesAsync();
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "صرف مكافأة مهندسة");
-                await _notify.NotifyAsync(record.EngineerId, $"تم صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل", NotificationEventType.EngineerRewardPaid, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
 
                 var payoutProject = await _context.Projects.FindAsync(record.ProjectId);
+                await _notify.NotifyAsync(record.EngineerId, $"تم صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل عن مشروع {payoutProject?.Code} - {payoutProject?.Name}", NotificationEventType.EngineerRewardPaid, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
+
                 var payoutEngineer = await _context.Users.FindAsync(record.EngineerId);
                 var payoutAssignment = await _context.ProjectAssignments.Include(a => a.Stage).Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == record.ProjectAssignmentId);
                 var payoutStageLabel = payoutAssignment != null && payoutAssignment.Tasks.Any() ? string.Join("، ", payoutAssignment.Tasks.Select(t => t.Title)) : (payoutAssignment?.Stage?.Name ?? "-");
@@ -359,9 +360,10 @@ namespace AtharERP_System.Controllers
                 record.ReceiptNumber = null;
                 await _context.SaveChangesAsync();
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(FinancialRecord), record.Id.ToString(), "إلغاء صرف مكافأة مهندسة");
-                await _notify.NotifyAsync(record.EngineerId, $"تم إلغاء صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل وإعادتها إلى حالة غير مصروف", NotificationEventType.EngineerRewardCancelled, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
 
                 var cancelProject = await _context.Projects.FindAsync(record.ProjectId);
+                await _notify.NotifyAsync(record.EngineerId, $"تم إلغاء صرف مكافأتك بقيمة {record.ValueAfterPercentage:N2} د.ل عن مشروع {cancelProject?.Code} - {cancelProject?.Name} وإعادتها إلى حالة غير مصروف", NotificationEventType.EngineerRewardCancelled, "/Finance/EngineerReceipts", entityType: "FinancialRecord", entityId: record.Id);
+
                 var cancelEngineer = await _context.Users.FindAsync(record.EngineerId);
                 var cancelAssignment = await _context.ProjectAssignments.Include(a => a.Stage).Include(a => a.Tasks).FirstOrDefaultAsync(a => a.Id == record.ProjectAssignmentId);
                 var cancelStageLabel = cancelAssignment != null && cancelAssignment.Tasks.Any() ? string.Join("، ", cancelAssignment.Tasks.Select(t => t.Title)) : (cancelAssignment?.Stage?.Name ?? "-");
@@ -865,7 +867,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
                     if (supplyRequest.ProjectTaskId.HasValue)
                     {
-                        var supplyTask = await _context.ProjectTasks.FirstOrDefaultAsync(t => t.Id == supplyRequest.ProjectTaskId.Value);
+                        var supplyTask = await _context.ProjectTasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == supplyRequest.ProjectTaskId.Value);
                         if (supplyTask != null && supplyTask.Status != ProjectTaskStatus.Completed)
                         {
                             supplyTask.Status = ProjectTaskStatus.Completed;
@@ -891,7 +893,7 @@ int? prefillSiteId, int? prefillCategoryId, string? prefillDescription, int? sup
 
                             if (!string.IsNullOrEmpty(supplyRequest.RequestedById))
                             {
-                                await _notify.NotifyAsync(supplyRequest.RequestedById, $"تم تسليم طلب التوريد لمهمتك \"{supplyTask.Title}\" — اكتملت المهمة",
+                                await _notify.NotifyAsync(supplyRequest.RequestedById, $"تم تسليم طلب التوريد لمهمتك \"{supplyTask.Title}\" ({supplyTask.Project?.Code} - {supplyTask.Project?.Name}) — اكتملت المهمة",
                                     NotificationEventType.TaskStatusChanged, $"/ProjectTasks/Edit/{supplyTask.Id}", entityType: "ProjectTask", entityId: supplyTask.Id);
                             }
                         }

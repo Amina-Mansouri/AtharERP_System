@@ -28,9 +28,10 @@ namespace AtharERP_System.Services
         public async Task RecalculateStageAsync(int stageId)
         {
             var stage = await _context.ProjectStages
-                .Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment)
-                .Include(s => s.Assignments)
-                .FirstOrDefaultAsync(s => s.Id == stageId);
+      .Include(s => s.Tasks).ThenInclude(t => t.ProjectAssignment)
+      .Include(s => s.Assignments)
+      .Include(s => s.Project)
+      .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null) return;
 
@@ -55,7 +56,7 @@ namespace AtharERP_System.Services
             {
                 var recipientIds = await _permission.GetProjectRecipientsAsync(stage.ProjectId);
 
-                await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name}", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"اكتملت المرحلة: {stage.Name} ({stage.Project?.Code} - {stage.Project?.Name})", NotificationEventType.StageCompleted, $"/Projects/Details/{stage.ProjectId}", entityType: "ProjectStage", entityId: stage.Id);
             }
         }
 
@@ -140,7 +141,7 @@ namespace AtharERP_System.Services
             if (!wasDelayed && project.Status == ProjectStatus.Delayed)
             {
                 var recipientIds = await _permission.GetProjectRecipientsAsync(project.Id);
-                await _notify.NotifyManyAsync(recipientIds, $"المشروع \"{project.Name}\" أصبح متأخراً", NotificationEventType.TaskDelayed, $"/Projects/Details/{project.Id}", requiresAction: true, entityType: "Project", entityId: project.Id);
+                await _notify.NotifyManyAsync(recipientIds, $"المشروع \"{project.Code} - {project.Name}\" أصبح متأخراً", NotificationEventType.TaskDelayed, $"/Projects/Details/{project.Id}", requiresAction: true, entityType: "Project", entityId: project.Id);
             }
         }
 

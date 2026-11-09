@@ -19,7 +19,7 @@
     string currentSystem = isEmployeeAdminActionForTrail ? "sys06" : ViewContext.RouteData.Values["controller"]?.ToString() switch
     {
         "Admin" => "sys01",
-        "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" => "sys02",
+        "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" or "StageTemplates" => "sys02",
         "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" => "sys03",
         "Clients" => "sys07",
         "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" => "sys04",

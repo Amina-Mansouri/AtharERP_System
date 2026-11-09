@@ -37,7 +37,7 @@ else
                             <span class="tag tag-accent">🔁 إعادة تصميم</span>
                         }
                     </div>
-                    <div class="stat-sub">@a.Stage?.Project?.Name — @a.Stage?.Name</div>
+                    <div class="stat-sub">@(a.Stage?.Project != null ? $"{a.Stage.Project.Code} - {a.Stage.Project.Name}" : "") — @a.Stage?.Name</div>
                 </div>
                 <span class="tag @StatusTagClass(a.Status)">@statusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label</span>
             </div>

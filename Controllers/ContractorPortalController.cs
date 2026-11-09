@@ -213,7 +213,7 @@ namespace AtharERP_System.Controllers
             var managerIds = await _context.SiteManagers.Where(m => m.SiteId == siteId).Select(m => m.UserId).ToListAsync();
             if (managerIds.Any())
             {
-                await _notify.NotifyManyAsync(managerIds, $"مراسلة جديدة من المقاول على الموقع {site.Name}",
+                await _notify.NotifyManyAsync(managerIds, $"مراسلة جديدة من المقاول على الموقع {site.Name} ({site.Project?.Code} - {site.Project?.Name})",
                     NotificationEventType.SiteCorrespondenceReceived, $"/SiteCorrespondences/Index?siteId={siteId}");
             }
 

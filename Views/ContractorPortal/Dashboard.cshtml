@@ -57,7 +57,7 @@
                 <a asp-controller="ContractorPortal" asp-action="SiteDetails" asp-route-siteId="@sa.SiteId" class="data-table-row" style="text-decoration:none; color:inherit;">
                     <div class="cell cell-num">@sa.Site.Code</div>
                     <div class="cell">@sa.Site.Name</div>
-                    <div class="cell">@sa.Site.Project.Name</div>
+                    <div class="cell">@sa.Site.Project.Code - @sa.Site.Project.Name</div>
                     <div class="cell">@(sa.Specialty ?? "-")</div>
                     <div class="cell">
                         <span class="tag @(sa.Site.Status == SiteStatus.Completed ? "tag-accent" : sa.Site.Status == SiteStatus.OnHold ? "tag-warning" : "tag-success")">

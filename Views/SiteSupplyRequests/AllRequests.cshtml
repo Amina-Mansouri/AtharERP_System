@@ -115,7 +115,7 @@
                     {
                         <div class="cell" onclick="event.stopPropagation();"><input type="checkbox" name="itemIds" value="@item.Id" /></div>
                     }
-                    <div class="cell">@r.Site?.Project?.Name</div>
+                    <div class="cell">@(r.Site?.Project != null ? $"{r.Site.Project.Code} - {r.Site.Project.Name}" : "-")</div>
                     <div class="cell">@r.Site?.Name</div>
                     <div class="cell">
                         @item.MaterialName

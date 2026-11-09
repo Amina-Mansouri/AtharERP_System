@@ -40,7 +40,7 @@
                     {
                         <tr>
                             <td>@t.Title</td>
-                            <td>@t.Project.Name</td>
+                            <td>@t.Project.Code - @t.Project.Name</td>
                             <td>@(t.Stage?.Name ?? "-")</td>
                             <td><span class="badge athar-status-badge athar-status-@t.Status">@StatusLabel(t.Status)</span></td>
                             <td>@t.CompletionPercentage.ToString("N0")%</td>
