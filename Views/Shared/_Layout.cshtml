@@ -217,12 +217,12 @@
                        asp-controller="Admin" asp-action="Users">الموظفون</a>
                 }
 
-                               <div class="nav-quick-divider"></div>
-                @if (canUsers)
-                {
-                <div class="nav-section-title">الإدارات</div>
+                    <div class="nav-quick-divider"></div>
                     @if (canUsers)
-                    
+                    {
+                        <div class="nav-section-title">الإدارات</div>
+                    }
+                    @if (canUsers)
                     {
                         @if (canRoles || canDepartments)
                         {
@@ -487,11 +487,10 @@
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")"
                                asp-controller="Resignations" asp-action="Index">📝 طلب استقالة</a>
 
-                            @if (canClients)
-                            {
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
-                                   asp-controller="Clients" asp-action="Index">🧑‍💼 العملاء</a>
-                            }
+                        @if (canClients)
+                        {
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
+                               asp-controller="Clients" asp-action="Index">🧑‍💼 العملاء</a>
                         }
                     }
 
