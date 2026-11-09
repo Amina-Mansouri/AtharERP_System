@@ -107,11 +107,14 @@ namespace AtharERP_System.Controllers
 
             if (canViewUsers)
             {
-                ViewBag.LatestNotifications = await _context.Notifications
-                    .Include(n => n.User)
-                    .OrderByDescending(n => n.CreatedAt)
-                    .Take(8)
-                    .ToListAsync();
+                ViewBag.InProgressAssignmentsList = await _context.ProjectAssignments
+    .Include(a => a.Project)
+    .Include(a => a.Stage)
+    .Include(a => a.Engineers).ThenInclude(e => e.User)
+    .Where(a => a.Status == AssignmentStatus.InProgress)
+    .OrderByDescending(a => a.CreatedAt)
+    .Take(8)
+    .ToListAsync();
 
                 ViewBag.GovernmentalProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Governmental);
                 ViewBag.MunicipalProjects = await _context.Projects.CountAsync(p => p.Type == ProjectType.Municipal);

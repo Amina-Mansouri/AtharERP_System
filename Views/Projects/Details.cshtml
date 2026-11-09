@@ -1444,12 +1444,25 @@ else
                             {
                                 var hasStages = child.Stages.Any();
                                 var projKey = "proj-" + child.Id;
+                                const int childCircleR = 16;
+                                var childCircleCircumference = 2 * Math.PI * childCircleR;
+                                var childRatio = Math.Min(child.CompletionPercentage, 100m) / 100m;
+                                var childDash = childRatio * (decimal)childCircleCircumference;
+                                var childGap = (decimal)childCircleCircumference - childDash;
+                                var childDashArray = childDash.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " " + childGap.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
                                 <div style="border:1px solid #ecebf2; border-radius:8px; padding:8px 10px;">
                                     <div style="display:flex; align-items:center; gap:6px;">
                                         @if (hasStages)
                                         {
                                             <span data-target="@projKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; font-weight:700; color:#7b6bd6; background:#efedf7; border-radius:5px; width:18px; height:18px;">▾</span>
                                         }
+                                        <div style="position:relative; width:36px; height:36px; flex-shrink:0;">
+                                            <svg width="36" height="36" viewBox="0 0 40 40" style="transform:rotate(-90deg); position:absolute; inset:0;">
+                                                <circle cx="20" cy="20" r="@childCircleR" fill="none" stroke="#f1f0f6" stroke-width="5" />
+                                                <circle cx="20" cy="20" r="@childCircleR" fill="none" stroke="#7b6bd6" stroke-width="5" stroke-linecap="round" stroke-dasharray="@childDashArray" />
+                                            </svg>
+                                            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:700; color:#3a3450;">@child.CompletionPercentage.ToString("N0")%</div>
+                                        </div>
                                         <a asp-action="Details" asp-route-id="@child.Id" style="font-size:12px; font-weight:600; text-decoration:underline; color:inherit;">@child.Code - @child.Name</a>
                                         <span class="tag">@child.Stages.Count مرحلة</span>
                                     </div>
@@ -1460,6 +1473,14 @@ else
                                             {
                                                 var hasTasks = stage.Tasks.Any();
                                                 var stageKey = "stage-" + stage.Id;
+                                                var completedStageTasks = stage.Tasks.Count(t => t.Status == ProjectTaskStatus.Completed);
+                                                var totalStageTasks = stage.Tasks.Count;
+                                                const int stageCircleR = 13;
+                                                var stageCircleCircumference = 2 * Math.PI * stageCircleR;
+                                                var stageRatio = totalStageTasks > 0 ? (decimal)completedStageTasks / totalStageTasks : 0m;
+                                                var stageDash = stageRatio * (decimal)stageCircleCircumference;
+                                                var stageGap = (decimal)stageCircleCircumference - stageDash;
+                                                var stageDashArray = stageDash.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " " + stageGap.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
                                                 <div>
                                                     <div style="display:flex; align-items:center; gap:6px;">
                                                         @if (hasTasks)
@@ -1467,7 +1488,16 @@ else
                                                             <span data-target="@stageKey" aria-expanded="true" onclick="toggleTreeChildren(this)" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; font-weight:700; color:#7b6bd6; background:#f1f0f6; border-radius:5px; width:16px; height:16px;">▾</span>
                                                         }
                                                         <a asp-controller="ProjectStages" asp-action="Edit" asp-route-id="@stage.Id" style="font-size:11.5px; text-decoration:underline; color:inherit;">@stage.Name</a>
-                                                        <span class="tag">@stage.Tasks.Count مهمة</span>
+                                                        <div style="position:relative; width:30px; height:30px; flex-shrink:0;">
+                                                            <svg width="30" height="30" viewBox="0 0 34 34" style="transform:rotate(-90deg); position:absolute; inset:0;">
+                                                                <circle cx="17" cy="17" r="@stageCircleR" fill="none" stroke="#f1f0f6" stroke-width="4" />
+                                                                @if (totalStageTasks > 0)
+                                                                {
+                                                                    <circle cx="17" cy="17" r="@stageCircleR" fill="none" stroke="#2f8a57" stroke-width="4" stroke-linecap="round" stroke-dasharray="@stageDashArray" />
+                                                                }
+                                                            </svg>
+                                                            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#3a3450;">@completedStageTasks/@totalStageTasks</div>
+                                                        </div>
                                                         @if (stage.Assignments.Any(a => a.IsRedesign && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled))
                                                         {
                                                             <span class="tag tag-accent" style="font-size:9px;">🔁</span>

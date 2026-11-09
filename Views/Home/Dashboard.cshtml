@@ -1,7 +1,7 @@
 ﻿@using AtharERP_System.Models.Entities
 @{
     ViewData["Title"] = "لوحة التحكم";
-    var latestNotifications = ViewBag.LatestNotifications as List<Notification> ?? new List<Notification>();
+    var inProgressAssignmentsList = ViewBag.InProgressAssignmentsList as List<ProjectAssignment> ?? new List<ProjectAssignment>();
 
     var canViewModule01 = ViewBag.CanViewModule01 as bool? ?? false;
     var canViewModule02 = ViewBag.CanViewModule02 as bool? ?? false;
@@ -35,23 +35,24 @@
     @if (canViewModule01)
     {
         <div class="side-panel">
-            <div class="side-panel-title">آخر الإشعارات</div>
-            @if (!latestNotifications.Any())
+            <div class="side-panel-title">التكليفات قيد التنفيذ</div>
+            @if (!inProgressAssignmentsList.Any())
             {
-                <p class="mb-0">لا توجد إشعارات بعد</p>
+                <p class="mb-0">لا توجد تكليفات قيد التنفيذ حالياً</p>
             }
             else
             {
-                @foreach (var n in latestNotifications)
+                @foreach (var a in inProgressAssignmentsList)
                 {
+                    var engineerNames = a.Engineers.Select(e => e.User?.FullName).Where(n => !string.IsNullOrEmpty(n)).ToList();
                     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid var(--sys-row-line);">
                         <div>
-                            <div style="font-size:11.5px;">@n.Message</div>
-                            <div style="font-size:10.5px; color:var(--sys-text-light); margin-top:2px;">@n.User.FullName · @n.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                            <div style="font-size:11.5px; font-weight:600;">@a.AssignmentType — @(a.Project != null ? $"{a.Project.Code} - {a.Project.Name}" : "-")</div>
+                            <div style="font-size:10.5px; color:var(--sys-text-light); margin-top:2px;">@(a.Stage?.Name ?? "-") · @(engineerNames.Any() ? string.Join("، ", engineerNames) : "بلا مهندس مُعيَّن")</div>
                         </div>
-                        @if (!n.IsRead)
+                        @if (a.IsUrgent)
                         {
-                            <span class="tag tag-accent">جديد</span>
+                            <span class="tag tag-danger">عاجل</span>
                         }
                     </div>
                 }
