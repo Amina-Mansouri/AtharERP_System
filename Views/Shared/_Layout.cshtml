@@ -217,10 +217,12 @@
                        asp-controller="Admin" asp-action="Users">الموظفون</a>
                 }
 
-                <div class="nav-quick-divider"></div>
+                               <div class="nav-quick-divider"></div>
+                @if (canUsers)
+                {
                 <div class="nav-section-title">الإدارات</div>
-
                     @if (canUsers)
+                    
                     {
                         @if (canRoles || canDepartments)
                         {
@@ -298,43 +300,7 @@
                             </div>
                         }
 
-                        @if (canFinance)
-                        {
-                            <div class="nav-group">
-                                <button type="button" class="nav-group-header @(activeSystem == "sys04" ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#sys04">
-                                    <span>المالية  <span class="tag tag-success">كاملة</span></span>
-                                    <span class="nav-group-caret">▾</span>
-                                </button>
-                                <div class="collapse @(activeSystem == "sys04" ? "show" : "")" id="sys04">
-                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"
-                                       asp-controller="Finance" asp-action="Dashboard">المالية</a>
-                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Claims" ? "active" : "")"
-                                       asp-controller="Finance" asp-action="Claims">المطالبات المالية</a>
-
-                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
-                                       asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
-                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
-                                       asp-controller="Finance" asp-action="SaleTable">جدول البيع النهائي</a>
-                                    <button type="button" class="nav-group-header @(expensesSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#expensesSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
-                                        <span>المصروفات</span>
-                                        <span class="nav-group-caret">▾</span>
-                                    </button>
-                                    <div class="collapse @(expensesSubActive ? "show" : "")" id="expensesSubGroup">
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")" style="padding-right:24px;"
-                                           asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
-                                           asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
-                                    </div>
-                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
-                                       asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
-                                    @if (canSalaries)
-                                    {
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
-                                           asp-controller="Salaries" asp-action="Index">الرواتب والخصومات</a>
-                                    }
-                                </div>
-                            </div>
-                        }
+                       
 
                         @if (canSupply)
                         {
@@ -424,101 +390,95 @@
                                 </div>
                             </div>
                         }
-                    }
-                    else
-                    {
-                        @if (canProjects)
-                        {
-                            <div class="nav-section-title">المشاريع</div>
-                            @if (!isDesignEngineer)
-                            {
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
-                                   asp-controller="ProjectStages" asp-action="Overview">مراحل المشاريع</a>
                             }
-                            @if (canViewAssignments)
+                        else
+                        {
+                            @if (canProjects)
                             {
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
-                                   asp-controller="ProjectAssignments" asp-action="Overview">تكليفات المشاريع</a>
+                                @if (!isDesignEngineer)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectStages" ? "active" : "")"
+                                       asp-controller="ProjectStages" asp-action="Overview">🏗️ مراحل مشاريعي</a>
+                                }
+                                @if (canViewAssignments)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
+                                       asp-controller="ProjectAssignments" asp-action="Overview">📋 تكليفاتي</a>
+                                }
+                                @if (isDesignEngineer)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
+                                       asp-controller="ProjectAssignments" asp-action="MyAssignments">📋 تكليفاتي</a>
+                                }
                             }
-                            @if (isDesignEngineer)
+
+                            @if (canSites && !isDesignEngineer)
                             {
-                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
-                                   asp-controller="ProjectAssignments" asp-action="MyAssignments">التكليفات</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
+                                   asp-controller="Sites" asp-action="Index">🏢 مواقعي</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteContractors" ? "active" : "")"
+                                   asp-controller="SiteContractors" asp-action="Index">👷 المقاولون</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contractors" ? "active" : "")"
+                                   asp-controller="Contractors" asp-action="Index">🔑 حسابات دخول المقاولين</a>
                             }
-                        }
 
-                        @if (canSites && !isDesignEngineer)
-                        {
-                            <div class="nav-section-title">المواقع</div>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
-                               asp-controller="Sites" asp-action="Index">إدارة المواقع</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteContractors" ? "active" : "")"
-                               asp-controller="SiteContractors" asp-action="Index">المقاولون</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contractors" ? "active" : "")"
-                               asp-controller="Contractors" asp-action="Index">حسابات دخول المقاولين</a>
-                        }
-
-                        @if (canFinance)
-                        {
-                            <div class="nav-section-title">المالية</div>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"
-                               asp-controller="Finance" asp-action="Dashboard">المالية</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Claims" ? "active" : "")"
-                               asp-controller="Finance" asp-action="Claims">المطالبات المالية</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
-                               asp-controller="Finance" asp-action="CostTable">جدول التكاليف العام</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
-                               asp-controller="Finance" asp-action="SaleTable">جدول البيع النهائي</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")"
-                               asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")"
-                               asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
-                               asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
-                            @if (canSalaries)
+                            @if (canFinance)
                             {
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
-                                   asp-controller="Salaries" asp-action="Index">الرواتب والخصومات</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="Dashboard">💰 المالية</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Claims" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="Claims">🧾 المطالبات المالية</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "CostTable" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="CostTable">📊 جدول التكاليف</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "SaleTable" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="SaleTable">📈 جدول البيع</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="Expenses">💵 مصروفات مشاريع</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")"
+                                   asp-controller="GeneralExpenses" asp-action="Index">💵 مصروفات عامة</a>
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
+                                   asp-controller="Finance" asp-action="Profit">📉 الأرباح والخسائر</a>
+                                @if (canSalaries)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
+                                       asp-controller="Salaries" asp-action="Index">💳 الرواتب والخصومات</a>
+                                }
                             }
-                        }
 
-                        @if (canSupply)
-                        {
-                            <div class="nav-section-title">التوريدات</div>
-                            @if (canSupplyApprove)
+                            @if (canSupply)
                             {
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Vendors" ? "active" : "")"
-                                   asp-controller="Vendors" asp-action="Index">الموردون</a>
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Materials" ? "active" : "")"
-                                   asp-controller="Materials" asp-action="Index">الأصناف</a>
+                                @if (canSupplyApprove)
+                                {
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Vendors" ? "active" : "")"
+                                       asp-controller="Vendors" asp-action="Index">🏭 الموردون</a>
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Materials" ? "active" : "")"
+                                       asp-controller="Materials" asp-action="Index">📦 الأصناف</a>
+                                }
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteSupplyRequests" && ViewContext.RouteData.Values["action"]?.ToString() == "AllRequests" ? "active" : "")"
+                                   asp-controller="SiteSupplyRequests" asp-action="AllRequests">🚚 طلبات التوريد</a>
                             }
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SiteSupplyRequests" && ViewContext.RouteData.Values["action"]?.ToString() == "AllRequests" ? "active" : "")"
-                               asp-controller="SiteSupplyRequests" asp-action="AllRequests">طلبات التوريد</a>
-                        }
 
-                        <div class="nav-section-title">شؤون إدارية</div>
-                        @if (canAttendance)
-                        {
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
-                               asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
-                        }
-                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
-                           asp-controller="Leaves" asp-action="Index">الإجازات</a>
-                        @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
-                        {
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")"
-                               asp-controller="Custody" asp-action="Index">العهد</a>
-                        }
-                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")"
-                           asp-controller="Resignations" asp-action="Index">طلبات الاستقالة</a>
+                            @if (canAttendance)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
+                                   asp-controller="Attendance" asp-action="Index">🕐 حضوري</a>
+                            }
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
+                               asp-controller="Leaves" asp-action="Index">🌴 إجازاتي</a>
+                            @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")"
+                                   asp-controller="Custody" asp-action="Index">🗂️ العهد</a>
+                            }
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")"
+                               asp-controller="Resignations" asp-action="Index">📝 طلب استقالة</a>
 
-                        @if (canClients)
-                        {
-                            <div class="nav-section-title">العلاقات العامة</div>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
-                               asp-controller="Clients" asp-action="Index">العملاء</a>
+                            @if (canClients)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clients" ? "active" : "")"
+                                   asp-controller="Clients" asp-action="Index">🧑‍💼 العملاء</a>
+                            }
                         }
-                    }
 
                 @if (SignInManager.IsSignedIn(User))
                 {
