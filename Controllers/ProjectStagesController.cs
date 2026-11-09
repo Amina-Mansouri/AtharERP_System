@@ -249,6 +249,7 @@ namespace AtharERP_System.Controllers
                         Weight = taskWeights.TryGetValue(taskId, out var tw) ? tw : 0,
                         Status = ProjectTaskStatus.NotStarted,
                         Priority = TaskPriority.Medium,
+                        IsSupply = defaultTask.IsSupply,
                         CreatedAt = DateTime.UtcNow,
                         CreatedById = CurrentUserId
                     });
