@@ -118,8 +118,8 @@ namespace AtharERP_System.Controllers
             if (template == null)
                 return NotFound();
 
-            var supplyIndices = (supplyTaskIndices ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToHashSet();
-        
+            // خيار "توريد؟" لم يعد قابلاً للتعديل من هذه الشاشة — نحافظ على قيمته الحالية لكل مهمة بالاسم بدل اشتقاقه من النموذج
+            var previousSupplyByName = template.DefaultTasks.ToDictionary(t => t.TaskName, t => t.IsSupply);
 
             var totalTaskWeight = taskWeights?.Where(w => w.HasValue).Sum(w => w!.Value) ?? 0;
             if (totalTaskWeight > 100)
@@ -158,7 +158,7 @@ namespace AtharERP_System.Controllers
                         TaskName = taskName,
                         Order = order,
                         DefaultWeight = (taskWeights != null && i < taskWeights.Count) ? taskWeights[i] : null,
-                        IsSupply = supplyIndices.Contains(i)
+                        IsSupply = previousSupplyByName.TryGetValue(taskName, out var wasSupply) && wasSupply
                     });
                     order++;
                 }

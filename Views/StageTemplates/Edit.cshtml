@@ -11,12 +11,7 @@
     var existingTasksJson = System.Text.Json.JsonSerializer.Serialize(existingTasksData);
 }
 
-<script>
-    function isSupplyTaskRow(row) {
-        var chk = row.querySelector('.task-supply-chk');
-        return chk && chk.checked;
-    }
-</script>
+
 
 <h1 class="athar-page-title">تعديل قالب: @Model.Name</h1>
 
@@ -67,7 +62,7 @@
                 <label class="form-label">المهام الافتراضية (اسم + وزن افتراضي لكل مهمة)</label>
                 <div id="taskRows" style="display:grid; gap:6px; margin-bottom:8px;"></div>
                 <button type="button" class="btn athar-btn-outline" onclick="addTaskRow()">+ إضافة مهمة</button>
-                <input type="hidden" id="supplyTaskIndices" name="supplyTaskIndices" />
+             
             </div>
         </div>
 
@@ -107,20 +102,14 @@
             weightInput.style.flex = '1';
             weightInput.value = (weight != null ? weight : '');
 
-            var supplyLabel = document.createElement('label');
-            supplyLabel.style.display = 'flex';
-            supplyLabel.style.alignItems = 'center';
-            supplyLabel.style.gap = '4px';
-            supplyLabel.style.fontSize = '11.5px';
-            supplyLabel.style.whiteSpace = 'nowrap';
-
-            var supplyChk = document.createElement('input');
-            supplyChk.type = 'checkbox';
-            supplyChk.className = 'task-supply-chk';
-            supplyChk.checked = !!isSupply;
-
-            supplyLabel.appendChild(supplyChk);
-            supplyLabel.appendChild(document.createTextNode('توريد؟'));
+            if (isSupply) {
+                var supplyBadge = document.createElement('span');
+                supplyBadge.className = 'tag tag-accent';
+                supplyBadge.style.fontSize = '10px';
+                supplyBadge.style.whiteSpace = 'nowrap';
+                supplyBadge.textContent = 'توريد';
+                row.appendChild(supplyBadge);
+            }
 
             var delBtn = document.createElement('button');
             delBtn.type = 'button';
@@ -131,7 +120,6 @@
 
             row.appendChild(nameInput);
             row.appendChild(weightInput);
-            row.appendChild(supplyLabel);
             row.appendChild(delBtn);
             wrap.appendChild(row);
         }
@@ -142,13 +130,6 @@
             addTaskRow();
         }
 
-        document.getElementById('templateEditForm').addEventListener('submit', function () {
-            var rows = document.querySelectorAll('#taskRows > div');
-            var indices = [];
-            rows.forEach(function (row, idx) {
-                if (isSupplyTaskRow(row)) indices.push(idx);
-            });
-            document.getElementById('supplyTaskIndices').value = indices.join(',');
-        });
+      
     </script>
 }
