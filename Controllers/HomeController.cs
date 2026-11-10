@@ -118,12 +118,7 @@ namespace AtharERP_System.Controllers
             ViewBag.MyLeaveRemainingDays = Math.Max(0, leaveAllowance - usedLeaveDays);
 
             ViewBag.MySalaryPayment = await _context.SalaryPayments
-                .FirstOrDefaultAsync(s => s.UserId == CurrentUserId && s.Year == today.Year && s.Month == today.Month);
-
-            var myMonthRewards = await _context.FinancialRecords
-                .Where(r => r.EngineerId == CurrentUserId && r.IsCleared && r.ClearedAt.HasValue && r.ClearedAt.Value >= monthStart && r.ClearedAt.Value < monthEnd)
-                .ToListAsync();
-            ViewBag.MyRewardsThisMonth = myMonthRewards.Sum(r => r.ValueAfterPercentage);
+    .FirstOrDefaultAsync(s => s.UserId == CurrentUserId && s.Year == today.Year && s.Month == today.Month);
 
             return View();
         }
