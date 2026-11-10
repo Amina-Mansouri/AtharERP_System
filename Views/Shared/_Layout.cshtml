@@ -329,7 +329,7 @@
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "PerformanceExpenses" ? "active" : "")" style="padding-right:24px;"
                                            asp-controller="PerformanceExpenses" asp-action="Index">مصروفات الأداء</a>
                                     </div>
-                                        </div>
+                                      
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
                                            asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>
                                     @if (canSalaries)
