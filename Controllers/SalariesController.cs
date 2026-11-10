@@ -148,17 +148,8 @@ namespace AtharERP_System.Controllers
                 TempData["Error"] = "تم صرف راتب هذا الموظف لهذا الشهر بالفعل";
                 return RedirectToAction("Index", new { year, month });
             }
-
             var activeAdvance = await _context.SalaryAdvanceRequests
-      .FirstOrDefaultAsync(a => a.UserId == userId && a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths);
-            if (activeAdvance != null)
-            {
-                deduction += activeAdvance.MonthlyInstallment;
-                activeAdvance.MonthsRepaid++;
-            }
-
-            var activeAdvance = await _context.SalaryAdvanceRequests
-     .FirstOrDefaultAsync(a => a.UserId == userId && a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths);
+                .FirstOrDefaultAsync(a => a.UserId == userId && a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths);
             var advanceDeduction = activeAdvance?.MonthlyInstallment ?? 0;
             if (activeAdvance != null)
                 activeAdvance.MonthsRepaid++;

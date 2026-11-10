@@ -2028,6 +2028,51 @@ namespace AtharERP_System.Migrations
                     b.ToTable("RolePermissions");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SalaryAdvanceRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<int>("InstallmentMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("MonthlyInstallment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MonthsRepaid")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SalaryAdvanceRequests");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.SalaryPayment", b =>
                 {
                     b.Property<int>("Id")
@@ -2035,6 +2080,9 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AdvanceDeduction")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("BaseAmount")
                         .HasColumnType("decimal(18,2)");
@@ -3671,6 +3719,23 @@ namespace AtharERP_System.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SalaryAdvanceRequest", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DecidedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.SalaryPayment", b =>
