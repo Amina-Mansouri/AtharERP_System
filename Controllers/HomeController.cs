@@ -17,19 +17,21 @@ namespace AtharERP_System.Controllers
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly AppDbContext _context;
         private readonly PermissionService _permissionService;
+        private readonly IConfiguration _config;
 
         public HomeController(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
             AppDbContext context,
-            PermissionService permissionService)
+            PermissionService permissionService,
+            IConfiguration config)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _permissionService = permissionService;
+            _config = config;
         }
-
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         public async Task<IActionResult> Index()
@@ -94,6 +96,34 @@ namespace AtharERP_System.Controllers
             var todayDate = DateTime.UtcNow.AddHours(2).Date;
             ViewBag.TodayAttendance = await _context.AttendanceDailyRecords
                 .FirstOrDefaultAsync(r => r.UserId == CurrentUserId && r.Date == todayDate);
+
+            var monthStart = new DateTime(today.Year, today.Month, 1);
+            var monthEnd = monthStart.AddMonths(1);
+
+            var myMonthAttendance = await _context.AttendanceDailyRecords
+                .Where(r => r.UserId == CurrentUserId && r.Date >= monthStart && r.Date < monthEnd)
+                .ToListAsync();
+            ViewBag.MyAttendanceDaysThisMonth = myMonthAttendance.Count(r => r.CheckIn != null);
+            ViewBag.MyLateHoursThisMonth = Math.Round(myMonthAttendance.Sum(r => r.LateMinutes) / 60m, 1);
+            ViewBag.MyOvertimeHoursThisMonth = Math.Round(myMonthAttendance.Where(r => r.OvertimeApproved == true).Sum(r => r.OvertimeHours), 1);
+
+            var leaveAllowance = _config.GetValue<int?>("Leaves:AnnualAllowanceDays") ?? 30;
+            var myLeaveRequests = await _context.LeaveRequests
+                .Where(l => l.UserId == CurrentUserId)
+                .ToListAsync();
+            var usedLeaveDays = myLeaveRequests
+                .Where(l => l.Type == LeaveType.Annual && l.Status == LeaveRequestStatus.Approved && l.StartDate.Year == today.Year)
+                .Sum(l => l.DaysCount);
+            ViewBag.MyLeaveAllowance = leaveAllowance;
+            ViewBag.MyLeaveRemainingDays = Math.Max(0, leaveAllowance - usedLeaveDays);
+
+            ViewBag.MySalaryPayment = await _context.SalaryPayments
+                .FirstOrDefaultAsync(s => s.UserId == CurrentUserId && s.Year == today.Year && s.Month == today.Month);
+
+            var myMonthRewards = await _context.FinancialRecords
+                .Where(r => r.EngineerId == CurrentUserId && r.IsCleared && r.ClearedAt.HasValue && r.ClearedAt.Value >= monthStart && r.ClearedAt.Value < monthEnd)
+                .ToListAsync();
+            ViewBag.MyRewardsThisMonth = myMonthRewards.Sum(r => r.ValueAfterPercentage);
 
             return View();
         }
