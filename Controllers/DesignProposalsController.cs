@@ -355,7 +355,7 @@ IFormFile? attachment)
                 _context.ProposalReviews.Add(pendingReview);
                 await _context.SaveChangesAsync();
 
-                var pendingPdfBytes = _pdfService.Generate(pendingReview, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code);
+                var pendingPdfBytes = _pdfService.Generate(pendingReview, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code, proposal.SubmittedDate);
                 var pendingPdfResult = await _fileUpload.SaveGeneratedFileAsync(pendingPdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
                 if (pendingPdfResult.Success)
                 {
@@ -447,8 +447,8 @@ IFormFile? attachment)
                 }
             }
 
-            
-            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code);
+
+            var pdfBytes = _pdfService.Generate(review, mainProject, subProject, task.Stage?.Name, proposal.Name, proposal.Code, proposal.SubmittedDate);
             var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"reviews/proposal-{proposal.Id}", ".pdf");
             if (pdfResult.Success)
             {
