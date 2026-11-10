@@ -22,7 +22,7 @@
         "Projects" or "ProjectTasks" or "ProjectStages" or "ProjectAssignments" or "ProjectDocuments" or "DesignProposals" or "StageTemplates" => "sys02",
         "Sites" or "SiteContractors" or "Contractors" or "SiteChecks" or "SiteDailyReports" or "SiteDocuments" or "SiteMaintenance" => "sys03",
         "Clients" => "sys07",
-        "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" or "SalaryAdvances" => "sys04",
+        "Finance" or "ClientRedesignRequests" or "GeneralExpenses" or "Salaries" or "SalaryAdvances" or "PerformanceExpenses" => "sys04",
         "Vendors" or "Materials" or "SiteSupplyRequests" => "sys05",
         "Attendance" or "Leaves" or "Custody" or "Resignations" => "sys06",
         _ => ""
@@ -142,7 +142,8 @@
         // نفس تصنيف القسم المحسوب أعلاه في بداية الملف لبناء الرابط العلوي — نعيد استخدامه هنا بدل تكراره لضمان تطابقهما دائماً
         string activeSystem = currentSystem;
         bool expensesSubActive = (ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses")
-    || ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses";
+|| ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses"
+|| ViewContext.RouteData.Values["controller"]?.ToString() == "PerformanceExpenses";
         <header class="app-topbar">
             <img src="~/images/logo-icon.png" alt="أثر" class="ds-logo" />
             <span class="ds-brand">منظومة أثر</span>
@@ -323,8 +324,11 @@
                                         <div class="collapse @(expensesSubActive ? "show" : "")" id="expensesSubGroup">
                                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Expenses" ? "active" : "")" style="padding-right:24px;"
                                                asp-controller="Finance" asp-action="Expenses">مصروفات مشاريع</a>
-                                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
-                                               asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
+                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "GeneralExpenses" ? "active" : "")" style="padding-right:24px;"
+                                           asp-controller="GeneralExpenses" asp-action="Index">مصروفات عامة</a>
+                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "PerformanceExpenses" ? "active" : "")" style="padding-right:24px;"
+                                           asp-controller="PerformanceExpenses" asp-action="Index">مصروفات الأداء</a>
+                                    </div>
                                         </div>
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" && ViewContext.RouteData.Values["action"]?.ToString() == "Profit" ? "active" : "")"
                                            asp-controller="Finance" asp-action="Profit">الأرباح والخسائر</a>

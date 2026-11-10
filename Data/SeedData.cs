@@ -103,6 +103,18 @@ namespace AtharERP_System.Data
                 await context.SaveChangesAsync();
             }
 
+            // ========== تصنيف مصروف "مكافآت" — مصروف إداري عام، يُستخدم في "مصروفات الأداء" ==========
+            if (!await context.ExpenseCategories.AnyAsync(c => c.NameAr == "مكافآت"))
+            {
+                context.ExpenseCategories.Add(new ExpenseCategory
+                {
+                    NameAr = "مكافآت",
+                    Scope = ExpenseCategoryScope.General,
+                    IsActive = true
+                });
+                await context.SaveChangesAsync();
+            }
+
             // ========== الأدوار القوالب الجاهزة (محمية من الحذف) ==========
             var templateRoles = new[]
 {
