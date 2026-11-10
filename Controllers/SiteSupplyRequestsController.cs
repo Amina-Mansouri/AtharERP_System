@@ -102,7 +102,7 @@ namespace AtharERP_System.Controllers
             var accessibleProjects = await accessibleProjectsQuery.OrderBy(p => p.Name).ToListAsync();
             ViewBag.Projects = accessibleProjects.Where(p => p.Scope == ProjectScope.Main).ToList();
             ViewBag.SubProjects = projectId.HasValue
-                ? await _context.Projects.Where(p => p.ParentProjectId == projectId.Value).OrderBy(p => p.Name).ToListAsync()
+                ? accessibleProjects.Where(p => p.ParentProjectId == projectId.Value).OrderBy(p => p.Name).ToList()
                 : new List<Project>();
             ViewBag.MainProjectId = projectId;
             ViewBag.SubProjectId = subProjectId;
