@@ -1,5 +1,6 @@
 ﻿@using AtharERP_System.Models.Entities
 @using AtharERP_System.Services
+@using System.Security.Claims
 @model Project
 @inject PermissionService PermissionService
 @{
@@ -1119,12 +1120,16 @@ else
                     ProposalStatus.Redesign => "إعادة تصميم",
                     _ => "بانتظار الاعتماد"
                 };
+                var isDesignEngineer = ViewBag.IsDesignEngineer as bool? ?? false;
+                var currentUserIdForDocs = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var assignmentDocsGroups = allAssignments
                     .Select(x => new
                     {
                         x.Stage,
                         x.Assignment,
-                        Docs = x.Assignment.Tasks.SelectMany(t => t.Todos).SelectMany(td => td.DesignProposals).OrderByDescending(d => d.SubmittedDate).ToList()
+                        Docs = x.Assignment.Tasks.SelectMany(t => t.Todos).SelectMany(td => td.DesignProposals)
+                            .Where(d => !isDesignEngineer || d.PreparedById == currentUserIdForDocs)
+                            .OrderByDescending(d => d.SubmittedDate).ToList()
                     })
                     .Where(x => x.Docs.Any())
                     .ToList();
