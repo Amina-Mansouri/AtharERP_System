@@ -16,7 +16,7 @@ namespace AtharERP_System.Services
             _environment = environment;
         }
 
-        public byte[] Generate(ProposalReview review, Project project, Project? subProject, string? stageName, string itemName, string? documentCode)
+        public byte[] Generate(ProposalReview review, Project project, Project? subProject, string? stageName, string itemName, string? documentCode, DateTime? submittedDate = null)
         {
             var statusLabel = GetDisplayName(review.Status);
             var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
@@ -60,8 +60,14 @@ namespace AtharERP_System.Services
 
                         col.Item().Row(row =>
                         {
-                            row.RelativeItem().Text($"التاريخ: {review.ReviewDate:yyyy-MM-dd}");
+                            row.RelativeItem().Text($"تاريخ التقديم: {(submittedDate.HasValue ? submittedDate.Value.ToString("yyyy-MM-dd") : "-")}");
                             row.RelativeItem().Text($"رقم المراجعة: {review.ReviewNumber}");
+                        });
+
+                        col.Item().Row(row =>
+                        {
+                            row.RelativeItem().Text($"تاريخ مراجعة المشرف: {(review.SupervisorReviewedAt.HasValue ? review.SupervisorReviewedAt.Value.ToString("yyyy-MM-dd") : "-")}");
+                            row.RelativeItem().Text($"تاريخ الاعتماد النهائي: {review.ReviewDate:yyyy-MM-dd}");
                         });
 
                         col.Item().Row(row =>
