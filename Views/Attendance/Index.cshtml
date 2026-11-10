@@ -7,6 +7,9 @@
     var userId = ViewBag.UserId as string;
     var dateFrom = ViewBag.DateFrom as DateTime?;
     var dateTo = ViewBag.DateTo as DateTime?;
+    bool canManageAttendance = ViewBag.CanManageAttendance as bool? ?? false;
+    bool isSingleEmployeeView = ViewBag.IsSingleEmployeeView as bool? ?? false;
+    string FormatMinutes(decimal minutes) => minutes >= 60 ? $"{(int)(minutes / 60)}س {(int)(minutes % 60)}د" : $"{minutes:N0}د";
     ViewData["Title"] = "الحضور والانصراف";
 }
 
@@ -19,26 +22,29 @@
 
 <div class="athar-card" style="margin-bottom:12px;">
     <form method="get" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
-        <div style="min-width:180px;">
-            <label class="form-label" style="font-size:11px;">القسم</label>
-            <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- الكل --</option>
-                @foreach (var d in departments)
-                {
-                    <option value="@d.Id" selected="@(departmentId == d.Id)">@d.Name</option>
-                }
-            </select>
-        </div>
-        <div style="min-width:200px;">
-            <label class="form-label" style="font-size:11px;">الموظف</label>
-            <select name="userId" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- الكل --</option>
-                @foreach (var u in users)
-                {
-                    <option value="@u.Id" selected="@(userId == u.Id)">@u.FullName</option>
-                }
-            </select>
-        </div>
+        @if (canManageAttendance)
+        {
+            <div style="min-width:180px;">
+                <label class="form-label" style="font-size:11px;">القسم</label>
+                <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- الكل --</option>
+                    @foreach (var d in departments)
+                    {
+                        <option value="@d.Id" selected="@(departmentId == d.Id)">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div style="min-width:200px;">
+                <label class="form-label" style="font-size:11px;">الموظف</label>
+                <select name="userId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- الكل --</option>
+                    @foreach (var u in users)
+                    {
+                        <option value="@u.Id" selected="@(userId == u.Id)">@u.FullName</option>
+                    }
+                </select>
+            </div>
+        }
         <div>
             <label class="form-label" style="font-size:11px;">من</label>
             <input type="date" name="dateFrom" class="form-control form-control-sm" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
@@ -67,8 +73,8 @@
         <div style="font-size:21px; font-weight:700; margin-top:3px; color:#5a5370;">@ViewBag.AbsentCount</div>
     </div>
     <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #c9700f; border-radius:11px; padding:12px 14px;">
-        <div style="font-size:10.5px; color:#8a83a0;">إضافي</div>
-        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#c9700f;">@ViewBag.OvertimeCount</div>
+        <div style="font-size:10.5px; color:#8a83a0;">@(isSingleEmployeeView ? "ساعات الإضافي المعتمدة" : "موظفون عملوا إضافي")</div>
+        <div style="font-size:21px; font-weight:700; margin-top:3px; color:#c9700f;">@(isSingleEmployeeView ? ((decimal)ViewBag.OvertimeApprovedHours).ToString("N1") + " س" : ViewBag.OvertimeCount.ToString())</div>
     </div>
     <div style="background:#fff; border:1px solid #ecebf2; border-right:4px solid #2f8a57; border-radius:11px; padding:12px 14px;">
         <div style="font-size:10.5px; color:#8a83a0;">ضمن الوقت</div>
@@ -82,7 +88,7 @@
 
 <div class="athar-card" style="margin-bottom:12px;">
     <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:12px;">
-        <div><strong>أيام حضور:</strong> @Model.Count(r => r.CheckIn.HasValue)</div>
+        <div><strong>أيام حضور:</strong> @Model.Where(r => r.CheckIn.HasValue).Select(r => r.Date.Date).Distinct().Count()</div>
         <div style="color:#e0a040;"><strong>بانتظار اعتماد الإضافي:</strong> @Model.Count(r => r.OvertimeHours > 0 && r.OvertimeApproved == null)</div>
     </div>
 </div>
@@ -112,7 +118,7 @@
                 <div class="cell cell-num">@(r.CheckIn?.Add(TimeSpan.FromHours(2)).ToString("HH:mm") ?? "-")</div>
                 <div class="cell cell-num">@(r.CheckOut?.Add(TimeSpan.FromHours(2)).ToString("HH:mm") ?? "-")</div>
                 <div class="cell cell-num">@(r.TotalHours?.ToString("N2") ?? "-")</div>
-                <div class="cell cell-num" style="@(r.LateMinutes > 0 ? "color:#c94a42;" : "")">@r.LateMinutes.ToString("N0")</div>
+                <div class="cell cell-num" style="@(r.LateMinutes > 0 ? "color:#c94a42;" : "")">@(r.LateMinutes > 0 ? FormatMinutes(r.LateMinutes) : "-")</div>
                 <div class="cell cell-num">@(r.OvertimeHours > 0 ? r.OvertimeHours.ToString("N2") : "-")</div>
                 <div class="cell">
                     @if (r.OvertimeHours <= 0)
@@ -126,6 +132,10 @@
                     else if (r.OvertimeApproved == false)
                     {
                         <span class="tag" style="color:#c94a42;">مرفوض</span>
+                    }
+                    else if (!canManageAttendance)
+                    {
+                        <span class="tag" style="color:#8a83a0;">غير معتمد</span>
                     }
                     else
                     {

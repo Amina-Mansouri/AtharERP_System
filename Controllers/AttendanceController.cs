@@ -16,14 +16,16 @@ namespace AtharERP_System.Controllers
         private readonly AttendanceCalculationService _calc;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _config;
+        private readonly PermissionService _permissionService;
 
-        public AttendanceController(AppDbContext context, AuditService audit, AttendanceCalculationService calc, IHttpClientFactory httpClientFactory, IConfiguration config)
+        public AttendanceController(AppDbContext context, AuditService audit, AttendanceCalculationService calc, IHttpClientFactory httpClientFactory, IConfiguration config, PermissionService permissionService)
         {
             _context = context;
             _audit = audit;
             _calc = calc;
             _httpClientFactory = httpClientFactory;
             _config = config;
+            _permissionService = permissionService;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -31,6 +33,14 @@ namespace AtharERP_System.Controllers
         [RequirePermission("HR.Attendance.View")]
         public async Task<IActionResult> Index(int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo)
         {
+            bool canManageAttendance = await _permissionService.HasPermissionAsync(User, "HR.Attendance.Edit");
+            if (!canManageAttendance)
+            {
+                departmentId = null;
+                userId = CurrentUserId;
+            }
+            ViewBag.CanManageAttendance = canManageAttendance;
+
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();
             ViewBag.DepartmentId = departmentId;
             ViewBag.UserId = userId;
@@ -89,11 +99,24 @@ namespace AtharERP_System.Controllers
                 }
             }
 
-            ViewBag.LateCount = records.Count(r => r.LateMinutes > 0);
+            bool isSingleEmployeeView = filteredUserIds.Count == 1;
+            ViewBag.IsSingleEmployeeView = isSingleEmployeeView;
             ViewBag.AbsentCount = Math.Max(0, expectedAttendanceSlots - presentDaySlots - leaveDaySlots);
-            ViewBag.OvertimeCount = records.Count(r => r.OvertimeHours > 0);
-            ViewBag.OnTimeCount = records.Count(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0);
-            ViewBag.EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0);
+
+            if (isSingleEmployeeView)
+            {
+                ViewBag.LateCount = records.Count(r => r.LateMinutes > 0);
+                ViewBag.OvertimeApprovedHours = records.Where(r => r.OvertimeApproved == true).Sum(r => r.OvertimeHours);
+                ViewBag.OnTimeCount = records.Count(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0);
+                ViewBag.EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0);
+            }
+            else
+            {
+                ViewBag.LateCount = records.Where(r => r.LateMinutes > 0).Select(r => r.UserId).Distinct().Count();
+                ViewBag.OvertimeCount = records.Where(r => r.OvertimeHours > 0).Select(r => r.UserId).Distinct().Count();
+                ViewBag.OnTimeCount = records.Where(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0).Select(r => r.UserId).Distinct().Count();
+                ViewBag.EarlyLeaveCount = records.Where(r => r.EarlyLeaveMinutes > 0).Select(r => r.UserId).Distinct().Count();
+            }
 
             return View(records);
         }
