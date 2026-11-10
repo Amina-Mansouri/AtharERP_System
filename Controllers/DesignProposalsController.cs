@@ -290,14 +290,15 @@ IFormFile? attachment)
                 TempData["Error"] = "تم اتخاذ قرار نهائي على هذا المستند مسبقاً";
                 return RedirectToAction("Overview", "ProjectAssignments", new { projectId, stageId, subProjectId, taskFilter });
             }
-
             var todo = proposal.TaskTodo;
             var task = todo.Task;
             var supervisorId = task.Stage?.AssignedEngineerId;
             var hasSupervisor = !string.IsNullOrEmpty(supervisorId);
+            var projectManagerIds = await GetProjectManagersAsync(proposal.ProjectId);
+            var supervisorIsManager = hasSupervisor && projectManagerIds.Contains(supervisorId!);
 
             var existingReview = await _context.ProposalReviews.FirstOrDefaultAsync(r => r.DesignProposalId == proposal.Id);
-            var isSupervisorPhase = existingReview == null && hasSupervisor;
+            var isSupervisorPhase = existingReview == null && hasSupervisor && !supervisorIsManager;
 
             if (isSupervisorPhase)
             {
