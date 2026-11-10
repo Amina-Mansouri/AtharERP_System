@@ -1071,7 +1071,7 @@ else
 
         <div class="tab-pane fade" id="pane-documents">
             <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px;">
-                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مستندات المشروع</div>
+                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مستندات خارجية</div>
                 @if (!documents.Any())
                 {
                     <div class="stat-sub" style="margin-bottom:10px;">لا توجد مستندات مرفوعة بعد</div>
@@ -1131,7 +1131,7 @@ else
             }
 
             <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-top:12px;">
-                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">وثائق التكليفات</div>
+                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مستندات المهندسات</div>
                 @if (!assignmentDocsGroups.Any())
                 {
                     <div class="stat-sub">لا توجد وثائق مرفوعة ضمن أي تكليف بعد</div>
@@ -1160,9 +1160,74 @@ else
                     </div>
                 }
             </div>
+
+            @{
+                var approvedDocsGroups = assignmentDocsGroups
+                    .Select(x => new { x.Stage, x.Assignment, Docs = x.Docs.Where(d => d.Status == ProposalStatus.Approved || d.Status == ProposalStatus.ApprovedWithModification).ToList() })
+                    .Where(x => x.Docs.Any())
+                    .ToList();
+                var internalReviewDocs = ViewBag.InternalReviewDocs as List<ProposalReview> ?? new List<ProposalReview>();
+            }
+
+            <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-top:12px;">
+                <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">الإصدارات</div>
+                @if (!approvedDocsGroups.Any())
+                {
+                    <div class="stat-sub">لا توجد إصدارات معتمدة بعد</div>
+                }
+                else
+                {
+                    <div style="display:grid; gap:12px;">
+                        @foreach (var grp in approvedDocsGroups)
+                        {
+                            <div style="border:1px solid #ecebf2; border-radius:9px; padding:10px 12px;">
+                                <div style="font-size:11.5px; font-weight:700; margin-bottom:6px;">@grp.Stage.Name — @grp.Assignment.AssignmentType</div>
+                                <div style="display:grid; gap:6px;">
+                                    @foreach (var doc in grp.Docs)
+                                    {
+                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px; flex-wrap:wrap;">
+                                            <div>
+                                                <a href="@doc.FilePath" target="_blank" download="@($"{doc.Code}.{doc.FileType}")" style="font-size:11.5px; font-weight:600;">@doc.Code — @doc.Name (v@doc.Revision)</a>
+                                                <div class="stat-sub">@(doc.PreparedBy?.FullName ?? "-") · @doc.FileType · @(doc.SubmittedDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                                            </div>
+                                            <span class="tag @DocsProposalTagClass(doc.Status)">@DocsProposalLabel(doc.Status)</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (canEdit)
+            {
+                <div style="background:#fff; border:1px solid #ecebf2; border-radius:11px; box-shadow:0 1px 2px rgba(36,31,51,.04); padding:14px 16px; margin-top:12px;">
+                    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">مستندات داخلية</div>
+                    @if (!internalReviewDocs.Any())
+                    {
+                        <div class="stat-sub">لا توجد مراجعات داخلية بعد</div>
+                    }
+                    else
+                    {
+                        <div style="display:grid; gap:6px;">
+                            @foreach (var rv in internalReviewDocs)
+                            {
+                                <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid #f1f0f6; border-radius:8px; padding:6px 10px;">
+                                    <div>
+                                        <a asp-controller="DesignProposals" asp-action="DownloadReview" asp-route-id="@rv.Id" target="_blank" style="font-size:11.5px; font-weight:600;">@rv.DesignProposal?.Name — RV-@rv.ReviewNumber</a>
+                                        <div class="stat-sub">@rv.ReviewerName · @rv.ReviewDate.ToString("yyyy-MM-dd")</div>
+                                    </div>
+                                    <span class="tag @DocsProposalTagClass(rv.Status)">@DocsProposalLabel(rv.Status)</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
         </div>
 
-        <div class="tab-pane fade" id="pane-supply">
+        <div class="tab-pane fade" id="pane-supply">س
             @{
                 string SupplyStatusLabel(SiteSupplyStatus s) => s switch
                 {

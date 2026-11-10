@@ -86,33 +86,17 @@ namespace AtharERP_System.Services
                         col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(60)
                             .Text(string.IsNullOrWhiteSpace(review.Notes) ? "-" : review.Notes);
 
-                        col.Item().PaddingTop(20).Row(row =>
+                        col.Item().PaddingTop(20).Column(c =>
                         {
-                            row.RelativeItem().Column(c =>
+                            c.Item().Text($"اسم المعتمِد: {review.ReviewerName}");
+                            c.Item().Text($"الوظيفة: {review.ReviewerPosition ?? "-"}");
+                            c.Item().PaddingTop(5).Text("التوقيع:");
+                            if (!string.IsNullOrEmpty(review.ReviewerSignaturePath))
                             {
-                                c.Item().Text($"اسم المراجع: {review.ReviewerName}");
-                                c.Item().Text($"الوظيفة: {review.ReviewerPosition ?? "-"}");
-                                c.Item().PaddingTop(5).Text("التوقيع:");
-                                if (!string.IsNullOrEmpty(review.ReviewerSignaturePath))
-                                {
-                                    var path = MapPath(review.ReviewerSignaturePath);
-                                    if (File.Exists(path))
-                                        c.Item().Height(50).Image(path).FitArea();
-                                }
-                            });
-
-                            row.RelativeItem().Column(c =>
-                            {
-                                c.Item().Text($"اسم المشرف المباشر: {review.SupervisorName ?? "-"}");
-                                c.Item().Text($"الوظيفة: {review.SupervisorPosition ?? "-"}");
-                                c.Item().PaddingTop(5).Text("التوقيع:");
-                                if (!string.IsNullOrEmpty(review.SupervisorSignaturePath))
-                                {
-                                    var path = MapPath(review.SupervisorSignaturePath);
-                                    if (File.Exists(path))
-                                        c.Item().Height(50).Image(path).FitArea();
-                                }
-                            });
+                                var path = MapPath(review.ReviewerSignaturePath);
+                                if (File.Exists(path))
+                                    c.Item().Height(50).Image(path).FitArea();
+                            }
                         });
                     });
 

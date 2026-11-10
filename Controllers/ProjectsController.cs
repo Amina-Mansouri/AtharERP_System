@@ -193,6 +193,11 @@ namespace AtharERP_System.Controllers
    .ToListAsync();
             ViewBag.StageTemplates = await _context.StageTemplates.Include(t => t.DefaultTasks).OrderBy(t => t.Order).ToListAsync();
             ViewBag.Documents = await _context.ProjectDocuments.Include(d => d.UploadedBy).Where(d => d.ProjectId == id).OrderByDescending(d => d.UploadedAt).ToListAsync();
+            ViewBag.InternalReviewDocs = await _context.ProposalReviews
+                .Include(r => r.DesignProposal)
+                .Where(r => r.DesignProposal != null && r.DesignProposal.ProjectId == id && r.PdfFilePath != null)
+                .OrderByDescending(r => r.ReviewDate)
+                .ToListAsync();
             ViewBag.SupplyRequests = await _context.SiteSupplyRequests.Include(r => r.Items).Include(r => r.RequestedBy).Include(r => r.RequestedByContractor).Include(r => r.ProjectTask).Where(r => r.ProjectId == id).OrderByDescending(r => r.RequestDate).ToListAsync();
             await LoadDropdownsAsync(id);
             return View(project);
