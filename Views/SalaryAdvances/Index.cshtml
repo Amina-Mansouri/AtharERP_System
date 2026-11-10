@@ -1,0 +1,95 @@
+﻿@model List<SalaryAdvanceRequest>
+@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@{
+    ViewData["Title"] = "طلب سلفة";
+    decimal contractSalary = ViewBag.ContractSalary as decimal? ?? 0;
+    bool hasActiveAdvance = ViewBag.HasActiveAdvance as bool? ?? false;
+    var statusLabels = EnumDisplayHelper.GetDisplayList<SalaryAdvanceStatus>();
+    string StatusTagClass(SalaryAdvanceStatus s) => s switch
+    {
+        SalaryAdvanceStatus.Approved => "tag-success",
+        SalaryAdvanceStatus.Rejected => "tag-danger",
+        _ => "tag-warning"
+    };
+}
+
+<h1 class="athar-page-title">طلب سلفة</h1>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mt-3">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mt-3">@TempData["Error"]</div>
+}
+
+<div class="athar-card mt-3">
+    <div class="stat-strip stat-strip-text" style="margin-bottom:12px;">
+        <span>الراتب المتفق عليه: <strong>@contractSalary.ToString("N0") د.ل</strong></span>
+        <span>الحد الأقصى للسلفة (50%): <strong>@((contractSalary * 0.5m).ToString("N0")) د.ل</strong></span>
+    </div>
+
+    @if (hasActiveAdvance)
+    {
+        <div class="alert alert-warning">لديكِ سلفة قائمة حالياً (قيد الاعتماد أو لم تُسدَّد بالكامل) — لا يمكن تقديم طلب جديد حتى تُسدَّد أو يُرفض الطلب الحالي.</div>
+    }
+    else
+    {
+        <form method="post" asp-action="Create">
+            @Html.AntiForgeryToken()
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">المبلغ المطلوب</label>
+                    <input type="number" step="0.01" min="0" name="amount" class="form-control" required />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">مدة السداد (أشهر)</label>
+                    <select name="installmentMonths" class="form-select" required>
+                        <option value="1">شهر واحد</option>
+                        <option value="2">شهران</option>
+                        <option value="3">3 أشهر</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn athar-btn">إرسال الطلب</button>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+<div class="athar-card mt-3">
+    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">طلباتي السابقة</div>
+    @if (!Model.Any())
+    {
+        <div class="stat-sub">لا توجد طلبات سابقة</div>
+    }
+    else
+    {
+        <div class="data-table" style="--cols: 100px 90px 90px 90px 90px 1fr">
+            <div class="data-table-head">
+                <div class="cell">المبلغ</div>
+                <div class="cell">الحالة</div>
+                <div class="cell">القسط الشهري</div>
+                <div class="cell">أشهر مسدَّدة</div>
+                <div class="cell">المخصوم حتى الآن</div>
+                <div class="cell">المتبقي</div>
+            </div>
+            @foreach (var r in Model)
+            {
+                var deductedSoFar = r.MonthlyInstallment * r.MonthsRepaid;
+                var remaining = r.Amount - deductedSoFar;
+                <div class="data-table-row">
+                    <div class="cell cell-num">@r.Amount.ToString("N0")</div>
+                    <div class="cell"><span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span></div>
+                    <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
+                    <div class="cell cell-num">@r.MonthsRepaid/@r.InstallmentMonths</div>
+                    <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? deductedSoFar.ToString("N0") : "-")</div>
+                    <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? remaining.ToString("N0") : "-")</div>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -149,6 +149,20 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Index", new { year, month });
             }
 
+            var activeAdvance = await _context.SalaryAdvanceRequests
+      .FirstOrDefaultAsync(a => a.UserId == userId && a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths);
+            if (activeAdvance != null)
+            {
+                deduction += activeAdvance.MonthlyInstallment;
+                activeAdvance.MonthsRepaid++;
+            }
+
+            var activeAdvance = await _context.SalaryAdvanceRequests
+     .FirstOrDefaultAsync(a => a.UserId == userId && a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths);
+            var advanceDeduction = activeAdvance?.MonthlyInstallment ?? 0;
+            if (activeAdvance != null)
+                activeAdvance.MonthsRepaid++;
+
             var payment = new SalaryPayment
             {
                 UserId = userId,
@@ -167,7 +181,8 @@ namespace AtharERP_System.Controllers
                 BaseAmount = baseAmount,
                 OvertimeAmount = overtimeAmount,
                 Deduction = deduction,
-                NetAmount = baseAmount + overtimeAmount - deduction,
+                AdvanceDeduction = advanceDeduction,
+                NetAmount = baseAmount + overtimeAmount - deduction - advanceDeduction,
                 Notes = notes,
                 PaidAt = DateTime.UtcNow,
                 PaidById = CurrentUserId

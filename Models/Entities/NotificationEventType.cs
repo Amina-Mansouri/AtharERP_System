@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Xml.Linq;
 
 namespace AtharERP_System.Models.Entities
 {
@@ -89,6 +90,12 @@ namespace AtharERP_System.Models.Entities
         ResignationRequestDecided = 27,
 
         [Display(Name = "تفعيل استقالة")]
-        ResignationEffective = 28
+        ResignationEffective = 28,
+
+        [Display(Name = "طلب سلفة جديد")]
+        SalaryAdvanceRequestCreated = 29,
+
+        [Display(Name = "قرار بشأن طلب سلفة")]
+        SalaryAdvanceRequestDecided = 30
     }
 }

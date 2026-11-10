@@ -220,7 +220,9 @@
         <div style="padding:12px 16px 10px; border-bottom:1px solid #f1f0f6; font-size:13.5px; font-weight:600;">راتبي وخصوماتي ومكافآتي</div>
         <div style="padding:13px 16px; display:grid; gap:10px; font-size:11.5px;">
             <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">الراتب المتفق عليه</span><span style="font-weight:600;">@(user?.ContractSalary.ToString("N0")) د.ل</span></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">خصومات الشهر</span><span style="font-weight:600;">@(mySalaryPayment != null ? mySalaryPayment.Deduction.ToString("N0") + " د.ل" : "لم تُحتسب بعد")</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">خصم السلفة</span><span style="font-weight:600;">@(mySalaryPayment != null ? mySalaryPayment.AdvanceDeduction.ToString("N0") + " د.ل" : "-")</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">خصومات أخرى</span><span style="font-weight:600;">@(mySalaryPayment != null ? mySalaryPayment.Deduction.ToString("N0") + " د.ل" : "لم تُحتسب بعد")</span></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">إجمالي الخصومات</span><span style="font-weight:600;">@(mySalaryPayment != null ? mySalaryPayment.TotalDeduction.ToString("N0") + " د.ل" : "-")</span></div>
             <div style="display:flex; justify-content:space-between;"><span style="color:#8a83a0;">المكافآت</span><span class="stat-sub">قادمة (تُحسب من مصروفات الأداء)</span></div>
             <div style="display:flex; justify-content:space-between; padding-top:9px; border-top:1px solid #f1f0f6;"><span style="color:#8a83a0;">الصافي</span><span style="font-weight:600;">@(mySalaryPayment != null ? mySalaryPayment.NetAmount.ToString("N0") + " د.ل" : "لم يُصرف بعد")</span></div>
         </div>

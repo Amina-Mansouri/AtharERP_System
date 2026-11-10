@@ -169,6 +169,7 @@ namespace AtharERP_System.Data
                 new Permission { Code = "Finance.Print", Name = "المالية.طباعة", Module = "Finance" },
                 new Permission { Code = "Finance.Claims.View", Name = "المالية.مطالبات.عرض", Module = "Finance" },
                 new Permission { Code = "Finance.Claims.Manage", Name = "المالية.مطالبات.إدارة", Module = "Finance" },
+                new Permission { Code = "Finance.SalaryAdvances.Manage", Name = "المالية.سلف.إدارة", Module = "Finance" },
 
                 // 6.5 الموارد البشرية
                 new Permission { Code = "HR.View", Name = "الموارد_البشرية.عرض", Module = "HR" },

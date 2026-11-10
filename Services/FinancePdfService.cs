@@ -1711,8 +1711,14 @@ namespace AtharERP_System.Services
                             DataCell("الإضافي");
                             DataCell(payment.OvertimeAmount.ToString("N2"));
 
-                            DataCell("الخصم");
+                            DataCell("الخصم العام");
                             DataCell(payment.Deduction.ToString("N2"));
+
+                            DataCell("خصم السلفة");
+                            DataCell(payment.AdvanceDeduction.ToString("N2"));
+
+                            DataCell("إجمالي الخصومات");
+                            DataCell(payment.TotalDeduction.ToString("N2"));
 
                             DataCell("الصافي");
                             DataCell(payment.NetAmount.ToString("N2"));

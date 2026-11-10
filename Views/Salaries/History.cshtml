@@ -15,18 +15,19 @@
     </div>
 </div>
 
-<div class="data-table" style="--cols: minmax(0,1.3fr) 120px 110px 110px 110px 110px 1fr 110px">
+<div class="data-table" style="--cols: minmax(0,1.2fr) 100px 100px 100px 90px 90px 100px 110px 1fr 100px">
     <div class="data-table-head">
         <div class="cell">الموظف</div>
         <div class="cell">الشهر</div>
         <div class="cell cell-num">الأساسي</div>
         <div class="cell cell-num">الإضافي</div>
-        <div class="cell cell-num">الخصم</div>
+        <div class="cell cell-num">الخصم العام</div>
+        <div class="cell cell-num">خصم السلفة</div>
+        <div class="cell cell-num">إجمالي الخصومات</div>
         <div class="cell cell-num">الصافي</div>
         <div class="cell">صرفه</div>
         <div class="cell"></div>
-    </div>
-    @if (!Model.Any())
+    </div>    @if (!Model.Any())
     {
         <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد رواتب مصروفة بعد</div></div>
     }
@@ -40,6 +41,8 @@
                 <div class="cell cell-num">@p.BaseAmount.ToString("N2")</div>
                 <div class="cell cell-num">@p.OvertimeAmount.ToString("N2")</div>
                 <div class="cell cell-num">@p.Deduction.ToString("N2")</div>
+                <div class="cell cell-num">@p.AdvanceDeduction.ToString("N2")</div>
+                <div class="cell cell-num">@p.TotalDeduction.ToString("N2")</div>
                 <div class="cell cell-num">@p.NetAmount.ToString("N2")</div>
                 <div class="cell">@(p.PaidBy?.FullName ?? "-")</div>
                 <div class="cell"><a asp-action="Receipt" asp-route-id="@p.Id" target="_blank" class="btn-line">طباعة</a></div>

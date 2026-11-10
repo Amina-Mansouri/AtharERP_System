@@ -76,6 +76,13 @@ namespace AtharERP_System.Models.Entities
         public decimal Deduction { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "خصم السلفة")]
+        public decimal AdvanceDeduction { get; set; }
+
+        [NotMapped]
+        public decimal TotalDeduction => Deduction + AdvanceDeduction;
+
+        [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "الصافي")]
         public decimal NetAmount { get; set; }
 
