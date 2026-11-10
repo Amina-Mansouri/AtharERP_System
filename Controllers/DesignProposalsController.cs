@@ -346,7 +346,7 @@ IFormFile? attachment)
                     Notes = notes,
                     AttachmentPath = attachmentPath,
                     AttachmentFileName = attachmentFileName,
-                    Discipline = task.ProjectAssignment?.AssignmentType,
+                    Discipline = proposal.Classification,
                     ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId),
                     ReviewDate = DateTime.UtcNow,
                     ReviewedById = CurrentUserId,
@@ -384,6 +384,7 @@ IFormFile? attachment)
             if (existingReview != null)
             {
                 review = existingReview;
+                review.ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId);
                 review.Status = status;
                 review.ReviewerName = actingUser?.FullName ?? "";
                 review.ReviewerPosition = actingUser?.JobRankRef?.NameAr;
@@ -411,7 +412,7 @@ IFormFile? attachment)
                     Notes = notes,
                     AttachmentPath = attachmentPath,
                     AttachmentFileName = attachmentFileName,
-                    Discipline = task.ProjectAssignment?.AssignmentType,
+                    Discipline = proposal.Classification,
                     ReviewNumber = await ComputeNextReviewNumberAsync(proposal.TaskTodoId),
                     ReviewDate = DateTime.UtcNow,
                     ReviewedById = CurrentUserId,
@@ -595,8 +596,8 @@ IFormFile? attachment)
         public async Task<IActionResult> DownloadReview(int id)
         {
             var review = await _context.ProposalReviews
-                .Include(r => r.DesignProposal)
-                .FirstOrDefaultAsync(r => r.Id == id);
+    .Include(r => r.DesignProposal).ThenInclude(d => d!.Project)
+    .FirstOrDefaultAsync(r => r.Id == id);
             if (review == null || string.IsNullOrEmpty(review.PdfFilePath))
                 return NotFound();
 
@@ -607,7 +608,7 @@ IFormFile? attachment)
             if (!System.IO.File.Exists(pdfFullPath))
                 return NotFound();
 
-            var reportName = $"مراجعة-{review.DesignProposal?.Code}";
+            var reportName = $"{review.DesignProposal?.Project?.Code}-RV-{review.Discipline}-{review.ReviewNumber}";
 
             if (string.IsNullOrEmpty(review.AttachmentPath))
             {
