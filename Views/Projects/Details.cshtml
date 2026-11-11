@@ -846,7 +846,7 @@ else
                         <div class="cell">الحالة</div>
                         <div class="cell">إجراءات</div>
                     </div>
-                                        @{
+                    @{
                         var visibleAssignments = canViewAllStages
                             ? allAssignments
                             : allAssignments.Where(x => x.Assignment.Engineers.Any(e => e.UserId == currentUserIdForStages) || x.Stage.AssignedEngineerId == currentUserIdForStages).ToList();
