@@ -1764,14 +1764,23 @@ namespace AtharERP_System.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<string>("EngineerId")
+                        .HasColumnType("text");
+
                     b.Property<int>("ExpenseCategoryId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
 
                     b.Property<int?>("ProjectId")
                         .HasColumnType("integer");
@@ -1780,6 +1789,10 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("EngineerId");
 
                     b.HasIndex("ExpenseCategoryId");
 
@@ -2210,6 +2223,12 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("DecidedById")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("GmDecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GmDecidedById")
+                        .HasColumnType("text");
+
                     b.Property<int>("InstallmentMonths")
                         .HasColumnType("integer");
 
@@ -2218,6 +2237,9 @@ namespace AtharERP_System.Migrations
 
                     b.Property<int>("MonthsRepaid")
                         .HasColumnType("integer");
+
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2232,6 +2254,8 @@ namespace AtharERP_System.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DecidedById");
+
+                    b.HasIndex("GmDecidedById");
 
                     b.HasIndex("UserId");
 
@@ -3783,6 +3807,14 @@ namespace AtharERP_System.Migrations
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectExpense", b =>
                 {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "Engineer")
+                        .WithMany()
+                        .HasForeignKey("EngineerId");
+
                     b.HasOne("AtharERP_System.Models.Entities.ExpenseCategory", "ExpenseCategory")
                         .WithMany("Expenses")
                         .HasForeignKey("ExpenseCategoryId")
@@ -3796,6 +3828,10 @@ namespace AtharERP_System.Migrations
                     b.HasOne("AtharERP_System.Models.Entities.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Engineer");
 
                     b.Navigation("ExpenseCategory");
 
@@ -3958,6 +3994,10 @@ namespace AtharERP_System.Migrations
                         .WithMany()
                         .HasForeignKey("DecidedById");
 
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "GmDecidedBy")
+                        .WithMany()
+                        .HasForeignKey("GmDecidedById");
+
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -3965,6 +4005,8 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("DecidedBy");
+
+                    b.Navigation("GmDecidedBy");
 
                     b.Navigation("User");
                 });

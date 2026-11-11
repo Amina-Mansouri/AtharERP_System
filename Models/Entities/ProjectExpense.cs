@@ -39,8 +39,19 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "الوصف")]
         public string? Description { get; set; }
-
         [Display(Name = "تاريخ الإنشاء")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public string? EngineerId { get; set; }
+        [ForeignKey("EngineerId")]
+        [ValidateNever]
+        public virtual ApplicationUser? Engineer { get; set; }
+
+        public string? CreatedById { get; set; }
+        [ForeignKey("CreatedById")]
+        [ValidateNever]
+        public virtual ApplicationUser? CreatedBy { get; set; }
+
+        public string? PdfFilePath { get; set; }
     }
 }

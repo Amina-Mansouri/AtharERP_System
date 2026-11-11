@@ -69,6 +69,23 @@ namespace AtharERP_System.Services
             });
         }
 
+        public byte[] GenerateSalaryAdvancePdf(SalaryAdvanceRequest r)
+        {
+            return BuildDocument("نموذج طلب سلفة", r.User, col =>
+            {
+                col.Item().Row(row =>
+                {
+                    row.RelativeItem().Text($"المبلغ: {r.Amount:N0} د.ل");
+                    row.RelativeItem().Text($"مدة السداد: {r.InstallmentMonths} شهر");
+                });
+                col.Item().Text($"القسط الشهري: {r.MonthlyInstallment:N0} د.ل");
+                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+
+                SignatureSection(col, "اعتماد المسؤول المالي", r.DecidedBy, r.DecidedAt);
+                SignatureSection(col, "اعتماد المدير العام", r.GmDecidedBy, r.GmDecidedAt);
+            });
+        }
+
         public byte[] GenerateCustodyHandoverPdf(CustodyHandover h)
         {
             return BuildDocument("نموذج تسليم عهدة", h.Holder, col =>

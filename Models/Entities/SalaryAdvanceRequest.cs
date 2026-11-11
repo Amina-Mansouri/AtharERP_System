@@ -42,5 +42,15 @@ namespace AtharERP_System.Models.Entities
         public virtual ApplicationUser? DecidedBy { get; set; }
 
         public DateTime? DecidedAt { get; set; }
+
+        public string? GmDecidedById { get; set; }
+
+        [ForeignKey("GmDecidedById")]
+        [ValidateNever]
+        public virtual ApplicationUser? GmDecidedBy { get; set; }
+
+        public DateTime? GmDecidedAt { get; set; }
+
+        public string? PdfFilePath { get; set; }
     }
 }

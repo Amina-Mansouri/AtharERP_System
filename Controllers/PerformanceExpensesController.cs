@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -13,12 +14,18 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
         private readonly NotificationService _notify;
+        private readonly FileUploadService _fileUpload;
+        private readonly FinancePdfService _pdfExport;
+        private readonly IWebHostEnvironment _environment;
 
-        public PerformanceExpensesController(AppDbContext context, AuditService audit, NotificationService notify)
+        public PerformanceExpensesController(AppDbContext context, AuditService audit, NotificationService notify, FileUploadService fileUpload, FinancePdfService pdfExport, IWebHostEnvironment environment)
         {
             _context = context;
             _audit = audit;
             _notify = notify;
+            _fileUpload = fileUpload;
+            _pdfExport = pdfExport;
+            _environment = environment;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -37,6 +44,12 @@ namespace AtharERP_System.Controllers
             if (engineer == null)
                 return NotFound();
             ViewBag.Engineer = engineer;
+
+            ViewBag.RewardHistory = await _context.ProjectExpenses
+                .Include(e => e.CreatedBy)
+                .Where(e => e.EngineerId == engineerId && e.ExpenseCategory.NameAr == "مكافآت")
+                .OrderByDescending(e => e.Date)
+                .ToListAsync();
 
             var myProjectIds = await _context.ProjectAssignments
                 .Where(a => a.Engineers.Any(e => e.UserId == engineerId))
@@ -125,16 +138,40 @@ namespace AtharERP_System.Controllers
                 ExpenseCategoryId = category.Id,
                 Amount = amount,
                 Date = DateTime.UtcNow,
-                Description = $"مكافأة أداء للمهندسة {engineer.FullName} عن المشاريع: {projectsLabel}" + (string.IsNullOrWhiteSpace(notes) ? "" : $" — {notes}")
+                Description = $"مكافأة أداء للمهندسة {engineer.FullName} عن المشاريع: {projectsLabel}" + (string.IsNullOrWhiteSpace(notes) ? "" : $" — {notes}"),
+                EngineerId = engineerId,
+                CreatedById = CurrentUserId
             };
             _context.ProjectExpenses.Add(expense);
             await _context.SaveChangesAsync();
 
+            var pdfBytes = _pdfExport.GeneratePerformanceRewardReceipt(expense, engineer, await _context.Users.FindAsync(CurrentUserId));
+            var pdfResult = await _fileUpload.SaveGeneratedFileAsync(pdfBytes, $"performance-rewards/{expense.Id}", ".pdf");
+            if (pdfResult.Success)
+            {
+                expense.PdfFilePath = pdfResult.FilePath;
+                await _context.SaveChangesAsync();
+            }
+
             await _audit.LogAsync(CurrentUserId, "Create", nameof(ProjectExpense), expense.Id.ToString(), $"صرف مكافأة أداء لـ{engineer.FullName}");
-            await _notify.NotifyAsync(engineerId, $"تم صرف مكافأة أداء لكِ بقيمة {amount:N0} د.ل", NotificationEventType.EngineerRewardPaid, null, entityType: "ProjectExpense", entityId: expense.Id);
+            await _notify.NotifyAsync(engineerId, $"تم صرف مكافأة أداء لكِ بقيمة {amount:N0} د.ل", NotificationEventType.EngineerRewardPaid, expense.PdfFilePath != null ? $"/PerformanceExpenses/Download/{expense.Id}" : null, entityType: "ProjectExpense", entityId: expense.Id);
 
             TempData["Success"] = $"تم صرف مكافأة أداء بقيمة {amount:N0} د.ل لـ{engineer.FullName}";
             return RedirectToAction("Index", new { engineerId, projectIds });
+        }
+
+        [RequirePermission("Finance.Costs.View")]
+        public async Task<IActionResult> Download(int id)
+        {
+            var expense = await _context.ProjectExpenses.FirstOrDefaultAsync(e => e.Id == id);
+            if (expense == null || string.IsNullOrEmpty(expense.PdfFilePath))
+                return NotFound();
+
+            var fullPath = Path.Combine(_environment.WebRootPath, expense.PdfFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            return PhysicalFile(fullPath, "application/pdf", $"مكافأة-{expense.Id}.pdf");
         }
     }
 }

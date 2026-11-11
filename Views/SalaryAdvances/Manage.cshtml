@@ -3,6 +3,8 @@
 @using AtharERP_System.Services
 @{
     ViewData["Title"] = "طلبات السلف";
+    bool canManage = ViewBag.CanManage as bool? ?? false;
+    bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
     var statusLabels = EnumDisplayHelper.GetDisplayList<SalaryAdvanceStatus>();
     string StatusTagClass(SalaryAdvanceStatus s) => s switch
     {
@@ -11,7 +13,8 @@
         _ => "tag-warning"
     };
     var pending = Model.Where(r => r.Status == SalaryAdvanceStatus.Pending).ToList();
-    var history = Model.Where(r => r.Status != SalaryAdvanceStatus.Pending).ToList();
+    var pendingFinal = Model.Where(r => r.Status == SalaryAdvanceStatus.PendingGeneralManager).ToList();
+    var history = Model.Where(r => r.Status == SalaryAdvanceStatus.Approved || r.Status == SalaryAdvanceStatus.Rejected).ToList();
 }
 
 <h1 class="athar-page-title">طلبات السلف</h1>
@@ -21,48 +24,105 @@
     <div class="alert alert-success mt-3">@TempData["Success"]</div>
 }
 
-<div class="athar-card mt-3">
-    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">طلبات بانتظار الاعتماد (@pending.Count)</div>
-    @if (!pending.Any())
-    {
-        <div class="stat-sub">لا توجد طلبات معلّقة</div>
-    }
-    else
-    {
-        <div class="data-table" style="--cols: 1fr 100px 90px 90px 160px">
-            <div class="data-table-head">
-                <div class="cell">الموظف</div>
-                <div class="cell">المبلغ</div>
-                <div class="cell">المدة</div>
-                <div class="cell">القسط الشهري</div>
-                <div class="cell"></div>
-            </div>
-            @foreach (var r in pending)
-            {
-                <div class="data-table-row">
-                    <div class="cell">@r.User?.FullName</div>
-                    <div class="cell cell-num">@r.Amount.ToString("N0")</div>
-                    <div class="cell cell-num">@r.InstallmentMonths شهر</div>
-                    <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
-                    <div class="cell">
-                        <form method="post" asp-action="Decide" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="true" />
-                            <button type="submit" class="btn-line btn-line-accent">اعتماد</button>
-                        </form>
-                        <form method="post" asp-action="Decide" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="color:#c94a42;">رفض</button>
-                        </form>
-                    </div>
+@if (canManage)
+{
+    <div class="athar-card mt-3">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">طلبات بانتظار اعتماد المسؤول المالي (@pending.Count)</div>
+        @if (!pending.Any())
+        {
+            <div class="stat-sub">لا توجد طلبات معلّقة</div>
+        }
+        else
+        {
+            <div class="data-table" style="--cols: 1fr 100px 90px 90px 180px">
+                <div class="data-table-head">
+                    <div class="cell">الموظف</div>
+                    <div class="cell">المبلغ</div>
+                    <div class="cell">المدة</div>
+                    <div class="cell">القسط الشهري</div>
+                    <div class="cell"></div>
                 </div>
-            }
-        </div>
-    }
-</div>
+                @foreach (var r in pending)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@r.User?.FullName</div>
+                        <div class="cell cell-num">@r.Amount.ToString("N0")</div>
+                        <div class="cell cell-num">@r.InstallmentMonths شهر</div>
+                        <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
+                        <div class="cell">
+                            <form method="post" asp-action="Decide" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="true" />
+                                <button type="submit" class="btn-line btn-line-accent">اعتماد</button>
+                            </form>
+                            <form method="post" asp-action="Decide" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="false" />
+                                <button type="submit" class="btn-line" style="color:#c94a42;">رفض</button>
+                            </form>
+                            @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                            {
+                                <a href="/SalaryAdvances/Download/@r.Id" target="_blank" class="btn-line">PDF</a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@if (canFinalApprove)
+{
+    <div class="athar-card mt-3">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">طلبات بانتظار اعتماد المدير العام (@pendingFinal.Count)</div>
+        @if (!pendingFinal.Any())
+        {
+            <div class="stat-sub">لا توجد طلبات معلّقة</div>
+        }
+        else
+        {
+            <div class="data-table" style="--cols: 1fr 100px 90px 90px 180px">
+                <div class="data-table-head">
+                    <div class="cell">الموظف</div>
+                    <div class="cell">المبلغ</div>
+                    <div class="cell">المدة</div>
+                    <div class="cell">القسط الشهري</div>
+                    <div class="cell"></div>
+                </div>
+                @foreach (var r in pendingFinal)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@r.User?.FullName</div>
+                        <div class="cell cell-num">@r.Amount.ToString("N0")</div>
+                        <div class="cell cell-num">@r.InstallmentMonths شهر</div>
+                        <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
+                        <div class="cell">
+                            <form method="post" asp-action="FinalDecide" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="true" />
+                                <button type="submit" class="btn-line btn-line-accent">اعتماد نهائي</button>
+                            </form>
+                            <form method="post" asp-action="FinalDecide" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="false" />
+                                <button type="submit" class="btn-line" style="color:#c94a42;">رفض</button>
+                            </form>
+                            @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                            {
+                                <a href="/SalaryAdvances/Download/@r.Id" target="_blank" class="btn-line">PDF</a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
 
 <div class="athar-card mt-3">
     <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">سجل الطلبات</div>
@@ -72,13 +132,14 @@
     }
     else
     {
-        <div class="data-table" style="--cols: 1fr 100px 90px 90px 90px">
+        <div class="data-table" style="--cols: 1fr 100px 90px 90px 90px 70px">
             <div class="data-table-head">
                 <div class="cell">الموظف</div>
                 <div class="cell">المبلغ</div>
                 <div class="cell">الحالة</div>
                 <div class="cell">أشهر مسدَّدة</div>
-                <div class="cell">اعتمدها</div>
+                <div class="cell">آخر اعتماد</div>
+                <div class="cell">PDF</div>
             </div>
             @foreach (var r in history)
             {
@@ -87,7 +148,13 @@
                     <div class="cell cell-num">@r.Amount.ToString("N0")</div>
                     <div class="cell"><span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span></div>
                     <div class="cell cell-num">@r.MonthsRepaid/@r.InstallmentMonths</div>
-                    <div class="cell">@(r.DecidedBy?.FullName ?? "-")</div>
+                    <div class="cell">@(r.GmDecidedBy?.FullName ?? r.DecidedBy?.FullName ?? "-")</div>
+                    <div class="cell">
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/SalaryAdvances/Download/@r.Id" target="_blank">📄</a>
+                        }
+                    </div>
                 </div>
             }
         </div>

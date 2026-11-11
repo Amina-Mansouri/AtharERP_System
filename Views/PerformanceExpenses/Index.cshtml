@@ -56,6 +56,38 @@
     <div class="alert alert-warning mt-3">لا توجد تكليفات لهذه المهندسة ضمن المشاريع المختارة</div>
 }
 
+@{
+    var rewardHistory = ViewBag.RewardHistory as List<ProjectExpense> ?? new List<ProjectExpense>();
+}
+@if (!string.IsNullOrEmpty(engineerId) && rewardHistory.Any())
+{
+    <div class="athar-card mt-3">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">سجل المكافآت المصروفة لهذه المهندسة</div>
+        <div class="data-table" style="--cols: 100px 1fr 1fr 70px">
+            <div class="data-table-head">
+                <div class="cell">التاريخ</div>
+                <div class="cell">البيان</div>
+                <div class="cell">صرفها</div>
+                <div class="cell">PDF</div>
+            </div>
+            @foreach (var e in rewardHistory)
+            {
+                <div class="data-table-row">
+                    <div class="cell cell-num">@e.Date.ToString("yyyy-MM-dd")</div>
+                    <div class="cell">@e.Amount.ToString("N0") د.ل — @(e.Description ?? "-")</div>
+                    <div class="cell">@(e.CreatedBy?.FullName ?? "-")</div>
+                    <div class="cell">
+                        @if (!string.IsNullOrEmpty(e.PdfFilePath))
+                        {
+                            <a href="/PerformanceExpenses/Download/@e.Id" target="_blank">📄</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 @if (hasResults)
 {
     decimal totalSales = ViewBag.TotalSales;
@@ -131,6 +163,6 @@
                 </div>
             </div>
         </form>
-        <div class="stat-sub">سيُسجَّل هذا المبلغ ضمن مصروفات الشركة العامة (تصنيف "مكافآت"). طباعة نموذج رسمي لهذا الصرف ستُضاف لاحقاً.</div>
+        <div class="stat-sub">سيُسجَّل هذا المبلغ ضمن مصروفات الشركة العامة (تصنيف "مكافآت") ويُصدر له إيصال صرف فوري يمكن تنزيله من السجل أعلاه.</div>
     </div>
 }

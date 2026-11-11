@@ -337,7 +337,7 @@
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Salaries" ? "active" : "")"
                                            asp-controller="Salaries" asp-action="Index">الرواتب والخصومات</a>
                                     }
-                                    @if (await PermissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.Manage"))
+                                    @if (await PermissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.Manage") || await PermissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.FinalApprove"))
                                     {
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SalaryAdvances" && ViewContext.RouteData.Values["action"]?.ToString() == "Manage" ? "active" : "")"
                                            asp-controller="SalaryAdvances" asp-action="Manage">طلبات السلف</a>

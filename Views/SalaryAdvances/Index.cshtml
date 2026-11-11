@@ -83,7 +83,13 @@
                 var remaining = r.Amount - deductedSoFar;
                 <div class="data-table-row">
                     <div class="cell cell-num">@r.Amount.ToString("N0")</div>
-                    <div class="cell"><span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span></div>
+                    <div class="cell">
+                        <span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span>
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/SalaryAdvances/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
+                        }
+                    </div>
                     <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
                     <div class="cell cell-num">@r.MonthsRepaid/@r.InstallmentMonths</div>
                     <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? deductedSoFar.ToString("N0") : "-")</div>

@@ -1754,5 +1754,86 @@ namespace AtharERP_System.Services
                 });
             }).GeneratePdf();
         }
+
+        public byte[] GeneratePerformanceRewardReceipt(ProjectExpense expense, ApplicationUser engineer, ApplicationUser? disbursedBy)
+        {
+            var logoPath = Path.Combine(_environment.WebRootPath, "images", "logo-full.png");
+            var hasLogo = File.Exists(logoPath);
+            var amount = expense.Amount;
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(18);
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(8));
+                    page.ContentFromRightToLeft();
+
+                    page.Header().Column(header =>
+                    {
+                        if (hasLogo)
+                            header.Item().AlignCenter().Height(30).Image(logoPath).FitArea();
+
+                        header.Item().PaddingTop(4).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text("إيصال صرف مكافأة أداء").FontSize(14).Bold().FontColor("#221837");
+                                c.Item().Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                            });
+                            row.ConstantItem(110).Border(1).BorderColor("#c9a15a").Padding(4).Column(c =>
+                            {
+                                c.Item().Text("التاريخ").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().Text($"{expense.Date:yyyy-MM-dd}").FontSize(12).Bold().FontColor("#221837");
+                            });
+                        });
+                        header.Item().PaddingTop(4).BorderBottom(2).BorderColor("#c9a15a");
+                    });
+
+                    page.Content().PaddingTop(8).Column(col =>
+                    {
+                        col.Spacing(5);
+
+                        col.Item().Text(t =>
+                        {
+                            t.Span("صرفنا إلى السيد/ة: ").FontSize(10);
+                            t.Span(engineer.FullName).FontSize(10).Bold();
+                        });
+
+                        col.Item().PaddingTop(3).Background("#f6f4fb").Padding(6).Column(c =>
+                        {
+                            c.Item().Text("مبلغ المكافأة").FontSize(8).FontColor(Colors.Grey.Medium);
+                            c.Item().Text($"{amount:N2} د.ل").FontSize(14).Bold().FontColor("#221837");
+                            c.Item().PaddingTop(2).Text($"فقط {NumberToArabicWords(amount)} دينار ليبي لا غير").FontSize(8).FontColor(Colors.Grey.Darken2);
+                        });
+
+                        col.Item().PaddingTop(4).Text(t =>
+                        {
+                            t.Span("البيان: ").FontSize(9).FontColor(Colors.Grey.Medium);
+                            t.Span(expense.Description ?? "-").FontSize(9);
+                        });
+
+                        col.Item().PaddingTop(12).Row(row =>
+                        {
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("توقيع المستلم").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(12).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                            row.ConstantItem(14);
+                            row.RelativeItem().Column(c =>
+                            {
+                                c.Item().AlignCenter().Text("صرفه").FontSize(8).FontColor(Colors.Grey.Medium);
+                                c.Item().PaddingTop(2).AlignCenter().Text(disbursedBy != null ? disbursedBy.FullName : "-").FontSize(8);
+                                c.Item().PaddingTop(10).LineHorizontal(0.5f).LineColor(Colors.Grey.Lighten1);
+                            });
+                        });
+                    });
+
+                    page.Footer().AlignCenter().PaddingTop(4).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+            }).GeneratePdf();
+        }
     }
 }
