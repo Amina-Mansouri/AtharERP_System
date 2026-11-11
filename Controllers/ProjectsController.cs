@@ -185,6 +185,7 @@ namespace AtharERP_System.Controllers
             ViewBag.CanViewCosts = await CanViewCostsAsync(project);
             ViewBag.CanEdit = await _permissionService.HasPermissionAsync(User, "Projects.Edit");
             ViewBag.IsDesignEngineer = User.IsInRole("مهندس تصميم");
+            ViewBag.CanViewAllStages = await _permissionService.HasPermissionAsync(User, "Projects.ViewAll");
             ViewBag.AllEmployees = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.Engineers = await _userManager.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             ViewBag.Departments = await _context.Departments.Where(d => d.IsActive).OrderBy(d => d.Name).ToListAsync();

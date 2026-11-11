@@ -502,13 +502,20 @@ else
                         <div class="cell">الحالة</div>
                         <div class="cell"></div>
                     </div>
-                    @if (!Model.Stages.Any())
+                                       @{
+                        var canViewAllStages = ViewBag.CanViewAllStages as bool? ?? false;
+                        var currentUserIdForStages = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                        var visibleStages = canViewAllStages
+                            ? Model.Stages.ToList()
+                            : Model.Stages.Where(s => s.AssignedEngineerId == currentUserIdForStages || s.Assignments.Any(a => a.Engineers.Any(e => e.UserId == currentUserIdForStages))).ToList();
+                    }
+                    @if (!visibleStages.Any())
                     {
                         <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد مراحل مضافة بعد</div></div>
                     }
                     else
                     {
-                        @foreach (var stage in Model.Stages.OrderBy(s => s.Sequence))
+                        @foreach (var stage in visibleStages.OrderBy(s => s.Sequence))
                         {
                             <div class="data-table-row">
                                 <div class="cell cell-num">@stage.Sequence</div>
