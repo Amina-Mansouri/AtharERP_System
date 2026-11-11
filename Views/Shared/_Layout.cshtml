@@ -387,6 +387,8 @@
                                     }
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
                                        asp-controller="Leaves" asp-action="Index">الإجازات</a>
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "MyCustody" ? "active" : "")"
+                                       asp-controller="MyCustody" asp-action="Index">عهدتي</a>
                                     <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
                                     @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
                                     {
@@ -488,9 +490,11 @@
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
                                    asp-controller="Attendance" asp-action="Index">🕐 حضوري</a>
                             }
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
-                               asp-controller="Leaves" asp-action="Index">🌴 إجازاتي</a>
-                            @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
+                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")"
+                           asp-controller="Leaves" asp-action="Index">🌴 إجازاتي</a>
+                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "MyCustody" ? "active" : "")"
+                           asp-controller="MyCustody" asp-action="Index">🗒️ عهدتي</a>
+                        @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
                             {
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")"
                                    asp-controller="Custody" asp-action="Index">🗂️ العهد</a>

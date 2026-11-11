@@ -71,7 +71,10 @@ namespace AtharERP_System.Data
         public DbSet<ResignationRequest> ResignationRequests { get; set; } = null!;
         public DbSet<SalaryAdvanceRequest> SalaryAdvanceRequests { get; set; } = null!;
         public DbSet<TechnicalRequest> TechnicalRequests { get; set; } = null!;
-        public DbSet<Custody> Custodies { get; set; } = null!;
+        public DbSet<CustodyCategory> CustodyCategories { get; set; } = null!;
+        public DbSet<CustodyItem> CustodyItems { get; set; } = null!;
+        public DbSet<CustodyHandover> CustodyHandovers { get; set; } = null!;
+        public DbSet<CustodyHandoverLine> CustodyHandoverLines { get; set; } = null!;
         public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;
         public DbSet<ClientRedesignRequest> ClientRedesignRequests { get; set; } = null!;
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; } = null!;
@@ -666,17 +669,35 @@ namespace AtharERP_System.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             // ========== العهد (Custody) ==========
-            builder.Entity<Custody>()
-                .HasOne(c => c.Holder)
+            builder.Entity<CustodyHandover>()
+                .HasOne(h => h.Holder)
                 .WithMany()
-                .HasForeignKey(c => c.HolderId)
+                .HasForeignKey(h => h.HolderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Custody>()
-                .HasOne(c => c.Department)
+            builder.Entity<CustodyHandover>()
+                .HasOne(h => h.CreatedBy)
                 .WithMany()
-                .HasForeignKey(c => c.DepartmentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasForeignKey(h => h.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<CustodyHandoverLine>()
+                .HasOne(l => l.Handover)
+                .WithMany(h => h.Lines)
+                .HasForeignKey(l => l.CustodyHandoverId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CustodyHandoverLine>()
+                .HasOne(l => l.Item)
+                .WithMany()
+                .HasForeignKey(l => l.CustodyItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<CustodyItem>()
+                .HasOne(i => i.Category)
+                .WithMany()
+                .HasForeignKey(i => i.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // ========== بصمات الحضور الخام (AttendancePunch) ==========
             builder.Entity<AttendancePunch>()

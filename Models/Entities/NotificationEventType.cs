@@ -96,6 +96,12 @@ namespace AtharERP_System.Models.Entities
         SalaryAdvanceRequestCreated = 29,
 
         [Display(Name = "قرار بشأن طلب سلفة")]
-        SalaryAdvanceRequestDecided = 30
+        SalaryAdvanceRequestDecided = 30,
+
+        [Display(Name = "تسليم عهدة جديدة")]
+        CustodyHandoverCreated = 31,
+
+        [Display(Name = "تأكيد استلام عهدة")]
+        CustodyHandoverConfirmed = 32
     }
 }

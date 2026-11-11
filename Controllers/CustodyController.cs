@@ -12,71 +12,172 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
+        private readonly NotificationService _notify;
 
-        public CustodyController(AppDbContext context, AuditService audit)
+        public CustodyController(AppDbContext context, AuditService audit, NotificationService notify)
         {
             _context = context;
             _audit = audit;
+            _notify = notify;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [RequirePermission("HR.Custody.Manage")]
-        public async Task<IActionResult> Index(string? holderId, CustodyStatus? status)
+        public async Task<IActionResult> Index()
         {
+            ViewBag.Categories = await _context.CustodyCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
+            ViewBag.Items = await _context.CustodyItems.Include(i => i.Category).Where(i => i.IsActive).OrderBy(i => i.Name).ToListAsync();
             ViewBag.Users = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
-            ViewBag.HolderId = holderId;
-            ViewBag.Status = status;
 
-            var query = _context.Custodies.Include(c => c.Holder).Include(c => c.Department).AsQueryable();
-            if (!string.IsNullOrEmpty(holderId))
-                query = query.Where(c => c.HolderId == holderId);
-            if (status.HasValue)
-                query = query.Where(c => c.Status == status.Value);
+            var handovers = await _context.CustodyHandovers
+                .Include(h => h.Holder)
+                .Include(h => h.CreatedBy)
+                .Include(h => h.Lines).ThenInclude(l => l.Item)
+                .OrderByDescending(h => h.HandedDate)
+                .ToListAsync();
 
-            var items = await query.OrderByDescending(c => c.HandedDate).ToListAsync();
-            return View(items);
+            return View(handovers);
         }
 
         [RequirePermission("HR.Custody.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string code, string itemName, string holderId, int? departmentId, DateTime? handedDate)
+        public async Task<IActionResult> CreateCategory(string name)
         {
-            var custody = new Custody
+            if (string.IsNullOrWhiteSpace(name))
             {
-                Code = code,
-                ItemName = itemName,
-                HolderId = holderId,
-                DepartmentId = departmentId,
-                HandedDate = (handedDate ?? DateTime.UtcNow).Date,
-                Status = CustodyStatus.WithEmployee
-            };
-            _context.Custodies.Add(custody);
+                TempData["Error"] = "اسم التصنيف مطلوب";
+                return RedirectToAction("Index");
+            }
+
+            _context.CustodyCategories.Add(new CustodyCategory { Name = name.Trim() });
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Create", nameof(Custody), custody.Id.ToString(), $"إسناد عهدة \"{itemName}\" لموظف");
-
-            TempData["Success"] = "تم تسجيل العهدة بنجاح";
+            TempData["Success"] = "تم إضافة التصنيف";
             return RedirectToAction("Index");
         }
 
         [RequirePermission("HR.Custody.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Return(int id)
+        public async Task<IActionResult> CreateItem(string code, string name, int categoryId, int totalQuantity)
         {
-            var custody = await _context.Custodies.FindAsync(id);
-            if (custody == null)
-                return NotFound();
+            if (totalQuantity <= 0)
+            {
+                TempData["Error"] = "الكمية الإجمالية يجب أن تكون أكبر من صفر";
+                return RedirectToAction("Index");
+            }
 
-            custody.ReturnedDate = DateTime.UtcNow.Date;
-            custody.Status = CustodyStatus.Returned;
+            var item = new CustodyItem
+            {
+                Code = code,
+                Name = name,
+                CategoryId = categoryId,
+                TotalQuantity = totalQuantity,
+                AvailableQuantity = totalQuantity
+            };
+            _context.CustodyItems.Add(item);
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(Custody), custody.Id.ToString(), "استرجاع عهدة");
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(CustodyItem), item.Id.ToString(), $"إضافة مادة عهدة \"{name}\" بكمية {totalQuantity}");
 
-            TempData["Success"] = "تم تسجيل استرجاع العهدة";
+            TempData["Success"] = "تم إضافة المادة لكتالوج العهد";
+            return RedirectToAction("Index");
+        }
+
+        [RequirePermission("HR.Custody.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateHandover(string holderId, DateTime? handedDate, List<int?> itemIds, List<int> quantities)
+        {
+            if (string.IsNullOrEmpty(holderId))
+            {
+                TempData["Error"] = "يجب اختيار الموظف";
+                return RedirectToAction("Index");
+            }
+
+            var pairs = new List<(int ItemId, int Quantity)>();
+            for (int i = 0; i < (itemIds?.Count ?? 0); i++)
+            {
+                if (itemIds![i].HasValue && i < quantities.Count && quantities[i] > 0)
+                    pairs.Add((itemIds[i]!.Value, quantities[i]));
+            }
+
+            if (!pairs.Any())
+            {
+                TempData["Error"] = "يجب إضافة مادة واحدة على الأقل بكمية صحيحة";
+                return RedirectToAction("Index");
+            }
+
+            var itemIdsNeeded = pairs.Select(p => p.ItemId).Distinct().ToList();
+            var items = await _context.CustodyItems.Where(i => itemIdsNeeded.Contains(i.Id)).ToListAsync();
+
+            foreach (var (itemId, qty) in pairs)
+            {
+                var item = items.First(i => i.Id == itemId);
+                if (qty > item.AvailableQuantity)
+                {
+                    TempData["Error"] = $"الكمية المتاحة من \"{item.Name}\" هي {item.AvailableQuantity} فقط";
+                    return RedirectToAction("Index");
+                }
+            }
+
+            var handover = new CustodyHandover
+            {
+                HolderId = holderId,
+                HandedDate = (handedDate ?? DateTime.UtcNow).Date,
+                CreatedById = CurrentUserId
+            };
+
+            foreach (var (itemId, qty) in pairs)
+            {
+                var item = items.First(i => i.Id == itemId);
+                item.AvailableQuantity -= qty;
+                handover.Lines.Add(new CustodyHandoverLine
+                {
+                    CustodyItemId = itemId,
+                    QuantityHanded = qty
+                });
+            }
+
+            _context.CustodyHandovers.Add(handover);
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Create", nameof(CustodyHandover), handover.Id.ToString(), "تسليم عهدة جديدة لموظف");
+            await _notify.NotifyAsync(holderId, "تم تسليمك عهدة جديدة — راجعي شاشة \"عهدتي\" لتأكيد الاستلام", NotificationEventType.CustodyHandoverCreated, "/MyCustody/Index", requiresAction: true, entityType: "CustodyHandover", entityId: handover.Id);
+
+            TempData["Success"] = "تم تسجيل تسليم العهدة بنجاح";
+            return RedirectToAction("Index");
+        }
+
+        [RequirePermission("HR.Custody.Manage")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnLine(int lineId, int quantity)
+        {
+            var line = await _context.CustodyHandoverLines.Include(l => l.Item).FirstOrDefaultAsync(l => l.Id == lineId);
+            if (line == null)
+                return NotFound();
+
+            var outstanding = line.QuantityHanded - line.QuantityReturned;
+            if (quantity <= 0 || quantity > outstanding)
+            {
+                TempData["Error"] = $"الكمية غير صحيحة — المتبقي بحوزة الموظف {outstanding}";
+                return RedirectToAction("Index");
+            }
+
+            line.QuantityReturned += quantity;
+            line.Status = line.QuantityReturned >= line.QuantityHanded ? CustodyLineStatus.Returned : CustodyLineStatus.PartiallyReturned;
+
+            if (line.Item != null)
+                line.Item.AvailableQuantity += quantity;
+
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(CustodyHandoverLine), line.Id.ToString(), $"استرجاع {quantity} من عهدة");
+
+            TempData["Success"] = "تم تسجيل الاسترجاع";
             return RedirectToAction("Index");
         }
     }
