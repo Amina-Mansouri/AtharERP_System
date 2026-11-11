@@ -189,10 +189,12 @@ namespace AtharERP_System.Data
                 new Permission { Code = "HR.Attendance.Edit", Name = "الموارد_البشرية.حضور.تعديل", Module = "HR" },
                 new Permission { Code = "HR.Salaries.View", Name = "الموارد_البشرية.رواتب.عرض", Module = "HR" },
                 new Permission { Code = "HR.Salaries.Edit", Name = "الموارد_البشرية.رواتب.تعديل", Module = "HR" },
-                new Permission { Code = "HR.Leaves.Manage", Name = "الموارد_البشرية.إجازات.إدارة", Module = "HR" },
+                              new Permission { Code = "HR.Leaves.Manage", Name = "الموارد_البشرية.إجازات.إدارة", Module = "HR" },
+                new Permission { Code = "HR.Leaves.FinalApprove", Name = "الموارد_البشرية.إجازات.اعتماد_نهائي", Module = "HR" },
                 new Permission { Code = "HR.Evaluation", Name = "الموارد_البشرية.تقييم", Module = "HR" },
                 new Permission { Code = "HR.Custody.Manage", Name = "الموارد_البشرية.عهد.إدارة", Module = "HR" }, // بند L6
                 new Permission { Code = "HR.Resignations.Manage", Name = "الموارد_البشرية.استقالات.إدارة", Module = "HR" },
+                new Permission { Code = "HR.Resignations.FinalApprove", Name = "الموارد_البشرية.استقالات.اعتماد_نهائي", Module = "HR" },
 
                 // 6.6 التوريدات
                 new Permission { Code = "Supply.View", Name = "التوريدات.عرض", Module = "Supply" },

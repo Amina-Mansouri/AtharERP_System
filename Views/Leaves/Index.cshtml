@@ -8,6 +8,8 @@
     int remainingDays = (int)ViewBag.RemainingDays;
     bool canManage = (bool)ViewBag.CanManage;
     var pending = ViewBag.PendingRequests as List<LeaveRequest> ?? new List<LeaveRequest>();
+    bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
+    var pendingFinal = ViewBag.PendingFinalRequests as List<LeaveRequest> ?? new List<LeaveRequest>();
     var leaveTypeLabels = EnumDisplayHelper.GetDisplayList<LeaveType>();
 }
 
@@ -96,6 +98,49 @@
     </div>
 }
 
+@if (canFinalApprove && pendingFinal.Any())
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد النهائي من المدير العام (@pendingFinal.Count)</div>
+        <div class="data-table" style="--cols: 1.2fr 100px 100px 100px 80px 1fr 150px">
+            <div class="data-table-head">
+                <div class="cell">الموظف</div>
+                <div class="cell">النوع</div>
+                <div class="cell">من</div>
+                <div class="cell">إلى</div>
+                <div class="cell">الأيام</div>
+                <div class="cell">السبب</div>
+                <div class="cell">إجراء</div>
+            </div>
+            @foreach (var r in pendingFinal)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.User?.FullName</div>
+                    <div class="cell">@leaveTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
+                    <div class="cell cell-num">@r.StartDate.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.EndDate.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.DaysCount</div>
+                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="FinalDecide" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="true" />
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد نهائي</button>
+                        </form>
+                        <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="false" />
+                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 <div class="athar-card">
     <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلباتي</div>
     <div class="data-table" style="--cols: 100px 100px 100px 80px 1fr 110px">
@@ -124,7 +169,11 @@
                     <div class="cell">
                         @if (r.Status == LeaveRequestStatus.Pending)
                         {
-                            <span class="tag tag-warning">بانتظار الاعتماد</span>
+                            <span class="tag tag-warning">بانتظار اعتماد الشؤون الإدارية</span>
+                        }
+                        else if (r.Status == LeaveRequestStatus.PendingGeneralManager)
+                        {
+                            <span class="tag tag-warning">بانتظار اعتماد المدير العام</span>
                         }
                         else if (r.Status == LeaveRequestStatus.Approved)
                         {

@@ -20,5 +20,10 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("DecidedById")]
         public ApplicationUser? DecidedBy { get; set; }
         public DateTime? DecidedAt { get; set; }
+
+        public string? GmDecidedById { get; set; }
+        [ForeignKey("GmDecidedById")]
+        public ApplicationUser? GmDecidedBy { get; set; }
+        public DateTime? GmDecidedAt { get; set; }
     }
 }

@@ -57,6 +57,17 @@ namespace AtharERP_System.Controllers
                     .ToListAsync();
             }
 
+            bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Leaves.FinalApprove");
+            ViewBag.CanFinalApprove = canFinalApprove;
+            if (canFinalApprove)
+            {
+                ViewBag.PendingFinalRequests = await _context.LeaveRequests
+                    .Include(l => l.User)
+                    .Where(l => l.Status == LeaveRequestStatus.PendingGeneralManager)
+                    .OrderBy(l => l.RequestedAt)
+                    .ToListAsync();
+            }
+
             return View(myRequests);
         }
 
@@ -107,15 +118,55 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Index");
             }
 
-            request.Status = approved ? LeaveRequestStatus.Approved : LeaveRequestStatus.Rejected;
             request.DecidedById = CurrentUserId;
             request.DecidedAt = DateTime.UtcNow;
+
+            if (!approved)
+            {
+                request.Status = LeaveRequestStatus.Rejected;
+                await _context.SaveChangesAsync();
+                await _audit.LogAsync(CurrentUserId, "Update", nameof(LeaveRequest), request.Id.ToString(), "رفض طلب إجازة (الشؤون الإدارية)");
+                await _notify.NotifyAsync(request.UserId, "تم رفض طلب إجازتك", NotificationEventType.LeaveRequestDecided, "/Leaves/Index", entityType: "LeaveRequest", entityId: request.Id);
+                TempData["Success"] = "تم رفض الطلب";
+                return RedirectToAction("Index");
+            }
+
+            request.Status = LeaveRequestStatus.PendingGeneralManager;
             await _context.SaveChangesAsync();
 
-            await _audit.LogAsync(CurrentUserId, "Update", nameof(LeaveRequest), request.Id.ToString(), approved ? "اعتماد طلب إجازة" : "رفض طلب إجازة");
-            await _notify.NotifyAsync(request.UserId, approved ? "تم اعتماد طلب إجازتك" : "تم رفض طلب إجازتك", NotificationEventType.LeaveRequestDecided, "/Leaves/Index", entityType: "LeaveRequest", entityId: request.Id);
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(LeaveRequest), request.Id.ToString(), "اعتماد طلب إجازة (الشؤون الإدارية) — بانتظار المدير العام");
+            var gmIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("HR.Leaves.FinalApprove");
+            await _notify.NotifyManyAsync(gmIds, $"طلب إجازة من {request.User?.FullName} بانتظار اعتمادك النهائي", NotificationEventType.LeaveRequestCreated, "/Leaves/Index", requiresAction: true, entityType: "LeaveRequest", entityId: request.Id);
+            await _notify.NotifyAsync(request.UserId, "تم اعتماد طلب إجازتك من الشؤون الإدارية، بانتظار اعتماد المدير العام", NotificationEventType.LeaveRequestDecided, "/Leaves/Index", entityType: "LeaveRequest", entityId: request.Id);
 
-            TempData["Success"] = approved ? "تم اعتماد الطلب" : "تم رفض الطلب";
+            TempData["Success"] = "تم اعتماد الطلب من الشؤون الإدارية، بانتظار اعتماد المدير العام";
+            return RedirectToAction("Index");
+        }
+
+        [RequirePermission("HR.Leaves.FinalApprove")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FinalDecide(int id, bool approved)
+        {
+            var request = await _context.LeaveRequests.Include(l => l.User).FirstOrDefaultAsync(l => l.Id == id);
+            if (request == null)
+                return NotFound();
+
+            if (request.Status != LeaveRequestStatus.PendingGeneralManager)
+            {
+                TempData["Error"] = "هذا الطلب ليس بانتظار الاعتماد النهائي";
+                return RedirectToAction("Index");
+            }
+
+            request.Status = approved ? LeaveRequestStatus.Approved : LeaveRequestStatus.Rejected;
+            request.GmDecidedById = CurrentUserId;
+            request.GmDecidedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(LeaveRequest), request.Id.ToString(), approved ? "اعتماد نهائي لطلب إجازة (المدير العام)" : "رفض نهائي لطلب إجازة (المدير العام)");
+            await _notify.NotifyAsync(request.UserId, approved ? "تم اعتماد طلب إجازتك نهائياً" : "تم رفض طلب إجازتك من المدير العام", NotificationEventType.LeaveRequestDecided, "/Leaves/Index", entityType: "LeaveRequest", entityId: request.Id);
+
+            TempData["Success"] = approved ? "تم الاعتماد النهائي للطلب" : "تم رفض الطلب";
             return RedirectToAction("Index");
         }
     }

@@ -1065,6 +1065,12 @@ namespace AtharERP_System.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("GmDecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GmDecidedById")
+                        .HasColumnType("text");
+
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
@@ -1087,6 +1093,8 @@ namespace AtharERP_System.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DecidedById");
+
+                    b.HasIndex("GmDecidedById");
 
                     b.HasIndex("UserId");
 
@@ -1975,6 +1983,12 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("DecidedById")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("GmDecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GmDecidedById")
+                        .HasColumnType("text");
+
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
@@ -1994,6 +2008,8 @@ namespace AtharERP_System.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DecidedById");
+
+                    b.HasIndex("GmDecidedById");
 
                     b.HasIndex("UserId");
 
@@ -3414,6 +3430,10 @@ namespace AtharERP_System.Migrations
                         .WithMany()
                         .HasForeignKey("DecidedById");
 
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "GmDecidedBy")
+                        .WithMany()
+                        .HasForeignKey("GmDecidedById");
+
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -3421,6 +3441,8 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("DecidedBy");
+
+                    b.Navigation("GmDecidedBy");
 
                     b.Navigation("User");
                 });
@@ -3691,6 +3713,10 @@ namespace AtharERP_System.Migrations
                         .WithMany()
                         .HasForeignKey("DecidedById");
 
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "GmDecidedBy")
+                        .WithMany()
+                        .HasForeignKey("GmDecidedById");
+
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -3698,6 +3724,8 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("DecidedBy");
+
+                    b.Navigation("GmDecidedBy");
 
                     b.Navigation("User");
                 });

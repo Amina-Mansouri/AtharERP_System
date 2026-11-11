@@ -5,6 +5,8 @@
     bool canManage = (bool)ViewBag.CanManage;
     bool hasPending = (bool)ViewBag.HasPending;
     var pending = ViewBag.PendingRequests as List<ResignationRequest> ?? new List<ResignationRequest>();
+    bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
+    var pendingFinal = ViewBag.PendingFinalRequests as List<ResignationRequest> ?? new List<ResignationRequest>();
 }
 
 <div class="page-head">
@@ -74,6 +76,43 @@
     </div>
 }
 
+@if (canFinalApprove && pendingFinal.Any())
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد النهائي من المدير العام (@pendingFinal.Count)</div>
+        <div class="data-table" style="--cols: 1.2fr 120px 1fr 150px">
+            <div class="data-table-head">
+                <div class="cell">الموظف</div>
+                <div class="cell">آخر يوم عمل</div>
+                <div class="cell">السبب</div>
+                <div class="cell">إجراء</div>
+            </div>
+            @foreach (var r in pendingFinal)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.User?.FullName</div>
+                    <div class="cell cell-num">@r.RequestedLastWorkingDay.ToString("yyyy-MM-dd")</div>
+                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('اعتماد الاستقالة نهائياً سيُعطِّل حساب الموظف تلقائياً في آخر يوم عمله. متابعة؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="true" />
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد نهائي</button>
+                        </form>
+                        <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="false" />
+                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 <div class="athar-card">
     <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلباتي</div>
     <div class="data-table" style="--cols: 120px 1fr 130px">
@@ -96,7 +135,11 @@
                     <div class="cell">
                         @if (r.Status == ResignationStatus.Pending)
                         {
-                            <span class="tag tag-warning">بانتظار الاعتماد</span>
+                            <span class="tag tag-warning">بانتظار اعتماد الشؤون الإدارية</span>
+                        }
+                        else if (r.Status == ResignationStatus.PendingGeneralManager)
+                        {
+                            <span class="tag tag-warning">بانتظار اعتماد المدير العام</span>
                         }
                         else if (r.Status == ResignationStatus.Approved)
                         {
