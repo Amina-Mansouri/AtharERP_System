@@ -1357,6 +1357,62 @@ namespace AtharERP_System.Migrations
                     b.ToTable("Permissions");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PermitRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("interval");
+
+                    b.Property<DateTime?>("GmDecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GmDecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("interval");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("GmDecidedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PermitRequests");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.PersonalChecklistItem", b =>
                 {
                     b.Property<int>("Id")
@@ -3588,6 +3644,29 @@ namespace AtharERP_System.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PermitRequest", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "GmDecidedBy")
+                        .WithMany()
+                        .HasForeignKey("GmDecidedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DecidedBy");
+
+                    b.Navigation("GmDecidedBy");
 
                     b.Navigation("User");
                 });

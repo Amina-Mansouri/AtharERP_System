@@ -102,6 +102,12 @@ namespace AtharERP_System.Models.Entities
         CustodyHandoverCreated = 31,
 
         [Display(Name = "تأكيد استلام عهدة")]
-        CustodyHandoverConfirmed = 32
+        CustodyHandoverConfirmed = 32,
+
+        [Display(Name = "طلب إذن جديد")]
+        PermitRequestCreated = 33,
+
+        [Display(Name = "قرار بشأن طلب إذن")]
+        PermitRequestDecided = 34
     }
 }
