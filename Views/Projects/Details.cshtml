@@ -502,7 +502,7 @@ else
                         <div class="cell">الحالة</div>
                         <div class="cell"></div>
                     </div>
-                                       @{
+                    @{
                         var canViewAllStages = ViewBag.CanViewAllStages as bool? ?? false;
                         var currentUserIdForStages = User.FindFirstValue(ClaimTypes.NameIdentifier);
                         var visibleStages = canViewAllStages
@@ -846,18 +846,23 @@ else
                         <div class="cell">الحالة</div>
                         <div class="cell">إجراءات</div>
                     </div>
-                    @if (!allAssignments.Any())
+                                        @{
+                        var visibleAssignments = canViewAllStages
+                            ? allAssignments
+                            : allAssignments.Where(x => x.Assignment.Engineers.Any(e => e.UserId == currentUserIdForStages) || x.Stage.AssignedEngineerId == currentUserIdForStages).ToList();
+                    }
+                    @if (!visibleAssignments.Any())
                     {
                         <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تكليفات مضافة بعد</div></div>
                     }
                     else
                     {
-                        @foreach (var item in allAssignments)
+                        @foreach (var item in visibleAssignments)
                         {
                             var a = item.Assignment;
                             var isNestedRedesign = a.IsRedesign && a.RedesignOfAssignmentId.HasValue;
                             var redesignRowClass = isNestedRedesign ? $"redesign-child-of-{a.RedesignOfAssignmentId}" : "";
-                            var hasRedesignChildren = allAssignments.Any(x => x.Assignment.RedesignOfAssignmentId == a.Id);
+                            var hasRedesignChildren = visibleAssignments.Any(x => x.Assignment.RedesignOfAssignmentId == a.Id);
                             <div class="data-table-row @redesignRowClass" data-stage="@item.Stage.Id" style="@(isNestedRedesign ? "display:none; background:#faf9fd;" : "")">
                                 <div class="cell">
                                     <div style="display:flex; align-items:center; gap:5px;">
