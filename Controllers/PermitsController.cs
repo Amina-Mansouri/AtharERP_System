@@ -1,8 +1,8 @@
-﻿using AtharERP_System.Authorization;
-using AtharERP_System.Data;
+﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -15,17 +15,43 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly NotificationService _notify;
         private readonly AuditService _audit;
+        private readonly FileUploadService _fileUpload;
+        private readonly HRFormsPdfService _pdfService;
+        private readonly IWebHostEnvironment _environment;
 
-        public PermitsController(AppDbContext context, PermissionService permissionService, NotificationService notify, AuditService audit)
+        public PermitsController(AppDbContext context, PermissionService permissionService, NotificationService notify, AuditService audit, FileUploadService fileUpload, HRFormsPdfService pdfService, IWebHostEnvironment environment)
         {
             _context = context;
             _permissionService = permissionService;
             _notify = notify;
             _audit = audit;
+            _fileUpload = fileUpload;
+            _pdfService = pdfService;
+            _environment = environment;
+        }
+
+        private async Task ArchivePdfAsync(int requestId)
+        {
+            var full = await _context.PermitRequests
+                .Include(r => r.User).ThenInclude(u => u!.PositionRef)
+                .Include(r => r.User).ThenInclude(u => u!.Department)
+                .Include(r => r.DecidedBy).ThenInclude(u => u!.PositionRef)
+                .Include(r => r.GmDecidedBy).ThenInclude(u => u!.PositionRef)
+                .FirstAsync(r => r.Id == requestId);
+
+            var bytes = _pdfService.GeneratePermitPdf(full);
+            if (!string.IsNullOrEmpty(full.PdfFilePath))
+                _fileUpload.DeleteFile(full.PdfFilePath);
+
+            var result = await _fileUpload.SaveGeneratedFileAsync(bytes, $"permits/{full.Id}", ".pdf");
+            if (result.Success)
+            {
+                full.PdfFilePath = result.FilePath;
+                await _context.SaveChangesAsync();
+            }
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         [Authorize]
         public async Task<IActionResult> Index()
         {
@@ -83,6 +109,7 @@ namespace AtharERP_System.Controllers
             };
             _context.PermitRequests.Add(request);
             await _context.SaveChangesAsync();
+            await ArchivePdfAsync(request.Id);
 
             var me = await _context.Users.FindAsync(CurrentUserId);
             var approverIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("HR.Permits.Manage");
@@ -114,6 +141,7 @@ namespace AtharERP_System.Controllers
             {
                 request.Status = PermitStatus.Rejected;
                 await _context.SaveChangesAsync();
+                await ArchivePdfAsync(request.Id);
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(PermitRequest), request.Id.ToString(), "رفض طلب إذن (الشؤون الإدارية)");
                 await _notify.NotifyAsync(request.UserId, "تم رفض طلب إذنك", NotificationEventType.PermitRequestDecided, "/Permits/Index", entityType: "PermitRequest", entityId: request.Id);
                 TempData["Success"] = "تم رفض الطلب";
@@ -122,6 +150,7 @@ namespace AtharERP_System.Controllers
 
             request.Status = PermitStatus.PendingGeneralManager;
             await _context.SaveChangesAsync();
+            await ArchivePdfAsync(request.Id);
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(PermitRequest), request.Id.ToString(), "اعتماد طلب إذن (الشؤون الإدارية) — بانتظار المدير العام");
             var gmIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("HR.Permits.FinalApprove");
@@ -151,12 +180,31 @@ namespace AtharERP_System.Controllers
             request.GmDecidedById = CurrentUserId;
             request.GmDecidedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            await ArchivePdfAsync(request.Id);
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(PermitRequest), request.Id.ToString(), approved ? "اعتماد نهائي لطلب إذن (المدير العام)" : "رفض نهائي لطلب إذن (المدير العام)");
             await _notify.NotifyAsync(request.UserId, approved ? "تم اعتماد طلب إذنك نهائياً" : "تم رفض طلب إذنك من المدير العام", NotificationEventType.PermitRequestDecided, "/Permits/Index", entityType: "PermitRequest", entityId: request.Id);
-
             TempData["Success"] = approved ? "تم الاعتماد النهائي للطلب" : "تم رفض الطلب";
             return RedirectToAction("Index");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Download(int id)
+        {
+            var request = await _context.PermitRequests.FirstOrDefaultAsync(p => p.Id == id);
+            if (request == null || string.IsNullOrEmpty(request.PdfFilePath))
+                return NotFound();
+
+            bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Permits.Manage");
+            bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Permits.FinalApprove");
+            if (request.UserId != CurrentUserId && !canManage && !canFinalApprove)
+                return Forbid();
+
+            var fullPath = Path.Combine(_environment.WebRootPath, request.PdfFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            return PhysicalFile(fullPath, "application/pdf", $"طلب-اذن-{request.Id}.pdf");
         }
     }
 }

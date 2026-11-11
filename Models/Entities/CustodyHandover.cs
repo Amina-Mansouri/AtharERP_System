@@ -20,6 +20,8 @@ namespace AtharERP_System.Models.Entities
         public bool HolderConfirmed { get; set; } = false;
         public DateTime? HolderConfirmedAt { get; set; }
 
+        public string? PdfFilePath { get; set; }
+
         public List<CustodyHandoverLine> Lines { get; set; } = new();
     }
 }

@@ -61,7 +61,13 @@ else
                 }
             </div>
             <div style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <div style="font-size:11px; color:#8a83a0;">جهّزها: @h.CreatedBy?.FullName</div>
+                <div style="font-size:11px; color:#8a83a0;">
+                    جهّزها: @h.CreatedBy?.FullName
+                    @if (!string.IsNullOrEmpty(h.PdfFilePath))
+                    {
+                        <a href="/MyCustody/Download/@h.Id" target="_blank" style="margin-right:6px;">· 📄 PDF</a>
+                    }
+                </div>
                 @if (!h.HolderConfirmed)
                 {
                     <form method="post" asp-action="Confirm" onsubmit="return confirm('بتأكيدك، أنت تقرّين باستلام المواد أعلاه. متابعة؟');">

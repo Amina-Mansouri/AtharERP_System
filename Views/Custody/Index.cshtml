@@ -161,6 +161,10 @@
                         {
                             <span class="tag tag-warning">بانتظار تأكيد الموظف</span>
                         }
+                        @if (!string.IsNullOrEmpty(h.PdfFilePath))
+                        {
+                            <a href="/Custody/Download/@h.Id" target="_blank" style="margin-right:6px;">📄 PDF</a>
+                        }
                     </div>
                 </div>
                 <div class="data-table data-table-compact" style="--cols: 1.5fr 90px 90px 1fr 120px">

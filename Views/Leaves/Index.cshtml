@@ -91,6 +91,10 @@
                             <input type="hidden" name="approved" value="false" />
                             <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
                         </form>
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/Leaves/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                        }
                     </div>
                 </div>
             }
@@ -134,6 +138,10 @@
                             <input type="hidden" name="approved" value="false" />
                             <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
                         </form>
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/Leaves/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                        }
                     </div>
                 </div>
             }
@@ -182,6 +190,10 @@
                         else
                         {
                             <span class="tag tag-danger">مرفوضة</span>
+                        }
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/Leaves/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
                         }
                     </div>
                 </div>

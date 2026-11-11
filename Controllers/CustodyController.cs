@@ -2,6 +2,7 @@
 using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -13,12 +14,18 @@ namespace AtharERP_System.Controllers
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
         private readonly NotificationService _notify;
+        private readonly FileUploadService _fileUpload;
+        private readonly HRFormsPdfService _pdfService;
+        private readonly IWebHostEnvironment _environment;
 
-        public CustodyController(AppDbContext context, AuditService audit, NotificationService notify)
+        public CustodyController(AppDbContext context, AuditService audit, NotificationService notify, FileUploadService fileUpload, HRFormsPdfService pdfService, IWebHostEnvironment environment)
         {
             _context = context;
             _audit = audit;
             _notify = notify;
+            _fileUpload = fileUpload;
+            _pdfService = pdfService;
+            _environment = environment;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -143,6 +150,7 @@ namespace AtharERP_System.Controllers
 
             _context.CustodyHandovers.Add(handover);
             await _context.SaveChangesAsync();
+            await ArchiveCustodyPdfAsync(handover.Id);
 
             await _audit.LogAsync(CurrentUserId, "Create", nameof(CustodyHandover), handover.Id.ToString(), "تسليم عهدة جديدة لموظف");
             await _notify.NotifyAsync(holderId, "تم تسليمك عهدة جديدة — راجعي شاشة \"عهدتي\" لتأكيد الاستلام", NotificationEventType.CustodyHandoverCreated, "/MyCustody/Index", requiresAction: true, entityType: "CustodyHandover", entityId: handover.Id);
@@ -177,8 +185,45 @@ namespace AtharERP_System.Controllers
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(CustodyHandoverLine), line.Id.ToString(), $"استرجاع {quantity} من عهدة");
 
+            await _audit.LogAsync(CurrentUserId, "Update", nameof(CustodyHandoverLine), line.Id.ToString(), $"استرجاع {quantity} من عهدة");
+
             TempData["Success"] = "تم تسجيل الاسترجاع";
             return RedirectToAction("Index");
+        }
+
+        [RequirePermission("HR.Custody.Manage")]
+        public async Task<IActionResult> Download(int id)
+        {
+            var handover = await _context.CustodyHandovers.FirstOrDefaultAsync(h => h.Id == id);
+            if (handover == null || string.IsNullOrEmpty(handover.PdfFilePath))
+                return NotFound();
+
+            var fullPath = Path.Combine(_environment.WebRootPath, handover.PdfFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            return PhysicalFile(fullPath, "application/pdf", $"عهدة-{handover.Id}.pdf");
+        }
+
+        private async Task ArchiveCustodyPdfAsync(int handoverId)
+        {
+            var full = await _context.CustodyHandovers
+                .Include(h => h.Holder).ThenInclude(u => u!.PositionRef)
+                .Include(h => h.Holder).ThenInclude(u => u!.Department)
+                .Include(h => h.CreatedBy).ThenInclude(u => u!.PositionRef)
+                .Include(h => h.Lines).ThenInclude(l => l.Item)
+                .FirstAsync(h => h.Id == handoverId);
+
+            var bytes = _pdfService.GenerateCustodyHandoverPdf(full);
+            if (!string.IsNullOrEmpty(full.PdfFilePath))
+                _fileUpload.DeleteFile(full.PdfFilePath);
+
+            var result = await _fileUpload.SaveGeneratedFileAsync(bytes, $"custody/{full.Id}", ".pdf");
+            if (result.Success)
+            {
+                full.PdfFilePath = result.FilePath;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using AtharERP_System.Authorization;
-using AtharERP_System.Data;
+﻿using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -15,17 +15,43 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly NotificationService _notify;
         private readonly AuditService _audit;
+        private readonly FileUploadService _fileUpload;
+        private readonly HRFormsPdfService _pdfService;
+        private readonly IWebHostEnvironment _environment;
 
-        public ResignationsController(AppDbContext context, PermissionService permissionService, NotificationService notify, AuditService audit)
+        public ResignationsController(AppDbContext context, PermissionService permissionService, NotificationService notify, AuditService audit, FileUploadService fileUpload, HRFormsPdfService pdfService, IWebHostEnvironment environment)
         {
             _context = context;
             _permissionService = permissionService;
             _notify = notify;
             _audit = audit;
+            _fileUpload = fileUpload;
+            _pdfService = pdfService;
+            _environment = environment;
+        }
+
+        private async Task ArchivePdfAsync(int requestId)
+        {
+            var full = await _context.ResignationRequests
+                .Include(r => r.User).ThenInclude(u => u!.PositionRef)
+                .Include(r => r.User).ThenInclude(u => u!.Department)
+                .Include(r => r.DecidedBy).ThenInclude(u => u!.PositionRef)
+                .Include(r => r.GmDecidedBy).ThenInclude(u => u!.PositionRef)
+                .FirstAsync(r => r.Id == requestId);
+
+            var bytes = _pdfService.GenerateResignationPdf(full);
+            if (!string.IsNullOrEmpty(full.PdfFilePath))
+                _fileUpload.DeleteFile(full.PdfFilePath);
+
+            var result = await _fileUpload.SaveGeneratedFileAsync(bytes, $"resignations/{full.Id}", ".pdf");
+            if (result.Success)
+            {
+                full.PdfFilePath = result.FilePath;
+                await _context.SaveChangesAsync();
+            }
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         [Authorize]
         public async Task<IActionResult> Index()
         {
@@ -83,6 +109,7 @@ namespace AtharERP_System.Controllers
             };
             _context.ResignationRequests.Add(request);
             await _context.SaveChangesAsync();
+            await ArchivePdfAsync(request.Id);
 
             var me = await _context.Users.FindAsync(CurrentUserId);
             var approverIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("HR.Resignations.Manage");
@@ -114,6 +141,7 @@ namespace AtharERP_System.Controllers
             {
                 request.Status = ResignationStatus.Rejected;
                 await _context.SaveChangesAsync();
+                await ArchivePdfAsync(request.Id);
                 await _audit.LogAsync(CurrentUserId, "Update", nameof(ResignationRequest), request.Id.ToString(), "رفض طلب استقالة (الشؤون الإدارية)");
                 await _notify.NotifyAsync(request.UserId, "تم رفض طلب استقالتك", NotificationEventType.ResignationRequestDecided, "/Resignations/Index", entityType: "ResignationRequest", entityId: request.Id);
                 TempData["Success"] = "تم رفض الطلب";
@@ -122,6 +150,7 @@ namespace AtharERP_System.Controllers
 
             request.Status = ResignationStatus.PendingGeneralManager;
             await _context.SaveChangesAsync();
+            await ArchivePdfAsync(request.Id);
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(ResignationRequest), request.Id.ToString(), "اعتماد طلب استقالة (الشؤون الإدارية) — بانتظار المدير العام");
             var gmIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("HR.Resignations.FinalApprove");
@@ -151,12 +180,32 @@ namespace AtharERP_System.Controllers
             request.GmDecidedById = CurrentUserId;
             request.GmDecidedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            await ArchivePdfAsync(request.Id);
 
             await _audit.LogAsync(CurrentUserId, "Update", nameof(ResignationRequest), request.Id.ToString(), approved ? "اعتماد نهائي لطلب استقالة (المدير العام)" : "رفض نهائي لطلب استقالة (المدير العام)");
             await _notify.NotifyAsync(request.UserId, approved ? $"تم اعتماد طلب استقالتك نهائياً — سيُعطَّل حسابك تلقائياً في {request.RequestedLastWorkingDay:yyyy-MM-dd}" : "تم رفض طلب استقالتك من المدير العام", NotificationEventType.ResignationRequestDecided, "/Resignations/Index", entityType: "ResignationRequest", entityId: request.Id);
 
             TempData["Success"] = approved ? "تم الاعتماد النهائي للطلب" : "تم رفض الطلب";
             return RedirectToAction("Index");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Download(int id)
+        {
+            var request = await _context.ResignationRequests.FirstOrDefaultAsync(r => r.Id == id);
+            if (request == null || string.IsNullOrEmpty(request.PdfFilePath))
+                return NotFound();
+
+            bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Resignations.Manage");
+            bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Resignations.FinalApprove");
+            if (request.UserId != CurrentUserId && !canManage && !canFinalApprove)
+                return Forbid();
+
+            var fullPath = Path.Combine(_environment.WebRootPath, request.PdfFilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            return PhysicalFile(fullPath, "application/pdf", $"طلب-استقالة-{request.Id}.pdf");
         }
     }
 }
