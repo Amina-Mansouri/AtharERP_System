@@ -74,13 +74,18 @@ namespace AtharERP_System.Controllers
                 }
                 var accessibleProjectIds = await accessibleProjectIdsQuery.Select(p => p.Id).ToListAsync();
 
-                stages = await _context.ProjectStages
+                 stages = await _context.ProjectStages
                     .Include(s => s.AssignedEngineer)
-                    .Include(s => s.Assignments)
+                    .Include(s => s.Assignments).ThenInclude(a => a.Engineers)
                     .Include(s => s.Project)
                     .Where(s => accessibleProjectIds.Contains(s.ProjectId))
                     .OrderBy(s => s.Project.Name).ThenBy(s => s.Sequence)
                     .ToListAsync();
+
+                if (!canViewAll)
+                {
+                    stages = stages.Where(s => s.AssignedEngineerId == CurrentUserId || s.Assignments.Any(a => a.Engineers.Any(e => e.UserId == CurrentUserId))).ToList();
+                }
             }
             else
             {
@@ -96,13 +101,19 @@ namespace AtharERP_System.Controllers
                     return Forbid();
 
                 stages = await _context.ProjectStages
-         .Include(s => s.AssignedEngineer)
-         .Include(s => s.Assignments)
-         .Include(s => s.Project)
-         .Where(s => s.ProjectId == effectiveProjectId)
-                    .OrderBy(s => s.Sequence)
-                    .ToListAsync();
+.Include(s => s.AssignedEngineer)
+.Include(s => s.Assignments).ThenInclude(a => a.Engineers)
+.Include(s => s.Project)
+.Where(s => s.ProjectId == effectiveProjectId)
+     .OrderBy(s => s.Sequence)
+     .ToListAsync();
+
+                if (!canViewAll)
+                {
+                    stages = stages.Where(s => s.AssignedEngineerId == CurrentUserId || s.Assignments.Any(a => a.Engineers.Any(e => e.UserId == CurrentUserId))).ToList();
+                }
             }
+
             ViewBag.TotalStages = stages.Count;
             ViewBag.CompletedStages = stages.Count(s => s.Status == StageStatus.Completed);
             ViewBag.InProgressStages = stages.Count(s => s.Status == StageStatus.InProgress);
