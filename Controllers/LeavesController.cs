@@ -1,4 +1,5 @@
-﻿using AtharERP_System.Data;
+﻿using AtharERP_System.Authorization;
+using AtharERP_System.Data;
 using AtharERP_System.Models.Entities;
 using AtharERP_System.Services;
 using Microsoft.AspNetCore.Authorization;
