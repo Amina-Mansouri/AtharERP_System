@@ -650,6 +650,9 @@ namespace AtharERP_System.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
@@ -1152,6 +1155,9 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("GmDecidedById")
                         .HasColumnType("text");
 
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
+
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
@@ -1381,6 +1387,9 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("GmDecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PdfFilePath")
                         .HasColumnType("text");
 
                     b.Property<string>("Reason")
@@ -2124,6 +2133,9 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("GmDecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PdfFilePath")
                         .HasColumnType("text");
 
                     b.Property<string>("Reason")
