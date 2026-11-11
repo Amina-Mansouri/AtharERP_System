@@ -353,7 +353,7 @@ namespace AtharERP_System.Controllers
             if (await _context.ProposalReviews.AnyAsync(r => r.ReviewedById == id)) blockingReasons.Add("راجعت مقترحات تصميم");
             if (await _context.FinancialClaims.AnyAsync(c => c.CreatedById == id)) blockingReasons.Add("أنشأت مطالبات مالية");
             if (await _context.TechnicalRequests.AnyAsync(t => t.RequestedById == id)) blockingReasons.Add("لها طلبات فنية");
-            if (await _context.Custodies.AnyAsync(c => c.HolderId == id)) blockingReasons.Add("بعهدتها عهدة");
+            if (await _context.CustodyHandovers.AnyAsync(h => h.HolderId == id)) blockingReasons.Add("بعهدتها عهدة");
             if (await _context.DocumentRevisions.AnyAsync(d => d.PreparedById == id)) blockingReasons.Add("أعدّت مراجعات مستندات");
             if (await _context.FinancialRecords.AnyAsync(f => f.EngineerId == id)) blockingReasons.Add("لها سجلات مالية كمهندسة");
             if (await _context.SiteManagers.AnyAsync(m => m.UserId == id)) blockingReasons.Add("مديرة موقع");

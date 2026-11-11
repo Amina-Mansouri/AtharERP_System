@@ -604,7 +604,7 @@ namespace AtharERP_System.Migrations
                     b.ToTable("Contractors");
                 });
 
-            modelBuilder.Entity("AtharERP_System.Models.Entities.Custody", b =>
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyCategory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -612,39 +612,120 @@ namespace AtharERP_System.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
-                    b.Property<int?>("DepartmentId")
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CustodyCategories");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyHandover", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("HandedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HolderConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("HolderConfirmedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("HolderId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                    b.HasKey("Id");
 
-                    b.Property<DateTime?>("ReturnedDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("HolderId");
+
+                    b.ToTable("CustodyHandovers");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyHandoverLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CustodyHandoverId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CustodyItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QuantityHanded")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("QuantityReturned")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DepartmentId");
+                    b.HasIndex("CustodyHandoverId");
 
-                    b.HasIndex("HolderId");
+                    b.HasIndex("CustodyItemId");
 
-                    b.ToTable("Custodies");
+                    b.ToTable("CustodyHandoverLines");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("TotalQuantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("CustodyItems");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Department", b =>
@@ -3263,12 +3344,13 @@ namespace AtharERP_System.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AtharERP_System.Models.Entities.Custody", b =>
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyHandover", b =>
                 {
-                    b.HasOne("AtharERP_System.Models.Entities.Department", "Department")
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "Holder")
                         .WithMany()
@@ -3276,9 +3358,39 @@ namespace AtharERP_System.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Department");
+                    b.Navigation("CreatedBy");
 
                     b.Navigation("Holder");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyHandoverLine", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.CustodyHandover", "Handover")
+                        .WithMany("Lines")
+                        .HasForeignKey("CustodyHandoverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.CustodyItem", "Item")
+                        .WithMany()
+                        .HasForeignKey("CustodyItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Handover");
+
+                    b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyItem", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.CustodyCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Department", b =>
@@ -4225,6 +4337,11 @@ namespace AtharERP_System.Migrations
             modelBuilder.Entity("AtharERP_System.Models.Entities.Contractor", b =>
                 {
                     b.Navigation("SiteAssignments");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.CustodyHandover", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Department", b =>
