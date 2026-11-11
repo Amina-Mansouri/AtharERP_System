@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+namespace AtharERP_System.Models.Entities;
+
 public enum SalaryAdvanceStatus
 {
     [Display(Name = "بانتظار اعتماد المسؤول المالي")]
