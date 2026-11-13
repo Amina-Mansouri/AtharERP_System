@@ -60,8 +60,11 @@ namespace AtharERP_System.Controllers
                 .OrderByDescending(a => a.RequestedAt)
                 .ToListAsync();
 
-            var user = await _context.Users.FindAsync(CurrentUserId);
-            ViewBag.ContractSalary = user?.ContractSalary ?? 0;
+            var user = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+            bool hasFixedSalary = user != null && user.ContractSalary > 0;
+            decimal effectiveSalary = hasFixedSalary ? user!.ContractSalary : (user?.JobRankRef?.HourlyRate ?? 0) * 7 * 30;
+            ViewBag.ContractSalary = effectiveSalary;
+            ViewBag.HasFixedSalary = hasFixedSalary;
             ViewBag.HasActiveAdvance = myRequests.Any(a => a.Status == SalaryAdvanceStatus.Pending || a.Status == SalaryAdvanceStatus.PendingGeneralManager || (a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths));
 
             bool canManage = await _permissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.Manage");
@@ -108,7 +111,7 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(decimal amount, int installmentMonths)
         {
-            var user = await _context.Users.FindAsync(CurrentUserId);
+            var user = await _context.Users.Include(u => u.JobRankRef).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
             if (user == null)
                 return NotFound();
 
@@ -126,7 +129,9 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("Index");
             }
 
-            var maxAmount = user.ContractSalary * 0.5m;
+            decimal effectiveSalary = user.ContractSalary > 0 ? user.ContractSalary : (user.JobRankRef?.HourlyRate ?? 0) * 7 * 30;
+
+            var maxAmount = effectiveSalary * 0.5m;
             if (amount <= 0 || amount > maxAmount)
             {
                 TempData["Error"] = $"الحد الأقصى للسلفة هو {maxAmount:N0} د.ل (50% من الراتب)";
@@ -134,7 +139,7 @@ namespace AtharERP_System.Controllers
             }
 
             var monthlyInstallment = Math.Round(amount / installmentMonths, 2);
-            var maxInstallment = user.ContractSalary * 0.3m;
+            var maxInstallment = effectiveSalary * 0.3m;
             if (monthlyInstallment > maxInstallment)
             {
                 TempData["Error"] = $"القسط الشهري ({monthlyInstallment:N0} د.ل) يتجاوز الحد المسموح (30% من الراتب = {maxInstallment:N0} د.ل) — اختاري مدة سداد أطول";

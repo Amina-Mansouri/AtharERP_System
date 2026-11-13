@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "السلف";
     decimal contractSalary = ViewBag.ContractSalary as decimal? ?? 0;
+    bool hasFixedSalary = ViewBag.HasFixedSalary as bool? ?? true;
     bool hasActiveAdvance = ViewBag.HasActiveAdvance as bool? ?? false;
     bool canManage = ViewBag.CanManage as bool? ?? false;
     bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
@@ -35,7 +36,7 @@
 
 <div class="athar-card mt-3">
     <div class="stat-strip stat-strip-text" style="margin-bottom:12px;">
-        <span>الراتب المتفق عليه: <strong>@contractSalary.ToString("N0") د.ل</strong></span>
+        <span>@(hasFixedSalary ? "الراتب المتفق عليه" : "راتبك التعاقدي تقريبًا"): <strong>@contractSalary.ToString("N0") د.ل</strong></span>
         <span>الحد الأقصى للسلفة (50%): <strong>@((contractSalary * 0.5m).ToString("N0")) د.ل</strong></span>
     </div>
 
@@ -50,21 +51,56 @@
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">المبلغ المطلوب</label>
-                    <input type="number" step="0.01" min="0" name="amount" class="form-control" required />
+                    <input type="number" step="0.01" min="0" name="amount" id="advanceAmount" class="form-control" required />
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">مدة السداد (أشهر)</label>
-                    <select name="installmentMonths" class="form-select" required>
+                    <select name="installmentMonths" id="installmentMonthsSelect" class="form-select" required>
                         <option value="1">شهر واحد</option>
                         <option value="2">شهران</option>
                         <option value="3">3 أشهر</option>
                     </select>
+                    <div id="installmentHint" class="stat-sub" style="margin-top:4px;"></div>
                 </div>
                 <div class="col-md-4 mb-3 d-flex align-items-end">
                     <button type="submit" class="btn athar-btn">إرسال الطلب</button>
                 </div>
             </div>
         </form>
+
+        <script>
+                (function () {
+                    var maxInstallment = @((contractSalary * 0.3m).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    var amountInput = document.getElementById('advanceAmount');
+                    var monthsSelect = document.getElementById('installmentMonthsSelect');
+                    var hint = document.getElementById('installmentHint');
+
+                    function updateOptions() {
+                        var amount = parseFloat(amountInput.value) || 0;
+                        var anyValid = false;
+                        var firstValidValue = null;
+                        Array.prototype.forEach.call(monthsSelect.options, function (opt) {
+                            var months = parseInt(opt.value, 10);
+                            var installment = amount / months;
+                            var valid = amount <= 0 || installment <= maxInstallment;
+                            opt.disabled = !valid;
+                            opt.hidden = !valid;
+                            if (valid) {
+                                anyValid = true;
+                                if (firstValidValue === null) firstValidValue = opt.value;
+                            }
+                        });
+                        var current = monthsSelect.options[monthsSelect.selectedIndex];
+                        if (!current || current.disabled) {
+                            if (firstValidValue !== null) monthsSelect.value = firstValidValue;
+                        }
+                        hint.textContent = anyValid ? '' : 'هذا المبلغ يتجاوز الحد المسموح لكل مدد السداد المتاحة — اختاري مبلغاً أقل.';
+                    }
+
+                    amountInput.addEventListener('input', updateOptions);
+                    updateOptions();
+                })();
+        </script>
     }
 </div>
 
