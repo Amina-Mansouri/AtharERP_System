@@ -399,21 +399,16 @@
                                     <div class="collapse @(requestsSubActive ? "show" : "")" id="requestsSubGroup">
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")" style="padding-right:24px;"
                                            asp-controller="Leaves" asp-action="Index">الإجازات</a>
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "MyCustody" ? "active" : "")" style="padding-right:24px;"
-                                           asp-controller="MyCustody" asp-action="Index">عهدتي</a>
+                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")" style="padding-right:24px;"
+                                           asp-controller="Custody" asp-action="Index">العهد</a>
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permits" ? "active" : "")" style="padding-right:24px;"
                                            asp-controller="Permits" asp-action="Index">الأذونات</a>
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaints" ? "active" : "")" style="padding-right:24px;"
                                            asp-controller="Complaints" asp-action="Index">الشكاوى</a>
-                                        @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
-                                        {
-                                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")" style="padding-right:24px;"
-                                               asp-controller="Custody" asp-action="Index">العهد</a>
-                                        }
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")" style="padding-right:24px;"
                                            asp-controller="Resignations" asp-action="Index">طلبات الاستقالة</a>
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SalaryAdvances" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" style="padding-right:24px;"
-                                           asp-controller="SalaryAdvances" asp-action="Index">طلب سلفة</a>
+                                           asp-controller="SalaryAdvances" asp-action="Index">طلبات السلف</a>
                                     </div>
                                     <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
                                 </div>
@@ -518,22 +513,17 @@
                         </button>
                         <div class="collapse @(requestsSubActive ? "show" : "")" id="requestsSubGroupFlat">
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Leaves" ? "active" : "")" style="padding-right:24px;"
-                               asp-controller="Leaves" asp-action="Index">🌴 إجازاتي</a>
-                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "MyCustody" ? "active" : "")" style="padding-right:24px;"
-                               asp-controller="MyCustody" asp-action="Index">🗒️ عهدتي</a>
+                               asp-controller="Leaves" asp-action="Index">🌴 الإجازات</a>
+                            <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")" style="padding-right:24px;"
+                               asp-controller="Custody" asp-action="Index">🗂️ العهد</a>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permits" ? "active" : "")" style="padding-right:24px;"
                                asp-controller="Permits" asp-action="Index">⏱️ الأذونات</a>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaints" ? "active" : "")" style="padding-right:24px;"
                                asp-controller="Complaints" asp-action="Index">📣 الشكاوى</a>
-                            @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
-                            {
-                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")" style="padding-right:24px;"
-                                   asp-controller="Custody" asp-action="Index">🗂️ العهد</a>
-                            }
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")" style="padding-right:24px;"
-                               asp-controller="Resignations" asp-action="Index">📝 طلب استقالة</a>
+                               asp-controller="Resignations" asp-action="Index">📝 طلبات الاستقالة</a>
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "SalaryAdvances" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" style="padding-right:24px;"
-                               asp-controller="SalaryAdvances" asp-action="Index">💰 طلب سلفة</a>
+                               asp-controller="SalaryAdvances" asp-action="Index">💰 طلبات السلف</a>
                         </div>
 
                         @if (canClients)
