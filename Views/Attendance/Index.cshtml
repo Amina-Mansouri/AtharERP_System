@@ -148,7 +148,7 @@
                                 <input type="hidden" name="userId" value="@userId" />
                                 <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
                                 <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
-                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                                <button type="submit" class="btn-line-xs btn-line-accent">اعتماد</button>
                             </form>
                             <form method="post" asp-action="DecideOvertime">
                                 @Html.AntiForgeryToken()
@@ -158,7 +158,7 @@
                                 <input type="hidden" name="userId" value="@userId" />
                                 <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
                                 <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
-                                <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                                <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
                             </form>
                         </div>
                     }

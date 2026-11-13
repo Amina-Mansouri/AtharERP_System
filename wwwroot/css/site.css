@@ -1542,6 +1542,51 @@ button:focus-visible {
         color: #fff;
     }
 
+.btn-line-xs {
+    height: 24px;
+    padding: 0 9px;
+    font-size: 10.5px;
+    border: 1px solid var(--sys-border);
+    border-radius: var(--sys-radius-btn);
+    background: var(--sys-surface);
+    color: var(--sys-text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+    .btn-line-xs:hover {
+        background: var(--sys-row-line-light);
+        color: var(--sys-text);
+        text-decoration: none;
+    }
+
+    .btn-line-xs.btn-line-accent {
+        background: var(--sys-primary);
+        border-color: var(--sys-primary);
+        color: #fff;
+        font-weight: 600;
+    }
+
+        .btn-line-xs.btn-line-accent:hover {
+            background: var(--sys-primary-hover);
+            border-color: var(--sys-primary-hover);
+            color: #fff;
+        }
+
+    .btn-line-xs.btn-line-danger {
+        color: #c94a42;
+        border-color: #c94a42;
+    }
+
+        .btn-line-xs.btn-line-danger:hover {
+            background: rgba(201,74,66,.08);
+            color: #c94a42;
+        }
+
 .btn-primary {
     height: 30px;
     padding: 0 15px;

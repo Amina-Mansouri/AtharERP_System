@@ -107,17 +107,17 @@
                                     <option value="@fs.Value">@fs.Label</option>
                                 }
                             </select>
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                            <button type="submit" class="btn-line-xs btn-line-accent">اعتماد</button>
                         </form>
                         <form method="post" asp-action="DecideClosure" style="display:inline;" onsubmit="return confirm('رفض هذا التقرير؟');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                            <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
                         </form>
                         @if (!string.IsNullOrEmpty(r.PdfFilePath))
                         {
-                            <a href="/ProjectReports/DownloadClosure/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                            <a href="/ProjectReports/DownloadClosure/@r.Id" target="_blank" class="btn-line-xs">PDF</a>
                         }
                     </div>
                 </div>
@@ -134,17 +134,17 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="true" />
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                            <button type="submit" class="btn-line-xs btn-line-accent">اعتماد</button>
                         </form>
                         <form method="post" asp-action="DecideDelivery" style="display:inline;" onsubmit="return confirm('رفض هذا النموذج؟');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                            <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
                         </form>
                         @if (!string.IsNullOrEmpty(r.PdfFilePath))
                         {
-                            <a href="/ProjectReports/DownloadDelivery/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                            <a href="/ProjectReports/DownloadDelivery/@r.Id" target="_blank" class="btn-line-xs">PDF</a>
                         }
                     </div>
                 </div>

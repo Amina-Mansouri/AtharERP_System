@@ -160,7 +160,7 @@
                                 <label class="form-label" style="font-size:11px;">الرد</label>
                                 <input type="text" name="resolutionNotes" class="form-control form-control-sm" required />
                             </div>
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:11px;">إرسال الرد</button>
+                            <button type="submit" class="btn-line-xs btn-line-accent">إرسال الرد</button>
                         </form>
                     }
                     else
@@ -169,7 +169,7 @@
                             <div style="font-size:12px; padding:8px; background:#f6f4fb; border-radius:6px;"><strong>الرد:</strong> @r.ResolutionNotes</div>
                             @if (!string.IsNullOrEmpty(r.PdfFilePath))
                             {
-                                <a href="/Complaints/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                                <a href="/Complaints/Download/@r.Id" target="_blank" class="btn-line-xs">PDF</a>
                             }
                         </div>
                     }

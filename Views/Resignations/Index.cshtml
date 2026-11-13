@@ -175,13 +175,13 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="true" />
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                            <button type="submit" class="btn-line-xs btn-line-accent">اعتماد</button>
                         </form>
                         <form method="post" asp-action="Decide" onsubmit="return confirm('رفض هذا الطلب؟');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                            <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
                         </form>
                     </div>
                 </div>
@@ -215,17 +215,17 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@r.Id" />
                                 <input type="hidden" name="approved" value="true" />
-                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد نهائي</button>
+                                <button type="submit" class="btn-line-xs btn-line-accent">اعتماد نهائي</button>
                             </form>
                             <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@r.Id" />
                                 <input type="hidden" name="approved" value="false" />
-                                <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                                <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
                             </form>
                             @if (!string.IsNullOrEmpty(r.PdfFilePath))
                             {
-                                <a href="/Resignations/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                                <a href="/Resignations/Download/@r.Id" target="_blank" class="btn-line-xs">PDF</a>
                             }
                         </div>
                     </div>
@@ -254,7 +254,7 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@r.Id" />
                                 <input type="date" name="newDate" class="form-control form-control-sm" style="max-width:150px;" required />
-                                <button type="submit" class="btn-line" style="font-size:10px;">حفظ</button>
+                                <button type="submit" class="btn-line-xs">حفظ</button>
                             </form>
                         </div>
                     </div>

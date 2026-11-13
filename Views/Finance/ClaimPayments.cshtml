@@ -46,12 +46,12 @@
                 <div class="cell">@p.PaidAt.ToString("yyyy-MM-dd")</div>
                 <div class="cell cell-num">@p.Amount.ToString("N2")</div>
                 <div class="cell">
-                    <a asp-action="ExportPaymentReceiptPdf" asp-route-paymentId="@p.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>
+                    <a asp-action="ExportPaymentReceiptPdf" asp-route-paymentId="@p.Id" target="_blank" class="btn-line-xs btn-line-accent">📄 طباعة</a>
                 </div>
                 <div class="cell">
                     <form method="post" asp-action="DeleteClaimPayment" asp-route-id="@p.Id" onsubmit="return confirm('سيُحذف هذا الإيصال وتُعاد قيمته إلى المطالبة (المدفوع ينقص، والمتبقي يزيد). هل أنت متأكدة؟');">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">حذف</button>
+                        <button type="submit" class="btn-line-xs btn-line-danger">حذف</button>
                     </form>
                 </div>
             </div>

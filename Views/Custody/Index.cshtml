@@ -266,7 +266,7 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="lineId" value="@l.Id" />
                                             <input type="number" name="quantity" min="1" max="@(l.QuantityHanded - l.QuantityReturned)" class="form-control form-control-sm" style="max-width:70px;" required />
-                                            <button type="submit" class="btn-line" style="font-size:10px;">استرجاع</button>
+                                            <button type="submit" class="btn-line-xs">استرجاع</button>
                                         </form>
                                     }
                                     else

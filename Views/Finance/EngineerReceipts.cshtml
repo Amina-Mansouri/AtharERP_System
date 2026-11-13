@@ -193,7 +193,7 @@
                 <div class="cell">@(r.Engineer?.FullName ?? "-")</div>
                 <div class="cell cell-num">@r.ValueAfterPercentage.ToString("N2")</div>
                 <div class="cell">
-                    <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line btn-line-accent" style="font-size:10px;">📄 طباعة</a>
+                    <a asp-action="ExportRecordReceiptPdf" asp-route-recordId="@r.Id" target="_blank" class="btn-line-xs btn-line-accent">📄 طباعة</a>
                 </div>
                 <div class="cell">
                     <form method="post" asp-action="CancelRecordCleared" onsubmit="return confirm('سيُلغى هذا الصرف وتعود المكافأة إلى حالة غير مصروف. هل أنت متأكدة؟');">
@@ -211,7 +211,7 @@
                         <input type="hidden" name="engineerId" value="@engineerId" />
                         <input type="hidden" name="dateFrom" value="@(dateFrom?.ToString("yyyy-MM-dd"))" />
                         <input type="hidden" name="dateTo" value="@(dateTo?.ToString("yyyy-MM-dd"))" />
-                        <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">إلغاء الصرف</button>
+                        <button type="submit" class="btn-line-xs btn-line-danger">إلغاء الصرف</button>
                     </form>
                 </div>
             </div>
