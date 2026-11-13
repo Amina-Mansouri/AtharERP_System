@@ -16,18 +16,16 @@ namespace AtharERP_System.Controllers
         private readonly PermissionService _permissionService;
         private readonly NotificationService _notify;
         private readonly AuditService _audit;
-        private readonly IConfiguration _config;
         private readonly FileUploadService _fileUpload;
         private readonly HRFormsPdfService _pdfService;
         private readonly IWebHostEnvironment _environment;
 
-        public LeavesController(AppDbContext context, PermissionService permissionService, NotificationService notify, AuditService audit, IConfiguration config, FileUploadService fileUpload, HRFormsPdfService pdfService, IWebHostEnvironment environment)
+        public LeavesController(AppDbContext context, PermissionService permissionService, NotificationService notify, AuditService audit, FileUploadService fileUpload, HRFormsPdfService pdfService, IWebHostEnvironment environment)
         {
             _context = context;
             _permissionService = permissionService;
             _notify = notify;
             _audit = audit;
-            _config = config;
             _fileUpload = fileUpload;
             _pdfService = pdfService;
             _environment = environment;
@@ -40,9 +38,9 @@ namespace AtharERP_System.Controllers
                 .Include(r => r.User).ThenInclude(u => u!.Department)
                 .Include(r => r.DecidedBy).ThenInclude(u => u!.PositionRef)
                 .Include(r => r.GmDecidedBy).ThenInclude(u => u!.PositionRef)
-                .FirstAsync(r => r.Id == requestId);
+              .FirstAsync(r => r.Id == requestId);
 
-            var allowance = _config.GetValue<int?>("Leaves:AnnualAllowanceDays") ?? 30;
+            var allowance = (await _context.SystemSettings.FirstOrDefaultAsync())?.AnnualLeaveAllowanceDays ?? 20;
             var currentYear = DateTime.UtcNow.Year;
             var usedDays = await _context.LeaveRequests
                 .Where(l => l.UserId == full.UserId && l.Type == LeaveType.Annual && l.Status == LeaveRequestStatus.Approved && l.StartDate.Year == currentYear)
@@ -75,9 +73,9 @@ namespace AtharERP_System.Controllers
             var myRequests = await _context.LeaveRequests
                 .Where(l => l.UserId == CurrentUserId)
                 .OrderByDescending(l => l.RequestedAt)
-                .ToListAsync();
+                              .ToListAsync();
 
-            var allowance = _config.GetValue<int?>("Leaves:AnnualAllowanceDays") ?? 30;
+            var allowance = (await _context.SystemSettings.FirstOrDefaultAsync())?.AnnualLeaveAllowanceDays ?? 20;
             var currentYear = DateTime.UtcNow.Year;
             var usedDays = myRequests
                 .Where(l => l.Type == LeaveType.Annual && l.Status == LeaveRequestStatus.Approved && l.StartDate.Year == currentYear)

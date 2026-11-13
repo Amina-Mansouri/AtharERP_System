@@ -17,20 +17,18 @@ namespace AtharERP_System.Controllers
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly AppDbContext _context;
         private readonly PermissionService _permissionService;
-        private readonly IConfiguration _config;
 
         public HomeController(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
             AppDbContext context,
-            PermissionService permissionService,
-            IConfiguration config)
+            PermissionService permissionService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _permissionService = permissionService;
-            _config = config;
+         
         }
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
@@ -107,7 +105,7 @@ namespace AtharERP_System.Controllers
             ViewBag.MyLateHoursThisMonth = Math.Round(myMonthAttendance.Sum(r => r.LateMinutes) / 60m, 1);
             ViewBag.MyOvertimeHoursThisMonth = Math.Round(myMonthAttendance.Where(r => r.OvertimeApproved == true).Sum(r => r.OvertimeHours), 1);
 
-            var leaveAllowance = _config.GetValue<int?>("Leaves:AnnualAllowanceDays") ?? 30;
+            var leaveAllowance = (await _context.SystemSettings.FirstOrDefaultAsync())?.AnnualLeaveAllowanceDays ?? 20;
             var myLeaveRequests = await _context.LeaveRequests
                 .Where(l => l.UserId == CurrentUserId)
                 .ToListAsync();

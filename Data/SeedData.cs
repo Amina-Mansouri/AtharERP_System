@@ -17,6 +17,13 @@ namespace AtharERP_System.Data
             // ينشئ الجداول إذا لم تكن موجودة
             await context.Database.MigrateAsync();
 
+            // ========== إعدادات النظام العامة (صف وحيد) ==========
+            if (!await context.SystemSettings.AnyAsync())
+            {
+                context.SystemSettings.Add(new SystemSetting { AnnualLeaveAllowanceDays = 30 });
+                await context.SaveChangesAsync();
+            }
+
             // ========== شجرة الإدارات والأقسام (02-ARCHITECTURE.md §2 · بند P3) ==========
             Department? topManagement = null;
             if (!await context.Departments.AnyAsync())

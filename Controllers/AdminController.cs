@@ -836,6 +836,45 @@ namespace AtharERP_System.Controllers
             TempData["Success"] = $"تم حذف الدور {deletedRoleName} بنجاح";
             return RedirectToAction("Roles");
         }
+        // ============================================
+        // الإعدادات العامة
+        // ============================================
+
+        [HttpGet]
+        public async Task<IActionResult> Settings()
+        {
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            if (settings == null)
+            {
+                settings = new SystemSetting();
+                _context.SystemSettings.Add(settings);
+                await _context.SaveChangesAsync();
+            }
+            return View(settings);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Settings(int annualLeaveAllowanceDays)
+        {
+            if (annualLeaveAllowanceDays < 1)
+            {
+                TempData["Error"] = "عدد أيام الإجازة يجب أن يكون أكبر من صفر";
+                return RedirectToAction("Settings");
+            }
+
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            if (settings == null)
+            {
+                settings = new SystemSetting();
+                _context.SystemSettings.Add(settings);
+            }
+            settings.AnnualLeaveAllowanceDays = annualLeaveAllowanceDays;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم حفظ الإعدادات بنجاح";
+            return RedirectToAction("Settings");
+        }
 
         // ============================================
         // إدارة الأقسام (Department)

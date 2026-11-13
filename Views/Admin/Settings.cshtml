@@ -1,0 +1,31 @@
+﻿@using AtharERP_System.Models.Entities
+@model SystemSetting
+@{
+    ViewData["Title"] = "الإعدادات العامة";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">الإدارة</span>
+        <h1>الإعدادات العامة</h1>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="athar-card" style="padding:16px; max-width:420px;">
+    <form method="post" asp-action="Settings">
+        @Html.AntiForgeryToken()
+        <label class="form-label" style="font-size:12px; font-weight:600;">عدد أيام الإجازة السنوية المسموح بها</label>
+        <input type="number" min="1" name="annualLeaveAllowanceDays" value="@Model.AnnualLeaveAllowanceDays" class="form-control" required style="max-width:160px;" />
+        <div class="stat-sub" style="margin-top:6px;">هذا الرقم هو الرصيد السنوي الافتراضي للإجازة السنوية لكل الموظفين، ويُستخدم في حساب الرصيد المتبقي عبر النظام.</div>
+        <button type="submit" class="btn-line btn-line-accent" style="margin-top:12px;">حفظ</button>
+    </form>
+</div>

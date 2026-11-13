@@ -84,6 +84,7 @@ namespace AtharERP_System.Data
         public DbSet<ProjectClosureReportStage> ProjectClosureReportStages { get; set; } = null!;
         public DbSet<ProjectDeliveryReport> ProjectDeliveryReports { get; set; } = null!;
         public DbSet<ProjectDeliveryReportFile> ProjectDeliveryReportFiles { get; set; } = null!;
+        public DbSet<SystemSetting> SystemSettings { get; set; } = null!;
         public DbSet<ClientRedesignRequest> ClientRedesignRequests { get; set; } = null!;
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; } = null!;
         public DbSet<ProjectExpense> ProjectExpenses { get; set; } = null!;

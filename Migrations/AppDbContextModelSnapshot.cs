@@ -3348,6 +3348,22 @@ namespace AtharERP_System.Migrations
                     b.ToTable("StageTemplateTasks");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AnnualLeaveAllowanceDays")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemSettings");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.TaskDependency", b =>
                 {
                     b.Property<int>("Id")
