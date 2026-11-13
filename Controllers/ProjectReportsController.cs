@@ -296,13 +296,16 @@ namespace AtharERP_System.Controllers
             var starts = linkedAssignments.Where(a => a.PlannedStartDate.HasValue).Select(a => a.PlannedStartDate!.Value).ToList();
             var ends = linkedAssignments.Where(a => a.PlannedEndDate.HasValue).Select(a => a.PlannedEndDate!.Value).ToList();
 
-            var code = $"DLR-{project.Code}-{(await _context.ProjectDeliveryReports.CountAsync(r => r.ProjectId == projectId)) + 1:D3}";
+            var deliveryCount = await _context.ProjectDeliveryReports.CountAsync(r => r.ProjectId == projectId);
+            var code = $"DLR-{project.Code}-{deliveryCount + 1:D3}";
+            var version = (deliveryCount + 1).ToString();
 
             var report = new ProjectDeliveryReport
             {
                 ProjectId = projectId,
                 ProjectStageId = stageId,
                 ReportCode = code,
+                Version = version,
                 AssignmentDate = starts.Any() ? starts.Min() : (DateTime?)null,
                 ActualDeliveryDate = ends.Any() ? ends.Max() : (DateTime?)null,
                 Notes = notes,

@@ -28,6 +28,9 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "رمز التقرير")]
         public string ReportCode { get; set; } = string.Empty;
 
+        [Display(Name = "الإصدار")]
+        public string? Version { get; set; }
+
         [Display(Name = "تاريخ التكليف")]
         public DateTime? AssignmentDate { get; set; }
 

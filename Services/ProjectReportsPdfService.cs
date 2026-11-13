@@ -197,6 +197,7 @@ namespace AtharERP_System.Services
                                 row.RelativeItem().Text($"موقع المشروع: {site?.Name ?? "-"}");
                                 row.RelativeItem().Text($"التخصص: {r.Stage.Name}");
                             });
+                            c.Item().Text($"الإصدار: {r.Version ?? "-"}");
                             c.Item().Row(row =>
                             {
                                 row.RelativeItem().Text($"تاريخ التكليف: {(r.AssignmentDate.HasValue ? r.AssignmentDate.Value.ToString("yyyy-MM-dd") : "-")}");
