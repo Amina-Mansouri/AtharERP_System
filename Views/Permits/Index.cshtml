@@ -143,7 +143,18 @@
                     <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
                     <div class="cell cell-num">@r.TimeRangeDisplay</div>
                     <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
-                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell">
+                        @(r.Reason ?? "-")
+                        @if (r.Attachments != null && r.Attachments.Any())
+                        {
+                            <div style="margin-top:4px;">
+                                @foreach (var att in r.Attachments)
+                                {
+                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
+                                }
+                            </div>
+                        }
+                    </div>
                     <div class="cell" style="display:flex; gap:6px;">
                         <form method="post" asp-action="FinalDecide" style="display:inline;">
                             @Html.AntiForgeryToken()
@@ -192,7 +203,18 @@
                     <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
                     <div class="cell cell-num">@r.TimeRangeDisplay</div>
                     <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
-                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell">
+                        @(r.Reason ?? "-")
+                        @if (r.Attachments != null && r.Attachments.Any())
+                        {
+                            <div style="margin-top:4px;">
+                                @foreach (var att in r.Attachments)
+                                {
+                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
+                                }
+                            </div>
+                        }
+                    </div>
                     <div class="cell">
                         @if (r.Status == PermitStatus.Pending)
                         {
