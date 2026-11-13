@@ -162,27 +162,6 @@ namespace AtharERP_System.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize]
-        public async Task<IActionResult> Manage()
-        {
-            bool canManage = await _permissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.Manage");
-            bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.FinalApprove");
-            if (!canManage && !canFinalApprove)
-                return Forbid();
-
-            ViewBag.CanManage = canManage;
-            ViewBag.CanFinalApprove = canFinalApprove;
-
-            var requests = await _context.SalaryAdvanceRequests
-                .Include(a => a.User)
-                .Include(a => a.DecidedBy)
-                .Include(a => a.GmDecidedBy)
-                .OrderByDescending(a => a.RequestedAt)
-                .ToListAsync();
-
-            return View(requests);
-        }
-
         [RequirePermission("Finance.SalaryAdvances.Manage")]
         [HttpPost]
         [ValidateAntiForgeryToken]
