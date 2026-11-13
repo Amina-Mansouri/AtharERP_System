@@ -1,0 +1,230 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@{
+    ViewData["Title"] = "التقارير";
+    bool canCreate = ViewBag.CanCreate as bool? ?? false;
+    bool canApprove = ViewBag.CanApprove as bool? ?? false;
+    var mainProjects = ViewBag.MainProjects as List<Project> ?? new List<Project>();
+    var subProjects = ViewBag.SubProjects as List<Project> ?? new List<Project>();
+    var mainProjectOption = ViewBag.MainProjectOption as Project;
+    int? selectedMainProjectId = ViewBag.SelectedMainProjectId as int?;
+    int? selectedProjectId = ViewBag.SelectedProjectId as int?;
+    var myClosure = ViewBag.MyClosureReports as List<ProjectClosureReport> ?? new List<ProjectClosureReport>();
+    var myDelivery = ViewBag.MyDeliveryReports as List<ProjectDeliveryReport> ?? new List<ProjectDeliveryReport>();
+    var pendingClosure = ViewBag.PendingClosureReports as List<ProjectClosureReport> ?? new List<ProjectClosureReport>();
+    var pendingDelivery = ViewBag.PendingDeliveryReports as List<ProjectDeliveryReport> ?? new List<ProjectDeliveryReport>();
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">المشاريع</span>
+        <h1>التقارير</h1>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (canCreate)
+{
+    <div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
+        <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">إنشاء تقرير جديد — اختيار المشروع</div>
+        <form method="get" asp-action="Index" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+            <div style="min-width:220px;">
+                <label class="form-label" style="font-size:11px;">المشروع الرئيسي</label>
+                <select name="mainProjectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- اختر --</option>
+                    @foreach (var p in mainProjects)
+                    {
+                        <option value="@p.Id" @(p.Id == selectedMainProjectId ? "selected" : "")>@p.Name (@p.Code)</option>
+                    }
+                </select>
+            </div>
+        </form>
+
+        @if (selectedMainProjectId.HasValue && mainProjectOption != null)
+        {
+            <form method="get" asp-action="Index" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:10px;">
+                <input type="hidden" name="mainProjectId" value="@selectedMainProjectId" />
+                <div style="min-width:260px;">
+                    <label class="form-label" style="font-size:11px;">المشروع المحدد (الرئيسي نفسه أو أحد الفرعية)</label>
+                    <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">-- اختر --</option>
+                        <option value="@mainProjectOption.Id" @(mainProjectOption.Id == selectedProjectId ? "selected" : "")>@mainProjectOption.Name (المشروع الرئيسي نفسه)</option>
+                        @foreach (var sp in subProjects)
+                        {
+                            <option value="@sp.Id" @(sp.Id == selectedProjectId ? "selected" : "")>@sp.Name (@sp.Code)</option>
+                        }
+                    </select>
+                </div>
+            </form>
+
+            @if (selectedProjectId.HasValue)
+            {
+                <div style="margin-top:10px; display:flex; gap:8px;">
+                    <a class="btn-line btn-line-accent" asp-action="CreateClosure" asp-route-projectId="@selectedProjectId">إنشاء تقرير إغلاق وتسليم المشاريع</a>
+                    <a class="btn-line btn-line-accent" asp-action="CreateDelivery" asp-route-projectId="@selectedProjectId">إنشاء نموذج تسليم مشروع</a>
+                </div>
+            }
+        }
+    </div>
+}
+
+@if (canApprove && (pendingClosure.Any() || pendingDelivery.Any()))
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">بانتظار اعتمادك</div>
+        <div class="data-table" style="--cols: 1fr 1fr 1.2fr 110px 220px">
+            <div class="data-table-head">
+                <div class="cell">النوع</div>
+                <div class="cell">المشروع</div>
+                <div class="cell">مقدّمة من</div>
+                <div class="cell">التاريخ</div>
+                <div class="cell">إجراء</div>
+            </div>
+            @foreach (var r in pendingClosure)
+            {
+                <div class="data-table-row">
+                    <div class="cell">تقرير إغلاق وتسليم</div>
+                    <div class="cell">@r.Project?.Name</div>
+                    <div class="cell">@r.CreatedBy?.FullName</div>
+                    <div class="cell cell-num">@r.CreatedAt.ToString("yyyy-MM-dd")</div>
+                    <div class="cell" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <form method="post" asp-action="DecideClosure" style="display:inline-flex; gap:4px; align-items:center;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="true" />
+                            <select name="finalStatus" class="form-select form-select-sm" style="font-size:10px; width:150px;" required>
+                                <option value="">-- حالة المشروع --</option>
+                                @foreach (var fs in EnumDisplayHelper.GetDisplayList<ClosureFinalStatus>())
+                                {
+                                    <option value="@fs.Value">@fs.Label</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                        </form>
+                        <form method="post" asp-action="DecideClosure" style="display:inline;" onsubmit="return confirm('رفض هذا التقرير؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="false" />
+                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                        </form>
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/ProjectReports/DownloadClosure/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                        }
+                    </div>
+                </div>
+            }
+            @foreach (var r in pendingDelivery)
+            {
+                <div class="data-table-row">
+                    <div class="cell">نموذج تسليم مشروع</div>
+                    <div class="cell">@r.Project?.Name</div>
+                    <div class="cell">@r.CreatedBy?.FullName</div>
+                    <div class="cell cell-num">@r.CreatedAt.ToString("yyyy-MM-dd")</div>
+                    <div class="cell" style="display:flex; gap:6px;">
+                        <form method="post" asp-action="DecideDelivery" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="true" />
+                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                        </form>
+                        <form method="post" asp-action="DecideDelivery" style="display:inline;" onsubmit="return confirm('رفض هذا النموذج؟');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="approved" value="false" />
+                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                        </form>
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/ProjectReports/DownloadDelivery/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (canCreate)
+{
+    <div class="athar-card">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">تقاريري</div>
+        <div class="data-table" style="--cols: 1fr 1fr 110px 1fr 100px">
+            <div class="data-table-head">
+                <div class="cell">النوع</div>
+                <div class="cell">المشروع</div>
+                <div class="cell">التاريخ</div>
+                <div class="cell">الحالة</div>
+                <div class="cell">PDF</div>
+            </div>
+            @if (!myClosure.Any() && !myDelivery.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تقارير سابقة</div></div>
+            }
+            @foreach (var r in myClosure)
+            {
+                <div class="data-table-row">
+                    <div class="cell">تقرير إغلاق وتسليم</div>
+                    <div class="cell">@r.Project?.Name</div>
+                    <div class="cell cell-num">@r.CreatedAt.ToString("yyyy-MM-dd")</div>
+                    <div class="cell">
+                        @if (r.Status == ClosureReportStatus.Pending)
+                        {
+                            <span class="tag tag-warning">بانتظار الاعتماد</span>
+                        }
+                        else if (r.Status == ClosureReportStatus.Approved)
+                        {
+                            <span class="tag tag-success">معتمد</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-danger">مرفوض</span>
+                        }
+                    </div>
+                    <div class="cell">
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/ProjectReports/DownloadClosure/@r.Id" target="_blank">📄</a>
+                        }
+                    </div>
+                </div>
+            }
+            @foreach (var r in myDelivery)
+            {
+                <div class="data-table-row">
+                    <div class="cell">نموذج تسليم مشروع</div>
+                    <div class="cell">@r.Project?.Name</div>
+                    <div class="cell cell-num">@r.CreatedAt.ToString("yyyy-MM-dd")</div>
+                    <div class="cell">
+                        @if (r.Status == DeliveryReportStatus.Pending)
+                        {
+                            <span class="tag tag-warning">بانتظار الاعتماد</span>
+                        }
+                        else if (r.Status == DeliveryReportStatus.Approved)
+                        {
+                            <span class="tag tag-success">معتمد</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-danger">مرفوض</span>
+                        }
+                    </div>
+                    <div class="cell">
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/ProjectReports/DownloadDelivery/@r.Id" target="_blank">📄</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

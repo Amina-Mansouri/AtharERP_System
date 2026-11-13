@@ -1,0 +1,99 @@
+﻿@using AtharERP_System.Models.Entities
+@{
+    ViewData["Title"] = "نموذج تسليم مشروع";
+    var project = ViewBag.Project as Project;
+    var stages = ViewBag.Stages as List<ProjectStage> ?? new List<ProjectStage>();
+    int? selectedStageId = ViewBag.SelectedStageId as int?;
+    var linkedAssignments = ViewBag.LinkedAssignments as List<ProjectAssignment> ?? new List<ProjectAssignment>();
+    var incompleteAssignments = ViewBag.IncompleteAssignments as List<ProjectAssignment> ?? new List<ProjectAssignment>();
+    var candidateRevisions = ViewBag.CandidateRevisions as List<DocumentRevision> ?? new List<DocumentRevision>();
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">التقارير</span>
+        <h1>نموذج تسليم مشروع — @project?.Name</h1>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="athar-card" style="margin-bottom:12px; padding:14px;">
+    <form method="get" asp-action="CreateDelivery">
+        <input type="hidden" name="projectId" value="@project?.Id" />
+        <label class="form-label" style="font-size:11px;">التخصص (اختاري مرحلة واحدة)</label>
+        <select name="stageId" class="form-select form-select-sm" style="max-width:300px;" onchange="this.form.submit()">
+            <option value="">-- اختر --</option>
+            @foreach (var s in stages)
+            {
+                <option value="@s.Id" @(s.Id == selectedStageId ? "selected" : "")>@s.Name</option>
+            }
+        </select>
+    </form>
+</div>
+
+@if (selectedStageId.HasValue)
+{
+    <div class="athar-card" style="padding:14px;">
+        <form method="post" asp-action="CreateDelivery">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="projectId" value="@project?.Id" />
+            <input type="hidden" name="stageId" value="@selectedStageId" />
+
+            <div style="margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:600; margin-bottom:4px;">التكليفات المرتبطة بهذه المرحلة</div>
+                @if (!linkedAssignments.Any())
+                {
+                    <div style="font-size:11px; color:#999;">لا توجد تكليفات مرتبطة</div>
+                }
+                else
+                {
+                    foreach (var a in linkedAssignments)
+                    {
+                        <div style="font-size:11.5px;">• @a.AssignmentType (@a.Status)</div>
+                    }
+                }
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:600; margin-bottom:4px;">قائمة الملفات والمستندات المسلّمة (اختاري ما تم تسليمه)</div>
+                @if (!candidateRevisions.Any())
+                {
+                    <div style="font-size:11px; color:#999;">لا توجد ملفات مصدرة لهذا المشروع</div>
+                }
+                @foreach (var rev in candidateRevisions)
+                {
+                    <label style="display:block; font-size:11.5px;">
+                        <input type="checkbox" name="deliveredRevisionIds" value="@rev.Id" /> @rev.Document?.FileName (إصدار @rev.Revision)
+                    </label>
+                }
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:600; margin-bottom:4px;">قائمة الملفات المراد تسليمها (تكليفات غير مكتملة)</div>
+                @if (!incompleteAssignments.Any())
+                {
+                    <div style="font-size:11px; color:#999;">لا توجد تكليفات غير مكتملة</div>
+                }
+                else
+                {
+                    foreach (var a in incompleteAssignments)
+                    {
+                        <div style="font-size:11.5px;">• @a.AssignmentType</div>
+                    }
+                }
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label class="form-label" style="font-size:11px;">ملاحظات</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="btn-line btn-line-accent">إرسال النموذج</button>
+            <a class="btn-line" asp-action="Index">رجوع</a>
+        </form>
+    </div>
+}
