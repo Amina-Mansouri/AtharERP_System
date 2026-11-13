@@ -54,7 +54,7 @@ namespace AtharERP_System.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? filterEmployeeId, DateTime? filterFrom, DateTime? filterTo, string? filterStatus)
         {
             var myRequests = await _context.ComplaintRequests
                 .Where(c => c.UserId == CurrentUserId)
@@ -63,13 +63,26 @@ namespace AtharERP_System.Controllers
 
             bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Complaints.Manage");
             ViewBag.CanManage = canManage;
+
             if (canManage)
             {
-                ViewBag.PendingRequests = await _context.ComplaintRequests
-                    .Include(c => c.User)
-                    .Where(c => c.Status == ComplaintStatus.Pending)
-                    .OrderBy(c => c.RequestedAt)
-                    .ToListAsync();
+                var query = _context.ComplaintRequests.Include(c => c.User).AsQueryable();
+
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    query = query.Where(c => c.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    query = query.Where(c => c.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    query = query.Where(c => c.RequestedAt.Date <= filterTo.Value.Date);
+                if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<ComplaintStatus>(filterStatus, out var statusEnum))
+                    query = query.Where(c => c.Status == statusEnum);
+
+                ViewBag.ManagedRequests = await query.OrderByDescending(c => c.RequestedAt).ToListAsync();
+                ViewBag.AllEmployees = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
+                ViewBag.FilterEmployeeId = filterEmployeeId;
+                ViewBag.FilterFrom = filterFrom;
+                ViewBag.FilterTo = filterTo;
+                ViewBag.FilterStatus = filterStatus;
             }
 
             return View(myRequests);

@@ -56,7 +56,7 @@ namespace AtharERP_System.Controllers
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? filterEmployeeId, DateTime? filterFrom, DateTime? filterTo)
         {
             var myRequests = await _context.ResignationRequests
                 .Where(r => r.UserId == CurrentUserId)
@@ -67,11 +67,15 @@ namespace AtharERP_System.Controllers
             ViewBag.CanManage = canManage;
             if (canManage)
             {
-                var pending = await _context.ResignationRequests
-                    .Include(r => r.User)
-                    .Where(r => r.Status == ResignationStatus.Pending)
-                    .OrderBy(r => r.RequestedAt)
-                    .ToListAsync();
+                var pendingQuery = _context.ResignationRequests.Include(r => r.User).Where(r => r.Status == ResignationStatus.Pending).AsQueryable();
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    pendingQuery = pendingQuery.Where(r => r.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    pendingQuery = pendingQuery.Where(r => r.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    pendingQuery = pendingQuery.Where(r => r.RequestedAt.Date <= filterTo.Value.Date);
+
+                var pending = await pendingQuery.OrderBy(r => r.RequestedAt).ToListAsync();
                 ViewBag.PendingRequests = pending;
 
                 var openTasksByRequest = new Dictionary<int, List<ProjectAssignment>>();
@@ -89,20 +93,32 @@ namespace AtharERP_System.Controllers
             ViewBag.CanFinalApprove = canFinalApprove;
             if (canFinalApprove)
             {
-                ViewBag.PendingFinalRequests = await _context.ResignationRequests
-                    .Include(r => r.User)
-                    .Where(r => r.Status == ResignationStatus.PendingGeneralManager)
-                    .OrderBy(r => r.RequestedAt)
-                    .ToListAsync();
+                var pendingFinalQuery = _context.ResignationRequests.Include(r => r.User).Where(r => r.Status == ResignationStatus.PendingGeneralManager).AsQueryable();
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    pendingFinalQuery = pendingFinalQuery.Where(r => r.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    pendingFinalQuery = pendingFinalQuery.Where(r => r.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    pendingFinalQuery = pendingFinalQuery.Where(r => r.RequestedAt.Date <= filterTo.Value.Date);
+
+                ViewBag.PendingFinalRequests = await pendingFinalQuery.OrderBy(r => r.RequestedAt).ToListAsync();
             }
 
             if (canManage || canFinalApprove)
             {
-                ViewBag.ApprovedRequests = await _context.ResignationRequests
-                    .Include(r => r.User)
-                    .Where(r => r.Status == ResignationStatus.Approved)
-                    .OrderByDescending(r => r.EffectiveLastWorkingDay)
-                    .ToListAsync();
+                var approvedQuery = _context.ResignationRequests.Include(r => r.User).Where(r => r.Status == ResignationStatus.Approved).AsQueryable();
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    approvedQuery = approvedQuery.Where(r => r.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    approvedQuery = approvedQuery.Where(r => r.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    approvedQuery = approvedQuery.Where(r => r.RequestedAt.Date <= filterTo.Value.Date);
+
+                ViewBag.ApprovedRequests = await approvedQuery.OrderByDescending(r => r.EffectiveLastWorkingDay).ToListAsync();
+                ViewBag.AllEmployees = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
+                ViewBag.FilterEmployeeId = filterEmployeeId;
+                ViewBag.FilterFrom = filterFrom;
+                ViewBag.FilterTo = filterTo;
             }
 
             ViewBag.HasPending = myRequests.Any(r => r.Status == ResignationStatus.Pending || r.Status == ResignationStatus.PendingGeneralManager);
