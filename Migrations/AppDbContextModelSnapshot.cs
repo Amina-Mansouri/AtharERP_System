@@ -526,6 +526,56 @@ namespace AtharERP_System.Migrations
                     b.ToTable("ClientRedesignRequests");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ComplaintRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResolutionNotes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResolvedById")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResolvedById");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ComplaintRequests");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.ContractHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -3423,6 +3473,23 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("ProjectStage");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ComplaintRequest", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "ResolvedBy")
+                        .WithMany()
+                        .HasForeignKey("ResolvedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ResolvedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.ContractHistory", b =>

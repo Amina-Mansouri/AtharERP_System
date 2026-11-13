@@ -69,6 +69,29 @@ namespace AtharERP_System.Services
             });
         }
 
+        public byte[] GenerateComplaintPdf(ComplaintRequest r)
+        {
+            return BuildDocument("نموذج تقديم شكوى", r.User, col =>
+            {
+                col.Item().Text($"نوع الشكوى: {GetDisplayName(r.Type)}");
+                col.Item().Text($"الموضوع: {r.Subject}");
+                col.Item().PaddingTop(5).Text("التفاصيل:").Bold();
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(50).Text(r.Description);
+                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+
+                col.Item().PaddingTop(10).Text("رد الشؤون الإدارية").Bold().FontColor("#221837");
+                if (r.ResolvedBy == null)
+                {
+                    col.Item().Text("بانتظار الرد");
+                }
+                else
+                {
+                    col.Item().Text($"الرد: {r.ResolutionNotes ?? "-"}");
+                    SignatureSection(col, "تم الرد من", r.ResolvedBy, r.ResolvedAt);
+                }
+            });
+        }
+
         public byte[] GenerateSalaryAdvancePdf(SalaryAdvanceRequest r)
         {
             return BuildDocument("نموذج طلب سلفة", r.User, col =>

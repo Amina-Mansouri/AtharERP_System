@@ -391,6 +391,8 @@
                                        asp-controller="MyCustody" asp-action="Index">عهدتي</a>
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permits" ? "active" : "")"
                                        asp-controller="Permits" asp-action="Index">الأذونات</a>
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaints" ? "active" : "")"
+                                       asp-controller="Complaints" asp-action="Index">الشكاوى</a>
                                     <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
                                     @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
                                     {
@@ -498,6 +500,8 @@
                            asp-controller="MyCustody" asp-action="Index">🗒️ عهدتي</a>
                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permits" ? "active" : "")"
                            asp-controller="Permits" asp-action="Index">⏱️ الأذونات</a>
+                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Complaints" ? "active" : "")"
+                           asp-controller="Complaints" asp-action="Index">📣 الشكاوى</a>
                         @if (await PermissionService.HasPermissionAsync(User, "HR.Custody.Manage"))
                             {
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Custody" ? "active" : "")"

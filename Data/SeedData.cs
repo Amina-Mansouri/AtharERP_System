@@ -197,7 +197,8 @@ namespace AtharERP_System.Data
                 new Permission { Code = "HR.Resignations.Manage", Name = "الموارد_البشرية.استقالات.إدارة", Module = "HR" },
                 new Permission { Code = "HR.Resignations.FinalApprove", Name = "الموارد_البشرية.استقالات.اعتماد_نهائي", Module = "HR" },
                 new Permission { Code = "HR.Permits.Manage", Name = "الموارد_البشرية.أذونات.إدارة", Module = "HR" },
-                new Permission { Code = "HR.Permits.FinalApprove", Name = "الموارد_البشرية.أذونات.اعتماد_نهائي", Module = "HR" },
+                               new Permission { Code = "HR.Permits.FinalApprove", Name = "الموارد_البشرية.أذونات.اعتماد_نهائي", Module = "HR" },
+                new Permission { Code = "HR.Complaints.Manage", Name = "الموارد_البشرية.شكاوى.إدارة", Module = "HR" },
 
                 // 6.6 التوريدات
                 new Permission { Code = "Supply.View", Name = "التوريدات.عرض", Module = "Supply" },

@@ -1,0 +1,116 @@
+﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
+@model List<ComplaintRequest>
+@{
+    ViewData["Title"] = "الشكاوى";
+    bool canManage = (bool)ViewBag.CanManage;
+    var pending = ViewBag.PendingRequests as List<ComplaintRequest> ?? new List<ComplaintRequest>();
+    var typeLabels = EnumDisplayHelper.GetDisplayList<ComplaintType>();
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>الشكاوى</h1>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تقديم شكوى</div>
+    <form method="post" asp-action="Create" style="display:flex; flex-direction:column; gap:8px;">
+        @Html.AntiForgeryToken()
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="min-width:180px;">
+                <label class="form-label" style="font-size:11px;">نوع الشكوى</label>
+                <select name="type" class="form-select form-select-sm" required>
+                    @foreach (var t in typeLabels)
+                    {
+                        <option value="@t.Value">@t.Label</option>
+                    }
+                </select>
+            </div>
+            <div style="flex:1; min-width:220px;">
+                <label class="form-label" style="font-size:11px;">الموضوع</label>
+                <input type="text" name="subject" class="form-control form-control-sm" required />
+            </div>
+        </div>
+        <div>
+            <label class="form-label" style="font-size:11px;">التفاصيل</label>
+            <textarea name="description" class="form-control form-control-sm" rows="3" required></textarea>
+        </div>
+        <div>
+            <button type="submit" class="btn-line btn-line-accent">إرسال الشكوى</button>
+        </div>
+    </form>
+</div>
+
+@if (canManage && pending.Any())
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">شكاوى بانتظار الرد (@pending.Count)</div>
+        @foreach (var r in pending)
+        {
+            <div style="padding:12px 14px; border-bottom:1px solid #f1f0f6;">
+                <div style="font-size:12.5px; margin-bottom:4px;"><strong>@r.User?.FullName</strong> — @typeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label — @r.RequestedAt.ToString("yyyy-MM-dd")</div>
+                <div style="font-size:12px; font-weight:600; margin-bottom:4px;">@r.Subject</div>
+                <div style="font-size:12px; color:#5a5370; margin-bottom:8px;">@r.Description</div>
+                <form method="post" asp-action="Resolve" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@r.Id" />
+                    <div style="flex:1; min-width:220px;">
+                        <label class="form-label" style="font-size:11px;">الرد</label>
+                        <input type="text" name="resolutionNotes" class="form-control form-control-sm" required />
+                    </div>
+                    <button type="submit" class="btn-line btn-line-accent" style="font-size:11px;">إرسال الرد</button>
+                </form>
+            </div>
+        }
+    </div>
+}
+
+<div class="athar-card">
+    <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">شكاواي</div>
+    @if (!Model.Any())
+    {
+        <div style="padding:14px; font-size:12px; color:#8a83a0;">لا توجد شكاوى سابقة</div>
+    }
+    else
+    {
+        @foreach (var r in Model)
+        {
+            <div style="padding:12px 14px; border-bottom:1px solid #f1f0f6;">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:4px;">
+                    <div style="font-size:12.5px; font-weight:600;">@r.Subject <span class="stat-sub">(@typeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label)</span></div>
+                    <div>
+                        @if (r.Status == ComplaintStatus.Pending)
+                        {
+                            <span class="tag tag-warning">بانتظار الرد</span>
+                        }
+                        else
+                        {
+                            <span class="tag tag-success">تم الرد</span>
+                        }
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/Complaints/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
+                        }
+                    </div>
+                </div>
+                <div style="font-size:12px; color:#5a5370;">@r.Description</div>
+                @if (r.Status == ComplaintStatus.Resolved)
+                {
+                    <div style="font-size:12px; margin-top:6px; padding:8px; background:#f6f4fb; border-radius:6px;"><strong>الرد:</strong> @r.ResolutionNotes</div>
+                }
+            </div>
+        }
+    }
+</div>

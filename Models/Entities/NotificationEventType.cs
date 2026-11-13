@@ -108,6 +108,12 @@ namespace AtharERP_System.Models.Entities
         PermitRequestCreated = 33,
 
         [Display(Name = "قرار بشأن طلب إذن")]
-        PermitRequestDecided = 34
+        PermitRequestDecided = 34,
+
+        [Display(Name = "شكوى جديدة")]
+        ComplaintCreated = 35,
+
+        [Display(Name = "رد على شكوى")]
+        ComplaintResolved = 36
     }
 }
