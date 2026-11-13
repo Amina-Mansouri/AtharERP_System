@@ -47,13 +47,15 @@ namespace AtharERP_System.Controllers
                 .ToListAsync();
             var remainingDays = Math.Max(0, allowance - usedDays.Sum(l => l.DaysCount));
 
-            var openAssignments = await _context.ProjectAssignments
-                .Include(a => a.Project)
-                .Where(a => a.Engineers.Any(e => e.UserId == full.UserId) && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
-                .Select(a => new { a.Project.Code, a.Project.Name })
-                .ToListAsync();
+            var openAssignments = full.Status == LeaveRequestStatus.Rejected
+    ? new List<(string Code, string Name)>()
+    : await _context.ProjectAssignments
+        .Include(a => a.Project)
+        .Where(a => a.Engineers.Any(e => e.UserId == full.UserId) && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
+        .Select(a => new ValueTuple<string, string>(a.Project.Code, a.Project.Name))
+        .ToListAsync();
 
-            var bytes = _pdfService.GenerateLeavePdf(full, remainingDays, openAssignments.Select(a => (a.Code, a.Name)).ToList());
+            var bytes = _pdfService.GenerateLeavePdf(full, remainingDays, openAssignments);
             if (!string.IsNullOrEmpty(full.PdfFilePath))
                 _fileUpload.DeleteFile(full.PdfFilePath);
 
