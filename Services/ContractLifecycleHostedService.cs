@@ -104,10 +104,10 @@ namespace AtharERP_System.Services
 
             // تعطيل تلقائي عند بلوغ آخر يوم عمل لاستقالة معتمدة
             var resignedToday = await context.Users
-                .Where(u => u.IsActive && !u.IsSuspended)
-                .Join(context.ResignationRequests.Where(r => r.Status == ResignationStatus.Approved && r.RequestedLastWorkingDay.Date <= today),
-                    u => u.Id, r => r.UserId, (u, r) => u)
-                .ToListAsync(stoppingToken);
+        .Where(u => u.IsActive && !u.IsSuspended)
+        .Join(context.ResignationRequests.Where(r => r.Status == ResignationStatus.Approved && r.EffectiveLastWorkingDay.HasValue && r.EffectiveLastWorkingDay.Value.Date <= today),
+            u => u.Id, r => r.UserId, (u, r) => u)
+        .ToListAsync(stoppingToken);
 
             foreach (var user in resignedToday)
             {

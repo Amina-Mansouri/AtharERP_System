@@ -60,8 +60,23 @@ namespace AtharERP_System.Services
                 SectionHeader(col, "إقرار الموظف");
                 col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8)
                     .Text("أتقدم بطلب استقالتي من العمل، راجياً قبولها واتخاذ الإجراءات اللازمة وفقاً للوائح والنظم المعمول بها، مع خالص الشكر والتقدير.");
-                FieldRow(col, "آخر يوم عمل مقترح:", r.RequestedLastWorkingDay.ToString("yyyy-MM-dd"));
                 SignatureSection(col, "توقيع الموظف", r.User, r.RequestedAt);
+
+                SectionHeader(col, "إخلاء طرف المهام المفتوحة");
+                if (!r.TaskClearances.Any())
+                {
+                    col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text("لا توجد تكليفات مفتوحة");
+                }
+                else
+                {
+                    var i = 1;
+                    foreach (var c in r.TaskClearances)
+                    {
+                        FieldRow(col, $".{i}", $"{c.ProjectAssignment?.Project?.Code} - {c.ProjectAssignment?.Project?.Name} — تاريخ الإنهاء: {c.EndDate:yyyy-MM-dd}");
+                        i++;
+                    }
+                }
+                FieldRow(col, "تاريخ إيقاف العمل المتوقع:", r.EffectiveLastWorkingDay.HasValue ? r.EffectiveLastWorkingDay.Value.ToString("yyyy-MM-dd") : "-");
 
                 SignatureSection(col, "اعتماد الشؤون الإدارية", r.DecidedBy, r.DecidedAt);
                 SignatureSection(col, "اعتماد المدير العام", r.GmDecidedBy, r.GmDecidedAt);

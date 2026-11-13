@@ -10,11 +10,12 @@ namespace AtharERP_System.Models.Entities
         [ForeignKey("UserId")]
         public ApplicationUser? User { get; set; }
 
-        public DateTime RequestedLastWorkingDay { get; set; }
         public string? Reason { get; set; }
 
         public ResignationStatus Status { get; set; } = ResignationStatus.Pending;
         public DateTime RequestedAt { get; set; }
+
+        public DateTime? EffectiveLastWorkingDay { get; set; }
 
         public string? DecidedById { get; set; }
         [ForeignKey("DecidedById")]
@@ -27,5 +28,7 @@ namespace AtharERP_System.Models.Entities
         public DateTime? GmDecidedAt { get; set; }
 
         public string? PdfFilePath { get; set; }
+
+        public List<ResignationTaskClearance> TaskClearances { get; set; } = new();
     }
 }

@@ -230,6 +230,15 @@ namespace AtharERP_System.Controllers
             if (user.IsSuspended && user.ContractEndDate.HasValue && user.ContractEndDate.Value.Date > DateTime.UtcNow.Date)
             {
                 user.IsSuspended = false;
+                user.IsActive = true;
+                if (user.SuspendedReason == "استقالة")
+                {
+                    var activeResignations = await _context.ResignationRequests
+                        .Where(r => r.UserId == user.Id && r.Status == ResignationStatus.Approved && r.EffectiveLastWorkingDay.HasValue && r.EffectiveLastWorkingDay.Value.Date <= DateTime.UtcNow.Date)
+                        .ToListAsync();
+                    foreach (var r in activeResignations)
+                        r.EffectiveLastWorkingDay = null;
+                }
                 user.SuspendedReason = null;
             }
 

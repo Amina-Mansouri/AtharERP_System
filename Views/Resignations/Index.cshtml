@@ -7,6 +7,8 @@
     var pending = ViewBag.PendingRequests as List<ResignationRequest> ?? new List<ResignationRequest>();
     bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
     var pendingFinal = ViewBag.PendingFinalRequests as List<ResignationRequest> ?? new List<ResignationRequest>();
+    var approvedRequests = ViewBag.ApprovedRequests as List<ResignationRequest> ?? new List<ResignationRequest>();
+    var openTasksByRequest = ViewBag.OpenTasksByRequest as Dictionary<int, List<ProjectAssignment>> ?? new Dictionary<int, List<ProjectAssignment>>();
 }
 
 <div class="page-head">
@@ -15,6 +17,15 @@
         <h1>طلبات الاستقالة</h1>
     </div>
 </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
     <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تقديم طلب استقالة</div>
@@ -26,16 +37,13 @@
     {
         <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;" onsubmit="return confirm('سيتم إرسال طلب استقالتك للإدارة. متابعة؟');">
             @Html.AntiForgeryToken()
-            <div>
-                <label class="form-label" style="font-size:11px;">آخر يوم عمل</label>
-                <input type="date" name="lastWorkingDay" class="form-control form-control-sm" required />
-            </div>
             <div style="min-width:260px;">
                 <label class="form-label" style="font-size:11px;">السبب (اختياري)</label>
                 <input type="text" name="reason" class="form-control form-control-sm" />
             </div>
             <button type="submit" class="btn-line btn-line-accent">إرسال الطلب</button>
         </form>
+        <div class="stat-sub" style="margin-top:6px;">سيُحدَّد تاريخ إيقاف العمل لاحقاً من الإدارة بعد مراجعة تكليفاتك المفتوحة.</div>
     }
 </div>
 
@@ -43,40 +51,53 @@
 {
     <div class="athar-card" style="margin-bottom:12px;">
         <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد (@pending.Count)</div>
-        <div class="data-table" style="--cols: 1.2fr 120px 1fr 150px">
-            <div class="data-table-head">
-                <div class="cell">الموظف</div>
-                <div class="cell">آخر يوم عمل</div>
-                <div class="cell">السبب</div>
-                <div class="cell">إجراء</div>
-            </div>
-            @foreach (var r in pending)
-            {
-                <div class="data-table-row">
-                    <div class="cell">@r.User?.FullName</div>
-                    <div class="cell cell-num">@r.RequestedLastWorkingDay.ToString("yyyy-MM-dd")</div>
-                    <div class="cell">@(r.Reason ?? "-")</div>
-                    <div class="cell" style="display:flex; gap:6px;">
-                        <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('اعتماد الاستقالة سيُعطِّل حساب الموظف تلقائياً في آخر يوم عمله. متابعة؟');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="true" />
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
-                        </form>
-                        <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
-                        </form>
-                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
-                        {
-                            <a href="/Resignations/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
-                        }
-                    </div>
+        @foreach (var r in pending)
+        {
+            var openTasks = openTasksByRequest.ContainsKey(r.Id) ? openTasksByRequest[r.Id] : new List<ProjectAssignment>();
+            <div style="padding:12px 14px; border-bottom:1px solid #f1f0f6;">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                    <div style="font-size:12.5px;"><strong>@r.User?.FullName</strong> — @r.RequestedAt.ToString("yyyy-MM-dd")</div>
+                    @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                    {
+                        <a href="/Resignations/Download/@r.Id" target="_blank" style="font-size:11px;">📄 PDF</a>
+                    }
                 </div>
-            }
-        </div>
+                <div style="font-size:12px; color:#5a5370; margin-bottom:8px;">السبب: @(r.Reason ?? "-")</div>
+
+                <form method="post" asp-action="Decide" onsubmit="return confirm('اعتماد الاستقالة سيُحدِّد تاريخ إيقاف العمل من التواريخ المدخلة أدناه. متابعة؟');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@r.Id" />
+
+                    @if (openTasks.Any())
+                    {
+                        <div style="font-size:11.5px; font-weight:600; margin-bottom:6px;">التكليفات المفتوحة — حددي تاريخ إنهاء كل منها:</div>
+                        @foreach (var a in openTasks)
+                        {
+                            <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
+                                <input type="hidden" name="assignmentIds" value="@a.Id" />
+                                <div style="flex:1; font-size:12px;">@a.Project?.Code - @a.Project?.Name</div>
+                                <input type="date" name="taskEndDates" class="form-control form-control-sm" style="max-width:160px;" required />
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="stat-sub" style="margin-bottom:6px;">لا توجد تكليفات مفتوحة لهذه الموظفة — سيكون تاريخ إيقاف العمل اليوم عند الاعتماد.</div>
+                    }
+
+                    <div style="display:flex; gap:6px; margin-top:8px;">
+                        <input type="hidden" name="approved" value="true" />
+                        <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                    </div>
+                </form>
+                <form method="post" asp-action="Decide" style="margin-top:6px;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@r.Id" />
+                    <input type="hidden" name="approved" value="false" />
+                    <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                </form>
+            </div>
+        }
     </div>
 }
 
@@ -84,10 +105,10 @@
 {
     <div class="athar-card" style="margin-bottom:12px;">
         <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد النهائي من المدير العام (@pendingFinal.Count)</div>
-        <div class="data-table" style="--cols: 1.2fr 120px 1fr 150px">
+        <div class="data-table" style="--cols: 1.2fr 130px 1fr 150px">
             <div class="data-table-head">
                 <div class="cell">الموظف</div>
-                <div class="cell">آخر يوم عمل</div>
+                <div class="cell">تاريخ الإيقاف المتوقع</div>
                 <div class="cell">السبب</div>
                 <div class="cell">إجراء</div>
             </div>
@@ -95,10 +116,10 @@
             {
                 <div class="data-table-row">
                     <div class="cell">@r.User?.FullName</div>
-                    <div class="cell cell-num">@r.RequestedLastWorkingDay.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@(r.EffectiveLastWorkingDay?.ToString("yyyy-MM-dd") ?? "-")</div>
                     <div class="cell">@(r.Reason ?? "-")</div>
                     <div class="cell" style="display:flex; gap:6px;">
-                        <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('اعتماد الاستقالة نهائياً سيُعطِّل حساب الموظف تلقائياً في آخر يوم عمله. متابعة؟');">
+                        <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('اعتماد الاستقالة نهائياً سيُعطِّل حساب الموظف تلقائياً في تاريخ الإيقاف المتوقع. متابعة؟');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="true" />
@@ -121,11 +142,40 @@
     </div>
 }
 
+@if ((canManage || canFinalApprove) && approvedRequests.Any())
+{
+    <div class="athar-card" style="margin-bottom:12px;">
+        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">استقالات معتمدة — تعديل تاريخ إيقاف العمل</div>
+        <div class="data-table" style="--cols: 1.2fr 130px 220px">
+            <div class="data-table-head">
+                <div class="cell">الموظف</div>
+                <div class="cell">تاريخ الإيقاف الحالي</div>
+                <div class="cell">تعديل التاريخ</div>
+            </div>
+            @foreach (var r in approvedRequests)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.User?.FullName</div>
+                    <div class="cell cell-num">@(r.EffectiveLastWorkingDay?.ToString("yyyy-MM-dd") ?? "-")</div>
+                    <div class="cell">
+                        <form method="post" asp-action="AdjustEffectiveDate" style="display:flex; gap:6px;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="date" name="newDate" class="form-control form-control-sm" style="max-width:150px;" required />
+                            <button type="submit" class="btn-line" style="font-size:10px;">حفظ</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 <div class="athar-card">
     <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلباتي</div>
-    <div class="data-table" style="--cols: 120px 1fr 130px">
+    <div class="data-table" style="--cols: 150px 1fr 130px">
         <div class="data-table-head">
-            <div class="cell">آخر يوم عمل</div>
+            <div class="cell">تاريخ إيقاف العمل المتوقع</div>
             <div class="cell">السبب</div>
             <div class="cell">الحالة</div>
         </div>
@@ -138,7 +188,7 @@
             @foreach (var r in Model)
             {
                 <div class="data-table-row">
-                    <div class="cell cell-num">@r.RequestedLastWorkingDay.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@(r.EffectiveLastWorkingDay?.ToString("yyyy-MM-dd") ?? "-")</div>
                     <div class="cell">@(r.Reason ?? "-")</div>
                     <div class="cell">
                         @if (r.Status == ResignationStatus.Pending)

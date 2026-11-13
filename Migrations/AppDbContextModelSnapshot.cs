@@ -2221,6 +2221,9 @@ namespace AtharERP_System.Migrations
                     b.Property<string>("DecidedById")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("EffectiveLastWorkingDay")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("GmDecidedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2234,9 +2237,6 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("RequestedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("RequestedLastWorkingDay")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
@@ -2255,6 +2255,32 @@ namespace AtharERP_System.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ResignationRequests");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ResignationTaskClearance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ProjectAssignmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ResignationRequestId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectAssignmentId");
+
+                    b.HasIndex("ResignationRequestId");
+
+                    b.ToTable("ResignationTaskClearances");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.RolePermission", b =>
@@ -4076,6 +4102,25 @@ namespace AtharERP_System.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ResignationTaskClearance", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectAssignment", "ProjectAssignment")
+                        .WithMany()
+                        .HasForeignKey("ProjectAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ResignationRequest", "ResignationRequest")
+                        .WithMany("TaskClearances")
+                        .HasForeignKey("ResignationRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectAssignment");
+
+                    b.Navigation("ResignationRequest");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.RolePermission", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.Permission", "Permission")
@@ -4676,6 +4721,11 @@ namespace AtharERP_System.Migrations
                     b.Navigation("SupplyRequests");
 
                     b.Navigation("Todos");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ResignationRequest", b =>
+                {
+                    b.Navigation("TaskClearances");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Site", b =>
