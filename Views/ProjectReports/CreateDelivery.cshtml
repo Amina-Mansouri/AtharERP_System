@@ -29,7 +29,7 @@
             <option value="">-- اختر --</option>
             @foreach (var s in stages)
             {
-                <option value="@s.Id" @(s.Id == selectedStageId ? "selected" : "")>@s.Name</option>
+                <option value="@s.Id" selected="@(s.Id == selectedStageId ? "selected" : null)">@s.Name</option>
             }
         </select>
     </form>

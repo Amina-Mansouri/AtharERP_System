@@ -42,7 +42,7 @@
                     <option value="">-- اختر --</option>
                     @foreach (var p in mainProjects)
                     {
-                        <option value="@p.Id" @(p.Id == selectedMainProjectId ? "selected" : "")>@p.Name (@p.Code)</option>
+                        <option value="@p.Id" selected="@(p.Id == selectedMainProjectId ? "selected" : null)">@p.Name (@p.Code)</option>
                     }
                 </select>
             </div>
@@ -56,10 +56,10 @@
                     <label class="form-label" style="font-size:11px;">المشروع المحدد (الرئيسي نفسه أو أحد الفرعية)</label>
                     <select name="projectId" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">-- اختر --</option>
-                        <option value="@mainProjectOption.Id" @(mainProjectOption.Id == selectedProjectId ? "selected" : "")>@mainProjectOption.Name (المشروع الرئيسي نفسه)</option>
+                        <option value="@mainProjectOption.Id" selected="@(mainProjectOption.Id == selectedProjectId ? "selected" : null)">@mainProjectOption.Name (المشروع الرئيسي نفسه)</option>
                         @foreach (var sp in subProjects)
                         {
-                            <option value="@sp.Id" @(sp.Id == selectedProjectId ? "selected" : "")>@sp.Name (@sp.Code)</option>
+                            <option value="@sp.Id" selected="@(sp.Id == selectedProjectId ? "selected" : null)">@sp.Name (@sp.Code)</option>
                         }
                     </select>
                 </div>

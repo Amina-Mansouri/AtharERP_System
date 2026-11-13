@@ -1782,6 +1782,182 @@ namespace AtharERP_System.Migrations
                     b.ToTable("ProjectCategories");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectClosureReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosureDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("FinalStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FinalStatusNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReportCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("ScopeExcludedWorkExists")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ScopeFullyCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ScopeNotes")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("ScopePartiallyWithNotes")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Version")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectClosureReports");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectClosureReportStage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ProjectClosureReportId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectStageId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectClosureReportId");
+
+                    b.HasIndex("ProjectStageId");
+
+                    b.ToTable("ProjectClosureReportStages");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDeliveryReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualDeliveryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("AssignmentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PdfFilePath")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectStageId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReportCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectStageId");
+
+                    b.ToTable("ProjectDeliveryReports");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDeliveryReportFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DocumentRevisionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectDeliveryReportId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentRevisionId");
+
+                    b.HasIndex("ProjectDeliveryReportId");
+
+                    b.ToTable("ProjectDeliveryReportFiles");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDocument", b =>
                 {
                     b.Property<int>("Id")
@@ -3919,6 +4095,102 @@ namespace AtharERP_System.Migrations
                     b.Navigation("ProjectAssignment");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectClosureReport", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DecidedBy");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectClosureReportStage", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectClosureReport", "Report")
+                        .WithMany("Stages")
+                        .HasForeignKey("ProjectClosureReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectStage", "Stage")
+                        .WithMany()
+                        .HasForeignKey("ProjectStageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Report");
+
+                    b.Navigation("Stage");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDeliveryReport", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedById");
+
+                    b.HasOne("AtharERP_System.Models.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectStage", "Stage")
+                        .WithMany()
+                        .HasForeignKey("ProjectStageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DecidedBy");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Stage");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDeliveryReportFile", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.DocumentRevision", "DocumentRevision")
+                        .WithMany()
+                        .HasForeignKey("DocumentRevisionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ProjectDeliveryReport", "Report")
+                        .WithMany("DeliveredFiles")
+                        .HasForeignKey("ProjectDeliveryReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DocumentRevision");
+
+                    b.Navigation("Report");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDocument", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.Project", "Project")
@@ -4699,6 +4971,16 @@ namespace AtharERP_System.Migrations
             modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectCategory", b =>
                 {
                     b.Navigation("Projects");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectClosureReport", b =>
+                {
+                    b.Navigation("Stages");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectDeliveryReport", b =>
+                {
+                    b.Navigation("DeliveredFiles");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.ProjectStage", b =>
