@@ -53,7 +53,7 @@ namespace AtharERP_System.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? filterEmployeeId, DateTime? filterFrom, DateTime? filterTo, string? filterStatus)
         {
             var myRequests = await _context.SalaryAdvanceRequests
                 .Where(a => a.UserId == CurrentUserId)
@@ -64,7 +64,43 @@ namespace AtharERP_System.Controllers
             ViewBag.ContractSalary = user?.ContractSalary ?? 0;
             ViewBag.HasActiveAdvance = myRequests.Any(a => a.Status == SalaryAdvanceStatus.Pending || a.Status == SalaryAdvanceStatus.PendingGeneralManager || (a.Status == SalaryAdvanceStatus.Approved && a.MonthsRepaid < a.InstallmentMonths));
 
+            bool canManage = await _permissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.Manage");
+            bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "Finance.SalaryAdvances.FinalApprove");
+            ViewBag.CanManage = canManage;
+            ViewBag.CanFinalApprove = canFinalApprove;
+
+            if (canManage || canFinalApprove)
+            {
+                var query = _context.SalaryAdvanceRequests
+                    .Include(a => a.User)
+                    .Include(a => a.DecidedBy)
+                    .Include(a => a.GmDecidedBy)
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    query = query.Where(a => a.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    query = query.Where(a => a.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    query = query.Where(a => a.RequestedAt.Date <= filterTo.Value.Date);
+                if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<SalaryAdvanceStatus>(filterStatus, out var statusEnum))
+                    query = query.Where(a => a.Status == statusEnum);
+
+                ViewBag.ManagedRequests = await query.OrderByDescending(a => a.RequestedAt).ToListAsync();
+                ViewBag.AllEmployees = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
+                ViewBag.FilterEmployeeId = filterEmployeeId;
+                ViewBag.FilterFrom = filterFrom;
+                ViewBag.FilterTo = filterTo;
+                ViewBag.FilterStatus = filterStatus;
+            }
+
             return View(myRequests);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Manage()
+        {
+            return RedirectToAction("Index");
         }
 
         [Authorize]
@@ -120,7 +156,7 @@ namespace AtharERP_System.Controllers
             await ArchivePdfAsync(request.Id);
 
             var approverIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.SalaryAdvances.Manage");
-            await _notify.NotifyManyAsync(approverIds, $"طلب سلفة جديد من {user.FullName} بقيمة {amount:N0} د.ل", NotificationEventType.SalaryAdvanceRequestCreated, "/SalaryAdvances/Manage", requiresAction: true, entityType: "SalaryAdvanceRequest", entityId: request.Id);
+            await _notify.NotifyManyAsync(approverIds, $"طلب سلفة جديد من {user.FullName} بقيمة {amount:N0} د.ل", NotificationEventType.SalaryAdvanceRequestCreated, "/SalaryAdvances/Index", requiresAction: true, entityType: "SalaryAdvanceRequest", entityId: request.Id);
 
             TempData["Success"] = "تم إرسال طلب السلفة بنجاح — بانتظار الاعتماد";
             return RedirectToAction("Index");
@@ -166,7 +202,7 @@ namespace AtharERP_System.Controllers
                 await ArchivePdfAsync(request.Id);
                 await _notify.NotifyAsync(request.UserId, "تم رفض طلب سلفتك", NotificationEventType.SalaryAdvanceRequestDecided, "/SalaryAdvances/Index", entityType: "SalaryAdvanceRequest", entityId: request.Id);
                 TempData["Success"] = "تم رفض الطلب";
-                return RedirectToAction("Manage");
+                return RedirectToAction("Index");
             }
 
             request.Status = SalaryAdvanceStatus.PendingGeneralManager;
@@ -174,11 +210,11 @@ namespace AtharERP_System.Controllers
             await ArchivePdfAsync(request.Id);
 
             var gmIds = await _permissionService.GetUsersWithPermissionOrAdminAsync("Finance.SalaryAdvances.FinalApprove");
-            await _notify.NotifyManyAsync(gmIds, $"طلب سلفة من {request.User?.FullName} بانتظار اعتمادك النهائي", NotificationEventType.SalaryAdvanceRequestCreated, "/SalaryAdvances/Manage", requiresAction: true, entityType: "SalaryAdvanceRequest", entityId: request.Id);
+            await _notify.NotifyManyAsync(gmIds, $"طلب سلفة من {request.User?.FullName} بانتظار اعتمادك النهائي", NotificationEventType.SalaryAdvanceRequestCreated, "/SalaryAdvances/Index", requiresAction: true, entityType: "SalaryAdvanceRequest", entityId: request.Id);
             await _notify.NotifyAsync(request.UserId, "تم اعتماد طلب سلفتك من المسؤول المالي، بانتظار اعتماد المدير العام", NotificationEventType.SalaryAdvanceRequestDecided, "/SalaryAdvances/Index", entityType: "SalaryAdvanceRequest", entityId: request.Id);
 
             TempData["Success"] = "تم اعتماد الطلب من المسؤول المالي، بانتظار اعتماد المدير العام";
-            return RedirectToAction("Manage");
+            return RedirectToAction("Index");
         }
 
         [RequirePermission("Finance.SalaryAdvances.FinalApprove")]
@@ -193,7 +229,7 @@ namespace AtharERP_System.Controllers
             if (request.Status != SalaryAdvanceStatus.PendingGeneralManager)
             {
                 TempData["Error"] = "هذا الطلب ليس بانتظار الاعتماد النهائي";
-                return RedirectToAction("Manage");
+                return RedirectToAction("Index");
             }
 
             request.Status = approved ? SalaryAdvanceStatus.Approved : SalaryAdvanceStatus.Rejected;
@@ -205,7 +241,7 @@ namespace AtharERP_System.Controllers
             await _notify.NotifyAsync(request.UserId, approved ? $"تم اعتماد طلب سلفتك نهائياً بقيمة {request.Amount:N0} د.ل" : "تم رفض طلب سلفتك من المدير العام", NotificationEventType.SalaryAdvanceRequestDecided, "/SalaryAdvances/Index", entityType: "SalaryAdvanceRequest", entityId: request.Id);
 
             TempData["Success"] = approved ? "تم الاعتماد النهائي للطلب" : "تم رفض الطلب";
-            return RedirectToAction("Manage");
+            return RedirectToAction("Index");
         }
 
         [Authorize]

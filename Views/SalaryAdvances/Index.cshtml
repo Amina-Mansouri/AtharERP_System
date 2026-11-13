@@ -2,9 +2,17 @@
 @using AtharERP_System.Models.Entities
 @using AtharERP_System.Services
 @{
-    ViewData["Title"] = "طلب سلفة";
+    ViewData["Title"] = "السلف";
     decimal contractSalary = ViewBag.ContractSalary as decimal? ?? 0;
     bool hasActiveAdvance = ViewBag.HasActiveAdvance as bool? ?? false;
+    bool canManage = ViewBag.CanManage as bool? ?? false;
+    bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
+    var managedRequests = ViewBag.ManagedRequests as List<SalaryAdvanceRequest> ?? new List<SalaryAdvanceRequest>();
+    var allEmployees = ViewBag.AllEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
+    string? filterEmployeeId = ViewBag.FilterEmployeeId as string;
+    DateTime? filterFrom = ViewBag.FilterFrom as DateTime?;
+    DateTime? filterTo = ViewBag.FilterTo as DateTime?;
+    string? filterStatus = ViewBag.FilterStatus as string;
     var statusLabels = EnumDisplayHelper.GetDisplayList<SalaryAdvanceStatus>();
     string StatusTagClass(SalaryAdvanceStatus s) => s switch
     {
@@ -14,7 +22,7 @@
     };
 }
 
-<h1 class="athar-page-title">طلب سلفة</h1>
+<h1 class="athar-page-title">السلف</h1>
 
 @if (TempData["Success"] != null)
 {
@@ -61,41 +69,149 @@
 </div>
 
 <div class="athar-card mt-3">
-    <div style="font-size:13.5px; font-weight:600; margin-bottom:10px;">طلباتي السابقة</div>
-    @if (!Model.Any())
-    {
-        <div class="stat-sub">لا توجد طلبات سابقة</div>
-    }
-    else
-    {
-        <div class="data-table" style="--cols: 100px 90px 90px 90px 90px 1fr">
-            <div class="data-table-head">
-                <div class="cell">المبلغ</div>
-                <div class="cell">الحالة</div>
-                <div class="cell">القسط الشهري</div>
-                <div class="cell">أشهر مسدَّدة</div>
-                <div class="cell">المخصوم حتى الآن</div>
-                <div class="cell">المتبقي</div>
-            </div>
-            @foreach (var r in Model)
-            {
-                var deductedSoFar = r.MonthlyInstallment * r.MonthsRepaid;
-                var remaining = r.Amount - deductedSoFar;
-                <div class="data-table-row">
-                    <div class="cell cell-num">@r.Amount.ToString("N0")</div>
-                    <div class="cell">
-                        <span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span>
-                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
-                        {
-                            <a href="/SalaryAdvances/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
-                        }
-                    </div>
-                    <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
-                    <div class="cell cell-num">@r.MonthsRepaid/@r.InstallmentMonths</div>
-                    <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? deductedSoFar.ToString("N0") : "-")</div>
-                    <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? remaining.ToString("N0") : "-")</div>
+    <div class="nav-group-header collapsed" data-bs-toggle="collapse" data-bs-target="#mySalaryAdvancesSection" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; font-size:12.5px; font-weight:600;">
+        <span>طلباتي</span>
+        <span class="nav-group-caret">▾</span>
+    </div>
+    <div class="collapse" id="mySalaryAdvancesSection">
+        @if (!Model.Any())
+        {
+            <div class="stat-sub" style="padding:14px;">لا توجد طلبات سابقة</div>
+        }
+        else
+        {
+            <div class="data-table" style="--cols: 100px 90px 90px 90px 90px 1fr">
+                <div class="data-table-head">
+                    <div class="cell">المبلغ</div>
+                    <div class="cell">الحالة</div>
+                    <div class="cell">القسط الشهري</div>
+                    <div class="cell">أشهر مسدَّدة</div>
+                    <div class="cell">المخصوم حتى الآن</div>
+                    <div class="cell">المتبقي</div>
                 </div>
-            }
-        </div>
-    }
+                @foreach (var r in Model)
+                {
+                    var deductedSoFar = r.MonthlyInstallment * r.MonthsRepaid;
+                    var remaining = r.Amount - deductedSoFar;
+                    <div class="data-table-row">
+                        <div class="cell cell-num">@r.Amount.ToString("N0")</div>
+                        <div class="cell">
+                            <span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span>
+                            @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                            {
+                                <a href="/SalaryAdvances/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
+                            }
+                        </div>
+                        <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
+                        <div class="cell cell-num">@r.MonthsRepaid/@r.InstallmentMonths</div>
+                        <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? deductedSoFar.ToString("N0") : "-")</div>
+                        <div class="cell cell-num">@(r.Status == SalaryAdvanceStatus.Approved ? remaining.ToString("N0") : "-")</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 </div>
+
+@if (canManage || canFinalApprove)
+{
+    <div style="padding:6px 2px; font-size:12.5px; font-weight:700; color:#5a5370;">طلبات المهندسات</div>
+
+    <div class="athar-card">
+        <form method="get" asp-action="Index" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; padding:10px 14px; border-bottom:1px solid #f1f0f6;">
+            <div style="min-width:180px;">
+                <label class="form-label" style="font-size:11px;">الموظف</label>
+                <select name="filterEmployeeId" class="form-select form-select-sm">
+                    <option value="">-- الكل --</option>
+                    @foreach (var u in allEmployees)
+                    {
+                        <option value="@u.Id" selected="@(u.Id == filterEmployeeId ? "selected" : null)">@u.FullName</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">من تاريخ</label>
+                <input type="date" name="filterFrom" class="form-control form-control-sm" value="@(filterFrom?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">إلى تاريخ</label>
+                <input type="date" name="filterTo" class="form-control form-control-sm" value="@(filterTo?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div style="min-width:160px;">
+                <label class="form-label" style="font-size:11px;">الحالة</label>
+                <select name="filterStatus" class="form-select form-select-sm">
+                    <option value="">-- الكل --</option>
+                    @foreach (var st in statusLabels)
+                    {
+                        <option value="@st.Value" selected="@(st.Value == filterStatus ? "selected" : null)">@st.Label</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+            <a class="btn-line" asp-action="Index">إعادة تعيين</a>
+        </form>
+        @if (!managedRequests.Any())
+        {
+            <div class="stat-sub" style="padding:14px;">لا توجد طلبات مطابقة</div>
+        }
+        else
+        {
+            <div class="data-table" style="--cols: 1fr 100px 90px 90px 140px 190px">
+                <div class="data-table-head">
+                    <div class="cell">الموظف</div>
+                    <div class="cell">المبلغ</div>
+                    <div class="cell">المدة</div>
+                    <div class="cell">القسط الشهري</div>
+                    <div class="cell">الحالة</div>
+                    <div class="cell">إجراء</div>
+                </div>
+                @foreach (var r in managedRequests)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@r.User?.FullName</div>
+                        <div class="cell cell-num">@r.Amount.ToString("N0")</div>
+                        <div class="cell cell-num">@r.InstallmentMonths شهر</div>
+                        <div class="cell cell-num">@r.MonthlyInstallment.ToString("N0")</div>
+                        <div class="cell"><span class="tag @StatusTagClass(r.Status)">@statusLabels.FirstOrDefault(x => x.Value == r.Status.ToString()).Label</span></div>
+                        <div class="cell" style="display:flex; gap:6px; flex-wrap:wrap;">
+                            @if (canManage && r.Status == SalaryAdvanceStatus.Pending)
+                            {
+                                <form method="post" asp-action="Decide" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <input type="hidden" name="approved" value="true" />
+                                    <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                                </form>
+                                <form method="post" asp-action="Decide" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <input type="hidden" name="approved" value="false" />
+                                    <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42;">رفض</button>
+                                </form>
+                            }
+                            @if (canFinalApprove && r.Status == SalaryAdvanceStatus.PendingGeneralManager)
+                            {
+                                <form method="post" asp-action="FinalDecide" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <input type="hidden" name="approved" value="true" />
+                                    <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد نهائي</button>
+                                </form>
+                                <form method="post" asp-action="FinalDecide" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <input type="hidden" name="approved" value="false" />
+                                    <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42;">رفض</button>
+                                </form>
+                            }
+                            @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                            {
+                                <a href="/SalaryAdvances/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
