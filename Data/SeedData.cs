@@ -20,7 +20,7 @@ namespace AtharERP_System.Data
             // ========== إعدادات النظام العامة (صف وحيد) ==========
             if (!await context.SystemSettings.AnyAsync())
             {
-                context.SystemSettings.Add(new SystemSetting { AnnualLeaveAllowanceDays = 30 });
+                context.SystemSettings.Add(new SystemSetting { AnnualLeaveAllowanceDays = 20 });
                 await context.SaveChangesAsync();
             }
 
