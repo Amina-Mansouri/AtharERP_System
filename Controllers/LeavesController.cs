@@ -42,7 +42,20 @@ namespace AtharERP_System.Controllers
                 .Include(r => r.GmDecidedBy).ThenInclude(u => u!.PositionRef)
                 .FirstAsync(r => r.Id == requestId);
 
-            var bytes = _pdfService.GenerateLeavePdf(full);
+            var allowance = _config.GetValue<int?>("Leaves:AnnualAllowanceDays") ?? 30;
+            var currentYear = DateTime.UtcNow.Year;
+            var usedDays = await _context.LeaveRequests
+                .Where(l => l.UserId == full.UserId && l.Type == LeaveType.Annual && l.Status == LeaveRequestStatus.Approved && l.StartDate.Year == currentYear)
+                .ToListAsync();
+            var remainingDays = Math.Max(0, allowance - usedDays.Sum(l => l.DaysCount));
+
+            var openAssignments = await _context.ProjectAssignments
+                .Include(a => a.Project)
+                .Where(a => a.Engineers.Any(e => e.UserId == full.UserId) && a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
+                .Select(a => new { a.Project.Code, a.Project.Name })
+                .ToListAsync();
+
+            var bytes = _pdfService.GenerateLeavePdf(full, remainingDays, openAssignments.Select(a => (a.Code, a.Name)).ToList());
             if (!string.IsNullOrEmpty(full.PdfFilePath))
                 _fileUpload.DeleteFile(full.PdfFilePath);
 

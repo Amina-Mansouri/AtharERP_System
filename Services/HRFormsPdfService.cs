@@ -6,7 +6,7 @@ using QuestPDF.Infrastructure;
 
 namespace AtharERP_System.Services
 {
-    // توليد PDF لنماذج الشؤون الإدارية (إجازة / استقالة / إذن / تسليم عهدة) — يُستدعى عند كل خطوة اعتماد لأرشفة النموذج بأحدث توقيع
+    // توليد PDF لنماذج الشؤون الإدارية (إجازة / استقالة / إذن / تسليم عهدة / سلفة / شكوى) — بشكل جدولي يطابق النماذج الورقية، يُستدعى عند كل خطوة اعتماد لأرشفة النموذج بأحدث توقيع
     public class HRFormsPdfService
     {
         private readonly IWebHostEnvironment _environment;
@@ -16,22 +16,34 @@ namespace AtharERP_System.Services
             _environment = environment;
         }
 
-        public byte[] GenerateLeavePdf(LeaveRequest r)
+        public byte[] GenerateLeavePdf(LeaveRequest r, int remainingDays, List<(string Code, string Name)> openAssignments)
         {
-            return BuildDocument("نموذج طلب إجازة", r.User, col =>
+            return BuildDocument("نموذج تقديم طلب اجازة", r.User, col =>
             {
-                col.Item().Row(row =>
+                FieldRow(col, "تاريخ تقديم الطلب:", r.RequestedAt.ToString("yyyy-MM-dd"));
+                FieldRow(col, "رقم طلب الإجازة:", r.Id.ToString());
+                FieldRow(col, "رصيد الإجازات المتاح:", remainingDays.ToString());
+
+                SectionHeader(col, "بيانات الاجازة");
+                FieldRow(col, "نوع الإجازة:", GetDisplayName(r.Type));
+                DualFieldRow(col, "من تاريخ:", r.StartDate.ToString("yyyy-MM-dd"), "إلى تاريخ:", r.EndDate.ToString("yyyy-MM-dd"));
+                FieldRow(col, "عدد الأيام:", r.DaysCount.ToString());
+                FieldRow(col, "سبب الإجازة:", r.Reason ?? "-");
+
+                SectionHeader(col, "تسليم المهام أثناء فترة الإجازة");
+                if (!openAssignments.Any())
                 {
-                    row.RelativeItem().Text($"نوع الإجازة: {GetDisplayName(r.Type)}");
-                    row.RelativeItem().Text($"عدد الأيام: {r.DaysCount}");
-                });
-                col.Item().Row(row =>
+                    col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text("لا توجد تكليفات مفتوحة حالياً");
+                }
+                else
                 {
-                    row.RelativeItem().Text($"من: {r.StartDate:yyyy-MM-dd}");
-                    row.RelativeItem().Text($"إلى: {r.EndDate:yyyy-MM-dd}");
-                });
-                col.Item().Text($"السبب: {r.Reason ?? "-"}");
-                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+                    var i = 1;
+                    foreach (var a in openAssignments)
+                    {
+                        FieldRow(col, $".{i}", $"{a.Code} - {a.Name}");
+                        i++;
+                    }
+                }
 
                 SignatureSection(col, "اعتماد الشؤون الإدارية", r.DecidedBy, r.DecidedAt);
                 SignatureSection(col, "اعتماد المدير العام", r.GmDecidedBy, r.GmDecidedAt);
@@ -40,11 +52,16 @@ namespace AtharERP_System.Services
 
         public byte[] GenerateResignationPdf(ResignationRequest r)
         {
-            return BuildDocument("نموذج طلب استقالة", r.User, col =>
+            return BuildDocument("طلب استقالة", r.User, col =>
             {
-                col.Item().Text($"آخر يوم عمل مقترح: {r.RequestedLastWorkingDay:yyyy-MM-dd}");
-                col.Item().Text($"السبب: {r.Reason ?? "-"}");
-                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+                FieldRow(col, "تاريخ تقديم الاستقالة:", r.RequestedAt.ToString("yyyy-MM-dd"));
+                FieldRow(col, "سبب الاستقالة:", r.Reason ?? "-");
+
+                SectionHeader(col, "إقرار الموظف");
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8)
+                    .Text("أتقدم بطلب استقالتي من العمل، راجياً قبولها واتخاذ الإجراءات اللازمة وفقاً للوائح والنظم المعمول بها، مع خالص الشكر والتقدير.");
+                FieldRow(col, "آخر يوم عمل مقترح:", r.RequestedLastWorkingDay.ToString("yyyy-MM-dd"));
+                SignatureSection(col, "توقيع الموظف", r.User, r.RequestedAt);
 
                 SignatureSection(col, "اعتماد الشؤون الإدارية", r.DecidedBy, r.DecidedAt);
                 SignatureSection(col, "اعتماد المدير العام", r.GmDecidedBy, r.GmDecidedAt);
@@ -53,16 +70,28 @@ namespace AtharERP_System.Services
 
         public byte[] GeneratePermitPdf(PermitRequest r)
         {
-            return BuildDocument("نموذج إذن", r.User, col =>
+            return BuildDocument("نموذج اذونات", r.User, col =>
             {
-                col.Item().Row(row =>
+                SectionHeader(col, "نوع الأذن");
+                FieldRow(col, "نوع الأذن:", GetDisplayName(r.Type));
+                FieldRow(col, "الفترة:", $"{r.TimeRangeDisplay} ({r.DurationHours:N1} ساعة)");
+                FieldRow(col, "التاريخ:", r.Date.ToString("yyyy-MM-dd"));
+
+                SectionHeader(col, "السبب");
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).MinHeight(30).Text(r.Reason ?? "-");
+
+                SectionHeader(col, "المرفقات");
+                if (!r.Attachments.Any())
                 {
-                    row.RelativeItem().Text($"نوع الإذن: {GetDisplayName(r.Type)}");
-                    row.RelativeItem().Text($"التاريخ: {r.Date:yyyy-MM-dd}");
-                });
-                col.Item().Text($"الفترة: {r.TimeRangeDisplay} ({r.DurationHours:N1} ساعة)");
-                col.Item().Text($"السبب: {r.Reason ?? "-"}");
-                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+                    col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text("لا توجد مرفقات");
+                }
+                else
+                {
+                    foreach (var att in r.Attachments)
+                    {
+                        col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(att.FileName);
+                    }
+                }
 
                 SignatureSection(col, "اعتماد الشؤون الإدارية", r.DecidedBy, r.DecidedAt);
                 SignatureSection(col, "اعتماد المدير العام", r.GmDecidedBy, r.GmDecidedAt);
@@ -73,20 +102,26 @@ namespace AtharERP_System.Services
         {
             return BuildDocument("نموذج تقديم شكوى", r.User, col =>
             {
-                col.Item().Text($"نوع الشكوى: {GetDisplayName(r.Type)}");
-                col.Item().Text($"الموضوع: {r.Subject}");
-                col.Item().PaddingTop(5).Text("التفاصيل:").Bold();
-                col.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).MinHeight(50).Text(r.Description);
-                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+                FieldRow(col, "تاريخ تقديم الشكوى:", r.RequestedAt.ToString("yyyy-MM-dd"));
 
-                col.Item().PaddingTop(10).Text("رد الشؤون الإدارية").Bold().FontColor("#221837");
+                SectionHeader(col, "ثانيًا: بيانات الشكوى أو الاعتراض");
+                FieldRow(col, "نوع الطلب:", GetDisplayName(r.Type));
+                FieldRow(col, "موضوع الشكوى:", r.Subject);
+                FieldRow(col, "تفاصيل الشكوى:", r.Description, 45);
+
+                SectionHeader(col, "ثالثًا: إقرار مقدم الطلب");
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8)
+                    .Text("أقر بأن المعلومات الواردة أعلاه صحيحة حسب علمي، وأنني قدمت هذا الطلب بحسن نية، وأتحمل مسؤولية أي معلومات أقدمها عمدًا بصورة مضلّلة.");
+                SignatureSection(col, "توقيع مقدم الطلب", r.User, r.RequestedAt);
+
+                SectionHeader(col, "رابعًا: رد الشؤون الإدارية");
                 if (r.ResolvedBy == null)
                 {
-                    col.Item().Text("بانتظار الرد");
+                    col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).MinHeight(30).Text("بانتظار الرد");
                 }
                 else
                 {
-                    col.Item().Text($"الرد: {r.ResolutionNotes ?? "-"}");
+                    FieldRow(col, "الرد:", r.ResolutionNotes ?? "-", 40);
                     SignatureSection(col, "تم الرد من", r.ResolvedBy, r.ResolvedAt);
                 }
             });
@@ -96,13 +131,11 @@ namespace AtharERP_System.Services
         {
             return BuildDocument("نموذج طلب سلفة", r.User, col =>
             {
-                col.Item().Row(row =>
-                {
-                    row.RelativeItem().Text($"المبلغ: {r.Amount:N0} د.ل");
-                    row.RelativeItem().Text($"مدة السداد: {r.InstallmentMonths} شهر");
-                });
-                col.Item().Text($"القسط الشهري: {r.MonthlyInstallment:N0} د.ل");
-                col.Item().Text($"تاريخ التقديم: {r.RequestedAt:yyyy-MM-dd}");
+                FieldRow(col, "تاريخ تقديم الطلب:", r.RequestedAt.ToString("yyyy-MM-dd"));
+
+                SectionHeader(col, "بيانات السلفة");
+                DualFieldRow(col, "المبلغ:", $"{r.Amount:N0} د.ل", "مدة السداد:", $"{r.InstallmentMonths} شهر");
+                FieldRow(col, "القسط الشهري:", $"{r.MonthlyInstallment:N0} د.ل");
 
                 SignatureSection(col, "اعتماد المسؤول المالي", r.DecidedBy, r.DecidedAt);
                 SignatureSection(col, "اعتماد المدير العام", r.GmDecidedBy, r.GmDecidedAt);
@@ -111,16 +144,19 @@ namespace AtharERP_System.Services
 
         public byte[] GenerateCustodyHandoverPdf(CustodyHandover h)
         {
-            return BuildDocument("نموذج تسليم عهدة", h.Holder, col =>
+            return BuildDocument("نموذج تسليم العهد", h.Holder, col =>
             {
-                col.Item().Text($"تاريخ التسليم: {h.HandedDate:yyyy-MM-dd}");
-                col.Item().PaddingTop(5).Text("المواد المسلَّمة:").Bold();
+                FieldRow(col, "تاريخ تسليم العهد:", h.HandedDate.ToString("yyyy-MM-dd"));
+
+                SectionHeader(col, "العهد المستلمة");
+                var i = 1;
                 foreach (var line in h.Lines)
                 {
-                    col.Item().Text($"• {line.Item?.Name ?? "-"} — الكمية: {line.QuantityHanded}");
+                    FieldRow(col, $".{i}", $"{line.Item?.Name ?? "-"} — الكمية: {line.QuantityHanded}");
+                    i++;
                 }
 
-                SignatureSection(col, "الشؤون الإدارية (مُجهِّز العملية)", h.CreatedBy, h.HandedDate);
+                SignatureSection(col, "اعتماد الشؤون الإدارية", h.CreatedBy, h.HandedDate);
                 SignatureSection(col, "توقيع المستلم", h.HolderConfirmed ? h.Holder : null, h.HolderConfirmedAt);
             });
         }
@@ -136,56 +172,81 @@ namespace AtharERP_System.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(12));
+                    page.DefaultTextStyle(x => x.FontFamily("AtharArabic").FontSize(10));
                     page.ContentFromRightToLeft();
 
                     page.Header().Column(header =>
                     {
                         if (hasLogo)
-                            header.Item().AlignCenter().Height(60).Image(logoPath).FitArea();
+                            header.Item().AlignCenter().Height(55).Image(logoPath).FitArea();
 
-                        header.Item().PaddingTop(8).BorderBottom(2).BorderColor("#c9a15a")
-                            .PaddingBottom(6).AlignCenter().Text(title).FontSize(14).Bold().FontColor("#221837");
+                        header.Item().PaddingTop(8).AlignCenter().Text(title).FontSize(15).Bold().FontColor("#221837");
                     });
 
-                    page.Content().PaddingTop(15).Column(col =>
+                    page.Content().PaddingTop(12).Column(col =>
                     {
-                        col.Spacing(8);
-
-                        col.Item().Row(row =>
-                        {
-                            row.RelativeItem().Text($"اسم الموظف: {applicant?.FullName ?? "-"}");
-                            row.RelativeItem().Text($"الوظيفة: {applicant?.PositionRef?.NameAr ?? "-"}");
-                        });
-                        col.Item().Text($"القسم: {applicant?.Department?.Name ?? "-"}");
+                        SectionHeader(col, "بيانات الموظفة");
+                        DualFieldRow(col, "اسم الموظفة:", applicant?.FullName ?? "-", "الرقم الوظيفي:", applicant?.JobNumber ?? "-");
+                        DualFieldRow(col, "القسم:", applicant?.Department?.Name ?? "-", "المسمى الوظيفي:", applicant?.PositionRef?.NameAr ?? "-");
 
                         body(col);
                     });
 
-                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(10).FontColor(Colors.Grey.Medium);
+                    page.Footer().AlignCenter().PaddingTop(10).Text("أثر للتصاميم والاستشارات الهندسية").FontSize(9).FontColor(Colors.Grey.Medium);
                 });
             }).GeneratePdf();
         }
 
+        private void SectionHeader(ColumnDescriptor col, string text)
+        {
+            col.Item().Background("#d9d9d9").Padding(6).AlignCenter().Text(text).Bold().FontSize(11).FontColor("#221837");
+        }
+
+        private void FieldRow(ColumnDescriptor col, string label, string value, float minHeight = 20)
+        {
+            col.Item().Row(row =>
+            {
+                row.RelativeItem(1).Background("#f2f2f2").Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignRight().Text(label).Bold();
+                row.RelativeItem(3).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).MinHeight(minHeight).AlignRight().Text(value ?? "-");
+            });
+        }
+
+        private void DualFieldRow(ColumnDescriptor col, string label1, string value1, string label2, string value2)
+        {
+            col.Item().Row(row =>
+            {
+                row.RelativeItem(1).Background("#f2f2f2").Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignRight().Text(label1).Bold();
+                row.RelativeItem(2).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignRight().Text(value1 ?? "-");
+                row.RelativeItem(1).Background("#f2f2f2").Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignRight().Text(label2).Bold();
+                row.RelativeItem(2).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignRight().Text(value2 ?? "-");
+            });
+        }
+
         private void SignatureSection(ColumnDescriptor col, string title, ApplicationUser? decider, DateTime? decidedAt)
         {
-            col.Item().PaddingTop(10).Text(title).Bold().FontColor("#221837");
+            SectionHeader(col, title);
             if (decider == null)
             {
-                col.Item().Text("بانتظار الاعتماد");
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text("بانتظار الاعتماد");
                 return;
             }
 
-            col.Item().Text($"الاسم: {decider.FullName}");
-            col.Item().Text($"الوظيفة: {decider.PositionRef?.NameAr ?? "-"}");
-            col.Item().Text($"التاريخ: {(decidedAt.HasValue ? decidedAt.Value.ToString("yyyy-MM-dd") : "-")}");
-            col.Item().PaddingTop(3).Text("التوقيع:");
-            if (!string.IsNullOrEmpty(decider.SignatureImagePath))
+            FieldRow(col, "الاسم:", decider.FullName);
+            FieldRow(col, "الوظيفة:", decider.PositionRef?.NameAr ?? "-");
+            FieldRow(col, "التاريخ:", decidedAt.HasValue ? decidedAt.Value.ToString("yyyy-MM-dd") : "-");
+            col.Item().Row(row =>
             {
-                var path = MapPath(decider.SignatureImagePath);
-                if (File.Exists(path))
-                    col.Item().Height(45).Image(path).FitArea();
-            }
+                row.RelativeItem(1).Background("#f2f2f2").Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignRight().Text("التوقيع:").Bold();
+                row.RelativeItem(3).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).MinHeight(30).Element(container =>
+                {
+                    if (!string.IsNullOrEmpty(decider.SignatureImagePath))
+                    {
+                        var path = MapPath(decider.SignatureImagePath);
+                        if (File.Exists(path))
+                            container.Image(path).FitArea();
+                    }
+                });
+            });
         }
 
         private string MapPath(string relativePath)

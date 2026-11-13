@@ -1413,6 +1413,35 @@ namespace AtharERP_System.Migrations
                     b.ToTable("Permissions");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PermitAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PermitRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermitRequestId");
+
+                    b.ToTable("PermitAttachments");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.PermitRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -3751,6 +3780,17 @@ namespace AtharERP_System.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PermitAttachment", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.PermitRequest", "PermitRequest")
+                        .WithMany("Attachments")
+                        .HasForeignKey("PermitRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PermitRequest");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.PermitRequest", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "DecidedBy")
@@ -4574,6 +4614,11 @@ namespace AtharERP_System.Migrations
             modelBuilder.Entity("AtharERP_System.Models.Entities.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PermitRequest", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Project", b =>

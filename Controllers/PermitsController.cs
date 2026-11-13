@@ -38,6 +38,7 @@ namespace AtharERP_System.Controllers
                 .Include(r => r.User).ThenInclude(u => u!.Department)
                 .Include(r => r.DecidedBy).ThenInclude(u => u!.PositionRef)
                 .Include(r => r.GmDecidedBy).ThenInclude(u => u!.PositionRef)
+                .Include(r => r.Attachments)
                 .FirstAsync(r => r.Id == requestId);
 
             var bytes = _pdfService.GeneratePermitPdf(full);
@@ -57,6 +58,7 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Index()
         {
             var myRequests = await _context.PermitRequests
+                .Include(p => p.Attachments)
                 .Where(p => p.UserId == CurrentUserId)
                 .OrderByDescending(p => p.RequestedAt)
                 .ToListAsync();
@@ -67,6 +69,7 @@ namespace AtharERP_System.Controllers
             {
                 ViewBag.PendingRequests = await _context.PermitRequests
                     .Include(p => p.User)
+                    .Include(p => p.Attachments)
                     .Where(p => p.Status == PermitStatus.Pending)
                     .OrderBy(p => p.RequestedAt)
                     .ToListAsync();
@@ -78,6 +81,7 @@ namespace AtharERP_System.Controllers
             {
                 ViewBag.PendingFinalRequests = await _context.PermitRequests
                     .Include(p => p.User)
+                    .Include(p => p.Attachments)
                     .Where(p => p.Status == PermitStatus.PendingGeneralManager)
                     .OrderBy(p => p.RequestedAt)
                     .ToListAsync();
@@ -89,7 +93,7 @@ namespace AtharERP_System.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(PermitType type, DateTime date, TimeSpan startTime, TimeSpan endTime, string? reason)
+        public async Task<IActionResult> Create(PermitType type, DateTime date, TimeSpan startTime, TimeSpan endTime, string? reason, List<IFormFile>? attachments)
         {
             if (endTime <= startTime)
             {
@@ -110,6 +114,25 @@ namespace AtharERP_System.Controllers
             };
             _context.PermitRequests.Add(request);
             await _context.SaveChangesAsync();
+
+            if (attachments != null)
+            {
+                foreach (var file in attachments.Where(f => f != null && f.Length > 0))
+                {
+                    var uploadResult = await _fileUpload.SaveFileAsync(file, $"permits/{request.Id}");
+                    if (uploadResult.Success)
+                    {
+                        _context.PermitAttachments.Add(new PermitAttachment
+                        {
+                            PermitRequestId = request.Id,
+                            FilePath = uploadResult.FilePath,
+                            FileName = file.FileName
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+
             await ArchivePdfAsync(request.Id);
 
             var me = await _context.Users.FindAsync(CurrentUserId);
@@ -206,6 +229,25 @@ namespace AtharERP_System.Controllers
                 return NotFound();
 
             return PhysicalFile(fullPath, "application/pdf", $"طلب-اذن-{request.Id}.pdf");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> DownloadAttachment(int id)
+        {
+            var attachment = await _context.PermitAttachments.Include(a => a.PermitRequest).FirstOrDefaultAsync(a => a.Id == id);
+            if (attachment == null || attachment.PermitRequest == null)
+                return NotFound();
+
+            bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Permits.Manage");
+            bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Permits.FinalApprove");
+            if (attachment.PermitRequest.UserId != CurrentUserId && !canManage && !canFinalApprove)
+                return Forbid();
+
+            var fullPath = Path.Combine(_environment.WebRootPath, attachment.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            return PhysicalFile(fullPath, "application/octet-stream", attachment.FileName);
         }
     }
 }

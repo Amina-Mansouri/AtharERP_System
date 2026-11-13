@@ -4,19 +4,22 @@ namespace AtharERP_System.Models.Entities
 {
     public enum ComplaintType
     {
-        [Display(Name = "زميل عمل")]
-        Colleague = 1,
+        [Display(Name = "شكوى إدارية")]
+        Administrative = 1,
 
-        [Display(Name = "المدير المباشر")]
-        DirectManager = 2,
+        [Display(Name = "اعتراض على قرار إداري")]
+        ObjectionToDecision = 2,
 
-        [Display(Name = "بيئة العمل")]
-        WorkEnvironment = 3,
+        [Display(Name = "تظلم وظيفي")]
+        JobGrievance = 3,
 
-        [Display(Name = "رواتب ومستحقات")]
-        Payroll = 4,
+        [Display(Name = "شكوى بشأن التعامل المهني")]
+        ProfessionalConduct = 4,
+
+        [Display(Name = "اعتراض على إجراءات أو تعليمات العمل")]
+        ObjectionToProcedures = 5,
 
         [Display(Name = "أخرى")]
-        Other = 5
+        Other = 6
     }
 }

@@ -37,5 +37,7 @@ namespace AtharERP_System.Models.Entities
         public DateTime? GmDecidedAt { get; set; }
 
         public string? PdfFilePath { get; set; }
+
+        public List<PermitAttachment> Attachments { get; set; } = new();
     }
 }

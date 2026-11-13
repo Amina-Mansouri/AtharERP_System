@@ -28,7 +28,7 @@
 
 <div class="athar-card" style="margin-bottom:12px; padding:12px 14px;">
     <div style="font-size:12.5px; font-weight:600; margin-bottom:8px;">تقديم طلب إذن</div>
-    <form method="post" asp-action="Create" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+    <form method="post" asp-action="Create" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
         @Html.AntiForgeryToken()
         <div>
             <label class="form-label" style="font-size:11px;">النوع</label>
@@ -54,6 +54,10 @@
         <div style="min-width:220px;">
             <label class="form-label" style="font-size:11px;">السبب (اختياري)</label>
             <input type="text" name="reason" class="form-control form-control-sm" />
+        </div>
+        <div style="min-width:220px;">
+            <label class="form-label" style="font-size:11px;">المرفقات (اختياري، يمكن اختيار أكثر من ملف)</label>
+            <input type="file" name="attachments" multiple class="form-control form-control-sm" />
         </div>
         <button type="submit" class="btn-line btn-line-accent">إرسال الطلب</button>
     </form>
@@ -81,7 +85,18 @@
                     <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
                     <div class="cell cell-num">@r.TimeRangeDisplay</div>
                     <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
-                    <div class="cell">@(r.Reason ?? "-")</div>
+                    <div class="cell">
+                        @(r.Reason ?? "-")
+                        @if (r.Attachments != null && r.Attachments.Any())
+                        {
+                            <div style="margin-top:4px;">
+                                @foreach (var att in r.Attachments)
+                                {
+                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
+                                }
+                            </div>
+                        }
+                    </div>
                     <div class="cell" style="display:flex; gap:6px;">
                         <form method="post" asp-action="Decide" style="display:inline;">
                             @Html.AntiForgeryToken()
