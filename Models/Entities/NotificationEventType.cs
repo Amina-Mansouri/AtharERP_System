@@ -114,6 +114,18 @@ namespace AtharERP_System.Models.Entities
         ComplaintCreated = 35,
 
         [Display(Name = "رد على شكوى")]
-        ComplaintResolved = 36
+        ComplaintResolved = 36,
+
+        [Display(Name = "تقرير إغلاق مشروع جديد")]
+        ProjectClosureReportCreated = 37,
+
+        [Display(Name = "قرار بشأن تقرير إغلاق مشروع")]
+        ProjectClosureReportDecided = 38,
+
+        [Display(Name = "نموذج تسليم مشروع جديد")]
+        ProjectDeliveryReportCreated = 39,
+
+        [Display(Name = "قرار بشأن نموذج تسليم مشروع")]
+        ProjectDeliveryReportDecided = 40
     }
 }

@@ -129,6 +129,7 @@
         bool canSites = await PermissionService.HasPermissionAsync(User, "Sites.View");
         bool isDesignEngineer = User.IsInRole("مهندس تصميم");
         bool canViewAssignments = await PermissionService.HasPermissionAsync(User, "Projects.Assignments.View");
+        bool canProjectReports = await PermissionService.HasPermissionAsync(User, "Projects.Reports.Create") || await PermissionService.HasPermissionAsync(User, "Projects.Reports.Approve");
         bool canFinance = await PermissionService.HasPermissionAsync(User, "Finance.View")
     || await PermissionService.HasPermissionAsync(User, "Finance.Costs.View")
     || await PermissionService.HasPermissionAsync(User, "Finance.Sales.View")
@@ -278,6 +279,11 @@
                                     {
                                         <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
                                            asp-controller="ProjectAssignments" asp-action="MyAssignments">التكليفات</a>
+                                    }
+                                    @if (canProjectReports)
+                                    {
+                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectReports" ? "active" : "")"
+                                           asp-controller="ProjectReports" asp-action="Index">التقارير</a>
                                     }
                                 </div>
                             </div>
@@ -464,14 +470,19 @@
                                     <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectAssignments" ? "active" : "")"
                                        asp-controller="ProjectAssignments" asp-action="Overview">📋 تكليفاتي</a>
                                 }
-                                @if (isDesignEngineer)
-                                {
-                                    <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
-                                       asp-controller="ProjectAssignments" asp-action="MyAssignments">📋 تكليفاتي</a>
-                                }
+                            @if (isDesignEngineer)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "MyAssignments" ? "active" : "")"
+                                   asp-controller="ProjectAssignments" asp-action="MyAssignments">📋 تكليفاتي</a>
                             }
+                            @if (canProjectReports)
+                            {
+                                <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "ProjectReports" ? "active" : "")"
+                                   asp-controller="ProjectReports" asp-action="Index">📝 التقارير</a>
+                            }
+                        }
 
-                            @if (canSites && !isDesignEngineer)
+                        @if (canSites && !isDesignEngineer)
                             {
                                 <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Sites" ? "active" : "")"
                                    asp-controller="Sites" asp-action="Index">🏢 مواقعي</a>

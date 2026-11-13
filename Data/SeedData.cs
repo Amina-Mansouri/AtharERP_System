@@ -170,6 +170,8 @@ namespace AtharERP_System.Data
                 new Permission { Code = "Projects.Proposals.View", Name = "المشاريع.مقترحات.عرض", Module = "Projects" },
                 new Permission { Code = "Projects.Proposals.Edit", Name = "المشاريع.مقترحات.تعديل", Module = "Projects" },
                 new Permission { Code = "Projects.DocControl.Manage", Name = "المشاريع.ضبط_الوثائق.إدارة", Module = "Projects" },
+                new Permission { Code = "Projects.Reports.Create", Name = "المشاريع.تقارير.إضافة", Module = "Projects" },
+                new Permission { Code = "Projects.Reports.Approve", Name = "المشاريع.تقارير.اعتماد", Module = "Projects" },
 
                 // 6.4 المالية
                 new Permission { Code = "Finance.View", Name = "المالية.عرض", Module = "Finance" },
@@ -241,15 +243,15 @@ namespace AtharERP_System.Data
             // مهندسة تصميم (03-SCREENS.md): مشاريعها ومهامها · حضورها · راتبها وخصوماتها ومكافآتها ·
             // إضافة طلبات توريد · المقترحات التصميمية. ممنوعة من الميزانيات وبيانات المالك والمالية العامة.
             await LinkPermissionsToRole(context, roleManager, "مهندس تصميم", new[]
-            {
+   {
                 "Projects.ViewOwn",
                 "Projects.Proposals.View", "Projects.Proposals.Edit",
+                "Projects.Reports.Create",
                 "HR.Attendance.View",
                 "HR.Salaries.View",
                 "Sites.View",
                 "Supply.View", "Supply.Create"
             });
-
             // مهندسة جودة (03-SCREENS.md): إضافة المشاريع والمهام · متابعة جميع المشاريع وأعمال التصميم ·
             // الاطلاع على جميع المهام والحضور · اعتماد الجودة والتقارير. نفس الممنوعات الثلاثة.
             await LinkPermissionsToRole(context, roleManager, "مهندس جودة", new[]
