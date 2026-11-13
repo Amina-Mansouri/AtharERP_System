@@ -70,7 +70,7 @@ namespace AtharERP_System.Controllers
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? filterEmployeeId, DateTime? filterFrom, DateTime? filterTo, string? filterStatus)
         {
             var myRequests = await _context.LeaveRequests
                 .Where(l => l.UserId == CurrentUserId)
@@ -88,25 +88,29 @@ namespace AtharERP_System.Controllers
             ViewBag.RemainingDays = Math.Max(0, allowance - usedDays);
 
             bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Leaves.Manage");
-            ViewBag.CanManage = canManage;
-            if (canManage)
-            {
-                ViewBag.PendingRequests = await _context.LeaveRequests
-                    .Include(l => l.User)
-                    .Where(l => l.Status == LeaveRequestStatus.Pending)
-                    .OrderBy(l => l.RequestedAt)
-                    .ToListAsync();
-            }
-
             bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Leaves.FinalApprove");
+            ViewBag.CanManage = canManage;
             ViewBag.CanFinalApprove = canFinalApprove;
-            if (canFinalApprove)
+
+            if (canManage || canFinalApprove)
             {
-                ViewBag.PendingFinalRequests = await _context.LeaveRequests
-                    .Include(l => l.User)
-                    .Where(l => l.Status == LeaveRequestStatus.PendingGeneralManager)
-                    .OrderBy(l => l.RequestedAt)
-                    .ToListAsync();
+                var query = _context.LeaveRequests.Include(l => l.User).AsQueryable();
+
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    query = query.Where(l => l.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    query = query.Where(l => l.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    query = query.Where(l => l.RequestedAt.Date <= filterTo.Value.Date);
+                if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<LeaveRequestStatus>(filterStatus, out var statusEnum))
+                    query = query.Where(l => l.Status == statusEnum);
+
+                ViewBag.ManagedRequests = await query.OrderByDescending(l => l.RequestedAt).ToListAsync();
+                ViewBag.AllEmployees = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
+                ViewBag.FilterEmployeeId = filterEmployeeId;
+                ViewBag.FilterFrom = filterFrom;
+                ViewBag.FilterTo = filterTo;
+                ViewBag.FilterStatus = filterStatus;
             }
 
             return View(myRequests);

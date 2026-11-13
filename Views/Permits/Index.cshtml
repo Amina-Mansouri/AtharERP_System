@@ -5,9 +5,14 @@
     ViewData["Title"] = "الأذونات";
     bool canManage = (bool)ViewBag.CanManage;
     bool canFinalApprove = ViewBag.CanFinalApprove as bool? ?? false;
-    var pending = ViewBag.PendingRequests as List<PermitRequest> ?? new List<PermitRequest>();
-    var pendingFinal = ViewBag.PendingFinalRequests as List<PermitRequest> ?? new List<PermitRequest>();
+    var managedRequests = ViewBag.ManagedRequests as List<PermitRequest> ?? new List<PermitRequest>();
+    var allEmployees = ViewBag.AllEmployees as List<ApplicationUser> ?? new List<ApplicationUser>();
+    string? filterEmployeeId = ViewBag.FilterEmployeeId as string;
+    DateTime? filterFrom = ViewBag.FilterFrom as DateTime?;
+    DateTime? filterTo = ViewBag.FilterTo as DateTime?;
+    string? filterStatus = ViewBag.FilterStatus as string;
     var permitTypeLabels = EnumDisplayHelper.GetDisplayList<PermitType>();
+    var permitStatusLabels = EnumDisplayHelper.GetDisplayList<PermitStatus>();
 }
 
 <div class="page-head">
@@ -63,182 +68,184 @@
     </form>
 </div>
 
-@if (canManage && pending.Any())
-{
-    <div class="athar-card" style="margin-bottom:12px;">
-        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد (@pending.Count)</div>
-        <div class="data-table" style="--cols: 1.2fr 110px 90px 110px 70px 1fr 150px">
+<div class="athar-card" style="margin-bottom:12px;">
+    <div class="nav-group-header collapsed" data-bs-toggle="collapse" data-bs-target="#myPermitsSection" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; font-size:12.5px; font-weight:600;">
+        <span>طلباتي</span>
+        <span class="nav-group-caret">▾</span>
+    </div>
+    <div class="collapse" id="myPermitsSection">
+        <div class="data-table" style="--cols: 110px 90px 110px 70px 1fr 150px">
             <div class="data-table-head">
-                <div class="cell">الموظف</div>
                 <div class="cell">النوع</div>
                 <div class="cell">التاريخ</div>
                 <div class="cell">من - إلى</div>
                 <div class="cell">الساعات</div>
                 <div class="cell">السبب</div>
-                <div class="cell">إجراء</div>
+                <div class="cell">الحالة</div>
             </div>
-            @foreach (var r in pending)
+            @if (!Model.Any())
             {
-                <div class="data-table-row">
-                    <div class="cell">@r.User?.FullName</div>
-                    <div class="cell">@permitTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
-                    <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
-                    <div class="cell cell-num">@r.TimeRangeDisplay</div>
-                    <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
-                    <div class="cell">
-                        @(r.Reason ?? "-")
-                        @if (r.Attachments != null && r.Attachments.Any())
-                        {
-                            <div style="margin-top:4px;">
-                                @foreach (var att in r.Attachments)
-                                {
-                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
-                                }
-                            </div>
-                        }
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات أذونات سابقة</div></div>
+            }
+            else
+            {
+                @foreach (var r in Model)
+                {
+                    <div class="data-table-row">
+                        <div class="cell">@permitTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
+                        <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
+                        <div class="cell cell-num">@r.TimeRangeDisplay</div>
+                        <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
+                        <div class="cell">
+                            @(r.Reason ?? "-")
+                            @if (r.Attachments != null && r.Attachments.Any())
+                            {
+                                <div style="margin-top:4px;">
+                                    @foreach (var att in r.Attachments)
+                                    {
+                                        <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="cell">
+                            @if (r.Status == PermitStatus.Pending)
+                            {
+                                <span class="tag tag-warning">بانتظار اعتماد الشؤون الإدارية</span>
+                            }
+                            else if (r.Status == PermitStatus.PendingGeneralManager)
+                            {
+                                <span class="tag tag-warning">بانتظار اعتماد المدير العام</span>
+                            }
+                            else if (r.Status == PermitStatus.Approved)
+                            {
+                                <span class="tag tag-success">معتمد</span>
+                            }
+                            else
+                            {
+                                <span class="tag tag-danger">مرفوض</span>
+                            }
+                            @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                            {
+                                <a href="/Permits/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
+                            }
+                        </div>
                     </div>
-                    <div class="cell" style="display:flex; gap:6px;">
-                        <form method="post" asp-action="Decide" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="true" />
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
-                        </form>
-                        <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
-                        </form>
-                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
-                        {
-                            <a href="/Permits/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
-                        }
-                    </div>
-                </div>
+                }
             }
         </div>
-    </div>
-}
-
-@if (canFinalApprove && pendingFinal.Any())
-{
-    <div class="athar-card" style="margin-bottom:12px;">
-        <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلبات بانتظار الاعتماد النهائي من المدير العام (@pendingFinal.Count)</div>
-        <div class="data-table" style="--cols: 1.2fr 110px 90px 110px 70px 1fr 150px">
-            <div class="data-table-head">
-                <div class="cell">الموظف</div>
-                <div class="cell">النوع</div>
-                <div class="cell">التاريخ</div>
-                <div class="cell">من - إلى</div>
-                <div class="cell">الساعات</div>
-                <div class="cell">السبب</div>
-                <div class="cell">إجراء</div>
-            </div>
-            @foreach (var r in pendingFinal)
-            {
-                <div class="data-table-row">
-                    <div class="cell">@r.User?.FullName</div>
-                    <div class="cell">@permitTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
-                    <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
-                    <div class="cell cell-num">@r.TimeRangeDisplay</div>
-                    <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
-                    <div class="cell">
-                        @(r.Reason ?? "-")
-                        @if (r.Attachments != null && r.Attachments.Any())
-                        {
-                            <div style="margin-top:4px;">
-                                @foreach (var att in r.Attachments)
-                                {
-                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
-                                }
-                            </div>
-                        }
-                    </div>
-                    <div class="cell" style="display:flex; gap:6px;">
-                        <form method="post" asp-action="FinalDecide" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="true" />
-                            <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد نهائي</button>
-                        </form>
-                        <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
-                        </form>
-                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
-                        {
-                            <a href="/Permits/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-}
-
-<div class="athar-card">
-    <div style="padding:10px 14px; font-size:12.5px; font-weight:600; border-bottom:1px solid #f1f0f6;">طلباتي</div>
-    <div class="data-table" style="--cols: 110px 90px 110px 70px 1fr 150px">
-        <div class="data-table-head">
-            <div class="cell">النوع</div>
-            <div class="cell">التاريخ</div>
-            <div class="cell">من - إلى</div>
-            <div class="cell">الساعات</div>
-            <div class="cell">السبب</div>
-            <div class="cell">الحالة</div>
-        </div>
-        @if (!Model.Any())
-        {
-            <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات أذونات سابقة</div></div>
-        }
-        else
-        {
-            @foreach (var r in Model)
-            {
-                <div class="data-table-row">
-                    <div class="cell">@permitTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
-                    <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
-                    <div class="cell cell-num">@r.TimeRangeDisplay</div>
-                    <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
-                    <div class="cell">
-                        @(r.Reason ?? "-")
-                        @if (r.Attachments != null && r.Attachments.Any())
-                        {
-                            <div style="margin-top:4px;">
-                                @foreach (var att in r.Attachments)
-                                {
-                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
-                                }
-                            </div>
-                        }
-                    </div>
-                    <div class="cell">
-                        @if (r.Status == PermitStatus.Pending)
-                        {
-                            <span class="tag tag-warning">بانتظار اعتماد الشؤون الإدارية</span>
-                        }
-                        else if (r.Status == PermitStatus.PendingGeneralManager)
-                        {
-                            <span class="tag tag-warning">بانتظار اعتماد المدير العام</span>
-                        }
-                        else if (r.Status == PermitStatus.Approved)
-                        {
-                            <span class="tag tag-success">معتمد</span>
-                        }
-                        else
-                        {
-                            <span class="tag tag-danger">مرفوض</span>
-                        }
-                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
-                        {
-                            <a href="/Permits/Download/@r.Id" target="_blank" style="margin-right:6px; font-size:11px;">📄</a>
-                        }
-                    </div>
-                </div>
-            }
-        }
     </div>
 </div>
+
+@if (canManage || canFinalApprove)
+{
+    <div style="padding:6px 2px; font-size:12.5px; font-weight:700; color:#5a5370;">طلبات المهندسات</div>
+
+    <div class="athar-card">
+        <form method="get" asp-action="Index" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; padding:10px 14px; border-bottom:1px solid #f1f0f6;">
+            <div style="min-width:180px;">
+                <label class="form-label" style="font-size:11px;">الموظف</label>
+                <select name="filterEmployeeId" class="form-select form-select-sm">
+                    <option value="">-- الكل --</option>
+                    @foreach (var u in allEmployees)
+                    {
+                        <option value="@u.Id" selected="@(u.Id == filterEmployeeId ? "selected" : null)">@u.FullName</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">من تاريخ</label>
+                <input type="date" name="filterFrom" class="form-control form-control-sm" value="@(filterFrom?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div>
+                <label class="form-label" style="font-size:11px;">إلى تاريخ</label>
+                <input type="date" name="filterTo" class="form-control form-control-sm" value="@(filterTo?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div style="min-width:160px;">
+                <label class="form-label" style="font-size:11px;">الحالة</label>
+                <select name="filterStatus" class="form-select form-select-sm">
+                    <option value="">-- الكل --</option>
+                    @foreach (var st in permitStatusLabels)
+                    {
+                        <option value="@st.Value" selected="@(st.Value == filterStatus ? "selected" : null)">@st.Label</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn-line btn-line-accent">تصفية</button>
+            <a class="btn-line" asp-action="Index">إعادة تعيين</a>
+        </form>
+        <div class="data-table" style="--cols: 1.2fr 110px 90px 110px 70px 1fr 190px">
+            <div class="data-table-head">
+                <div class="cell">الموظف</div>
+                <div class="cell">النوع</div>
+                <div class="cell">التاريخ</div>
+                <div class="cell">من - إلى</div>
+                <div class="cell">الساعات</div>
+                <div class="cell">السبب</div>
+                <div class="cell">إجراء</div>
+            </div>
+            @if (!managedRequests.Any())
+            {
+                <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد طلبات مطابقة</div></div>
+            }
+            @foreach (var r in managedRequests)
+            {
+                <div class="data-table-row">
+                    <div class="cell">@r.User?.FullName</div>
+                    <div class="cell">@permitTypeLabels.FirstOrDefault(x => x.Value == r.Type.ToString()).Label</div>
+                    <div class="cell cell-num">@r.Date.ToString("yyyy-MM-dd")</div>
+                    <div class="cell cell-num">@r.TimeRangeDisplay</div>
+                    <div class="cell cell-num">@r.DurationHours.ToString("N1")</div>
+                    <div class="cell">
+                        @(r.Reason ?? "-")
+                        @if (r.Attachments != null && r.Attachments.Any())
+                        {
+                            <div style="margin-top:4px;">
+                                @foreach (var att in r.Attachments)
+                                {
+                                    <a href="/Permits/DownloadAttachment/@att.Id" target="_blank" style="font-size:10px; display:block;">📎 @att.FileName</a>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="cell" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        @if (canManage && r.Status == PermitStatus.Pending)
+                        {
+                            <form method="post" asp-action="Decide" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="true" />
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد</button>
+                            </form>
+                            <form method="post" asp-action="Decide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="false" />
+                                <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                            </form>
+                        }
+                        @if (canFinalApprove && r.Status == PermitStatus.PendingGeneralManager)
+                        {
+                            <form method="post" asp-action="FinalDecide" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="true" />
+                                <button type="submit" class="btn-line btn-line-accent" style="font-size:10px;">اعتماد نهائي</button>
+                            </form>
+                            <form method="post" asp-action="FinalDecide" style="display:inline;" onsubmit="return confirm('رفض هذا الطلب؟');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="false" />
+                                <button type="submit" class="btn-line" style="font-size:10px; color:#c94a42; border-color:#c94a42;">رفض</button>
+                            </form>
+                        }
+                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                        {
+                            <a href="/Permits/Download/@r.Id" target="_blank" class="btn-line" style="font-size:10px;">PDF</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

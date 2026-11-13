@@ -55,7 +55,7 @@ namespace AtharERP_System.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         [Authorize]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? filterEmployeeId, DateTime? filterFrom, DateTime? filterTo, string? filterStatus)
         {
             var myRequests = await _context.PermitRequests
                 .Include(p => p.Attachments)
@@ -64,27 +64,29 @@ namespace AtharERP_System.Controllers
                 .ToListAsync();
 
             bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Permits.Manage");
-            ViewBag.CanManage = canManage;
-            if (canManage)
-            {
-                ViewBag.PendingRequests = await _context.PermitRequests
-                    .Include(p => p.User)
-                    .Include(p => p.Attachments)
-                    .Where(p => p.Status == PermitStatus.Pending)
-                    .OrderBy(p => p.RequestedAt)
-                    .ToListAsync();
-            }
-
             bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Permits.FinalApprove");
+            ViewBag.CanManage = canManage;
             ViewBag.CanFinalApprove = canFinalApprove;
-            if (canFinalApprove)
+
+            if (canManage || canFinalApprove)
             {
-                ViewBag.PendingFinalRequests = await _context.PermitRequests
-                    .Include(p => p.User)
-                    .Include(p => p.Attachments)
-                    .Where(p => p.Status == PermitStatus.PendingGeneralManager)
-                    .OrderBy(p => p.RequestedAt)
-                    .ToListAsync();
+                var query = _context.PermitRequests.Include(p => p.User).Include(p => p.Attachments).AsQueryable();
+
+                if (!string.IsNullOrEmpty(filterEmployeeId))
+                    query = query.Where(p => p.UserId == filterEmployeeId);
+                if (filterFrom.HasValue)
+                    query = query.Where(p => p.RequestedAt.Date >= filterFrom.Value.Date);
+                if (filterTo.HasValue)
+                    query = query.Where(p => p.RequestedAt.Date <= filterTo.Value.Date);
+                if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<PermitStatus>(filterStatus, out var statusEnum))
+                    query = query.Where(p => p.Status == statusEnum);
+
+                ViewBag.ManagedRequests = await query.OrderByDescending(p => p.RequestedAt).ToListAsync();
+                ViewBag.AllEmployees = await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
+                ViewBag.FilterEmployeeId = filterEmployeeId;
+                ViewBag.FilterFrom = filterFrom;
+                ViewBag.FilterTo = filterTo;
+                ViewBag.FilterStatus = filterStatus;
             }
 
             return View(myRequests);
