@@ -73,8 +73,9 @@ namespace AtharERP_System.Controllers
             var site = await _context.Sites.FirstOrDefaultAsync(s => s.ProjectId == full.ProjectId);
 
             var linkedAssignments = await _context.ProjectAssignments
-                .Where(a => a.StageId == full.ProjectStageId)
-                .ToListAsync();
+     .Include(a => a.Engineers).ThenInclude(e => e.User)
+     .Where(a => a.StageId == full.ProjectStageId)
+     .ToListAsync();
             var incompleteAssignments = linkedAssignments
                 .Where(a => a.Status != AssignmentStatus.Completed && a.Status != AssignmentStatus.Cancelled)
                 .ToList();
@@ -166,7 +167,7 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Projects.Reports.Create")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateClosure(int projectId, List<int> stageIds, string? version, DateTime? closureDate,
+        public async Task<IActionResult> CreateClosure(int projectId, List<int> stageIds, DateTime? closureDate,
             bool scopeFullyCompleted, bool scopePartiallyWithNotes, bool scopeExcludedWorkExists, string? scopeNotes)
         {
             var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
@@ -178,7 +179,9 @@ namespace AtharERP_System.Controllers
                 return RedirectToAction("CreateClosure", new { projectId });
             }
 
-            var code = $"CLR-{project.Code}-{(await _context.ProjectClosureReports.CountAsync(r => r.ProjectId == projectId)) + 1:D3}";
+            var closureCount = await _context.ProjectClosureReports.CountAsync(r => r.ProjectId == projectId);
+            var code = $"CLR-{project.Code}-{closureCount + 1:D3}";
+            var version = (closureCount + 1).ToString();
 
             var report = new ProjectClosureReport
             {
@@ -262,6 +265,7 @@ namespace AtharERP_System.Controllers
             if (stageId.HasValue)
             {
                 var linkedAssignments = await _context.ProjectAssignments
+                    .Include(a => a.Engineers).ThenInclude(e => e.User)
                     .Where(a => a.StageId == stageId.Value)
                     .ToListAsync();
                 ViewBag.SelectedStageId = stageId.Value;

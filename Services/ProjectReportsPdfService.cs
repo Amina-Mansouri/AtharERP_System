@@ -211,7 +211,10 @@ namespace AtharERP_System.Services
                                 c.Item().Text("لا توجد تكليفات مرتبطة");
                             else
                                 foreach (var a in linkedAssignments)
-                                    c.Item().Text($"• {a.AssignmentType} ({GetDisplayName(a.Status)})");
+                                {
+                                    var engNames = a.Engineers.Any() ? string.Join("، ", a.Engineers.Select(e => e.User?.FullName ?? "-")) : "بدون مهندسة محددة";
+                                    c.Item().Text($"• {(string.IsNullOrWhiteSpace(a.AssignmentType) ? "بدون نوع محدد" : a.AssignmentType)} — {engNames} ({GetDisplayName(a.Status)})");
+                                }
                         });
 
                         col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("قائمة الملفات والمستندات المسلّمة").Bold().FontSize(12).FontColor(Colors.White);
@@ -231,7 +234,10 @@ namespace AtharERP_System.Services
                                 c.Item().Text("لا توجد تكليفات غير مكتملة");
                             else
                                 foreach (var a in incompleteAssignments)
-                                    c.Item().Text($"• {a.AssignmentType}");
+                                {
+                                    var engNames = a.Engineers.Any() ? string.Join("، ", a.Engineers.Select(e => e.User?.FullName ?? "-")) : "بدون مهندسة محددة";
+                                    c.Item().Text($"• {(string.IsNullOrWhiteSpace(a.AssignmentType) ? "بدون نوع محدد" : a.AssignmentType)} — {engNames} ({GetDisplayName(a.Status)})");
+                                }
                         });
 
                         col.Item().Background("#c9a15a").Padding(6).AlignCenter().Text("ملاحظات").Bold().FontSize(12).FontColor(Colors.White);

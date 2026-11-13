@@ -1,4 +1,5 @@
 ﻿@using AtharERP_System.Models.Entities
+@using AtharERP_System.Services
 @{
     ViewData["Title"] = "نموذج تسليم مشروع";
     var project = ViewBag.Project as Project;
@@ -7,8 +8,8 @@
     var linkedAssignments = ViewBag.LinkedAssignments as List<ProjectAssignment> ?? new List<ProjectAssignment>();
     var incompleteAssignments = ViewBag.IncompleteAssignments as List<ProjectAssignment> ?? new List<ProjectAssignment>();
     var candidateRevisions = ViewBag.CandidateRevisions as List<DocumentRevision> ?? new List<DocumentRevision>();
+    var assignmentStatusLabels = EnumDisplayHelper.GetDisplayList<AssignmentStatus>();
 }
-
 <div class="page-head">
     <div>
         <span class="kicker">التقارير</span>
@@ -53,7 +54,9 @@
                 {
                     foreach (var a in linkedAssignments)
                     {
-                        <div style="font-size:11.5px;">• @a.AssignmentType (@a.Status)</div>
+                        var engNames = a.Engineers.Any() ? string.Join("، ", a.Engineers.Select(e => e.User?.FullName ?? "-")) : "بدون مهندسة محددة";
+                        var statusLabel = assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label;
+                        <div style="font-size:11.5px;">• @(string.IsNullOrWhiteSpace(a.AssignmentType) ? "بدون نوع محدد" : a.AssignmentType) — @engNames (@statusLabel)</div>
                     }
                 }
             </div>
@@ -82,7 +85,9 @@
                 {
                     foreach (var a in incompleteAssignments)
                     {
-                        <div style="font-size:11.5px;">• @a.AssignmentType</div>
+                        var engNames = a.Engineers.Any() ? string.Join("، ", a.Engineers.Select(e => e.User?.FullName ?? "-")) : "بدون مهندسة محددة";
+                        var statusLabel = assignmentStatusLabels.FirstOrDefault(x => x.Value == a.Status.ToString()).Label;
+                        <div style="font-size:11.5px;">• @(string.IsNullOrWhiteSpace(a.AssignmentType) ? "بدون نوع محدد" : a.AssignmentType) — @engNames (@statusLabel)</div>
                     }
                 }
             </div>

@@ -95,12 +95,12 @@
                     <div class="cell">@r.Project?.Name</div>
                     <div class="cell">@r.CreatedBy?.FullName</div>
                     <div class="cell cell-num">@r.CreatedAt.ToString("yyyy-MM-dd")</div>
-                    <div class="cell" style="display:flex; gap:6px; flex-wrap:wrap;">
-                        <form method="post" asp-action="DecideClosure" style="display:inline-flex; gap:4px; align-items:center;">
+                    <div class="cell" style="display:flex; flex-direction:column; gap:5px; padding-top:4px; padding-bottom:4px;">
+                        <form method="post" asp-action="DecideClosure" style="display:flex; gap:4px; align-items:center;">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
                             <input type="hidden" name="approved" value="true" />
-                            <select name="finalStatus" class="form-select form-select-sm" style="font-size:10px; width:150px;" required>
+                            <select name="finalStatus" class="form-select form-select-sm" style="font-size:10px; width:120px;" required>
                                 <option value="">-- حالة المشروع --</option>
                                 @foreach (var fs in EnumDisplayHelper.GetDisplayList<ClosureFinalStatus>())
                                 {
@@ -109,16 +109,18 @@
                             </select>
                             <button type="submit" class="btn-line-xs btn-line-accent">اعتماد</button>
                         </form>
-                        <form method="post" asp-action="DecideClosure" style="display:inline;" onsubmit="return confirm('رفض هذا التقرير؟');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@r.Id" />
-                            <input type="hidden" name="approved" value="false" />
-                            <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
-                        </form>
-                        @if (!string.IsNullOrEmpty(r.PdfFilePath))
-                        {
-                            <a href="/ProjectReports/DownloadClosure/@r.Id" target="_blank" class="btn-line-xs">PDF</a>
-                        }
+                        <div style="display:flex; gap:6px;">
+                            <form method="post" asp-action="DecideClosure" style="display:inline;" onsubmit="return confirm('رفض هذا التقرير؟');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="approved" value="false" />
+                                <button type="submit" class="btn-line-xs btn-line-danger">رفض</button>
+                            </form>
+                            @if (!string.IsNullOrEmpty(r.PdfFilePath))
+                            {
+                                <a href="/ProjectReports/DownloadClosure/@r.Id" target="_blank" class="btn-line-xs">PDF</a>
+                            }
+                        </div>
                     </div>
                 </div>
             }
