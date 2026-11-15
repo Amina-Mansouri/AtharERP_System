@@ -65,6 +65,7 @@ builder.Services.AddScoped<FinancePdfService>();
 builder.Services.AddScoped<HRFormsPdfService>();
 builder.Services.AddScoped<ProjectReportsPdfService>();
 builder.Services.AddScoped<ClassificationValidationService>();
+builder.Services.AddScoped<PerformanceEvaluationExportService>();
 builder.Services.AddScoped<AttendanceCalculationService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<ContractLifecycleHostedService>();
