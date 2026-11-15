@@ -1000,10 +1000,29 @@ namespace AtharERP_System.Migrations
                     b.Property<decimal?>("ActualWorkingHours")
                         .HasColumnType("decimal(8,2)");
 
+                    b.Property<decimal?>("AdjustedProductionTarget")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("ApprovedLeaveHours")
+                        .HasColumnType("decimal(8,2)");
+
                     b.Property<decimal?>("AvailableWorkingHours")
                         .HasColumnType("decimal(8,2)");
 
+                    b.Property<int?>("CompletedTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Discipline")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("EarlyTasks")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("EngineeringKpi")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("EngineeringKpiWeight")
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<decimal?>("FinalMonthlyKpi")
@@ -1012,10 +1031,19 @@ namespace AtharERP_System.Migrations
                     b.Property<decimal?>("HrEvaluation")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<decimal?>("HrEvaluationWeight")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int?>("LateTasks")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("OnTimeDeliveryRatePercent")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int?>("OnTimeTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PendingTasks")
                         .HasColumnType("integer");
 
                     b.Property<int>("PerformanceEvaluationUploadId")
@@ -1025,15 +1053,43 @@ namespace AtharERP_System.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<decimal?>("ProductionAchievementPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("RecognizedProductionWithinPeriod")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("StandardProductionTarget")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("StandardWorkingHours")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<string>("TeamDepartment")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("TotalBaseProduction")
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<decimal?>("TotalFinalProductionScore")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<decimal?>("TotalRevisionDeduction")
                         .HasColumnType("decimal(8,2)");
 
                     b.Property<int?>("TotalTasks")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("TotalTasksCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal?>("WorkingHoursUtilizationPercent")
+                        .HasColumnType("decimal(5,2)");
 
                     b.HasKey("Id");
 
@@ -1467,6 +1523,129 @@ namespace AtharERP_System.Migrations
                     b.HasIndex("UploadedById");
 
                     b.ToTable("PerformanceEvaluationUploads");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PerformanceTaskDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("BaseProduction")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("BuildingArea")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("BuildingName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("BuildingNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal?>("DailyBaseProduction")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int?>("DaysWithinReportPeriod")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("DeadlineFactor")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("DeadlineStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Discipline")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Element")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("ElementWeight")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("EligibilityReduction")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int?>("EligibleRevisions")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("FinalTaskScore")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("PerformanceEvaluationUploadId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProjectName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ProjectNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProjectType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("ProjectTypeFactor")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("RecognizedProductionWithinPeriod")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("RevisionCompliance")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int?>("RevisionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RevisionReason")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Scope")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("ScopeWeight")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("TaskDueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("TaskStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TaskStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("TotalTaskDays")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerformanceEvaluationUploadId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PerformanceTaskDetails");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Permission", b =>
@@ -4122,6 +4301,25 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PerformanceTaskDetail", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.PerformanceEvaluationUpload", "Upload")
+                        .WithMany()
+                        .HasForeignKey("PerformanceEvaluationUploadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Upload");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.PermitAttachment", b =>
