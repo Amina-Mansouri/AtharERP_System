@@ -81,6 +81,8 @@ namespace AtharERP_System.Data
         public DbSet<CustodyHandoverLine> CustodyHandoverLines { get; set; } = null!;
         public DbSet<DocumentRevision> DocumentRevisions { get; set; } = null!;
         public DbSet<ProjectClosureReport> ProjectClosureReports { get; set; } = null!;
+        public DbSet<PerformanceEvaluationUpload> PerformanceEvaluationUploads { get; set; }
+        public DbSet<EmployeeMonthlyKpi> EmployeeMonthlyKpis { get; set; }
         public DbSet<ProjectClosureReportStage> ProjectClosureReportStages { get; set; } = null!;
         public DbSet<ProjectDeliveryReport> ProjectDeliveryReports { get; set; } = null!;
         public DbSet<ProjectDeliveryReportFile> ProjectDeliveryReportFiles { get; set; } = null!;

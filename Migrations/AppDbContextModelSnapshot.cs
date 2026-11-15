@@ -989,6 +989,61 @@ namespace AtharERP_System.Migrations
                     b.ToTable("EmployeeDocuments");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.EmployeeMonthlyKpi", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("ActualWorkingHours")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<decimal?>("AvailableWorkingHours")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<decimal?>("EngineeringKpi")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("FinalMonthlyKpi")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("HrEvaluation")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int?>("LateTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("OnTimeTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PerformanceEvaluationUploadId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PerformanceGrade")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal?>("TotalFinalProductionScore")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int?>("TotalTasks")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerformanceEvaluationUploadId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmployeeMonthlyKpis");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.ExpenseCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -1373,6 +1428,45 @@ namespace AtharERP_System.Migrations
                         .IsUnique();
 
                     b.ToTable("NotificationSettings");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PerformanceEvaluationUpload", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UploadedById")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ValidationNotes")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("ValidationPassed")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("PerformanceEvaluationUploads");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Permission", b =>
@@ -3880,6 +3974,25 @@ namespace AtharERP_System.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AtharERP_System.Models.Entities.EmployeeMonthlyKpi", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.PerformanceEvaluationUpload", "Upload")
+                        .WithMany("EmployeeResults")
+                        .HasForeignKey("PerformanceEvaluationUploadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Upload");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AtharERP_System.Models.Entities.FinancialClaim", b =>
                 {
                     b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "CreatedBy")
@@ -3998,6 +4111,17 @@ namespace AtharERP_System.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PerformanceEvaluationUpload", b =>
+                {
+                    b.HasOne("AtharERP_System.Models.Entities.ApplicationUser", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UploadedBy");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.PermitAttachment", b =>
@@ -4944,6 +5068,11 @@ namespace AtharERP_System.Migrations
             modelBuilder.Entity("AtharERP_System.Models.Entities.MaterialCategory", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AtharERP_System.Models.Entities.PerformanceEvaluationUpload", b =>
+                {
+                    b.Navigation("EmployeeResults");
                 });
 
             modelBuilder.Entity("AtharERP_System.Models.Entities.Permission", b =>

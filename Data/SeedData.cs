@@ -291,12 +291,40 @@ namespace AtharERP_System.Data
             });
             // مدير موقع: إدارة كاملة للمواقع والمقاولين وطلباتها الفنية والصيانة، + اعتماد فحوصات الجودة بالموقع + الموافقة على طلبات التوريد
             await LinkPermissionsToRole(context, roleManager, "مدير موقع", new[]
-            {
+  {
         "Sites.View", "Sites.Manage", "Sites.Reports",
     "Sites.TechnicalRequests.Manage", "Sites.Maintenance.Manage",
     "Quality.View", "Quality.Approve", "Quality.Reports",
     "Supply.View", "Supply.Create"
 });
+
+            // ========== منح "HR.Evaluation" تلقائياً لأي دور يملك صلاحيات إدارة شؤون إدارية أصلاً (بدون تدخل يدوي) ==========
+            var hrEvalPermission = await context.Permissions.FirstOrDefaultAsync(p => p.Code == "HR.Evaluation");
+            if (hrEvalPermission != null)
+            {
+                var hrIndicatorCodes = new[] { "HR.Leaves.Manage", "HR.Custody.Manage", "HR.Resignations.Manage", "HR.Permits.Manage", "HR.Complaints.Manage" };
+                var hrIndicatorPermissionIds = await context.Permissions
+                    .Where(p => hrIndicatorCodes.Contains(p.Code))
+                    .Select(p => p.Id)
+                    .ToListAsync();
+
+                var hrRoleIds = await context.RolePermissions
+                    .Where(rp => hrIndicatorPermissionIds.Contains(rp.PermissionId))
+                    .Select(rp => rp.RoleId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var alreadyGrantedRoleIds = await context.RolePermissions
+                    .Where(rp => rp.PermissionId == hrEvalPermission.Id)
+                    .Select(rp => rp.RoleId)
+                    .ToListAsync();
+
+                foreach (var roleId in hrRoleIds.Except(alreadyGrantedRoleIds))
+                {
+                    context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = hrEvalPermission.Id, IsGranted = true });
+                }
+                await context.SaveChangesAsync();
+            }
             // ========== المسارات والرتب الوظيفية ==========
             if (!await context.CareerTracks.AnyAsync())
             {
