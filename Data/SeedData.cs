@@ -122,6 +122,25 @@ namespace AtharERP_System.Data
                 await context.SaveChangesAsync();
             }
 
+            // ========== أنواع المشاريع (ProjectCategory) — تطابق تسميات ملف تتبع الـKPI بالضبط، تُستخدم لاحقاً عند التحقق من الملف المرفوع ==========
+            var projectCategoryNames = new[]
+            {
+                "Hospitality", "Recreational", "Administrative", "Service",
+                "Municipal", "Healthcare", "Residential", "Commercial", "Industrial"
+            };
+            foreach (var name in projectCategoryNames)
+            {
+                if (!await context.ProjectCategories.AnyAsync(c => c.Classification == name))
+                {
+                    context.ProjectCategories.Add(new ProjectCategory
+                    {
+                        Classification = name,
+                        IsActive = true
+                    });
+                }
+            }
+            await context.SaveChangesAsync();
+
             // ========== الأدوار القوالب الجاهزة (محمية من الحذف) ==========
             var templateRoles = new[]
 {
