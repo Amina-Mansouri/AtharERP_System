@@ -1770,11 +1770,10 @@ namespace AtharERP_System.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Tier")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<decimal>("Weight")
+                    b.Property<decimal?>("Weight")
                         .HasColumnType("decimal(5,2)");
 
                     b.HasKey("Id");

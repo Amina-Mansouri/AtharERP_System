@@ -35,7 +35,7 @@
                 <tr>
                     <th>التصنيف</th>
                     <th>الفئة</th>
-                    <th>الوزن</th>
+                
                     <th>الحالة</th>
                     <th>عدد المشاريع المرتبطة</th>
                     <th></th>
@@ -47,7 +47,7 @@
                     <tr>
                         <td>@c.Classification</td>
                         <td>@c.Tier</td>
-                        <td>@c.Weight</td>
+                      
                         <td>
                             @if (c.IsActive)
                             {
@@ -91,12 +91,11 @@
                         <input type="text" name="Classification" id="category-classification" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                     </div>
                     <div>
-                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الفئة (مثال: VIP، عادي)</div>
-                        <input type="text" name="Tier" id="category-tier" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الفئة (مثال: VIP، عادي) — اختياري</div>
+                        <input type="text" name="Tier" id="category-tier" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                     </div>
-                    <div>
-                        <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">الوزن</div>
-                        <input type="number" step="0.01" name="Weight" id="category-weight" required style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+                    <div style="display:none;">
+                        <input type="number" step="0.01" name="Weight" id="category-weight" />
                     </div>
                     <div id="category-active-wrapper" style="display:none; align-items:center; gap:8px;">
                         <input type="checkbox" name="IsActive" id="category-isActive" value="true" />

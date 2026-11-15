@@ -13,15 +13,13 @@ namespace AtharERP_System.Models.Entities
         [Display(Name = "التصنيف")]
         public string Classification { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "الفئة مطلوبة")]
         [StringLength(50)]
         [Display(Name = "الفئة")]
-        public string Tier { get; set; } = string.Empty;
+        public string? Tier { get; set; }
 
-        [Required]
         [Column(TypeName = "decimal(5,2)")]
         [Display(Name = "الوزن")]
-        public decimal Weight { get; set; }
+        public decimal? Weight { get; set; }
 
         [Display(Name = "نشطة")]
         public bool IsActive { get; set; } = true;
@@ -31,7 +29,7 @@ namespace AtharERP_System.Models.Entities
 
         [NotMapped]
         [Display(Name = "الاسم الكامل")]
-        public string DisplayName => $"{Classification} - {Tier}";
+        public string DisplayName => string.IsNullOrEmpty(Tier) ? Classification : $"{Classification} - {Tier}";
 
         public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     }
