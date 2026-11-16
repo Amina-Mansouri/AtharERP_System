@@ -135,8 +135,18 @@
             <div style="font-size:16px; font-weight:700; margin-top:4px;">@lateMinutesTotal.ToString("N0")</div>
         </div>
         <div class="athar-card">
-            <div style="font-size:11px; color:#8a83a0;">مؤشر الأداء (KPI)</div>
-            <div style="font-size:14px; font-weight:600; margin-top:4px;" class="stat-sub">قادم</div>
+            <div style="font-size:11px; color:#8a83a0;">مؤشر الأداء (KPI) — آخر شهر مُقيَّم</div>
+            @{
+                var latestKpi = ViewBag.LatestKpi as EmployeeMonthlyKpi;
+            }
+            @if (latestKpi != null)
+            {
+                <div style="font-size:16px; font-weight:700; margin-top:4px;">@(latestKpi.FinalMonthlyKpi?.ToString("N1") ?? "-") <span style="font-size:11px; font-weight:400; color:#8a83a0;">(@latestKpi.Upload.Month.ToString("D2")/@latestKpi.Upload.Year — @(latestKpi.PerformanceGrade ?? "-"))</span></div>
+            }
+            else
+            {
+                <div style="font-size:14px; font-weight:600; margin-top:4px;" class="stat-sub">لا يوجد تقييم بعد</div>
+            }
         </div>
     </div>
 

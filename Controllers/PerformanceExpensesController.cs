@@ -45,6 +45,12 @@ namespace AtharERP_System.Controllers
                 return NotFound();
             ViewBag.Engineer = engineer;
 
+            ViewBag.LatestKpi = await _context.EmployeeMonthlyKpis
+                .Include(k => k.Upload)
+                .Where(k => k.UserId == engineerId)
+                .OrderByDescending(k => k.Upload.Year).ThenByDescending(k => k.Upload.Month)
+                .FirstOrDefaultAsync();
+
             ViewBag.RewardHistory = await _context.ProjectExpenses
                 .Include(e => e.CreatedBy)
                 .Where(e => e.EngineerId == engineerId && e.ExpenseCategory.NameAr == "مكافآت")
