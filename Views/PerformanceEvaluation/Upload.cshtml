@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Title"] = "رفع تقييم شهري";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>رفع ملف التقييم الوظيفي الشهري</h1>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" style="white-space:pre-line;">@TempData["Error"]</div>
+}
+
+<div class="athar-card" style="padding:14px; max-width:480px;">
+    <form method="post" asp-action="Upload" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div style="margin-bottom:12px;">
+            <label class="form-label" style="font-size:11px;">الشهر</label>
+            <input type="month" name="period" class="form-control form-control-sm" required />
+        </div>
+        <div style="margin-bottom:12px;">
+            <label class="form-label" style="font-size:11px;">الملف المكتمل (xlsx)</label>
+            <input type="file" name="file" class="form-control form-control-sm" accept=".xlsx" required />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">رفع</button>
+        <a class="btn-line" asp-action="Index">رجوع للأرشيف</a>
+    </form>
+</div>

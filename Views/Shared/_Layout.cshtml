@@ -409,7 +409,8 @@
                                         <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Resignations" ? "active" : "")" style="padding-right:24px;"
                                            asp-controller="Resignations" asp-action="Index">طلبات الاستقالة</a>
                                     </div>
-                                    <span class="nav-item disabled">التقييم الوظيفي <span class="tag tag-muted">قادمة</span></span>
+                                    <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "PerformanceEvaluation" ? "active" : "")"
+                                       asp-controller="PerformanceEvaluation" asp-action="Index">التقييم الوظيفي</a>
                                 </div>
                             </div>
                         }
