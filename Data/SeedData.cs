@@ -302,7 +302,7 @@ namespace AtharERP_System.Data
             var hrEvalPermission = await context.Permissions.FirstOrDefaultAsync(p => p.Code == "HR.Evaluation");
             if (hrEvalPermission != null)
             {
-                var hrIndicatorCodes = new[] { "HR.Leaves.Manage", "HR.Custody.Manage", "HR.Resignations.Manage", "HR.Permits.Manage", "HR.Complaints.Manage" };
+                var hrIndicatorCodes = new List<string> { "HR.Leaves.Manage", "HR.Custody.Manage", "HR.Resignations.Manage", "HR.Permits.Manage", "HR.Complaints.Manage" };
                 var hrIndicatorPermissionIds = await context.Permissions
                     .Where(p => hrIndicatorCodes.Contains(p.Code))
                     .Select(p => p.Id)
