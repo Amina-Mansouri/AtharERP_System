@@ -1,0 +1,27 @@
+﻿@{
+    ViewData["Title"] = "تصدير تقييم شهري";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>تصدير ملف التقييم الوظيفي الشهري</h1>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" style="white-space:pre-line;">@TempData["Error"]</div>
+}
+
+<div class="athar-card" style="padding:14px; max-width:480px;">
+    <form method="post" asp-action="Export">
+        @Html.AntiForgeryToken()
+        <div style="margin-bottom:12px;">
+            <label class="form-label" style="font-size:11px;">الشهر</label>
+            <input type="month" name="period" class="form-control form-control-sm" required />
+        </div>
+        <button type="submit" class="btn-line btn-line-accent">تصدير وتنزيل</button>
+        <a class="btn-line" asp-action="Index">رجوع للأرشيف</a>
+    </form>
+</div>

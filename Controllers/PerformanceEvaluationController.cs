@@ -12,12 +12,14 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly PerformanceEvaluationUploadService _uploadService;
+        private readonly PerformanceEvaluationExportService _exportService;
         private readonly IWebHostEnvironment _environment;
 
-        public PerformanceEvaluationController(AppDbContext context, PerformanceEvaluationUploadService uploadService, IWebHostEnvironment environment)
+        public PerformanceEvaluationController(AppDbContext context, PerformanceEvaluationUploadService uploadService, PerformanceEvaluationExportService exportService, IWebHostEnvironment environment)
         {
             _context = context;
             _uploadService = uploadService;
+            _exportService = exportService;
             _environment = environment;
         }
 
@@ -31,6 +33,37 @@ namespace AtharERP_System.Controllers
                 .OrderByDescending(u => u.Year).ThenByDescending(u => u.Month)
                 .ToListAsync();
             return View(uploads);
+        }
+
+        [RequirePermission("HR.Evaluation")]
+        public IActionResult Export()
+        {
+            return View();
+        }
+
+        [RequirePermission("HR.Evaluation")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Export(string period)
+        {
+            if (string.IsNullOrEmpty(period) || !DateTime.TryParse(period + "-01", out var parsed))
+            {
+                TempData["Error"] = "يجب تحديد الشهر";
+                return RedirectToAction("Export");
+            }
+
+            var result = await _exportService.GenerateAsync(parsed.Year, parsed.Month);
+
+            if (!result.Success)
+            {
+                TempData["Error"] = "تعذّر التصدير:\n" + string.Join("\n", result.BlockingErrors);
+                return RedirectToAction("Export");
+            }
+
+            if (result.SoftWarningCount > 0)
+                TempData["Success"] = $"تم التصدير — انتبهي: فيه {result.SoftWarningCount} خانة (نطاق/عنصر) ملوّنة بالأحمر بالملف تحتاج مراجعة";
+
+            return File(result.FileBytes!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"تصدير-{parsed.Year}-{parsed.Month:D2}.xlsx");
         }
 
         [RequirePermission("HR.Evaluation")]
