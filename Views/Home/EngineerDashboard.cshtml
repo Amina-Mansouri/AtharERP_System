@@ -68,7 +68,24 @@
         <span class="tag tag-muted">توثيق عمل منجز — قادمة</span>
     </div>
 </div>
-
+@{
+    var myKpi = ViewBag.MyLatestKpi as EmployeeMonthlyKpi;
+}
+@if (myKpi != null)
+{
+    <div class="athar-card" style="margin-bottom:12px; padding:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:12.5px; font-weight:700; color:#5a5370;">تقييمي الوظيفي — @myKpi.Upload.Month.ToString("D2")/@myKpi.Upload.Year</div>
+            <a href="/Home/MyKpi" style="font-size:11px;">كل التقييمات السابقة ←</a>
+        </div>
+        <div style="display:flex; gap:20px; margin-top:8px; flex-wrap:wrap;">
+            <div><span style="font-size:10.5px; color:#8a83a0;">KPI الشهري النهائي</span><br /><strong style="font-size:17px;">@(myKpi.FinalMonthlyKpi?.ToString("N1") ?? "-")</strong></div>
+            <div><span style="font-size:10.5px; color:#8a83a0;">التقدير</span><br /><strong style="font-size:17px;">@(myKpi.PerformanceGrade ?? "-")</strong></div>
+            <div><span style="font-size:10.5px; color:#8a83a0;">KPI الهندسي</span><br /><strong>@(myKpi.EngineeringKpi?.ToString("N1") ?? "-")</strong></div>
+            <div><span style="font-size:10.5px; color:#8a83a0;">تقييم الشؤون الإدارية</span><br /><strong>@(myKpi.HrEvaluation?.ToString("N1") ?? "-")</strong></div>
+        </div>
+    </div>
+}
 @{
     var todayAttendance = ViewBag.TodayAttendance as AttendanceDailyRecord;
     var isLocationAttendance = user?.AttendanceMethodType == AttendanceMethod.Location;

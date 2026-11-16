@@ -44,6 +44,17 @@ namespace AtharERP_System.Controllers
         }
 
         [Authorize]
+        public async Task<IActionResult> MyKpi()
+        {
+            var myKpis = await _context.EmployeeMonthlyKpis
+                .Include(k => k.Upload)
+                .Where(k => k.UserId == CurrentUserId)
+                .OrderByDescending(k => k.Upload.Year).ThenByDescending(k => k.Upload.Month)
+                .ToListAsync();
+            return View(myKpis);
+        }
+
+        [Authorize]
         public async Task<IActionResult> EngineerDashboard()
         {
             var user = await _context.Users.Include(u => u.Department).Include(u => u.JobRankRef).ThenInclude(r => r!.CareerTrack).FirstOrDefaultAsync(u => u.Id == CurrentUserId);
@@ -94,6 +105,12 @@ namespace AtharERP_System.Controllers
             var todayDate = DateTime.UtcNow.AddHours(2).Date;
             ViewBag.TodayAttendance = await _context.AttendanceDailyRecords
                 .FirstOrDefaultAsync(r => r.UserId == CurrentUserId && r.Date == todayDate);
+
+            ViewBag.MyLatestKpi = await _context.EmployeeMonthlyKpis
+     .Include(k => k.Upload)
+     .Where(k => k.UserId == CurrentUserId)
+     .OrderByDescending(k => k.Upload.Year).ThenByDescending(k => k.Upload.Month)
+     .FirstOrDefaultAsync();
 
             var monthStart = new DateTime(today.Year, today.Month, 1);
             var monthEnd = monthStart.AddMonths(1);

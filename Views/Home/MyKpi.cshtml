@@ -1,0 +1,43 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<EmployeeMonthlyKpi>
+@{
+    ViewData["Title"] = "تقييماتي الوظيفية";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">لوحتي</span>
+        <h1>تقييماتي الوظيفية</h1>
+    </div>
+</div>
+
+<div class="data-table" style="--cols: 90px 100px 100px 110px 110px 110px 110px">
+    <div class="data-table-head">
+        <div class="cell">الشهر</div>
+        <div class="cell">KPI الهندسي</div>
+        <div class="cell">تقييم الشؤون الإدارية</div>
+        <div class="cell">KPI النهائي</div>
+        <div class="cell">التقدير</div>
+        <div class="cell">نسبة الاستغلال</div>
+        <div class="cell">نسبة التسليم بالوقت</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد تقييمات سابقة بعد</div></div>
+    }
+    else
+    {
+        @foreach (var k in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell cell-num">@k.Upload.Month.ToString("D2")/@k.Upload.Year</div>
+                <div class="cell cell-num">@(k.EngineeringKpi?.ToString("N1") ?? "-")</div>
+                <div class="cell cell-num">@(k.HrEvaluation?.ToString("N1") ?? "-")</div>
+                <div class="cell cell-num">@(k.FinalMonthlyKpi?.ToString("N1") ?? "-")</div>
+                <div class="cell">@(k.PerformanceGrade ?? "-")</div>
+                <div class="cell cell-num">@(k.WorkingHoursUtilizationPercent?.ToString("P0") ?? "-")</div>
+                <div class="cell cell-num">@(k.OnTimeDeliveryRatePercent?.ToString("P0") ?? "-")</div>
+            </div>
+        }
+    }
+</div>
