@@ -1,0 +1,45 @@
+﻿@using AtharERP_System.Models.Entities
+@model List<PerformanceEvaluationUpload>
+@{
+    ViewData["Title"] = "التقييم الوظيفي";
+}
+
+<div class="page-head">
+    <div>
+        <span class="kicker">شؤون إدارية</span>
+        <h1>التقييم الوظيفي</h1>
+    </div>
+    <div class="page-head-actions">
+        <a class="btn-line btn-line-accent" asp-action="Upload">+ رفع ملف شهري</a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="data-table" style="--cols: 100px 1fr 140px 100px">
+    <div class="data-table-head">
+        <div class="cell">الشهر</div>
+        <div class="cell">رفعها</div>
+        <div class="cell">تاريخ الرفع</div>
+        <div class="cell">الملف</div>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="data-table-row"><div class="cell" style="grid-column:1/-1">لا توجد رفعات سابقة</div></div>
+    }
+    else
+    {
+        @foreach (var u in Model)
+        {
+            <div class="data-table-row">
+                <div class="cell cell-num">@u.Month.ToString("D2")/@u.Year</div>
+                <div class="cell">@u.UploadedBy?.FullName</div>
+                <div class="cell cell-num">@u.UploadedAt.ToString("yyyy-MM-dd")</div>
+                <div class="cell"><a href="/PerformanceEvaluation/Download/@u.Id" target="_blank">📄 تنزيل</a></div>
+            </div>
+        }
+    }
+</div>
