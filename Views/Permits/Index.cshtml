@@ -37,7 +37,7 @@
         @Html.AntiForgeryToken()
         <div>
             <label class="form-label" style="font-size:11px;">النوع</label>
-            <select name="type" class="form-select form-select-sm" required>
+            <select name="type" id="permitTypeSelect" class="form-select form-select-sm" required onchange="toggleEarlyLeaveField()">
                 @foreach (var t in permitTypeLabels)
                 {
                     <option value="@t.Value">@t.Label</option>
@@ -49,12 +49,12 @@
             <input type="date" name="date" class="form-control form-control-sm" required />
         </div>
         <div>
-            <label class="form-label" style="font-size:11px;">من الساعة</label>
-            <input type="time" name="startTime" class="form-control form-control-sm" required />
+            <label class="form-label" style="font-size:11px;" id="startTimeLabel">من الساعة</label>
+            <input type="time" name="startTime" id="startTimeInput" class="form-control form-control-sm" required />
         </div>
-        <div>
+        <div id="endTimeField">
             <label class="form-label" style="font-size:11px;">إلى الساعة</label>
-            <input type="time" name="endTime" class="form-control form-control-sm" required />
+            <input type="time" name="endTime" id="endTimeInput" class="form-control form-control-sm" required />
         </div>
         <div style="min-width:220px;">
             <label class="form-label" style="font-size:11px;">السبب (اختياري)</label>
@@ -248,4 +248,25 @@
             }
         </div>
     </div>
+}
+@section Scripts {
+    <script>
+        function toggleEarlyLeaveField() {
+            var type = document.getElementById('permitTypeSelect').value;
+            var endField = document.getElementById('endTimeField');
+            var endInput = document.getElementById('endTimeInput');
+            var startLabel = document.getElementById('startTimeLabel');
+            if (type === 'EarlyLeave') {
+                startLabel.textContent = 'توقيت الخروج';
+                endField.style.display = 'none';
+                endInput.required = false;
+                endInput.value = '@ViewBag.MyExpectedEndTime';
+            } else {
+                startLabel.textContent = 'من الساعة';
+                endField.style.display = '';
+                endInput.required = true;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', toggleEarlyLeaveField);
+    </script>
 }

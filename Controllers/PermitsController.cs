@@ -58,10 +58,13 @@ namespace AtharERP_System.Controllers
         public async Task<IActionResult> Index(string? filterEmployeeId, DateTime? filterFrom, DateTime? filterTo, string? filterStatus)
         {
             var myRequests = await _context.PermitRequests
-                .Include(p => p.Attachments)
-                .Where(p => p.UserId == CurrentUserId)
-                .OrderByDescending(p => p.RequestedAt)
-                .ToListAsync();
+     .Include(p => p.Attachments)
+     .Where(p => p.UserId == CurrentUserId)
+     .OrderByDescending(p => p.RequestedAt)
+     .ToListAsync();
+
+            var meForForm = await _context.Users.FindAsync(CurrentUserId);
+            ViewBag.MyExpectedEndTime = (meForForm?.ExpectedEndTime ?? new TimeOnly(16, 0)).ToString("HH:mm");
 
             bool canManage = await _permissionService.HasPermissionAsync(User, "HR.Permits.Manage");
             bool canFinalApprove = await _permissionService.HasPermissionAsync(User, "HR.Permits.FinalApprove");
@@ -97,7 +100,18 @@ namespace AtharERP_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PermitType type, DateTime date, TimeSpan startTime, TimeSpan endTime, string? reason, List<IFormFile>? attachments)
         {
-            if (endTime <= startTime)
+            if (type == PermitType.EarlyLeave)
+            {
+                var me = await _context.Users.FindAsync(CurrentUserId);
+                var officialEnd = me?.ExpectedEndTime?.ToTimeSpan() ?? new TimeSpan(16, 0, 0);
+                if (officialEnd <= startTime)
+                {
+                    TempData["Error"] = "توقيت الخروج يجب أن يكون قبل نهاية دوامك الرسمي";
+                    return RedirectToAction("Index");
+                }
+                endTime = officialEnd;
+            }
+            else if (endTime <= startTime)
             {
                 TempData["Error"] = "وقت النهاية يجب أن يكون بعد وقت البداية";
                 return RedirectToAction("Index");
