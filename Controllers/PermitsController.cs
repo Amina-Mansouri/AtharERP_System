@@ -102,8 +102,8 @@ namespace AtharERP_System.Controllers
         {
             if (type == PermitType.EarlyLeave)
             {
-                var me = await _context.Users.FindAsync(CurrentUserId);
-                var officialEnd = me?.ExpectedEndTime?.ToTimeSpan() ?? new TimeSpan(16, 0, 0);
+                var meForLeave = await _context.Users.FindAsync(CurrentUserId);
+                var officialEnd = meForLeave?.ExpectedEndTime?.ToTimeSpan() ?? new TimeSpan(16, 0, 0);
                 if (officialEnd <= startTime)
                 {
                     TempData["Error"] = "توقيت الخروج يجب أن يكون قبل نهاية دوامك الرسمي";
