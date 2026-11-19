@@ -70,38 +70,54 @@ namespace AtharERP_System.Controllers
      .ThenBy(r => r.User.FirstName)
      .ToListAsync();
 
-            var filteredUserIds = await usersQuery.Select(u => u.Id).ToListAsync();
+            var filteredUsers = await usersQuery.Select(u => new { u.Id, u.ContractStartDate }).ToListAsync();
             if (!string.IsNullOrEmpty(userId))
-                filteredUserIds = filteredUserIds.Where(id => id == userId).ToList();
+                filteredUsers = filteredUsers.Where(u => u.Id == userId).ToList();
+            var filteredUserIds = filteredUsers.Select(u => u.Id).ToList();
 
             var effectiveDateTo = dateTo.Value.Date > DateTime.UtcNow.Date ? DateTime.UtcNow.Date : dateTo.Value.Date;
-            int expectedWorkDays = 0;
-            for (var d = dateFrom.Value.Date; d <= effectiveDateTo; d = d.AddDays(1))
-            {
-                if (d.DayOfWeek != DayOfWeek.Friday) expectedWorkDays++;
-            }
-            int expectedAttendanceSlots = expectedWorkDays * filteredUserIds.Count;
-            var presentDaySlots = records.Select(r => new { r.UserId, Date = r.Date.Date }).Distinct().Count();
 
             var approvedLeaves = await _context.LeaveRequests
                 .Where(l => l.Status == LeaveRequestStatus.Approved && filteredUserIds.Contains(l.UserId)
                     && l.StartDate <= effectiveDateTo && l.EndDate >= dateFrom.Value.Date)
                 .ToListAsync();
 
+            // حساب حقيقي يوم بيوم: كل موظفة تُحسب فقط من تاريخ تعيينها الفعلي، ويوم الإجازة المعتمدة لا يُعتبر غيابًا
+            var presentDayKeys = records.Select(r => (r.UserId, Date: r.Date.Date)).ToHashSet();
+            int presentDaySlots = 0;
             int leaveDaySlots = 0;
-            foreach (var leave in approvedLeaves)
+            int absentDaySlots = 0;
+            foreach (var u in filteredUsers)
             {
-                var overlapStart = leave.StartDate > dateFrom.Value.Date ? leave.StartDate : dateFrom.Value.Date;
-                var overlapEnd = leave.EndDate < effectiveDateTo ? leave.EndDate : effectiveDateTo;
-                for (var d = overlapStart; d <= overlapEnd; d = d.AddDays(1))
+                var userStart = u.ContractStartDate?.Date ?? dateFrom.Value.Date;
+                var effectiveStart = userStart > dateFrom.Value.Date ? userStart : dateFrom.Value.Date;
+                if (effectiveStart > effectiveDateTo) continue;
+
+                var userLeaveDays = new HashSet<DateTime>();
+                foreach (var leave in approvedLeaves.Where(l => l.UserId == u.Id))
                 {
-                    if (d.DayOfWeek != DayOfWeek.Friday) leaveDaySlots++;
+                    var overlapStart = leave.StartDate > effectiveStart ? leave.StartDate : effectiveStart;
+                    var overlapEnd = leave.EndDate < effectiveDateTo ? leave.EndDate : effectiveDateTo;
+                    for (var d = overlapStart; d <= overlapEnd; d = d.AddDays(1))
+                        userLeaveDays.Add(d.Date);
+                }
+
+                for (var d = effectiveStart; d <= effectiveDateTo; d = d.AddDays(1))
+                {
+                    if (d.DayOfWeek == DayOfWeek.Friday) continue;
+
+                    if (presentDayKeys.Contains((u.Id, d)))
+                        presentDaySlots++;
+                    else if (userLeaveDays.Contains(d))
+                        leaveDaySlots++;
+                    else
+                        absentDaySlots++;
                 }
             }
 
             bool isSingleEmployeeView = filteredUserIds.Count == 1;
             ViewBag.IsSingleEmployeeView = isSingleEmployeeView;
-            ViewBag.AbsentCount = Math.Max(0, expectedAttendanceSlots - presentDaySlots - leaveDaySlots);
+            ViewBag.AbsentCount = absentDaySlots;
 
             if (isSingleEmployeeView)
             {

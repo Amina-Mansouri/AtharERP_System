@@ -53,6 +53,11 @@ namespace AtharERP_System.Controllers
                 .Where(r => userIds.Contains(r.UserId) && r.Date >= monthStart && r.Date < monthEnd)
                 .ToListAsync();
 
+            var monthApprovedLeaves = await _context.LeaveRequests
+                .Where(l => l.Status == LeaveRequestStatus.Approved && userIds.Contains(l.UserId)
+                    && l.StartDate < monthEnd && l.EndDate >= monthStart)
+                .ToListAsync();
+
             var previews = new List<object>();
             foreach (var emp in employees)
             {
@@ -64,14 +69,28 @@ namespace AtharERP_System.Controllers
                 decimal overtimeHoursApproved = empRecords.Where(r => r.OvertimeApproved == true).Sum(r => r.OvertimeHours);
                 decimal lateMinutesTotal = empRecords.Sum(r => r.LateMinutes + r.EarlyLeaveMinutes);
 
-                var periodEnd = monthEnd <= today.AddDays(1) ? monthEnd : today.AddDays(1);
-                int expectedWorkDays = 0;
-                for (var d = monthStart; d < periodEnd; d = d.AddDays(1))
+                // حساب حقيقي يوم بيوم: بداية الفترة = تاريخ تعيينها الفعلي إن كان بنص الشهر، والإجازة المعتمدة لا تُحتسب غيابًا
+                var periodEndInclusive = (monthEnd <= today.AddDays(1) ? monthEnd : today.AddDays(1)).AddDays(-1);
+                var periodStart = emp.ContractStartDate.HasValue && emp.ContractStartDate.Value.Date > monthStart
+                    ? emp.ContractStartDate.Value.Date : monthStart;
+
+                var presentDays = empRecords.Where(r => r.CheckIn != null).Select(r => r.Date.Date).ToHashSet();
+                var leaveDays = new HashSet<DateTime>();
+                foreach (var leave in monthApprovedLeaves.Where(l => l.UserId == emp.Id))
                 {
-                    if (d.DayOfWeek != DayOfWeek.Friday) expectedWorkDays++;
+                    var overlapStart = leave.StartDate > periodStart ? leave.StartDate : periodStart;
+                    var overlapEnd = leave.EndDate < periodEndInclusive ? leave.EndDate : periodEndInclusive;
+                    for (var d = overlapStart; d <= overlapEnd; d = d.AddDays(1))
+                        leaveDays.Add(d.Date);
                 }
-                var daysPresent = empRecords.Where(r => r.CheckIn != null).Select(r => r.Date.Date).Distinct().Count();
-                int estimatedAbsentDays = Math.Max(0, expectedWorkDays - daysPresent);
+
+                int estimatedAbsentDays = 0;
+                for (var d = periodStart; d <= periodEndInclusive; d = d.AddDays(1))
+                {
+                    if (d.DayOfWeek == DayOfWeek.Friday) continue;
+                    if (presentDays.Contains(d) || leaveDays.Contains(d)) continue;
+                    estimatedAbsentDays++;
+                }
 
                 decimal? hourlyRateUsed = emp.JobRankRef?.HourlyRate;
                 decimal? fixedSalaryUsed = emp.JobRankRef?.BaseSalary;
