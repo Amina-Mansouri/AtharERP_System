@@ -496,9 +496,12 @@ namespace AtharERP_System.Controllers
             string? expectedLocationName,
             double? expectedLatitude,
             double? expectedLongitude,
-            int? allowedRadiusMeters,
+                       int? allowedRadiusMeters,
             int? positionId,
-            string role)
+            string role,
+            AttendanceMethod attendanceMethodType,
+            TimeOnly? expectedStartTime,
+            TimeOnly? expectedEndTime)
         {
             async Task<IActionResult> FailAsync(string error)
             {
@@ -528,6 +531,9 @@ namespace AtharERP_System.Controllers
                 ViewBag.PostedExpectedLongitude = expectedLongitude;
                 ViewBag.PostedAllowedRadiusMeters = allowedRadiusMeters;
                 ViewBag.PostedRole = role;
+                ViewBag.PostedAttendanceMethodType = (int)attendanceMethodType;
+                ViewBag.PostedExpectedStartTime = expectedStartTime;
+                ViewBag.PostedExpectedEndTime = expectedEndTime;
 
                 if (departmentId.HasValue)
                 {
@@ -576,6 +582,9 @@ namespace AtharERP_System.Controllers
                 ExpectedLongitude = expectedLongitude,
                 AllowedRadiusMeters = allowedRadiusMeters ?? 100,
                 PositionId = positionId,
+                AttendanceMethodType = attendanceMethodType,
+                ExpectedStartTime = expectedStartTime,
+                ExpectedEndTime = expectedEndTime,
                 EmailConfirmed = true,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow

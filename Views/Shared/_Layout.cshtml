@@ -390,8 +390,11 @@
                                     }
                                     @if (canAttendance)
                                     {
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
-                                           asp-controller="Attendance" asp-action="Index">الحضور والانصراف</a>
+                                        <div class="nav-subgroup-title">الحضور والانصراف</div>
+                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                                           asp-controller="Attendance" asp-action="Index">سجلات البصمة</a>
+                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" && ViewContext.RouteData.Values["action"]?.ToString() == "LocationRecords" ? "active" : "")"
+                                           asp-controller="Attendance" asp-action="LocationRecords">سجلات المواقع</a>
                                     }
                                     <button type="button" class="nav-group-header @(requestsSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#requestsSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
                                         <span>إدارة الطلبات</span>
@@ -504,8 +507,9 @@
 
                         @if (canAttendance)
                         {
+                            var myAttendanceAction = currentUser?.AttendanceMethodType == AttendanceMethod.Location ? "LocationRecords" : "Index";
                             <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" ? "active" : "")"
-                               asp-controller="Attendance" asp-action="Index">🕐 حضوري</a>
+                               asp-controller="Attendance" asp-action="@myAttendanceAction">🕐 حضوري</a>
                         }
                         <button type="button" class="nav-group-header @(requestsSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#requestsSubGroupFlat" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
                             <span>📋 إدارة الطلبات</span>

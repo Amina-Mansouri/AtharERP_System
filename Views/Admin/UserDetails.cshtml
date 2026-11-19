@@ -88,7 +88,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
 </div>
 
 <div class="tab-content">
-    <div class="tab-pane fade show active" id="pane-data">
+    < class="tab-pane fade show active" id="pane-data">
         <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
           <button type="button" id="userDataEditBtn" class="btn-line btn-line-accent" onclick="enableUserDataEdit()">تعديل</button>
         </div>
@@ -235,6 +235,22 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
                 <input type="file" name="contractImage" accept="image/*,application/pdf" disabled class="proj-editable" style="width:100%; font-size:11.5px;" />
             </div>
 
+                      <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">طريقة تسجيل الحضور</div>
+                <select name="AttendanceMethodType" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
+                    <option value="Fingerprint" selected="@(Model.AttendanceMethodType == AttendanceMethod.Fingerprint)">بصمة</option>
+                    <option value="Location" selected="@(Model.AttendanceMethodType == AttendanceMethod.Location)">موقع جغرافي</option>
+                </select>
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">وقت بداية الدوام</div>
+                <input type="time" name="ExpectedStartTime" value="@(Model.ExpectedStartTime?.ToString("HH:mm"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+            <div>
+                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">وقت نهاية الدوام</div>
+                <input type="time" name="ExpectedEndTime" value="@(Model.ExpectedEndTime?.ToString("HH:mm"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
+            </div>
+
             <div style="grid-column:span 2;">
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">موقع الحضور المتوقع</div>
                 <div style="display:flex; gap:8px; margin-bottom:8px;">
@@ -256,6 +272,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
                     <input type="number" min="1" name="AllowedRadiusMeters" id="AllowedRadiusMeters" value="@Model.AllowedRadiusMeters" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
                 </div>
             </div>
+         
 
             <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">طريقة تسجيل الحضور</div>
@@ -426,7 +443,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
                         <div class="cell cell-num">@(r.CheckIn?.AddHours(2).ToString("HH:mm") ?? "-")</div>
                         <div class="cell cell-num">@(r.CheckOut?.AddHours(2).ToString("HH:mm") ?? "-")</div>
                         <div class="cell cell-num">@(r.TotalHours?.ToString("N1") ?? "-")</div>
-                        <div class="cell cell-num">@(r.LateMinutes > 0 ? r.LateMinutes.ToString("N0") : "-")</div>
+                        <div class="cell cell-num">@(r.LateMinutes >= 1 ? r.LateMinutes.ToString("N0") : "-")</div>
                         <div class="cell cell-num">@(r.OvertimeHours > 0 ? r.OvertimeHours.ToString("N1") : "-")</div>
                     </div>
                 }

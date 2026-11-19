@@ -33,6 +33,17 @@ namespace AtharERP_System.Controllers
         [RequirePermission("HR.Attendance.View")]
         public async Task<IActionResult> Index(int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo)
         {
+            return await RenderAttendanceAsync(AttendanceMethod.Fingerprint, "Index", departmentId, userId, dateFrom, dateTo);
+        }
+
+        [RequirePermission("HR.Attendance.View")]
+        public async Task<IActionResult> LocationRecords(int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo)
+        {
+            return await RenderAttendanceAsync(AttendanceMethod.Location, "LocationRecords", departmentId, userId, dateFrom, dateTo);
+        }
+
+        private async Task<IActionResult> RenderAttendanceAsync(AttendanceMethod method, string viewName, int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo)
+        {
             bool canManageAttendance = await _permissionService.HasPermissionAsync(User, "HR.Attendance.Edit");
             if (!canManageAttendance)
             {
@@ -45,12 +56,13 @@ namespace AtharERP_System.Controllers
             ViewBag.DepartmentId = departmentId;
             ViewBag.UserId = userId;
 
-            var usersQuery = _context.Users.Where(u => u.IsActive);
+            var usersQuery = _context.Users.Where(u => u.IsActive && u.AttendanceMethodType == method);
             if (departmentId.HasValue)
                 usersQuery = usersQuery.Where(u => u.DepartmentId == departmentId.Value);
             ViewBag.Users = await usersQuery.OrderBy(u => u.FirstName).ToListAsync();
 
-            dateFrom ??= DateTime.UtcNow.Date.AddDays(-DateTime.UtcNow.Day + 1);
+            // الفلترة الافتراضية: يوم واحد بس (اليوم الحالي)، قابلة للتغيير يدويًا
+            dateFrom ??= DateTime.UtcNow.Date;
             dateTo ??= DateTime.UtcNow.Date;
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;
@@ -58,7 +70,7 @@ namespace AtharERP_System.Controllers
             var query = _context.AttendanceDailyRecords
                 .Include(r => r.User)
                 .Include(r => r.OvertimeDecidedBy)
-                .Where(r => r.Date >= dateFrom.Value && r.Date <= dateTo.Value);
+                .Where(r => r.Date >= dateFrom.Value && r.Date <= dateTo.Value && r.User.AttendanceMethodType == method);
 
             if (departmentId.HasValue)
                 query = query.Where(r => r.User.DepartmentId == departmentId.Value);
@@ -82,7 +94,6 @@ namespace AtharERP_System.Controllers
                     && l.StartDate <= effectiveDateTo && l.EndDate >= dateFrom.Value.Date)
                 .ToListAsync();
 
-            // حساب حقيقي يوم بيوم: كل موظفة تُحسب فقط من تاريخ تعيينها الفعلي، ويوم الإجازة المعتمدة لا يُعتبر غيابًا
             var presentDayKeys = records.Select(r => (r.UserId, Date: r.Date.Date)).ToHashSet();
             int presentDaySlots = 0;
             int leaveDaySlots = 0;
@@ -121,26 +132,26 @@ namespace AtharERP_System.Controllers
 
             if (isSingleEmployeeView)
             {
-                ViewBag.LateCount = records.Count(r => r.LateMinutes > 0);
+                ViewBag.LateCount = records.Count(r => r.LateMinutes >= 1);
                 ViewBag.OvertimeApprovedHours = records.Where(r => r.OvertimeApproved == true).Sum(r => r.OvertimeHours);
-                ViewBag.OnTimeCount = records.Count(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0);
-                ViewBag.EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0);
+                ViewBag.OnTimeCount = records.Count(r => r.CheckIn.HasValue && r.LateMinutes < 1 && r.EarlyLeaveMinutes < 1);
+                ViewBag.EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes >= 1);
             }
             else
             {
-                ViewBag.LateCount = records.Where(r => r.LateMinutes > 0).Select(r => r.UserId).Distinct().Count();
+                ViewBag.LateCount = records.Where(r => r.LateMinutes >= 1).Select(r => r.UserId).Distinct().Count();
                 ViewBag.OvertimeCount = records.Where(r => r.OvertimeHours > 0).Select(r => r.UserId).Distinct().Count();
-                ViewBag.OnTimeCount = records.Where(r => r.CheckIn.HasValue && r.LateMinutes == 0 && r.EarlyLeaveMinutes == 0).Select(r => r.UserId).Distinct().Count();
-                ViewBag.EarlyLeaveCount = records.Where(r => r.EarlyLeaveMinutes > 0).Select(r => r.UserId).Distinct().Count();
+                ViewBag.OnTimeCount = records.Where(r => r.CheckIn.HasValue && r.LateMinutes < 1 && r.EarlyLeaveMinutes < 1).Select(r => r.UserId).Distinct().Count();
+                ViewBag.EarlyLeaveCount = records.Where(r => r.EarlyLeaveMinutes >= 1).Select(r => r.UserId).Distinct().Count();
             }
 
-            return View(records);
+            return View(viewName, records);
         }
 
         [RequirePermission("HR.Attendance.Edit")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DecideOvertime(int id, bool approved, int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo)
+        public async Task<IActionResult> DecideOvertime(int id, bool approved, int? departmentId, string? userId, DateTime? dateFrom, DateTime? dateTo, string? returnAction)
         {
             var record = await _context.AttendanceDailyRecords.FindAsync(id);
             if (record == null)
@@ -157,7 +168,7 @@ namespace AtharERP_System.Controllers
             await _audit.LogAsync(CurrentUserId, "Update", nameof(AttendanceDailyRecord), record.Id.ToString(), approved ? "اعتماد ساعات إضافية" : "رفض ساعات إضافية");
 
             TempData["Success"] = approved ? "تم اعتماد الساعات الإضافية" : "تم رفض الساعات الإضافية";
-            return RedirectToAction("Index", new { departmentId, userId, dateFrom, dateTo });
+            return RedirectToAction(string.IsNullOrEmpty(returnAction) ? "Index" : returnAction, new { departmentId, userId, dateFrom, dateTo });
         }
 
         // تسجيل حضور/انصراف ذاتي بالموقع — متاح لكل موظف طريقته "بالموقع"، يستخدم نفس خط أنابيب البصمة بدون تكرار منطق
