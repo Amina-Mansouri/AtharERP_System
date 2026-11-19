@@ -390,11 +390,17 @@
                                     }
                                     @if (canAttendance)
                                     {
-                                        <div class="nav-subgroup-title">الحضور والانصراف</div>
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
-                                           asp-controller="Attendance" asp-action="Index">سجلات البصمة</a>
-                                        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance" && ViewContext.RouteData.Values["action"]?.ToString() == "LocationRecords" ? "active" : "")"
-                                           asp-controller="Attendance" asp-action="LocationRecords">سجلات المواقع</a>
+                                        bool attendanceSubActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Attendance";
+                                        <button type="button" class="nav-group-header @(attendanceSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#attendanceSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
+                                            <span>الحضور والانصراف</span>
+                                            <span class="nav-group-caret">▾</span>
+                                        </button>
+                                        <div class="collapse @(attendanceSubActive ? "show" : "")" id="attendanceSubGroup">
+                                            <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" style="padding-right:24px;"
+                                               asp-controller="Attendance" asp-action="Index">سجلات البصمة</a>
+                                            <a class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "LocationRecords" ? "active" : "")" style="padding-right:24px;"
+                                               asp-controller="Attendance" asp-action="LocationRecords">سجلات المواقع</a>
+                                        </div>
                                     }
                                     <button type="button" class="nav-group-header @(requestsSubActive ? "" : "collapsed")" data-bs-toggle="collapse" data-bs-target="#requestsSubGroup" style="font-size:11.5px; font-weight:600; padding:7px 14px;">
                                         <span>إدارة الطلبات</span>
