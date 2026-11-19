@@ -88,7 +88,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
 </div>
 
 <div class="tab-content">
-    < class="tab-pane fade show active" id="pane-data">
+    <div class="tab-pane fade show active" id="pane-data">
         <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
           <button type="button" id="userDataEditBtn" class="btn-line btn-line-accent" onclick="enableUserDataEdit()">تعديل</button>
         </div>
@@ -233,62 +233,7 @@ else if (daysToExpiry.HasValue && daysToExpiry.Value >= 0 && daysToExpiry.Value 
                     </div>
                 }
                 <input type="file" name="contractImage" accept="image/*,application/pdf" disabled class="proj-editable" style="width:100%; font-size:11.5px;" />
-            </div>
-
-                      <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">طريقة تسجيل الحضور</div>
-                <select name="AttendanceMethodType" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="Fingerprint" selected="@(Model.AttendanceMethodType == AttendanceMethod.Fingerprint)">بصمة</option>
-                    <option value="Location" selected="@(Model.AttendanceMethodType == AttendanceMethod.Location)">موقع جغرافي</option>
-                </select>
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">وقت بداية الدوام</div>
-                <input type="time" name="ExpectedStartTime" value="@(Model.ExpectedStartTime?.ToString("HH:mm"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">وقت نهاية الدوام</div>
-                <input type="time" name="ExpectedEndTime" value="@(Model.ExpectedEndTime?.ToString("HH:mm"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-
-            <div style="grid-column:span 2;">
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">موقع الحضور المتوقع</div>
-                <div style="display:flex; gap:8px; margin-bottom:8px;">
-                    <input type="text" id="edituser-address-search" placeholder="اكتب اسم منطقة أو شارع..." autocomplete="off" disabled class="proj-editable" style="flex:1; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-                    <button type="button" id="edituser-use-my-location" disabled class="proj-editable" style="height:34px; padding:0 14px; border:1px solid #7b6bd6; border-radius:8px; background:#fff; color:#7b6bd6; font-size:11.5px; font-weight:600; white-space:nowrap;">📍 موقعي الحالي</button>
-                </div>
-                <div id="edituser-map" style="direction:ltr; height:220px; width:100%; border-radius:8px; border:1px solid #e4e2ec;"></div>
-                <div id="edituser-coords-display" style="font-size:10.5px; color:#8a83a0; margin-top:6px;">
-                    @(Model.ExpectedLatitude.HasValue && Model.ExpectedLongitude.HasValue
-                        ? $"الإحداثيات المختارة: {Model.ExpectedLatitude.Value:F6}, {Model.ExpectedLongitude.Value:F6}"
-                        : "لم يتم تحديد موقع بعد")
-                </div>
-                <input type="hidden" id="ExpectedLocationName" name="ExpectedLocationName" value="@Model.ExpectedLocationName" />
-                <input type="hidden" id="ExpectedLatitude" name="ExpectedLatitude" value="@(Model.ExpectedLatitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
-                <input type="hidden" id="ExpectedLongitude" name="ExpectedLongitude" value="@(Model.ExpectedLongitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
-                <div style="margin-top:8px; max-width:220px;">
-                                    
-                    <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">نصف القطر المسموح (متر)</div>
-                    <input type="number" min="1" name="AllowedRadiusMeters" id="AllowedRadiusMeters" value="@Model.AllowedRadiusMeters" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#fff; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-                </div>
-            </div>
-         
-
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">طريقة تسجيل الحضور</div>
-                <select name="AttendanceMethodType" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px;">
-                    <option value="Fingerprint" selected="@(Model.AttendanceMethodType == AttendanceMethod.Fingerprint)">بصمة</option>
-                    <option value="Location" selected="@(Model.AttendanceMethodType == AttendanceMethod.Location)">موقع جغرافي</option>
-                </select>
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">وقت بداية الدوام</div>
-                <input type="time" name="ExpectedStartTime" value="@(Model.ExpectedStartTime?.ToString("HH:mm"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
-            <div>
-                <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">وقت نهاية الدوام</div>
-                <input type="time" name="ExpectedEndTime" value="@(Model.ExpectedEndTime?.ToString("HH:mm"))" disabled class="proj-editable" style="width:100%; height:34px; border:1px solid #e4e2ec; border-radius:8px; background:#faf9fd; padding:0 11px; font-size:12.5px; font-family:inherit;" />
-            </div>
+                       </div>
 
             <div>
                 <div style="font-size:11px; color:#5a5370; margin-bottom:5px;">المسؤوليات</div>
