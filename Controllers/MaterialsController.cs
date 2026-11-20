@@ -12,11 +12,13 @@ namespace AtharERP_System.Controllers
     {
         private readonly AppDbContext _context;
         private readonly AuditService _audit;
+        private readonly FileUploadService _fileUpload;
 
-        public MaterialsController(AppDbContext context, AuditService audit)
+        public MaterialsController(AppDbContext context, AuditService audit, FileUploadService fileUpload)
         {
             _context = context;
             _audit = audit;
+            _fileUpload = fileUpload;
         }
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -73,10 +75,22 @@ namespace AtharERP_System.Controllers
         [RequirePermission("Supply.Approve")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateItem(string name, int materialCategoryId)
+        public async Task<IActionResult> CreateItem(string name, int materialCategoryId, IFormFile? photo)
         {
-            _context.MaterialItems.Add(new MaterialItem { Name = name, MaterialCategoryId = materialCategoryId, IsActive = true, CreatedAt = DateTime.UtcNow });
+            var item = new MaterialItem { Name = name, MaterialCategoryId = materialCategoryId, IsActive = true, CreatedAt = DateTime.UtcNow };
+            _context.MaterialItems.Add(item);
             await _context.SaveChangesAsync();
+
+            if (photo != null && photo.Length > 0)
+            {
+                var uploadResult = await _fileUpload.SaveFileAsync(photo, $"materials/{item.Id}");
+                if (uploadResult.Success)
+                {
+                    item.PhotoPath = uploadResult.FilePath;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             TempData["Success"] = "تم إضافة الصنف بنجاح";
             return RedirectToAction("Index");
         }

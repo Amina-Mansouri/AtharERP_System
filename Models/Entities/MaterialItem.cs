@@ -26,5 +26,8 @@ namespace AtharERP_System.Models.Entities
 
         [Display(Name = "تاريخ الإضافة")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Display(Name = "صورة الصنف")]
+        public string? PhotoPath { get; set; }
     }
 }

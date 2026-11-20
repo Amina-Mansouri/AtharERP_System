@@ -245,7 +245,7 @@ namespace AtharERP_System.Services
         {
             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(text);
         }
-        private void ImageCell(TableDescriptor table, string? relativePath)
+        private void ImageCell(TableDescriptor table, string? relativePath, float height = 35)
         {
             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3).Column(c =>
             {
@@ -254,7 +254,7 @@ namespace AtharERP_System.Services
                     : Path.Combine(_environment.WebRootPath, relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
 
                 if (fullPath != null && File.Exists(fullPath))
-                    c.Item().Height(35).Image(fullPath).FitArea();
+                    c.Item().Height(height).Image(fullPath).FitArea();
                 else
                     c.Item().Text("-");
             });

@@ -1392,6 +1392,9 @@ namespace AtharERP_System.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("PhotoPath")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MaterialCategoryId");

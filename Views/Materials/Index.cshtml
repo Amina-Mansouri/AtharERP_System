@@ -71,8 +71,9 @@
 }
 
 <div style="font-size:13px; font-weight:600; margin-bottom:8px;">الأصناف</div>
-<div class="data-table" style="--cols: 1.2fr 1fr 100px @(canManage ? "160px" : "");">
+<div class="data-table" style="--cols: 110px 1.2fr 1fr 100px @(canManage ? "160px" : "");">
     <div class="data-table-head">
+        <div class="cell">الصورة</div>
         <div class="cell">اسم الصنف</div>
         <div class="cell">التصنيف</div>
         <div class="cell">الحالة</div>
@@ -90,6 +91,16 @@
         @foreach (var i in Model)
         {
             <div class="data-table-row">
+                <div class="cell">
+                    @if (!string.IsNullOrEmpty(i.PhotoPath))
+                    {
+                        <a href="@i.PhotoPath" target="_blank"><img src="@i.PhotoPath" style="max-width:90px; max-height:70px; border-radius:6px;" /></a>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </div>
                 <div class="cell">@i.Name</div>
                 <div class="cell">@i.MaterialCategory.NameAr</div>
                 <div class="cell"><span class="tag @(i.IsActive ? "tag-success" : "tag-muted")">@(i.IsActive ? "نشط" : "غير نشط")</span></div>
@@ -116,7 +127,7 @@
 @if (canManage)
 {
     <div style="background:#fff; border:1px solid var(--sys-border); border-radius:var(--sys-radius-card); box-shadow:var(--sys-shadow); padding:10px 14px; margin-top:10px;">
-        <form method="post" asp-action="CreateItem" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+        <form method="post" asp-action="CreateItem" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
             @Html.AntiForgeryToken()
             <div style="flex:1; min-width:200px;">
                 <label class="form-label" style="font-size:11px;">اسم الصنف</label>
@@ -131,6 +142,10 @@
                         <option value="@c.Id">@c.NameAr</option>
                     }
                 </select>
+            </div>
+            <div style="min-width:200px;">
+                <label class="form-label" style="font-size:11px;">صورة الصنف (اختياري)</label>
+                <input type="file" name="photo" accept="image/*" class="form-control form-control-sm" />
             </div>
             <button type="submit" class="btn-line btn-line-accent">+ إضافة صنف</button>
         </form>
