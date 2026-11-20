@@ -1573,7 +1573,7 @@ namespace AtharERP_System.Services
                     {
                         table.ColumnsDefinition(c =>
                         {
-                            c.ConstantColumn(50);
+                            c.ConstantColumn(90);
                             c.RelativeColumn(1.3f);
                             c.RelativeColumn(1.3f);
                             c.RelativeColumn();
@@ -1593,8 +1593,11 @@ namespace AtharERP_System.Services
 
                         foreach (var item in items)
                         {
-                            ImageCell(table, item.PhotoPath);
-                            DataCell(table, item.SiteSupplyRequest.Site?.Project?.Name ?? "-");
+                            ImageCell(table, item.PhotoPath, 70);
+                            var projectLabel = item.SiteSupplyRequest.Site?.Project != null
+                                ? $"{item.SiteSupplyRequest.Site.Project.Code} - {item.SiteSupplyRequest.Site.Project.Name}"
+                                : "-";
+                            DataCell(table, projectLabel);
                             DataCell(table, item.SiteSupplyRequest.Site?.Name ?? "-");
                             DataCell(table, item.MaterialName);
                             DataCell(table, item.Quantity.ToString("N2"));
